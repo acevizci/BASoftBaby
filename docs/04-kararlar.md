@@ -126,6 +126,11 @@ gönderimde `prisma migrate deploy` çalışıyor, şema kendiliğinden güncell
 Tekrar tekrar çalıştırılabilir; eldeki stoğu ve sonradan girilmiş ürünleri
 ezmez. Örnek ürünler gerçek ürünler girilince panelden silinebilir.
 
+Yayın adımı bu dosyayı `--bir-kez` bayrağıyla çağırıyor: mağaza ayarındaki
+`tohumAtildi` işareti konulduktan sonra bir daha hiçbir şey yazmıyor. Böylece
+mağaza ilk yayında boş görünmüyor, ama silinen örnek ürünler sonraki yayında
+geri gelmiyor. Elle çalıştırmak gerekirse `npm run tohum` işareti dinlemiyor.
+
 **Panelin korunması:** `/yonetim` altındaki her sayfa `YONETIM_SIFRE` ortam
 değişkenindeki şifreyi soruyor (tarayıcının kendi şifre kutusu). Değişken
 tanımlı değilse panel 404 veriyor — yani ayar unutulursa panel açıkta kalmıyor.

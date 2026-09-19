@@ -31,6 +31,9 @@ Vercel'in proje ayarlarında durur.
 | `npm run kontrol` | Tip ve kod denetimi — göndermeden önce bunu çalıştır |
 | `npm run tohum` | Kategorileri, örnek ürünleri ve duyuruları veritabanına yazar |
 
+Yayına ilk gönderimde bu veri kendiliğinden bir kez yazılıyor; sonraki
+gönderimlerde yazılmıyor, yani sildiğin örnek ürünler geri gelmiyor.
+
 ## Klasörler
 
 | Klasör | İçinde ne var |

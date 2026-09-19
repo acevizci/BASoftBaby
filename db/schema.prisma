@@ -119,4 +119,5 @@ model StoreSetting {
   seritRenk        String  @default("nane")
   seritDurdurHover Boolean @default(true)
   seritMobilde     Boolean @default(true)
+  tohumAtildi      Boolean @default(false)
 }

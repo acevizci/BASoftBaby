@@ -7,10 +7,20 @@
  * eldeki stoğu ya da sonradan girilmiş ürünleri silmez.
  *
  * Örnek ürünler gerçek ürünler girilince yönetim panelinden silinebilir.
+ *
+ * `--bir-kez` ile çağrıldığında (yayın adımı böyle çağırıyor) yalnızca ilk
+ * seferinde çalışır: mağaza ayarındaki `tohumAtildi` işareti konduktan sonra
+ * hiçbir şey yapmaz. Böylece silinen örnek ürünler sonraki yayında geri gelmez.
  */
 
+import fs from "node:fs";
+import path from "node:path";
 import { PrismaClient } from "./uretilen/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+
+// Yerelde .env dosyasindan okur; Vercel'de degisken zaten ortamda hazir.
+const yerelEnv = path.join(process.cwd(), ".env");
+if (fs.existsSync(yerelEnv)) process.loadEnvFile(yerelEnv);
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) throw new Error("DATABASE_URL tanımlı değil.");
@@ -228,6 +238,15 @@ const DUYURULAR = [
 ];
 
 async function main() {
+  const birKez = process.argv.includes("--bir-kez");
+  if (birKez) {
+    const ayar = await db.storeSetting.findUnique({ where: { id: "tek" } });
+    if (ayar?.tohumAtildi) {
+      console.log("Başlangıç verisi daha önce yazılmış, atlandı.");
+      return;
+    }
+  }
+
   for (const k of KATEGORILER) {
     await db.category.upsert({
       where: { slug: k.slug },
@@ -282,7 +301,11 @@ async function main() {
     if (!varOlan) await db.announcement.create({ data: d });
   }
 
-  await db.storeSetting.upsert({ where: { id: "tek" }, update: {}, create: { id: "tek" } });
+  await db.storeSetting.upsert({
+    where: { id: "tek" },
+    update: { tohumAtildi: true },
+    create: { id: "tek", tohumAtildi: true },
+  });
 
   const [kategori, urun, varyant, duyuru] = await Promise.all([
     db.category.count(),
