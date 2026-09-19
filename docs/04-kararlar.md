@@ -83,13 +83,19 @@ Duyuru şeridi
 
 ---
 
+### K-06 · Mimari onaylandı, koda geçildi
+**19 Eylül 2026 · Aykut**
+
+[`02-mimari.md`](02-mimari.md) içindeki yapı ve sekiz teknik karar onaylandı;
+yol haritasının 01. adımı (proje iskeleti, marka sistemi) yazıldı.
+
+**Nerede:** depo kökü — `app/`, `ui/`, `server/`
+
+---
+
 ---
 
 ## Açık sorular
-
-### A-01 · Mimari onayı
-[`02-mimari.md`](02-mimari.md) içindeki yapı ve sekiz teknik karar onay
-bekliyor. Onay gelmeden kod yazılmayacak.
 
 ### A-02 · Alan adı
 Araştırılıyor. 07. adımda (açılış) gerekli.

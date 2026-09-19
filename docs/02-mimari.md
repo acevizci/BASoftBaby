@@ -50,8 +50,10 @@ yerde durması şart.
 
 ```
 app/
+  layout.tsx              her sayfayı saran ortak çerçeve
+  globals.css             marka renkleri ve yazı tipleri
+  page.tsx                ana sayfa
   (vitrin)/               herkese açık sayfalar
-    sayfa.tsx             ana sayfa
     [kategori]/           kategori listesi, filtreler
     urun/[slug]/          ürün detayı, varyant seçimi
     sepet/ odeme/         sepet ve ödeme adımı
@@ -65,7 +67,7 @@ app/
     cron/                 zamanlı işler
 
 server/                   iş kuralları — tek kaynak
-  katalog.ts fiyatlama.ts sepet.ts siparis.ts
+  duyuru.ts katalog.ts fiyatlama.ts sepet.ts siparis.ts
   odeme.ts kargo.ts fatura.ts eposta.ts stok.ts
 
 db/
@@ -73,8 +75,11 @@ db/
   migrations/             şema değişiklik geçmişi
 
 ui/                       ortak arayüz parçaları
-marka/                    logo, renkler, yazı tipleri
+public/marka/             logo dosyaları
 ```
+
+Klasör adları Türkçe, ama `layout.tsx`, `page.tsx` ve `route.ts` Next.js'in
+ayrılmış dosya adları; onlar çevrilmez, yoksa sayfa bulunmaz.
 
 ---
 

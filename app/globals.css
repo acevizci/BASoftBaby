@@ -1,0 +1,252 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   Marka renkleri
+   Kodlar logodan piksel örneklemesiyle alındı; dokümanı docs/05-marka.md.
+   Pastel tonlar metinde yeterli kontrast vermediği için her rengin bir de
+   "koyu" karşılığı var: yazı ve düğmelerde o kullanılır.
+   ========================================================================== */
+
+:root {
+  /* marka tonları */
+  --mavi: #7badd6;
+  --mavi-koyu: #2f6e9e;
+  --mavi-soluk: #eaf3fa;
+  --nane: #77d9ab;
+  --nane-koyu: #2c8760;
+  --nane-soluk: #e6f7ee;
+  --mercan: #f36c62;
+  --mercan-koyu: #c2433a;
+  --mercan-soluk: #fdebe9;
+  --sari: #f3c265;
+  --sari-koyu: #8f6410;
+  --sari-soluk: #fdf3dd;
+  --ayicik: #f2b76b;
+  --ayicik-kontur: #b37a42;
+
+  /* yüzeyler ve yazı */
+  --sayfa: #efe9e0;
+  --zemin: #fffcf7;
+  --yuzey: #ffffff;
+  --yuzey-sicak: #fbf5eb;
+  --metin: #332f2a;
+  --metin-2: #6c655c;
+  --metin-3: #9b9289;
+  --cizgi: #eae3d7;
+  --cizgi-soluk: #f3ede3;
+}
+
+/* Koyu tema. Üç durum için de çözülür: kullanıcı açık seçmiş, koyu seçmiş,
+   ya da hiçbir şey seçmemiş (işletim sistemi tercihi). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="acik"]) {
+    --mavi-soluk: #1d2b36;
+    --nane-soluk: #162b23;
+    --mercan-soluk: #35201e;
+    --sari-soluk: #33291a;
+    --mavi-koyu: #9cc8e8;
+    --nane-koyu: #7fd4ab;
+    --mercan-koyu: #f59289;
+    --sari-koyu: #e0b56a;
+
+    --sayfa: #14120f;
+    --zemin: #1e1b16;
+    --yuzey: #26221c;
+    --yuzey-sicak: #2c271f;
+    --metin: #f2ece2;
+    --metin-2: #bdb4a7;
+    --metin-3: #8d8578;
+    --cizgi: #3a342b;
+    --cizgi-soluk: #2f2a22;
+  }
+}
+
+:root[data-tema="koyu"] {
+  --mavi-soluk: #1d2b36;
+  --nane-soluk: #162b23;
+  --mercan-soluk: #35201e;
+  --sari-soluk: #33291a;
+  --mavi-koyu: #9cc8e8;
+  --nane-koyu: #7fd4ab;
+  --mercan-koyu: #f59289;
+  --sari-koyu: #e0b56a;
+
+  --sayfa: #14120f;
+  --zemin: #1e1b16;
+  --yuzey: #26221c;
+  --yuzey-sicak: #2c271f;
+  --metin: #f2ece2;
+  --metin-2: #bdb4a7;
+  --metin-3: #8d8578;
+  --cizgi: #3a342b;
+  --cizgi-soluk: #2f2a22;
+}
+
+/* Tailwind'e tanıtım. "inline" olması önemli: üretilen sınıflar rengin o anki
+   değerini değil değişkenin kendisini kullanır, böylece koyu tema çalışır. */
+@theme inline {
+  --color-mavi: var(--mavi);
+  --color-mavi-koyu: var(--mavi-koyu);
+  --color-mavi-soluk: var(--mavi-soluk);
+  --color-nane: var(--nane);
+  --color-nane-koyu: var(--nane-koyu);
+  --color-nane-soluk: var(--nane-soluk);
+  --color-mercan: var(--mercan);
+  --color-mercan-koyu: var(--mercan-koyu);
+  --color-mercan-soluk: var(--mercan-soluk);
+  --color-sari: var(--sari);
+  --color-sari-koyu: var(--sari-koyu);
+  --color-sari-soluk: var(--sari-soluk);
+  --color-ayicik: var(--ayicik);
+  --color-ayicik-kontur: var(--ayicik-kontur);
+
+  --color-sayfa: var(--sayfa);
+  --color-zemin: var(--zemin);
+  --color-yuzey: var(--yuzey);
+  --color-yuzey-sicak: var(--yuzey-sicak);
+  --color-metin: var(--metin);
+  --color-metin-2: var(--metin-2);
+  --color-metin-3: var(--metin-3);
+  --color-cizgi: var(--cizgi);
+  --color-cizgi-soluk: var(--cizgi-soluk);
+
+  --font-baslik: var(--font-baloo), "Baloo 2", ui-rounded, system-ui, sans-serif;
+  --font-govde: var(--font-nunito), "Nunito Sans", system-ui, sans-serif;
+
+  --radius-marka: 14px;
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  background: var(--zemin);
+  color: var(--metin);
+  font-family: var(--font-govde);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-baslik);
+  font-weight: 700;
+  line-height: 1.18;
+}
+
+/* Fiyatlar ve tablo sütunları alt alta hizalı dursun */
+.rakam {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   Duyuru şeridi
+   Mesaj dizisi iki kez arka arkaya basılır ve şerit tam bir dizi kadar
+   (yani %50) kaydırılır. Dönüş anında ikinci dizi ilkinin durduğu yerde
+   olduğu için birleşme yeri görünmez.
+   ========================================================================== */
+
+.serit {
+  --serit-sure: 26s;
+  overflow: hidden;
+  padding: 7px 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  background: var(--nane-soluk);
+  color: var(--nane-koyu);
+}
+
+.serit[data-renk="mercan"] {
+  background: var(--mercan-soluk);
+  color: var(--mercan-koyu);
+}
+.serit[data-renk="sari"] {
+  background: var(--sari-soluk);
+  color: var(--sari-koyu);
+}
+.serit[data-renk="mavi"] {
+  background: var(--mavi-soluk);
+  color: var(--mavi-koyu);
+}
+
+.serit[data-hiz="yavas"] {
+  --serit-sure: 42s;
+}
+.serit[data-hiz="orta"] {
+  --serit-sure: 26s;
+}
+.serit[data-hiz="hizli"] {
+  --serit-sure: 15s;
+}
+
+.serit-iz {
+  display: flex;
+  width: max-content;
+  animation: serit-kay var(--serit-sure) linear infinite;
+}
+
+.serit[data-dur-hover="1"]:hover .serit-iz {
+  animation-play-state: paused;
+}
+
+.serit-dizi {
+  display: flex;
+  flex: none;
+}
+
+.serit-mesaj {
+  white-space: nowrap;
+  padding: 0 16px;
+}
+
+.serit-mesaj::after {
+  content: "\00b7";
+  margin-left: 32px;
+  opacity: 0.5;
+}
+
+a.serit-mesaj:hover {
+  text-decoration: underline;
+}
+
+@keyframes serit-kay {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Cihazında "hareketi azalt" açık olan kullanıcıda şerit kaymaz; mesajlar
+   ortada sabit durur. Seçenek değil, erişilebilirlik için zorunlu. */
+@media (prefers-reduced-motion: reduce) {
+  .serit {
+    padding: 7px 12px;
+  }
+  .serit-iz {
+    width: 100%;
+    animation: none;
+    justify-content: center;
+  }
+  .serit-dizi {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 2px;
+  }
+  .serit-dizi[data-kopya="1"] {
+    display: none;
+  }
+  .serit-mesaj {
+    white-space: normal;
+    text-align: center;
+  }
+  .serit-mesaj:last-child::after {
+    content: none;
+  }
+}

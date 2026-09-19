@@ -2,12 +2,39 @@
 
 Online bebek kıyafetleri ve aksesuarları mağazası.
 
-> Bu depo şu an **planlama ve tasarım** aşamasında. Henüz uygulama kodu yok;
-> buradaki dosyalar mağazanın ne olacağını, nasıl kurulacağını ve nasıl
-> görüneceğini tarif ediyor. Kod yazımı, mimarinin onaylanmasının ardından
-> `docs/01-kurulus-plani.md` içindeki yol haritasının 01. adımıyla başlayacak.
+> Yol haritasının **01. adımı** yazıldı: proje iskeleti, marka renk ve yazı
+> tipi sistemi, duyuru şeridi, üst çubuk ve alt bilgi. Katalog, sepet ve ödeme
+> sıradaki adımlarda geliyor.
 
-## Ne var bu depoda
+## Çalıştırmak
+
+Node.js 20 veya üstü gerekiyor.
+
+```bash
+npm install
+npm run dev
+```
+
+Sonra tarayıcıda `http://localhost:3000`.
+
+| Komut | Ne yapar |
+| --- | --- |
+| `npm run dev` | Geliştirme sunucusu, kaydettiğin an ekranda |
+| `npm run build` | Yayına çıkacak sürümü derler |
+| `npm run kontrol` | Tip ve kod denetimi — göndermeden önce bunu çalıştır |
+
+## Klasörler
+
+| Klasör | İçinde ne var |
+| --- | --- |
+| `app/` | Sayfalar ve ortak çerçeve. `globals.css` marka renklerini tanımlar |
+| `ui/` | Ortak arayüz parçaları: duyuru şeridi, üst çubuk, alt bilgi |
+| `server/` | İş kuralları. Sayfalar veriyi hep buradan okur |
+| `public/marka/` | Logo dosyaları (SVG ve PNG) |
+| `docs/` | Plan, mimari, tasarım sistemi, kararlar |
+| `tasarim/` | Gezilebilir tasarım mokapı |
+
+## Belgeler
 
 | Dosya | Ne anlatıyor |
 | --- | --- |
@@ -15,21 +42,15 @@ Online bebek kıyafetleri ve aksesuarları mağazası.
 | [`docs/02-mimari.md`](docs/02-mimari.md) | Sistem haritası, klasör yapısı, veri modeli, ödeme ve kargo akışları, baştan verilen sekiz teknik karar |
 | [`docs/03-tasarim-sistemi.md`](docs/03-tasarim-sistemi.md) | Renk paleti, yazı tipleri, bileşenler, 28 ekranın listesi |
 | [`docs/04-kararlar.md`](docs/04-kararlar.md) | Verilmiş kararlar ve hâlâ açık olan sorular |
-| [`tasarim/mokap.html`](tasarim/mokap.html) | Gezilebilir tasarım mokapı — tarayıcıda açman yeterli, kurulum gerekmez |
-| [`marka/`](marka/) | Logo dosyaları (SVG ve PNG) ve marka renkleri |
-
-## Mokapı açmak
-
-`tasarim/mokap.html` dosyasını tarayıcıda çift tıklayarak aç. Sunucu ya da
-kurulum gerekmiyor. Üstten önce grup adına, sonra ekran adına basarak 28 ekranın
-tamamında gezebilirsin.
+| [`docs/05-marka.md`](docs/05-marka.md) | Logo dosyalarının hangisi nerede kullanılır, renk kodları, kullanım kuralları |
+| [`tasarim/mokap.html`](tasarim/mokap.html) | 28 ekranlık tasarım mokapı — tarayıcıda açman yeterli, kurulum gerekmez |
 
 ## Özet
 
 **Ne yapıyoruz:** Ürün ve görsel yönetimi, kampanya ve indirimler, online ödeme,
 kargo etiketi basma ve fatura kesme yeteneği olan bir mağaza.
 
-**Teknoloji:** Next.js + TypeScript + PostgreSQL. Vitrin ve yönetim paneli tek
+**Teknoloji:** Next.js + TypeScript + Tailwind CSS. Vitrin ve yönetim paneli tek
 kod tabanında. Ödeme iyzico, kargo tek entegrasyonla Yurtiçi/Aras/MNG/PTT,
 fatura e-arşiv, yayın Vercel üzerinde.
 
@@ -44,5 +65,6 @@ fatura e-arşiv, yayın Vercel üzerinde.
 - [x] Marka ve tasarım sistemi
 - [x] Logo (vektör olarak yeniden çizildi)
 - [x] 28 ekranlık tasarım mokapı
-- [ ] Mimari onayı
-- [ ] 01. adım: proje iskeleti
+- [x] 01. adım: proje iskeleti ve marka sistemi
+- [ ] Vercel'e bağlanması
+- [ ] 02. adım: katalog ve yönetim paneli

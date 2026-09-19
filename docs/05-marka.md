@@ -6,6 +6,8 @@ Logonun orijinal dosyası bulunmadığı için eldeki görselden vektör olarak 
 
 ## Hangi dosya nerede
 
+Dosyalar `public/marka/` altında; site onları bu adresten doğrudan servis eder.
+
 | Dosya | Nerede kullanılır |
 | --- | --- |
 | `basoftbaby-logo.svg` | Ana logo (amblem üstte, yazı altta). Baskı, tanıtım, geniş alan |
@@ -25,7 +27,7 @@ Tercih sırası her zaman SVG. PNG'ler yalnızca SVG kabul etmeyen yerler
 
 Aşağıdaki kodlar tahmin değil, logo görselinden piksel örneklemesiyle alındı.
 Kullanım rolleri ve yazıda kullanılan koyu karşılıkları için
-[`../docs/03-tasarim-sistemi.md`](../docs/03-tasarim-sistemi.md).
+[`03-tasarim-sistemi.md`](03-tasarim-sistemi.md).
 
 | Renk | Kod |
 | --- | --- |
@@ -61,4 +63,4 @@ rengin koyu karşılığı kullanılır: mavi `#2F6E9E`, nane `#2C8760`, mercan
 
 Orijinal logo suluboya tarzında; vektör sürümde fırça dokusu yok. Karakterler ve
 renkler korundu. Orijinal dosya bulunursa onun kullanılması tercih edilir
-(bkz. [`../docs/04-kararlar.md`](../docs/04-kararlar.md) K-03, A-04).
+(bkz. [`04-kararlar.md`](04-kararlar.md) K-03, A-04).
