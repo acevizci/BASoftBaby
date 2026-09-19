@@ -93,6 +93,27 @@ yol haritasının 01. adımı (proje iskeleti, marka sistemi) yazıldı.
 
 ---
 
+### K-07 · Katalog verisi geçici olarak kodda, sepet geçici olarak tarayıcıda
+**19 Eylül 2026**
+
+Veritabanı (Neon) henüz kurulmadığı için 02. adımda katalog verisi
+`server/katalog.ts` içinde duruyor, sepet ise yalnızca tarayıcıda
+(localStorage) tutuluyor. Böylece site hiçbir ayar gerektirmeden Vercel'e
+çıkabiliyor ve alışveriş akışı bugünden denenebiliyor.
+
+Sayfalar veriyi hiçbir zaman diziden değil hep `server/` altındaki
+fonksiyonlardan okuyor; veritabanı bağlandığında yalnızca o fonksiyonların
+içi değişecek, sayfalara dokunulmayacak. Şema `db/schema.prisma` içinde hazır.
+
+**Bunun sonucu:** Yönetim panelinin ürün ekleme ve stok düzenleme ekranları
+veritabanı kurulmadan yazılamaz — kaydedecek yer yok. Panel, veritabanı
+geldiğinde yazılacak.
+
+**Nerede:** [`../server/katalog.ts`](../server/katalog.ts),
+[`../db/schema.prisma`](../db/schema.prisma), [`../ui/sepet-durumu.ts`](../ui/sepet-durumu.ts)
+
+---
+
 ---
 
 ## Açık sorular
@@ -111,3 +132,7 @@ Mevcut değil. Vektör yeniden çizim şimdilik resmî kaynak.
 Mesafeli satış sözleşmesi, KVKK aydınlatma metni, çerez politikası ve iade
 koşullarının gerçek metinleri bir avukata hazırlatılmalı. Depodaki tasarım
 yalnızca bu metinlerin nerede duracağını gösteriyor.
+
+### A-06 · Veritabanı
+Neon hesabı ve `DATABASE_URL` gerekiyor. Gelmeden yönetim paneli ve kalıcı
+sepet yazılamıyor; katalog şimdilik kodda duruyor (bkz. K-07).

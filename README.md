@@ -2,9 +2,10 @@
 
 Online bebek kıyafetleri ve aksesuarları mağazası.
 
-> Yol haritasının **01. adımı** yazıldı: proje iskeleti, marka renk ve yazı
-> tipi sistemi, duyuru şeridi, üst çubuk ve alt bilgi. Katalog, sepet ve ödeme
-> sıradaki adımlarda geliyor.
+> Yol haritasının **01. ve 02. adımları** yazıldı: proje iskeleti, marka
+> sistemi, duyuru şeridi ve katalog (ana sayfa, kategori ve süzgeçler, ürün
+> detayı, beden-renk seçimi). Katalog verisi veritabanı kurulana kadar kodda
+> duruyor; yönetim paneli ve kalıcı sepet veritabanına bağlı.
 
 ## Çalıştırmak
 
@@ -28,6 +29,7 @@ Sonra tarayıcıda `http://localhost:3000`.
 | Klasör | İçinde ne var |
 | --- | --- |
 | `app/` | Sayfalar ve ortak çerçeve. `globals.css` marka renklerini tanımlar |
+| `db/` | Prisma şeması — veritabanı kurulunca uygulanacak |
 | `ui/` | Ortak arayüz parçaları: duyuru şeridi, üst çubuk, alt bilgi |
 | `server/` | İş kuralları. Sayfalar veriyi hep buradan okur |
 | `public/marka/` | Logo dosyaları (SVG ve PNG) |
@@ -66,5 +68,6 @@ fatura e-arşiv, yayın Vercel üzerinde.
 - [x] Logo (vektör olarak yeniden çizildi)
 - [x] 28 ekranlık tasarım mokapı
 - [x] 01. adım: proje iskeleti ve marka sistemi
+- [x] 02. adım: katalog vitrini (ana sayfa, kategori, süzgeç, ürün detayı)
 - [ ] Vercel'e bağlanması
-- [ ] 02. adım: katalog ve yönetim paneli
+- [ ] Veritabanı (Neon) ve yönetim paneli

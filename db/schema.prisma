@@ -1,0 +1,89 @@
+// BASoftBaby veri modeli — katalog bölümü.
+//
+// Bu şema henüz çalıştırılmıyor: veritabanı (Neon) kurulduğunda
+// `prisma migrate` ile uygulanacak ve server/katalog.ts içindeki okuma
+// fonksiyonlarının içi bu tablolara bağlanacak. Fonksiyon imzaları o zaman
+// değişmeyecek, bu yüzden sayfalara dokunulmayacak.
+//
+// Para her yerde tam sayı kuruş (bkz. docs/02-mimari.md, 01. karar).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id       String     @id @default(cuid())
+  slug     String     @unique
+  ad       String
+  aciklama String?
+  sira     Int        @default(0)
+  aktif    Boolean    @default(true)
+  products Product[]
+
+  @@index([aktif, sira])
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  ad            String
+  ozet          String
+  aciklama      String?
+  categoryId    String
+  category      Category @relation(fields: [categoryId], references: [id])
+
+  fiyatKurus    Int
+  eskiFiyatKurus Int?
+
+  // Bebek tekstilinde yasal zorunluluk (bkz. docs/01-kurulus-plani.md § 3)
+  kumasIcerigi  String
+  yikamaTalimati String
+  ureticiBilgisi String?
+
+  puan          Decimal? @db.Decimal(2, 1)
+  yorumSayisi   Int      @default(0)
+
+  aktif         Boolean  @default(true)
+  olusturuldu   DateTime @default(now())
+  guncellendi   DateTime @updatedAt
+
+  variants      ProductVariant[]
+  images        ProductImage[]
+
+  @@index([categoryId, aktif])
+}
+
+model ProductVariant {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  beden     String
+  renk      String
+  /// Stok kodu — kargo ve sayımda kullanılır
+  sku       String  @unique
+  stok      Int     @default(0)
+  /// Varyant bazlı fiyat farkı; boşsa ürünün fiyatı geçerli
+  fiyatKurus Int?
+
+  @@unique([productId, beden, renk])
+  @@index([productId])
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  /// Cloudflare R2'deki dosya yolu. Boyutlar bundan türetilir
+  yol       String
+  altMetin  String
+  sira      Int     @default(0)
+
+  @@index([productId, sira])
+}
