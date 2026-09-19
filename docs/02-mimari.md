@@ -67,12 +67,16 @@ app/
     cron/                 zamanlı işler
 
 server/                   iş kuralları — tek kaynak
-  duyuru.ts katalog.ts fiyatlama.ts sepet.ts siparis.ts
+  veritabani.ts           Prisma bağlantısı
+  duyuru.ts katalog.ts yonetim.ts fiyatlama.ts sepet.ts siparis.ts
   odeme.ts kargo.ts fatura.ts eposta.ts stok.ts
 
 db/
   schema.prisma           veri modeli
   migrations/             şema değişiklik geçmişi
+  tohum.ts                başlangıç verisi
+
+middleware.ts             yönetim panelinin şifre koruması
 
 ui/                       ortak arayüz parçaları
 public/marka/             logo dosyaları

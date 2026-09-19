@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import SepeteEkle from "@/ui/sepete-ekle";
-import { RENK_ADLARI, PALET, type Beden, type RenkAdi, type Varyant } from "@/server/katalog";
+import { RENK_ADLARI, PALET, type RenkAdi, type Varyant } from "@/ui/katalog-bicim";
 
 /** Bir beden ve renk için stok; olmayan birleşim undefined döner. */
-function bul(varyantlar: Varyant[], beden: Beden, renk: RenkAdi): Varyant | undefined {
+function bul(varyantlar: Varyant[], beden: string, renk: RenkAdi): Varyant | undefined {
   return varyantlar.find((v) => v.beden === beden && v.renk === renk);
 }
 
@@ -20,12 +20,12 @@ export default function VaryantSecici({
   slug: string;
   ad: string;
   fiyatKurus: number;
-  bedenler: Beden[];
+  bedenler: string[];
   renkler: RenkAdi[];
   varyantlar: Varyant[];
 }) {
   const ilk = varyantlar.find((v) => v.stok > 0) ?? varyantlar[0];
-  const [beden, setBeden] = useState<Beden>(ilk.beden);
+  const [beden, setBeden] = useState<string>(ilk.beden);
   const [renk, setRenk] = useState<RenkAdi>(ilk.renk);
 
   const secili = bul(varyantlar, beden, renk);

@@ -1,19 +1,16 @@
 // BASoftBaby veri modeli — katalog bölümü.
 //
-// Bu şema henüz çalıştırılmıyor: veritabanı (Neon) kurulduğunda
-// `prisma migrate` ile uygulanacak ve server/katalog.ts içindeki okuma
-// fonksiyonlarının içi bu tablolara bağlanacak. Fonksiyon imzaları o zaman
-// değişmeyecek, bu yüzden sayfalara dokunulmayacak.
+// Bağlantı adresi burada durmaz; Vercel'de DATABASE_URL olarak tanımlı.
 //
 // Para her yerde tam sayı kuruş (bkz. docs/02-mimari.md, 01. karar).
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../db/uretilen"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model Category {
@@ -47,6 +44,18 @@ model Product {
 
   puan          Decimal? @db.Decimal(2, 1)
   yorumSayisi   Int      @default(0)
+
+  /// Ürün sayfasındaki madde madde özellikler
+  ozellikler    String[]
+
+  /// Kart üzerindeki rozet: "Çok satan", "%20", "Son 3 adet"
+  rozetTon      String?
+  rozetYazi     String?
+
+  /// Gerçek fotoğraflar çekilene kadar kullanılan çizim ve renk paleti.
+  /// Fotoğraflar geldiğinde ProductImage devreye girip bunlar düşecek.
+  gorsel        String   @default("zibin")
+  palet         String   @default("mint")
 
   aktif         Boolean  @default(true)
   olusturuldu   DateTime @default(now())
@@ -86,4 +95,28 @@ model ProductImage {
   sira      Int     @default(0)
 
   @@index([productId, sira])
+}
+
+/// Duyuru şeridindeki tek bir mesaj. Tarihi geçen mesaj sorgudan düşer.
+model Announcement {
+  id         String    @id @default(cuid())
+  metin      String
+  link       String?
+  sira       Int       @default(0)
+  aktif      Boolean   @default(true)
+  baslangic  DateTime?
+  bitis      DateTime?
+  olusturuldu DateTime @default(now())
+
+  @@index([aktif, sira])
+}
+
+/// Sitenin tek satırlık ayar kaydı. id her zaman "tek".
+model StoreSetting {
+  id               String  @id @default("tek")
+  seritAcik        Boolean @default(true)
+  seritHiz         String  @default("orta")
+  seritRenk        String  @default("nane")
+  seritDurdurHover Boolean @default(true)
+  seritMobilde     Boolean @default(true)
 }

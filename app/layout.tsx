@@ -36,6 +36,10 @@ export const metadata: Metadata = {
   },
 };
 
+// Tarihi gelen ya da biten duyuru, kimse bir şey kaydetmese de en geç beş
+// dakikada devreye girsin. Panelden yapılan değişiklikler zaten anında yansır.
+export const revalidate = 300;
+
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#FFFCF7" },

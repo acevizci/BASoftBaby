@@ -4,7 +4,6 @@ import type { Metadata } from "next";
 import UrunKarti from "@/ui/urun-karti";
 import {
   BEDENLER,
-  KATEGORILER,
   RENK_ADLARI,
   PALET,
   kategoriGetir,
@@ -22,10 +21,6 @@ const FIYAT_ARALIKLARI = [
 ];
 
 type Aranan = { beden?: string; renk?: string; fiyat?: string };
-
-export async function generateStaticParams() {
-  return [{ kategori: TUMU }, ...KATEGORILER.map((k) => ({ kategori: k.slug }))];
-}
 
 export async function generateMetadata({
   params,

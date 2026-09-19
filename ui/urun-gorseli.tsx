@@ -1,4 +1,4 @@
-import { PALET, type GorselTipi, type RenkAdi } from "@/server/katalog";
+import { PALET, type GorselTipi, type RenkAdi } from "@/ui/katalog-bicim";
 
 /**
  * Ürün görselleri henüz çizim. Gerçek fotoğraflar çekilip yüklendiğinde bu

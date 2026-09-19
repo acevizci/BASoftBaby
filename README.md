@@ -2,10 +2,10 @@
 
 Online bebek kıyafetleri ve aksesuarları mağazası.
 
-> Yol haritasının **01. ve 02. adımları** yazıldı: proje iskeleti, marka
-> sistemi, duyuru şeridi ve katalog (ana sayfa, kategori ve süzgeçler, ürün
-> detayı, beden-renk seçimi). Katalog verisi veritabanı kurulana kadar kodda
-> duruyor; yönetim paneli ve kalıcı sepet veritabanına bağlı.
+> Yol haritasının **01. ve 02. adımları** tamam: proje iskeleti, marka sistemi,
+> duyuru şeridi, katalog vitrini ve yönetim paneli. Veriler Neon Postgres'te,
+> panelden girilen her değişiklik anında mağazaya yansıyor. Sepet şimdilik
+> yalnızca tarayıcıda; 03. adımda sunucuya taşınacak.
 
 ## Çalıştırmak
 
@@ -13,28 +13,41 @@ Node.js 20 veya üstü gerekiyor.
 
 ```bash
 npm install
+cp .env.example .env    # içini doldur
+npm run tohum           # kategorileri ve örnek ürünleri yazar
 npm run dev
 ```
 
 Sonra tarayıcıda `http://localhost:3000`.
+
+`.env` içinde iki değer var: `DATABASE_URL` (Postgres bağlantısı) ve
+`YONETIM_SIFRE` (yönetim panelinin şifresi). İkisi de depoya girmez; yayında
+Vercel'in proje ayarlarında durur.
 
 | Komut | Ne yapar |
 | --- | --- |
 | `npm run dev` | Geliştirme sunucusu, kaydettiğin an ekranda |
 | `npm run build` | Yayına çıkacak sürümü derler |
 | `npm run kontrol` | Tip ve kod denetimi — göndermeden önce bunu çalıştır |
+| `npm run tohum` | Kategorileri, örnek ürünleri ve duyuruları veritabanına yazar |
 
 ## Klasörler
 
 | Klasör | İçinde ne var |
 | --- | --- |
 | `app/` | Sayfalar ve ortak çerçeve. `globals.css` marka renklerini tanımlar |
-| `db/` | Prisma şeması — veritabanı kurulunca uygulanacak |
+| `db/` | Veritabanı şeması, göç dosyaları ve başlangıç verisi |
 | `ui/` | Ortak arayüz parçaları: duyuru şeridi, üst çubuk, alt bilgi |
 | `server/` | İş kuralları. Sayfalar veriyi hep buradan okur |
 | `public/marka/` | Logo dosyaları (SVG ve PNG) |
 | `docs/` | Plan, mimari, tasarım sistemi, kararlar |
 | `tasarim/` | Gezilebilir tasarım mokapı |
+
+## Yönetim paneli
+
+`/yonetim` adresinde. Ürün ekleme ve düzenleme, beden-renk stokları, duyuru
+şeridi. Açılabilmesi için `YONETIM_SIFRE` tanımlı olmalı; tanımlı değilse panel
+kendini tamamen kapatır (404 verir), yani ayar unutulursa açıkta kalmaz.
 
 ## Belgeler
 
@@ -69,5 +82,6 @@ fatura e-arşiv, yayın Vercel üzerinde.
 - [x] 28 ekranlık tasarım mokapı
 - [x] 01. adım: proje iskeleti ve marka sistemi
 - [x] 02. adım: katalog vitrini (ana sayfa, kategori, süzgeç, ürün detayı)
-- [ ] Vercel'e bağlanması
-- [ ] Veritabanı (Neon) ve yönetim paneli
+- [x] Veritabanı (Neon Postgres) ve yönetim paneli
+- [ ] Gerçek ürünlerin girilmesi
+- [ ] 03. adım: sepet, üyelik ve sipariş

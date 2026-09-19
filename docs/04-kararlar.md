@@ -94,23 +94,49 @@ yol haritasının 01. adımı (proje iskeleti, marka sistemi) yazıldı.
 ---
 
 ### K-07 · Katalog verisi geçici olarak kodda, sepet geçici olarak tarayıcıda
-**19 Eylül 2026**
+**19 Eylül 2026 — katalog kısmı aynı gün K-08 ile kapandı**
 
-Veritabanı (Neon) henüz kurulmadığı için 02. adımda katalog verisi
-`server/katalog.ts` içinde duruyor, sepet ise yalnızca tarayıcıda
-(localStorage) tutuluyor. Böylece site hiçbir ayar gerektirmeden Vercel'e
-çıkabiliyor ve alışveriş akışı bugünden denenebiliyor.
+02. adımda veritabanı henüz kurulmamıştı; katalog verisi `server/katalog.ts`
+içinde, sepet ise yalnızca tarayıcıda (localStorage) tutuluyordu. Katalog artık
+veritabanından okunuyor (K-08); **sepet hâlâ tarayıcıda**, 03. adımda sunucuya
+taşınacak.
 
 Sayfalar veriyi hiçbir zaman diziden değil hep `server/` altındaki
 fonksiyonlardan okuyor; veritabanı bağlandığında yalnızca o fonksiyonların
 içi değişecek, sayfalara dokunulmayacak. Şema `db/schema.prisma` içinde hazır.
 
-**Bunun sonucu:** Yönetim panelinin ürün ekleme ve stok düzenleme ekranları
-veritabanı kurulmadan yazılamaz — kaydedecek yer yok. Panel, veritabanı
-geldiğinde yazılacak.
+**Bunun sonucu:** Yönetim paneli veritabanı gelmeden yazılamamıştı.
 
 **Nerede:** [`../server/katalog.ts`](../server/katalog.ts),
 [`../db/schema.prisma`](../db/schema.prisma), [`../ui/sepet-durumu.ts`](../ui/sepet-durumu.ts)
+
+---
+
+### K-08 · Veritabanı bağlandı, yönetim paneli şifreyle korunuyor
+**19 Eylül 2026 · Aykut**
+
+Neon Postgres, Vercel üzerinden Frankfurt bölgesinde kuruldu ve Prisma ile
+bağlandı. Katalog, kategoriler ve duyuru şeridi artık veritabanından okunuyor;
+yönetim panelinden girilen her değişiklik anında mağazaya yansıyor.
+
+**Şema ve göçler:** `db/schema.prisma` ve `db/migrations/`. Yayına her
+gönderimde `prisma migrate deploy` çalışıyor, şema kendiliğinden güncelleniyor.
+
+**Başlangıç verisi:** `db/tohum.ts` — kategoriler, örnek ürünler ve duyurular.
+Tekrar tekrar çalıştırılabilir; eldeki stoğu ve sonradan girilmiş ürünleri
+ezmez. Örnek ürünler gerçek ürünler girilince panelden silinebilir.
+
+**Panelin korunması:** `/yonetim` altındaki her sayfa `YONETIM_SIFRE` ortam
+değişkenindeki şifreyi soruyor (tarayıcının kendi şifre kutusu). Değişken
+tanımlı değilse panel 404 veriyor — yani ayar unutulursa panel açıkta kalmıyor.
+Üyelik sistemi (Auth.js) 03. adımda gelince yerini ona bırakacak.
+
+**Neden Frankfurt:** Müşteriler Türkiye'de; veritabanı Amerika'da olsaydı her
+sayfa açılışı Atlantik'i geçerdi. Neon bölgesi sonradan değiştirilemiyor.
+
+**Nerede:** [`../db/schema.prisma`](../db/schema.prisma),
+[`../server/veritabani.ts`](../server/veritabani.ts),
+[`../middleware.ts`](../middleware.ts), [`../app/yonetim/`](../app/yonetim/)
 
 ---
 
@@ -133,6 +159,6 @@ Mesafeli satış sözleşmesi, KVKK aydınlatma metni, çerez politikası ve iad
 koşullarının gerçek metinleri bir avukata hazırlatılmalı. Depodaki tasarım
 yalnızca bu metinlerin nerede duracağını gösteriyor.
 
-### A-06 · Veritabanı
-Neon hesabı ve `DATABASE_URL` gerekiyor. Gelmeden yönetim paneli ve kalıcı
-sepet yazılamıyor; katalog şimdilik kodda duruyor (bkz. K-07).
+### A-06 · Yönetim paneli şifresi
+Vercel'de `YONETIM_SIFRE` ortam değişkeni tanımlanmalı. Tanımlanana kadar panel
+kapalı (404). Şifre koda ya da depoya hiçbir zaman yazılmaz.

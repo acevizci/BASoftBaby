@@ -1,0 +1,93 @@
+/**
+ * Katalogun saf (veritabanısız) kısmı: türler, renk paleti, beden sırası ve
+ * biçimlendirme yardımcıları.
+ *
+ * Ayrı dosyada duruyor çünkü tarayıcıda çalışan bileşenler de bunlara
+ * ihtiyaç duyuyor; `server/katalog.ts` veritabanına bağlı olduğu için
+ * tarayıcı tarafına alınamaz.
+ */
+
+export type GorselTipi = "zibin" | "tulum" | "battaniye" | "patik" | "sapka" | "onluk";
+export type RenkAdi = "mint" | "krem" | "mercan" | "mavi" | "sari";
+export type RozetTonu = "mint" | "mercan" | "sari" | "mavi";
+
+export type Kategori = {
+  slug: string;
+  ad: string;
+  aciklama: string;
+  sira: number;
+};
+
+export type Varyant = {
+  beden: string;
+  renk: RenkAdi;
+  stok: number;
+};
+
+export type Urun = {
+  slug: string;
+  ad: string;
+  ozet: string;
+  kategori: string;
+  gorsel: GorselTipi;
+  palet: RenkAdi;
+  fiyatKurus: number;
+  eskiFiyatKurus?: number;
+  rozet?: { ton: RozetTonu; yazi: string };
+  puan: number;
+  yorumSayisi: number;
+  renkler: RenkAdi[];
+  varyantlar: Varyant[];
+  kumasIcerigi: string;
+  yikamaTalimati: string;
+  ozellikler: string[];
+};
+
+/** Bedenler sıralı sabit: veritabanında metin olarak duruyor, ekranda sırası bu. */
+export const BEDENLER = ["0-3 ay", "3-6 ay", "6-9 ay", "9-12 ay", "12-18 ay", "18-24 ay"] as const;
+
+export const RENK_ADLARI: Record<RenkAdi, string> = {
+  mint: "Nane",
+  krem: "Krem",
+  mercan: "Mercan",
+  mavi: "Mavi",
+  sari: "Sarı",
+};
+
+/** Ürün görselleri henüz çizim; gerçek fotoğraflar çekildiğinde yerlerine oturacak. */
+export const PALET: Record<RenkAdi, { zemin: string; c1: string; c2: string; c3: string }> = {
+  mint: { zemin: "#E6F7EE", c1: "#8FD9B7", c2: "#B9E9D2", c3: "#3FA478" },
+  krem: { zemin: "#FBF3E4", c1: "#EBD3A8", c2: "#F7E7C9", c3: "#B08A45" },
+  mercan: { zemin: "#FDEBE9", c1: "#F5A79E", c2: "#FAC8C2", c3: "#C2433A" },
+  mavi: { zemin: "#EAF3FA", c1: "#A9CCE6", c2: "#CBE2F2", c3: "#3F82B4" },
+  sari: { zemin: "#FDF3DD", c1: "#F2CE85", c2: "#F9E6BC", c3: "#8F6410" },
+};
+
+export const GORSEL_TIPLERI: GorselTipi[] = [
+  "zibin",
+  "tulum",
+  "battaniye",
+  "patik",
+  "sapka",
+  "onluk",
+];
+
+
+/** Kuruşu ekranda görünen fiyata çevirir: 24990 → "249,90 ₺" */
+export function fiyatYaz(kurus: number): string {
+  return (
+    (kurus / 100).toLocaleString("tr-TR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }) + " ₺"
+  );
+}
+
+export function toplamStok(urun: Urun): number {
+  return urun.varyantlar.reduce((t, v) => t + v.stok, 0);
+}
+
+export function urununBedenleri(urun: Urun): string[] {
+  const set = new Set(urun.varyantlar.map((v) => v.beden));
+  return (BEDENLER as readonly string[]).filter((b) => set.has(b));
+}

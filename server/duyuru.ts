@@ -1,12 +1,11 @@
 /**
  * Duyuru şeridi — sitenin en üstündeki kayan yazı.
  *
- * Mesajlar ve şerit ayarları yönetim panelinden değiştirilir. Veritabanı 02.
- * adımda kurulacağı için şimdilik veriler bu dosyada duruyor; okuma
- * fonksiyonlarının imzası o zaman değişmeyecek, sadece içleri Prisma
- * sorgusuna dönecek. Bu yüzden sayfalar diziyi doğrudan değil hep bu
- * fonksiyonlar üzerinden okur.
+ * Mesajlar ve şerit ayarları yönetim panelinden değiştirilir; sayfalar hep bu
+ * fonksiyonlardan okur.
  */
+
+import { db } from "@/server/veritabani";
 
 export type Duyuru = {
   id: string;
@@ -15,9 +14,8 @@ export type Duyuru = {
   link?: string;
   sira: number;
   aktif: boolean;
-  /** ISO tarih. Boşsa sınır yok. */
-  baslangic?: string;
-  bitis?: string;
+  baslangic?: Date;
+  bitis?: Date;
 };
 
 export type SeritHizi = "yavas" | "orta" | "hizli";
@@ -32,7 +30,7 @@ export type SeritAyari = {
   mobildeGoster: boolean;
 };
 
-const AYAR: SeritAyari = {
+export const VARSAYILAN_AYAR: SeritAyari = {
   acik: true,
   hiz: "orta",
   renk: "nane",
@@ -40,29 +38,55 @@ const AYAR: SeritAyari = {
   mobildeGoster: true,
 };
 
-const DUYURULAR: Duyuru[] = [
-  { id: "d1", metin: "750 TL ve üzeri siparişlerde kargo bedava", sira: 1, aktif: true },
-  {
-    id: "d2",
-    metin: "Aynı gün kargo · saat 16:00'a kadar verilen siparişler bugün çıkar",
-    sira: 2,
-    aktif: true,
-  },
-  { id: "d3", metin: "Hediye paketi ücretsiz", sira: 3, aktif: true },
-];
-
-/** Tarihi gelmemiş ya da geçmiş mesajlar kendiliğinden düşer. */
-function yayindaMi(d: Duyuru, simdi: Date): boolean {
-  if (!d.aktif) return false;
-  if (d.baslangic && simdi < new Date(d.baslangic)) return false;
-  if (d.bitis && simdi > new Date(d.bitis)) return false;
-  return true;
-}
-
 export async function seritAyariGetir(): Promise<SeritAyari> {
-  return AYAR;
+  const s = await db.storeSetting.findUnique({ where: { id: "tek" } });
+  if (!s) return VARSAYILAN_AYAR;
+  return {
+    acik: s.seritAcik,
+    hiz: s.seritHiz as SeritHizi,
+    renk: s.seritRenk as SeritRengi,
+    durdurHover: s.seritDurdurHover,
+    mobildeGoster: s.seritMobilde,
+  };
 }
 
+function satirCevir(d: {
+  id: string;
+  metin: string;
+  link: string | null;
+  sira: number;
+  aktif: boolean;
+  baslangic: Date | null;
+  bitis: Date | null;
+}): Duyuru {
+  return {
+    id: d.id,
+    metin: d.metin,
+    link: d.link ?? undefined,
+    sira: d.sira,
+    aktif: d.aktif,
+    baslangic: d.baslangic ?? undefined,
+    bitis: d.bitis ?? undefined,
+  };
+}
+
+/** Panelde görünen liste: kapalı ve tarihi geçmiş mesajlar da dahil. */
+export async function tumDuyurular(): Promise<Duyuru[]> {
+  const satirlar = await db.announcement.findMany({ orderBy: { sira: "asc" } });
+  return satirlar.map(satirCevir);
+}
+
+/** Sitede görünen liste: tarihi gelmemiş ya da geçmiş mesajlar kendiliğinden düşer. */
 export async function yayindakiDuyurular(simdi: Date = new Date()): Promise<Duyuru[]> {
-  return DUYURULAR.filter((d) => yayindaMi(d, simdi)).sort((a, b) => a.sira - b.sira);
+  const satirlar = await db.announcement.findMany({
+    where: {
+      aktif: true,
+      AND: [
+        { OR: [{ baslangic: null }, { baslangic: { lte: simdi } }] },
+        { OR: [{ bitis: null }, { bitis: { gte: simdi } }] },
+      ],
+    },
+    orderBy: { sira: "asc" },
+  });
+  return satirlar.map(satirCevir);
 }

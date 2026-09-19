@@ -1,7 +1,7 @@
 import Link from "next/link";
 import UrunGorseli from "@/ui/urun-gorseli";
 import SepeteEkle from "@/ui/sepete-ekle";
-import { PALET, RENK_ADLARI, fiyatYaz, toplamStok, type Urun } from "@/server/katalog";
+import { PALET, RENK_ADLARI, fiyatYaz, toplamStok, type Urun } from "@/ui/katalog-bicim";
 
 const ROZET_SINIFI: Record<string, string> = {
   mint: "bg-nane-soluk text-nane-koyu",
