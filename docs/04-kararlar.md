@@ -64,6 +64,25 @@ yapılması önerilmişti; Aykut tamamının önceden tasarlanmasını tercih et
 
 **Nerede:** [`../tasarim/mokap.html`](../tasarim/mokap.html)
 
+### K-05 · Duyuru şeridi kayan yazı, yönetimden kontrol edilir
+**19 Eylül 2026 · Aykut**
+
+Sitenin en üstündeki duyuru şeridi sabit yazı değil, soldan sola kayan yazı.
+İçindeki mesajlar, şeridin açık/kapalı olması, kayma hızı ve rengi yönetim
+panelinden değiştirilir; koda dokunulmaz.
+
+Her mesaja tarih aralığı verilebiliyor, böylece kampanya duyurusu kendiliğinden
+başlayıp bitiyor.
+
+**Erişilebilirlik:** Cihazında "hareketi azalt" ayarı açık olan müşteride şerit
+kaymaz, mesajlar sabit durur. Bu tercih edilebilir bir seçenek değil, zorunlu.
+
+**Nerede:** [`02-mimari.md` § 3](02-mimari.md#3-veri-modeli) (`Announcement`,
+`StoreSetting`), [`../tasarim/mokap.html`](../tasarim/mokap.html) → Yönetim →
+Duyuru şeridi
+
+---
+
 ---
 
 ## Açık sorular

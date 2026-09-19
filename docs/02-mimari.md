@@ -133,6 +133,15 @@ değil)
 **Coupon** — `kod`, `campaignId`, `kullanimLimiti`, `kullanimSayisi`,
 `musteriBasinaLimit`
 
+**Announcement** — duyuru şeridindeki tek bir mesaj: `metin`, `link`,
+`sira`, `aktif`, `baslangic`, `bitis`. Tarihi geçen mesaj sorgudan kendiliğinden
+düşer; yönetimden bir şey yapılmaz.
+
+**StoreSetting** — sitenin tek satırlık ayar kaydı; duyuru şeridi için
+`seritAcik`, `seritHiz` (yavaş / orta / hızlı), `seritRenk`, `seritDurdurHover`,
+`seritMobilde`. Şeridin kendisi ile içindeki mesajlar ayrı durur: mesaj eklemek
+ayarları, ayar değiştirmek mesajları bozmaz.
+
 **Diğerleri** — `ReturnRequest` (iade talebi), `StockNotification` (gelince haber
 ver), `Review` (puan, yorum, fotoğraf, onay), `GiftRegistry` (bebek hediye
 listesi)

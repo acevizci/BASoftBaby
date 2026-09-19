@@ -71,6 +71,11 @@ durur.
 - **Form alanları** — 10px yuvarlatma, 1.5px çerçeve, seçili hâlde mercan.
 - **Radyo kartları** — seçenek başlığı, açıklaması ve varsa fiyatı bir arada.
 - **Tablolar** — dar ekranda kendi kabında yatay kayar, sayfa kaymaz.
+- **Duyuru şeridi** — sayfanın en üstünde soldan sola kayan tek satır. Mesajlar
+  iki kez arka arkaya dizilir ve şerit tam bir mesaj dizisi kadar kaydırılır,
+  böylece dönüş noktası görünmez, yazı zıplamaz. Fare üzerine gelince akış
+  durur. Cihazında "hareketi azalt" açık olan müşteride hiç kaymaz, mesajlar
+  ortada sabit durur.
 
 Kutu genişliği her yerde `border-box` hesaplanır; genişliği %100 olan bir düğme
 ya da form alanı iç boşluğu yüzünden kabından taşmaz.
@@ -88,7 +93,7 @@ pastel kalır — gerçek ürün fotoğrafları da beyaz zeminde duracağı içi
 
 ## 5. Ekranlar
 
-27 ekran, altı grup. Mokapta üstten grup, sonra ekran seçilerek gezilir.
+28 ekran, altı grup. Mokapta üstten grup, sonra ekran seçilerek gezilir.
 
 ### Vitrin
 | Ekran | İçerik |
@@ -130,6 +135,7 @@ pastel kalır — gerçek ürün fotoğrafları da beyaz zeminde duracağı içi
 | Ürün formu | Temel bilgiler, görsel yükleme, varyant tablosu, yasal ürün etiketi, Google önizlemesi |
 | Kampanya kur | Koşul ve etki seçimi, tarih aralığı, canlı indirim önizlemesi, çakışma kuralı |
 | Kuponlar | Kupon tablosu, yeni kupon formu |
+| Duyuru şeridi | Canlı önizleme, mesaj tablosu, hız ve renk ayarı, yeni mesaj formu |
 | İade yönetimi | İade istatistikleri, talep tablosu, onaylama |
 
 ### Diğer

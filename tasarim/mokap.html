@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="BASoftBaby online magaza tasarim mokapi - 27 ekran">
+<meta name="description" content="BASoftBaby online magaza tasarim mokapi - 28 ekran">
 <style>
   :root{color-scheme:light dark;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
   body{margin:0;font:14px system-ui,sans-serif}
@@ -123,9 +123,56 @@
 
   /* ---------- site ust bar ---------- */
   .promo{
-    background:var(--mint-wash);color:var(--mint-ink);text-align:center;
-    font-size:.78rem;font-weight:700;padding:7px 16px;letter-spacing:.01em;
+    --pdur:26s;
+    background:var(--mint-wash);color:var(--mint-ink);
+    font-size:.78rem;font-weight:700;letter-spacing:.01em;
+    padding:7px 0;overflow:hidden;position:relative;
   }
+  .promo[data-renk="coral"]{background:var(--coral-wash);color:var(--coral-ink)}
+  .promo[data-renk="sand"]{background:var(--sand-wash);color:var(--sand-ink)}
+  .promo[data-renk="blue"]{background:var(--blue-wash);color:var(--blue-ink)}
+  .promo[data-hiz="yavas"]{--pdur:42s}
+  .promo[data-hiz="orta"]{--pdur:26s}
+  .promo[data-hiz="hizli"]{--pdur:15s}
+  .promo[data-kapali="1"]{display:none}
+  .ptrack{
+    display:flex;width:max-content;
+    animation:seritKay var(--pdur) linear infinite;
+  }
+  .promo:hover .ptrack{animation-play-state:paused}
+  .pset{display:flex;flex:none}
+  .pmsg{white-space:nowrap;padding:0 16px}
+  .pmsg::after{content:"\00b7";margin-left:32px;opacity:.5}
+  @keyframes seritKay{ from{transform:translateX(0)} to{transform:translateX(-50%)} }
+  @media (prefers-reduced-motion:reduce){
+    .promo{padding:7px 12px}
+    .ptrack{animation:none;width:100%;justify-content:center}
+    .pset{flex:1 1 auto;min-width:0;width:100%;flex-wrap:wrap;justify-content:center;row-gap:2px}
+    .pset:nth-child(2){display:none}
+    .pmsg{white-space:normal;text-align:center}
+    .pmsg:last-child::after{content:none}
+  }
+  /* duyuru serisi yonetimi */
+  .onizleme{border:1px solid var(--line);border-radius:11px;overflow:hidden}
+  .onizleme .browserbar{
+    background:var(--wash);border-bottom:1px solid var(--line-soft);
+    padding:6px 11px;font-size:.7rem;color:var(--ink-3);display:flex;gap:6px;align-items:center;
+  }
+  .onizleme .browserbar i{width:7px;height:7px;border-radius:50%;background:var(--line);flex:none}
+  .chiprow{display:flex;gap:8px;flex-wrap:wrap}
+  .dchip{
+    padding:7px 14px;border-radius:999px;font-size:.8rem;font-weight:700;
+    border:1.5px solid var(--line);background:var(--surface);color:var(--ink-2);
+    cursor:pointer;transition:border-color .15s,color .15s;
+  }
+  .dchip:hover{border-color:var(--ink-3)}
+  .dchip[data-on="1"]{border-color:var(--coral);color:var(--coral-ink);background:var(--coral-wash)}
+  .dchip .nokta{
+    display:inline-block;width:9px;height:9px;border-radius:50%;
+    margin-right:6px;vertical-align:-1px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);
+  }
+  .dtablo .check{margin:0}
+  .dtablo td{vertical-align:middle}
   .nav{
     display:flex;align-items:center;gap:14px;padding:12px 18px;
     border-bottom:1px solid var(--line-soft);flex-wrap:wrap;
@@ -536,7 +583,7 @@
 
   <div class="mokap-head">
     <h1>Tasarım mokapı</h1>
-    <p>Sitenin nasıl görüneceği. Logodan çıkardığım pastel palet ve yuvarlak hatlı yazı tipiyle 27 ekran, altı gruba ayrıldı. Üstteki grup adına, sonra ekran adına basarak gezebilirsin.</p>
+    <p>Sitenin nasıl görüneceği. Logodan çıkardığım pastel palet ve yuvarlak hatlı yazı tipiyle 28 ekran, altı gruba ayrıldı. Üstteki grup adına, sonra ekran adına basarak gezebilirsin.</p>
     <div class="navwrap">
       <div class="groups" id="groups" role="tablist" aria-label="Ekran grupları"></div>
       <div class="tabs" id="tabs" role="tablist" aria-label="Ekranlar"></div>
@@ -1841,6 +1888,101 @@
       </div>
     </div>
 
+    <!-- ===================== YONETIM: DUYURU SERIDI ===================== -->
+    <div id="s-duyuru" class="screen" hidden>
+      <div class="adminlayout">
+        <div data-adminnav="Duyuru şeridi"></div>
+        <div class="main">
+          <div class="sechead">
+            <h2 style="font-size:1.2rem">Duyuru şeridi</h2>
+            <span class="btn sm">Yeni mesaj</span>
+          </div>
+
+          <p class="note"><span>Sitenin en üstündeki kayan şerit. Buradaki mesajlar sırayla akar; tarih verdiğin mesaj kendiliğinden başlar ve biter, sen bir şey yapmazsın.</span></p>
+
+          <div class="panelbox">
+            <h3>Canlı önizleme</h3>
+            <div class="onizleme">
+              <div class="browserbar"><i></i><i></i><i></i><span>basoftbaby.com</span></div>
+              <div id="duyuruOnizleme"></div>
+            </div>
+            <p class="hint">Aşağıdaki ayarları değiştirdiğinde önizleme anında güncellenir. Müşteri fareyi şeridin üstüne getirince akış durur, okumak isteyen yetişebilsin diye.</p>
+          </div>
+
+          <div class="cartlayout">
+            <div class="panelbox">
+              <h3>Mesajlar</h3>
+              <div class="tablewrap">
+                <table class="dtablo">
+                  <thead><tr><th>Mesaj</th><th>Başlangıç</th><th>Bitiş</th><th>Durum</th><th></th></tr></thead>
+                  <tbody id="duyuruSatirlar"></tbody>
+                </table>
+              </div>
+              <p class="hint">Sıralamayı sürükleyerek değiştirebilirsin; şeritte bu sırayla akarlar.</p>
+            </div>
+
+            <div class="panelbox">
+              <h3>Şerit ayarları</h3>
+
+              <div class="field">
+                <span class="lb">Şerit</span>
+                <div class="chiprow" data-grup="acik">
+                  <span class="dchip" data-acik="1" data-on="1">Açık</span>
+                  <span class="dchip" data-acik="0">Kapalı</span>
+                </div>
+              </div>
+
+              <div class="field">
+                <span class="lb">Kayma hızı</span>
+                <div class="chiprow" data-grup="hiz">
+                  <span class="dchip" data-hiz="yavas">Yavaş</span>
+                  <span class="dchip" data-hiz="orta" data-on="1">Orta</span>
+                  <span class="dchip" data-hiz="hizli">Hızlı</span>
+                </div>
+                <span class="hint">Orta hız, ortalama bir mesajın okunmasına yetecek kadar yavaş.</span>
+              </div>
+
+              <div class="field">
+                <span class="lb">Şerit rengi</span>
+                <div class="chiprow" data-grup="renk">
+                  <span class="dchip" data-renk="mint" data-on="1"><i class="nokta" style="background:var(--mint)"></i>Nane</span>
+                  <span class="dchip" data-renk="coral"><i class="nokta" style="background:var(--coral)"></i>Mercan</span>
+                  <span class="dchip" data-renk="sand"><i class="nokta" style="background:var(--sand)"></i>Sarı</span>
+                  <span class="dchip" data-renk="blue"><i class="nokta" style="background:var(--blue)"></i>Mavi</span>
+                </div>
+              </div>
+
+              <div class="check" data-on="1"><span class="bx">✓</span><span>Fare üzerine gelince dursun</span></div>
+              <div class="check" data-on="1"><span class="bx">✓</span><span>Telefonda da görünsün</span></div>
+
+              <p class="hint">Cihazında "hareketi azalt" ayarı açık olan müşteride şerit kaymaz, mesajlar yan yana sabit durur. Bu, erişilebilirlik için zorunlu.</p>
+            </div>
+          </div>
+
+          <div class="panelbox" style="max-width:560px">
+            <h3>Yeni mesaj</h3>
+            <div class="form">
+              <div class="field">
+                <span class="lb">Mesaj <i>*</i></span>
+                <span class="inp dolu">Sonbahar koleksiyonu yayında</span>
+                <span class="hint">Kısa tut; şeritte tek satır akıyor.</span>
+              </div>
+              <div class="field">
+                <span class="lb">Tıklayınca gideceği sayfa</span>
+                <span class="inp dolu">/sonbahar</span>
+                <span class="hint">Boş bırakırsan mesaj tıklanmaz.</span>
+              </div>
+              <div class="frow iki">
+                <div class="field"><span class="lb">Başlangıç</span><span class="inp dolu">20.09.2026</span></div>
+                <div class="field"><span class="lb">Bitiş</span><span class="inp dolu">15.11.2026</span></div>
+              </div>
+              <span class="btn sm" style="align-self:flex-start">Şeride ekle</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ===================== YASAL SAYFA ===================== -->
     <div id="s-yasal" class="screen" hidden>
       <div data-shopnav="sade"></div>
@@ -2340,10 +2482,31 @@
   var LOGO_YAZI = '<span class="w"><b style="color:#3F82B4">BA</b><b style="color:#3FA478">soft</b><b style="color:#E0564C">baby</b></span>';
   var LOGO = '<div class="logo">' + LOGO_SVG + LOGO_YAZI + '</div>';
 
+  /* ---------- duyuru seridi (yonetim panelinden kontrol edilir) ---------- */
+  var SERIT = { acik:true, hiz:'orta', renk:'mint' };
+  var DUYURULAR = [
+    {metin:'750 TL ve üzeri siparişlerde kargo bedava', bas:'—', bit:'—', acik:true},
+    {metin:'Aynı gün kargo · saat 16:00\'a kadar verilen siparişler bugün çıkar', bas:'—', bit:'—', acik:true},
+    {metin:'Yenidoğan setlerinde %20 indirim', bas:'15.09.2026', bit:'30.09.2026', acik:true},
+    {metin:'Hediye paketi ücretsiz', bas:'—', bit:'—', acik:true},
+    {metin:'Yılbaşına özel pijama takımları', bas:'01.12.2026', bit:'31.12.2026', acik:false}
+  ];
+  function seritHtml(hiz, renk){
+    var acikOlanlar = DUYURULAR.filter(function(d){ return d.acik; });
+    if (!SERIT.acik || !acikOlanlar.length) return '';
+    var mesajlar = acikOlanlar.map(function(d){
+      return '<span class="pmsg">' + d.metin + '</span>';
+    }).join('');
+    return '<div class="promo" data-hiz="' + hiz + '" data-renk="' + renk + '">'
+      + '<div class="ptrack">'
+      +   '<div class="pset">' + mesajlar + '</div>'
+      +   '<div class="pset" aria-hidden="true">' + mesajlar + '</div>'
+      + '</div></div>';
+  }
+
   Array.prototype.forEach.call(document.querySelectorAll('[data-shopnav]'), function(el){
     var tip = el.getAttribute('data-shopnav') || '';
-    var promo = (tip === 'promo')
-      ? '<div class="promo">750 TL ve üzeri siparişlerde kargo bedava · Aynı gün kargo</div>' : '';
+    var promo = (tip === 'promo') ? seritHtml(SERIT.hiz, SERIT.renk) : '';
     var icerik;
     if (tip === 'odeme'){
       icerik = '<div class="nav">' + LOGO
@@ -2359,7 +2522,7 @@
     el.outerHTML = promo + icerik;
   });
 
-  var ADMIN_MENU = ['Özet','Siparişler','Ürünler','Stok','Kampanyalar','Kuponlar','İadeler','Müşteriler','Raporlar'];
+  var ADMIN_MENU = ['Özet','Siparişler','Ürünler','Stok','Kampanyalar','Kuponlar','Duyuru şeridi','İadeler','Müşteriler','Raporlar'];
   Array.prototype.forEach.call(document.querySelectorAll('[data-adminnav]'), function(el){
     var aktif = el.getAttribute('data-adminnav');
     var html = '<aside class="side"><div class="logo" style="padding:4px 8px 14px">'
@@ -2540,6 +2703,7 @@
     {id:'urunform',     ad:'Ürün formu',     grup:'Yönetim',   url:'basoftbaby.com/yonetim/urunler/yeni'},
     {id:'kampanyaform', ad:'Kampanya kur',   grup:'Yönetim',   url:'basoftbaby.com/yonetim/kampanyalar/yeni'},
     {id:'kuponform',    ad:'Kuponlar',       grup:'Yönetim',   url:'basoftbaby.com/yonetim/kuponlar'},
+    {id:'duyuru',       ad:'Duyuru şeridi',  grup:'Yönetim',   url:'basoftbaby.com/yonetim/duyuru-seridi'},
     {id:'iadeyonetim',  ad:'İade yönetimi',  grup:'Yönetim',   url:'basoftbaby.com/yonetim/iadeler'},
 
     {id:'yasal',        ad:'Yasal sayfa',    grup:'Diğer',     url:'basoftbaby.com/mesafeli-satis-sozlesmesi'},
@@ -2595,6 +2759,71 @@
   Array.prototype.forEach.call(groupsEl.children, function(b){
     b.addEventListener('click', function(){ grubuGoster(b.getAttribute('data-g')); });
   });
+
+  /* ---------- duyuru seridi yonetim ekrani: onizleme ve ayarlar ---------- */
+  var onizlemeEl  = document.getElementById('duyuruOnizleme');
+  var satirlarEl  = document.getElementById('duyuruSatirlar');
+
+  function seridiCiz(){
+    if (onizlemeEl){
+      var html = seritHtml(SERIT.hiz, SERIT.renk);
+      onizlemeEl.innerHTML = html
+        || '<div style="padding:11px 14px;font-size:.78rem;color:var(--ink-3);text-align:center">'
+           + 'Şerit kapalı · müşteri bir şey görmüyor</div>';
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('.screen .promo'), function(el){
+      if (onizlemeEl && onizlemeEl.contains(el)) return;
+      el.outerHTML = seritHtml(SERIT.hiz, SERIT.renk) || '<div class="promo" data-kapali="1"></div>';
+    });
+  }
+
+  function satirlariCiz(){
+    if (!satirlarEl) return;
+    satirlarEl.innerHTML = DUYURULAR.map(function(d, i){
+      return '<tr>'
+        + '<td>' + d.metin + '</td>'
+        + '<td class="num">' + d.bas + '</td>'
+        + '<td class="num">' + d.bit + '</td>'
+        + '<td>' + (d.acik
+            ? '<span class="tag mint">Yayında</span>'
+            : '<span class="tag" style="background:var(--line-soft);color:var(--ink-3)">Kapalı</span>') + '</td>'
+        + '<td><span class="btn ghost sm dsil" data-i="' + i + '">'
+        +   (d.acik ? 'Kapat' : 'Aç') + '</span></td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  if (onizlemeEl || satirlarEl){
+    seridiCiz();
+    satirlariCiz();
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if (!t || !t.closest) return;
+
+      var chip = t.closest('.dchip');
+      if (chip){
+        var grup = chip.parentNode;
+        Array.prototype.forEach.call(grup.querySelectorAll('.dchip'), function(c){
+          c.removeAttribute('data-on');
+        });
+        chip.setAttribute('data-on', '1');
+        if (chip.hasAttribute('data-hiz'))  SERIT.hiz  = chip.getAttribute('data-hiz');
+        if (chip.hasAttribute('data-renk')) SERIT.renk = chip.getAttribute('data-renk');
+        if (chip.hasAttribute('data-acik')) SERIT.acik = chip.getAttribute('data-acik') === '1';
+        seridiCiz();
+        return;
+      }
+
+      var dugme = t.closest('.dsil');
+      if (dugme){
+        var i = parseInt(dugme.getAttribute('data-i'), 10);
+        DUYURULAR[i].acik = !DUYURULAR[i].acik;
+        satirlariCiz();
+        seridiCiz();
+      }
+    });
+  }
 
   var basla = 'ana';
   try {

@@ -13,7 +13,7 @@ Online bebek kıyafetleri ve aksesuarları mağazası.
 | --- | --- |
 | [`docs/01-kurulus-plani.md`](docs/01-kurulus-plani.md) | Kapsam, teknoloji seçimi ve gerekçesi, Türkiye'ye özel yasal zorunluluklar, özellik önerileri, yol haritası |
 | [`docs/02-mimari.md`](docs/02-mimari.md) | Sistem haritası, klasör yapısı, veri modeli, ödeme ve kargo akışları, baştan verilen sekiz teknik karar |
-| [`docs/03-tasarim-sistemi.md`](docs/03-tasarim-sistemi.md) | Renk paleti, yazı tipleri, bileşenler, 27 ekranın listesi |
+| [`docs/03-tasarim-sistemi.md`](docs/03-tasarim-sistemi.md) | Renk paleti, yazı tipleri, bileşenler, 28 ekranın listesi |
 | [`docs/04-kararlar.md`](docs/04-kararlar.md) | Verilmiş kararlar ve hâlâ açık olan sorular |
 | [`tasarim/mokap.html`](tasarim/mokap.html) | Gezilebilir tasarım mokapı — tarayıcıda açman yeterli, kurulum gerekmez |
 | [`marka/`](marka/) | Logo dosyaları (SVG ve PNG) ve marka renkleri |
@@ -21,7 +21,7 @@ Online bebek kıyafetleri ve aksesuarları mağazası.
 ## Mokapı açmak
 
 `tasarim/mokap.html` dosyasını tarayıcıda çift tıklayarak aç. Sunucu ya da
-kurulum gerekmiyor. Üstten önce grup adına, sonra ekran adına basarak 27 ekranın
+kurulum gerekmiyor. Üstten önce grup adına, sonra ekran adına basarak 28 ekranın
 tamamında gezebilirsin.
 
 ## Özet
@@ -43,6 +43,6 @@ fatura e-arşiv, yayın Vercel üzerinde.
 - [x] Sistem mimarisi
 - [x] Marka ve tasarım sistemi
 - [x] Logo (vektör olarak yeniden çizildi)
-- [x] 27 ekranlık tasarım mokapı
+- [x] 28 ekranlık tasarım mokapı
 - [ ] Mimari onayı
 - [ ] 01. adım: proje iskeleti
