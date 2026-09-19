@@ -1,0 +1,2611 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="BASoftBaby online magaza tasarim mokapi - 27 ekran">
+<style>
+  :root{color-scheme:light dark;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+  body{margin:0;font:14px system-ui,sans-serif}
+  img{max-width:100%}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<title>BASoftBaby Tasarım Mokapı</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap">
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  :root{
+    --page:#EFE9E0;
+    --bg:#FFFCF7;
+    --surface:#FFFFFF;
+    --wash:#FBF5EB;
+    --ink:#332F2A;
+    --ink-2:#6C655C;
+    --ink-3:#9B9289;
+    --line:#EAE3D7;
+    --line-soft:#F3EDE3;
+    --blue:#7BADD6;  --blue-ink:#2F6E9E;  --blue-wash:#EAF3FA;
+    --mint:#77D9AB;  --mint-ink:#2C8760;  --mint-wash:#E6F7EE;
+    --coral:#F36C62; --coral-ink:#C2433A; --coral-wash:#FDEBE9;
+    --sand:#F3C265;  --sand-ink:#8F6410;  --sand-wash:#FDF3DD;
+    --bear:#F2B76B;  --bear-line:#B37A42;
+    --shadow-s:0 1px 2px rgba(51,47,42,.05);
+    --shadow-m:0 2px 4px rgba(51,47,42,.05), 0 12px 28px -16px rgba(51,47,42,.25);
+    --overlay:rgba(255,255,255,.92);
+    --dot-off:rgba(51,47,42,.22);
+    --r:14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --page:#14120F; --bg:#1E1B16; --surface:#26221C; --wash:#2C271F;
+      --ink:#F4EFE5; --ink-2:#BDB4A7; --ink-3:#8C8478;
+      --line:#3A342B; --line-soft:#2F2A23;
+      --blue-ink:#9DC8E8; --blue-wash:#1D2833;
+      --mint-ink:#80D4AB; --mint-wash:#17291F;
+      --coral-ink:#F2948B; --coral-wash:#311F1C;
+      --sand-ink:#E4C179; --sand-wash:#2C2416;
+      --shadow-s:0 1px 2px rgba(0,0,0,.5);
+      --shadow-m:0 2px 4px rgba(0,0,0,.5), 0 12px 28px -16px rgba(0,0,0,.8);
+      --overlay:rgba(38,34,28,.92);
+      --dot-off:rgba(244,239,229,.3);
+    }
+  }
+  :root[data-theme="dark"]{
+    --page:#14120F; --bg:#1E1B16; --surface:#26221C; --wash:#2C271F;
+    --ink:#F4EFE5; --ink-2:#BDB4A7; --ink-3:#8C8478;
+    --line:#3A342B; --line-soft:#2F2A23;
+    --blue-ink:#9DC8E8; --blue-wash:#1D2833;
+    --mint-ink:#80D4AB; --mint-wash:#17291F;
+    --coral-ink:#F2948B; --coral-wash:#311F1C;
+    --sand-ink:#E4C179; --sand-wash:#2C2416;
+    --shadow-s:0 1px 2px rgba(0,0,0,.5);
+    --shadow-m:0 2px 4px rgba(0,0,0,.5), 0 12px 28px -16px rgba(0,0,0,.8);
+    --overlay:rgba(38,34,28,.92);
+    --dot-off:rgba(244,239,229,.3);
+  }
+
+  body{
+    background:var(--page);
+    color:var(--ink);
+    font-family:"Nunito Sans",ui-sans-serif,system-ui,-apple-system,sans-serif;
+    font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:1080px;margin:0 auto;padding-inline:16px;padding-block:26px 56px;display:flex;flex-direction:column;gap:18px}
+  h1,h2,h3,h4,.disp{font-family:"Baloo 2","Nunito Sans",system-ui,sans-serif;font-weight:600;letter-spacing:-.004em;margin:0}
+  p{margin:0}
+  button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+  :focus-visible{outline:2px solid var(--blue-ink);outline-offset:2px;border-radius:8px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+  /* ---------- mokap cercevesi ---------- */
+  .mokap-head{display:flex;flex-direction:column;gap:12px}
+  .mokap-head h1{font-size:clamp(1.5rem,5vw,2rem);line-height:1.15}
+  .mokap-head p{color:var(--ink-2);max-width:62ch;font-size:.95rem}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{
+    padding:7px 14px;border-radius:999px;font-size:.85rem;font-weight:700;
+    color:var(--ink-2);background:var(--surface);border:1px solid var(--line);
+    transition:background .15s,color .15s,border-color .15s;
+  }
+  .tab:hover{color:var(--ink);border-color:var(--ink-3)}
+  .tab[aria-selected="true"]{background:var(--coral);border-color:var(--coral);color:#fff}
+  .groups{display:flex;gap:6px;flex-wrap:wrap}
+  .grp-btn{
+    padding:6px 13px;border-radius:9px;font-size:.8rem;font-weight:700;
+    color:var(--ink-3);background:transparent;border:1px solid transparent;
+  }
+  .grp-btn:hover{color:var(--ink)}
+  .grp-btn[aria-selected="true"]{background:var(--wash);border-color:var(--line);color:var(--ink)}
+  .navwrap{display:flex;flex-direction:column;gap:9px}
+  .screencount{font-size:.78rem;color:var(--ink-3)}
+  .frame{
+    background:var(--bg);border:1px solid var(--line);border-radius:18px;
+    overflow:hidden;box-shadow:var(--shadow-m);
+  }
+  .chrome{
+    display:flex;align-items:center;gap:8px;padding:10px 14px;
+    background:var(--wash);border-bottom:1px solid var(--line);
+  }
+  .chrome i{width:9px;height:9px;border-radius:50%;background:var(--line);flex:none}
+  .chrome .url{
+    margin-left:6px;font-size:.74rem;color:var(--ink-3);background:var(--surface);
+    padding:3px 12px;border-radius:999px;border:1px solid var(--line);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .note{
+    font-size:.82rem;color:var(--ink-3);padding-left:2px;display:flex;gap:7px;align-items:baseline;
+  }
+  .note b{color:var(--ink-2);font-weight:700}
+
+  /* ---------- site ust bar ---------- */
+  .promo{
+    background:var(--mint-wash);color:var(--mint-ink);text-align:center;
+    font-size:.78rem;font-weight:700;padding:7px 16px;letter-spacing:.01em;
+  }
+  .nav{
+    display:flex;align-items:center;gap:14px;padding:12px 18px;
+    border-bottom:1px solid var(--line-soft);flex-wrap:wrap;
+  }
+  .logo{display:flex;align-items:center;gap:9px;flex:none}
+  .logo svg{display:block}
+  .logo .w{font-family:"Baloo 2",sans-serif;font-weight:700;font-size:1.18rem;line-height:1;white-space:nowrap}
+  .logo .w b{font-weight:700}
+  .navlinks{display:flex;gap:16px;flex-wrap:wrap;font-size:.86rem;font-weight:600;color:var(--ink-2);flex:1 1 200px}
+  .navlinks span{cursor:default;white-space:nowrap}
+  .navlinks span:hover{color:var(--coral-ink)}
+  .navtools{display:flex;gap:9px;align-items:center;flex:none}
+  .pill{
+    font-size:.76rem;font-weight:700;padding:5px 11px;border-radius:999px;
+    background:var(--wash);color:var(--ink-2);border:1px solid var(--line);white-space:nowrap;
+  }
+  .pill.cart{background:var(--coral-wash);color:var(--coral-ink);border-color:transparent}
+
+  /* ---------- ortak ---------- */
+  .pad{padding:20px 14px}
+  @media (min-width:600px){ .pad{padding:22px 18px} }
+  .stack{display:flex;flex-direction:column;gap:22px}
+  .sechead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .sechead h2{font-size:1.28rem}
+  .sechead .more{font-size:.82rem;font-weight:700;color:var(--blue-ink)}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;
+    padding:11px 20px;border-radius:999px;font-weight:700;font-size:.9rem;
+    background:var(--coral);color:#fff;box-shadow:var(--shadow-s);
+    transition:filter .15s;
+  }
+  .btn:hover{filter:brightness(.95)}
+  .btn.ghost{background:var(--surface);color:var(--ink);border:1.5px solid var(--line)}
+  .btn.mint{background:var(--mint-ink);color:#fff}
+  .btn.sm{padding:7px 14px;font-size:.8rem}
+  .tag{
+    display:inline-block;font-size:.68rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    padding:3px 9px;border-radius:999px;
+  }
+  .tag.mint{background:var(--mint-wash);color:var(--mint-ink)}
+  .tag.coral{background:var(--coral-wash);color:var(--coral-ink)}
+  .tag.sand{background:var(--sand-wash);color:var(--sand-ink)}
+  .tag.blue{background:var(--blue-wash);color:var(--blue-ink)}
+
+  /* ---------- hero kayan banner ---------- */
+  .slider{position:relative;overflow:hidden}
+  .track{display:flex}
+  .slide{flex:0 0 100%;width:100%;max-width:100%;min-width:0}
+  .track.anim{transition:transform .55s cubic-bezier(.4,0,.2,1)}
+  .arw{
+    position:absolute;top:50%;transform:translateY(-50%);z-index:2;
+    width:34px;height:34px;border-radius:50%;background:var(--overlay);color:var(--ink);
+    display:grid;place-items:center;font-size:1.25rem;line-height:1;padding-bottom:3px;
+    box-shadow:var(--shadow-s);transition:filter .15s;
+  }
+  .arw:hover{filter:brightness(.95)}
+  .arw.prev{left:10px} .arw.next{right:10px}
+  .sdots{position:absolute;bottom:13px;left:0;right:0;z-index:2;display:flex;justify-content:center;gap:7px}
+  .sdot{
+    width:8px;height:8px;border-radius:999px;background:var(--dot-off);
+    transition:width .25s,background .25s;
+  }
+  .sdot[data-on="1"]{width:22px;background:var(--coral)}
+
+  .hero{
+    display:grid;grid-template-columns:1fr;gap:18px;align-items:center;
+    padding:26px 20px 40px;
+  }
+  @media (min-width:700px){ .hero{grid-template-columns:1.1fr .9fr;padding:34px 46px 44px} }
+  .hero .kupon{
+    display:inline-block;margin-top:12px;font-size:.78rem;font-weight:700;
+    letter-spacing:.06em;padding:6px 14px;border-radius:999px;
+    background:var(--overlay);color:var(--coral-ink);border:1.5px dashed var(--coral);
+  }
+  .hero h2{font-size:clamp(1.6rem,4.4vw,2.3rem);line-height:1.14;text-wrap:balance}
+  .hero p{color:var(--ink-2);margin-top:8px;font-size:.96rem;max-width:42ch}
+  .hero .cta{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+  .heroart{display:flex;justify-content:center}
+  .heroart svg{width:100%;max-width:280px;height:auto}
+
+  /* ---------- yas kutulari ---------- */
+  .ages{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px}
+  .age{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+    padding:14px 12px;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;
+    transition:transform .15s,border-color .15s;
+  }
+  .age:hover{transform:translateY(-2px);border-color:var(--blue)}
+  .age .ic{width:42px;height:42px;border-radius:50%;display:grid;place-items:center}
+  .age .t{font-weight:700;font-size:.88rem}
+  .age .s{font-size:.74rem;color:var(--ink-3)}
+
+  /* ---------- urun izgarasi ---------- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+  @media (min-width:600px){ .grid{grid-template-columns:repeat(auto-fill,minmax(166px,1fr));gap:14px} }
+  .card{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+    overflow:hidden;display:flex;flex-direction:column;transition:transform .15s,box-shadow .15s;
+  }
+  .card:hover{transform:translateY(-3px);box-shadow:var(--shadow-m)}
+  .ph{position:relative;aspect-ratio:1/1;display:grid;place-items:center;max-width:100%}
+  .ph svg{width:62%;height:62%}
+  .ph .tag{position:absolute;top:9px;left:9px;background:var(--surface)}
+  .dots{position:absolute;inset:8px;border:2px dashed;border-radius:11px;opacity:.45;pointer-events:none}
+  .fav{
+    position:absolute;top:8px;right:8px;width:27px;height:27px;border-radius:50%;
+    background:rgba(255,255,255,.88);display:grid;place-items:center;
+    font-size:.92rem;line-height:1;color:#8B8378;transition:color .15s,transform .15s;
+  }
+  .fav:hover{transform:scale(1.08)}
+  .fav[data-on="1"]{color:var(--coral)}
+  .cardbody{padding:11px 12px 13px;display:flex;flex-direction:column;gap:5px;flex:1}
+  .cardbody .nm{font-size:.86rem;font-weight:700;line-height:1.35}
+  .cardbody .meta{font-size:.74rem;color:var(--ink-3)}
+  .rating{display:flex;align-items:center;gap:5px;font-size:.75rem;color:var(--ink-2);font-variant-numeric:tabular-nums}
+  .rating .st{color:var(--sand-ink);font-size:.82rem;line-height:1}
+  .rating .cnt{color:var(--ink-3)}
+  .addbtn{
+    width:100%;margin-top:9px;padding:9px 12px;border-radius:999px;
+    border:1.5px solid var(--line);background:var(--surface);
+    font-size:.83rem;font-weight:700;color:var(--ink);
+    transition:border-color .15s,color .15s,background .15s;
+  }
+  .addbtn:hover{border-color:var(--coral);color:var(--coral-ink)}
+  .addbtn[data-done="1"]{background:var(--mint-wash);border-color:transparent;color:var(--mint-ink)}
+  .agechips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .achip{padding:8px 17px;border-radius:999px;font-size:.84rem;font-weight:700;transition:filter .15s}
+  .achip:hover{filter:brightness(.96)}
+  .achip[data-on="1"]{box-shadow:inset 0 0 0 2px currentColor}
+  .prices{display:flex;align-items:baseline;gap:7px;margin-top:auto;padding-top:5px;flex-wrap:wrap}
+  .prices .now{font-family:"Baloo 2",sans-serif;font-weight:700;font-size:1.02rem;font-variant-numeric:tabular-nums}
+  .prices .was{font-size:.78rem;color:var(--ink-3);text-decoration:line-through;font-variant-numeric:tabular-nums}
+  .swatches{display:flex;gap:4px;margin-top:3px}
+  .sw{width:13px;height:13px;border-radius:50%;border:1px solid rgba(0,0,0,.08)}
+
+  /* ---------- guven seridi ---------- */
+  .trust{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;background:var(--wash);padding:18px}
+  .tr{display:flex;gap:10px;align-items:flex-start}
+  .tr .d{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:none;font-size:.9rem}
+  .tr .t{font-size:.83rem;font-weight:700;line-height:1.3}
+  .tr .s{font-size:.75rem;color:var(--ink-3);line-height:1.4}
+
+  /* ---------- kategori ekrani ---------- */
+  .catlayout{display:grid;grid-template-columns:1fr;gap:18px}
+  @media (min-width:760px){ .catlayout{grid-template-columns:200px 1fr} }
+  .filters{display:flex;flex-direction:column;gap:18px}
+  .fgroup{display:flex;flex-direction:column;gap:8px}
+  .fgroup .ft{font-size:.72rem;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{
+    font-size:.78rem;font-weight:600;padding:5px 11px;border-radius:999px;
+    border:1px solid var(--line);background:var(--surface);color:var(--ink-2);
+  }
+  .chip[data-on="1"]{background:var(--blue-wash);border-color:var(--blue);color:var(--blue-ink);font-weight:700}
+  .crumb{font-size:.78rem;color:var(--ink-3);margin-bottom:3px}
+
+  /* ---------- urun detay ---------- */
+  .pdp{display:grid;grid-template-columns:1fr;gap:22px}
+  @media (min-width:760px){ .pdp{grid-template-columns:1fr 1fr} }
+  .gallery{display:flex;flex-direction:column;gap:9px}
+  .gmain{border-radius:var(--r);aspect-ratio:1/1;display:grid;place-items:center;max-width:100%}
+  .gmain svg{width:60%;height:60%}
+  .thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .thumb{border-radius:10px;aspect-ratio:1/1;display:grid;place-items:center;border:1.5px solid transparent;max-width:100%}
+  .thumb[data-on="1"]{border-color:var(--coral)}
+  .thumb svg{width:56%;height:56%}
+  .pinfo{display:flex;flex-direction:column;gap:14px}
+  .pinfo h2{font-size:1.5rem;line-height:1.2}
+  .stars{display:flex;align-items:center;gap:7px;font-size:.8rem;color:var(--ink-2)}
+  .stars .s{color:var(--sand-ink);letter-spacing:1px}
+  .pricerow{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .pricerow .now{font-family:"Baloo 2",sans-serif;font-weight:700;font-size:1.85rem;color:var(--coral-ink);font-variant-numeric:tabular-nums}
+  .pricerow .was{color:var(--ink-3);text-decoration:line-through;font-variant-numeric:tabular-nums}
+  .opt{display:flex;flex-direction:column;gap:8px}
+  .opt .lbl{font-size:.8rem;font-weight:700;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .opt .lbl a{font-size:.76rem;font-weight:700;color:var(--blue-ink);text-decoration:none}
+  .sizes{display:flex;flex-wrap:wrap;gap:7px}
+  .size{
+    min-width:60px;text-align:center;font-size:.82rem;font-weight:700;padding:8px 12px;
+    border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink-2);
+  }
+  .size[data-on="1"]{border-color:var(--coral);background:var(--coral-wash);color:var(--coral-ink)}
+  .size[data-out="1"]{color:var(--ink-3);text-decoration:line-through;background:var(--line-soft);border-color:transparent}
+  .colors{display:flex;gap:9px}
+  .cdot{width:30px;height:30px;border-radius:50%;border:2px solid transparent;box-shadow:inset 0 0 0 1px rgba(0,0,0,.07)}
+  .cdot[data-on="1"]{border-color:var(--ink-3)}
+  .badges{display:flex;flex-wrap:wrap;gap:6px}
+  .buyrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .stockline{font-size:.82rem;font-weight:700;color:var(--mint-ink);display:flex;align-items:center;gap:6px}
+  .stockline .d{width:7px;height:7px;border-radius:50%;background:var(--mint-ink)}
+  .stockline.low{color:var(--coral-ink)} .stockline.low .d{background:var(--coral-ink)}
+  .giftbox{
+    background:var(--sand-wash);border-radius:12px;padding:12px 14px;
+    display:flex;gap:10px;align-items:flex-start;font-size:.84rem;color:var(--ink-2);
+  }
+  .giftbox b{color:var(--ink)}
+  .acc{border-top:1px solid var(--line-soft);padding-top:11px;display:flex;flex-direction:column;gap:9px}
+  .accrow{display:flex;justify-content:space-between;align-items:center;font-size:.86rem;font-weight:700}
+  .accrow span:last-child{color:var(--ink-3);font-weight:400}
+
+  /* ---------- sepet ---------- */
+  .cartlayout{display:grid;grid-template-columns:1fr;gap:18px}
+  .cartlayout > *{min-width:0}
+  @media (min-width:760px){ .cartlayout{grid-template-columns:1.5fr 1fr;align-items:start} }
+  .citem{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid var(--line-soft)}
+  .citem .im{width:64px;height:64px;border-radius:11px;display:grid;place-items:center;flex:none}
+  .citem .im svg{width:60%;height:60%}
+  .citem .cb{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0}
+  .citem .nm{font-size:.88rem;font-weight:700;line-height:1.3}
+  .citem .vr{font-size:.76rem;color:var(--ink-3)}
+  .citem .pr{font-family:"Baloo 2",sans-serif;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .qty{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-top:5px}
+  .qty span{padding:3px 10px;font-size:.8rem;font-weight:700}
+  .qty span:nth-child(2){border-inline:1px solid var(--line);min-width:32px;text-align:center}
+  .shipbar{background:var(--mint-wash);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+  .shipbar .t{font-size:.83rem;font-weight:700;color:var(--mint-ink)}
+  .bar{height:7px;border-radius:999px;background:rgba(0,0,0,.07);overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:999px;background:var(--mint-ink)}
+  .summary{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:11px}
+  .srow{display:flex;justify-content:space-between;font-size:.87rem;color:var(--ink-2);font-variant-numeric:tabular-nums}
+  .srow.disc{color:var(--mint-ink);font-weight:700}
+  .srow.tot{border-top:1px solid var(--line);padding-top:11px;font-size:1.05rem;color:var(--ink);font-weight:700;font-family:"Baloo 2",sans-serif}
+  .coupon{display:flex;gap:7px}
+  .coupon .fld{flex:1;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:.83rem;color:var(--ink-3);background:var(--wash)}
+  .paylogos{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+  .paylogos .p{font-size:.68rem;font-weight:700;color:var(--ink-3);border:1px solid var(--line);border-radius:6px;padding:3px 8px}
+
+  /* ---------- yonetim paneli ---------- */
+  .adminlayout{display:grid;grid-template-columns:1fr;gap:0}
+  @media (min-width:760px){ .adminlayout{grid-template-columns:172px 1fr} }
+  .side{background:var(--wash);border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:3px}
+  .side .si{padding:8px 11px;border-radius:9px;font-size:.84rem;font-weight:600;color:var(--ink-2)}
+  .side .si[data-on="1"]{background:var(--coral-wash);color:var(--coral-ink);font-weight:700}
+  .main{padding:18px;display:flex;flex-direction:column;gap:18px;min-width:0}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:11px}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 13px;display:flex;flex-direction:column;gap:2px}
+  .stat .k{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+  .stat .v{font-family:"Baloo 2",sans-serif;font-weight:700;font-size:1.35rem;font-variant-numeric:tabular-nums;line-height:1.2}
+  .stat .c{font-size:.73rem;color:var(--mint-ink);font-weight:700}
+  .stat .c.warn{color:var(--coral-ink)}
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+  table{border-collapse:collapse;width:100%;min-width:560px}
+  th{
+    text-align:left;font-size:.68rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--ink-3);padding:10px 13px;border-bottom:1px solid var(--line);white-space:nowrap;
+  }
+  td{padding:11px 13px;font-size:.84rem;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+  tr:last-child td{border-bottom:0}
+  td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .stk{display:flex;align-items:center;gap:7px;white-space:nowrap}
+  .stk i{width:7px;height:7px;border-radius:50%;flex:none}
+  .prodcell{display:flex;align-items:center;gap:10px;min-width:180px}
+  .prodcell .im{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;flex:none}
+  .prodcell .im svg{width:62%;height:62%}
+  .prodcell .nm{font-weight:700;font-size:.84rem;line-height:1.3}
+  .prodcell .sk{font-size:.72rem;color:var(--ink-3)}
+
+  /* ---------- form parcalari ---------- */
+  .form{display:flex;flex-direction:column;gap:14px}
+  .frow{display:grid;grid-template-columns:1fr;gap:12px}
+  @media (min-width:560px){ .frow.iki{grid-template-columns:1fr 1fr} .frow.uc{grid-template-columns:1fr 1fr 1fr} }
+  .field{display:flex;flex-direction:column;gap:5px;min-width:0}
+  .field > .lb{font-size:.78rem;font-weight:700;color:var(--ink-2)}
+  .field > .lb i{font-style:normal;color:var(--coral-ink)}
+  .inp{
+    border:1.5px solid var(--line);border-radius:10px;padding:10px 13px;
+    font-size:.87rem;color:var(--ink-3);background:var(--surface);min-height:20px;
+  }
+  .inp.dolu{color:var(--ink)}
+  .inp.area{min-height:64px}
+  .inp.sel{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .inp.sel::after{content:"⌄";color:var(--ink-3);font-size:.9rem;line-height:1;margin-top:-5px}
+  .hint{font-size:.74rem;color:var(--ink-3)}
+  .hint.err{color:var(--coral-ink);font-weight:700}
+  .radiocards{display:grid;grid-template-columns:1fr;gap:9px}
+  @media (min-width:560px){ .radiocards.iki{grid-template-columns:1fr 1fr} }
+  .rcard{
+    border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;
+    display:flex;gap:11px;align-items:flex-start;background:var(--surface);text-align:left;
+  }
+  .rcard[data-on="1"]{border-color:var(--coral);background:var(--coral-wash)}
+  .rcard .rd{
+    width:17px;height:17px;border-radius:50%;border:2px solid var(--line);flex:none;margin-top:2px;
+    display:grid;place-items:center;
+  }
+  .rcard[data-on="1"] .rd{border-color:var(--coral)}
+  .rcard[data-on="1"] .rd::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--coral)}
+  .rcard .rt{display:block;font-size:.87rem;font-weight:700;line-height:1.3}
+  .rcard .rs{display:block;font-size:.76rem;color:var(--ink-2);line-height:1.45}
+  .rcard .rp{margin-left:auto;font-size:.84rem;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .check{display:flex;gap:10px;align-items:flex-start;font-size:.82rem;color:var(--ink-2);line-height:1.5}
+  .check .bx{
+    width:17px;height:17px;border-radius:5px;border:2px solid var(--line);flex:none;margin-top:2px;
+    display:grid;place-items:center;font-size:.7rem;color:#fff;
+  }
+  .check[data-on="1"] .bx{background:var(--mint-ink);border-color:var(--mint-ink)}
+  .check a{color:var(--blue-ink)}
+  .steps{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.8rem;font-weight:700}
+  .steps .st{display:flex;align-items:center;gap:7px;color:var(--ink-3)}
+  .steps .st .n{
+    width:22px;height:22px;border-radius:50%;background:var(--line-soft);color:var(--ink-3);
+    display:grid;place-items:center;font-size:.73rem;
+  }
+  .steps .st[data-on="1"]{color:var(--ink)}
+  .steps .st[data-on="1"] .n{background:var(--coral);color:#fff}
+  .steps .st[data-ok="1"] .n{background:var(--mint-ink);color:#fff}
+  .steps .sep{color:var(--ink-3)}
+
+  /* ---------- bos durum ---------- */
+  .empty{
+    display:flex;flex-direction:column;align-items:center;gap:11px;text-align:center;
+    padding:40px 20px;
+  }
+  .empty svg{width:96px;height:96px}
+  .empty h3{font-size:1.1rem}
+  .empty p{font-size:.88rem;color:var(--ink-2);max-width:40ch}
+
+  /* ---------- eposta sablonu ---------- */
+  .mail{
+    max-width:520px;margin:0 auto;border:1px solid var(--line);border-radius:14px;
+    overflow:hidden;background:var(--surface);
+  }
+  .mail .mh{padding:9px 14px;background:var(--wash);border-bottom:1px solid var(--line);font-size:.76rem;color:var(--ink-3)}
+  .mail .mh b{color:var(--ink);font-weight:700}
+  .mail .mb{padding:22px 20px;display:flex;flex-direction:column;gap:13px;align-items:flex-start}
+  .mail .mb h3{font-size:1.15rem}
+  .mail .mb p{font-size:.87rem;color:var(--ink-2)}
+  .mailgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+
+  /* ---------- yasal sayfa ---------- */
+  .legal{max-width:68ch;display:flex;flex-direction:column;gap:14px}
+  .legal h3{font-size:1rem;margin-top:6px}
+  .legal p{font-size:.88rem;color:var(--ink-2)}
+  .legal ol{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:7px;font-size:.88rem;color:var(--ink-2)}
+  .toc{display:flex;flex-wrap:wrap;gap:6px}
+  .toc span{font-size:.76rem;font-weight:700;padding:5px 11px;border-radius:999px;background:var(--wash);color:var(--ink-2);border:1px solid var(--line)}
+  .faq{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:13px;overflow:hidden;background:var(--surface)}
+  .faq > div{padding:14px 17px;border-bottom:1px solid var(--line-soft);display:flex;flex-direction:column;gap:5px}
+  .faq > div:last-child{border-bottom:0}
+  .faq .q{font-size:.89rem;font-weight:700;display:flex;justify-content:space-between;gap:12px}
+  .faq .q span:last-child{color:var(--ink-3);font-weight:400}
+  .faq .a{font-size:.85rem;color:var(--ink-2)}
+
+  /* ---------- beden rehberi ---------- */
+  .sizetable{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+
+  /* ---------- yorumlar ---------- */
+  .revsum{display:grid;grid-template-columns:1fr;gap:18px;align-items:start}
+  @media (min-width:640px){ .revsum{grid-template-columns:200px 1fr} }
+  .bigscore{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--wash);border-radius:13px;padding:18px}
+  .bigscore .v{font-family:"Baloo 2",sans-serif;font-weight:700;font-size:2.4rem;line-height:1}
+  .bigscore .s{color:var(--sand-ink);letter-spacing:2px}
+  .bigscore .c{font-size:.76rem;color:var(--ink-3)}
+  .barrow{display:grid;grid-template-columns:34px 1fr 34px;gap:9px;align-items:center;font-size:.78rem;color:var(--ink-2)}
+  .barrow .tr{height:7px;border-radius:999px;background:var(--line-soft);overflow:hidden}
+  .barrow .tr i{display:block;height:100%;background:var(--sand)}
+  .review{padding:14px 0;border-bottom:1px solid var(--line-soft);display:flex;flex-direction:column;gap:6px}
+  .review:last-child{border-bottom:0}
+  .rvhead{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+  .rvhead .who{font-size:.86rem;font-weight:700}
+  .rvhead .when{font-size:.76rem;color:var(--ink-3)}
+  .rvbody{font-size:.86rem;color:var(--ink-2)}
+  .rvvar{font-size:.75rem;color:var(--ink-3)}
+  .rvpics{display:flex;gap:7px}
+  .rvpics span{width:46px;height:46px;border-radius:9px;display:grid;place-items:center}
+  .rvpics span svg{width:62%;height:62%}
+
+  /* ---------- hediye listesi ---------- */
+  .regcard{
+    background:linear-gradient(150deg,var(--coral-wash),var(--sand-wash));
+    border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:9px;
+  }
+  .regcard h3{font-size:1.15rem}
+  .regcard p{font-size:.87rem;color:var(--ink-2);max-width:46ch}
+  .linkbox{
+    display:flex;gap:8px;align-items:center;background:var(--overlay);border-radius:10px;
+    padding:8px 8px 8px 14px;font-size:.8rem;color:var(--ink-2);flex-wrap:wrap;
+  }
+  .reglist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:13px;overflow:hidden;background:var(--surface)}
+  .regitem{display:flex;gap:12px;align-items:center;padding:13px 15px;border-bottom:1px solid var(--line-soft);flex-wrap:wrap}
+  .regitem:last-child{border-bottom:0}
+  .regitem .im{width:52px;height:52px;border-radius:11px;display:grid;place-items:center;flex:none}
+  .regitem .im svg{width:62%;height:62%}
+  .regitem .info{flex:1;min-width:130px;display:flex;flex-direction:column;gap:2px}
+  .regitem .nm{font-size:.87rem;font-weight:700;line-height:1.3}
+  .regitem .vr{font-size:.75rem;color:var(--ink-3)}
+  .regitem.alindi{background:var(--mint-wash)}
+
+  /* ---------- 404 ---------- */
+  .fourof{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;padding:52px 20px}
+  .fourof .big{font-family:"Baloo 2",sans-serif;font-weight:700;font-size:3.6rem;line-height:1;color:var(--coral)}
+
+  /* ---------- tasarim sistemi ---------- */
+  .dsgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+  .panelbox{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px}
+  .panelbox h3{font-size:.95rem}
+  .swatchrow{display:flex;flex-direction:column;gap:7px}
+  .swline{display:flex;align-items:center;gap:10px}
+  .swline .b{width:34px;height:34px;border-radius:9px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.07)}
+  .swline .n{font-size:.82rem;font-weight:700;line-height:1.25}
+  .swline .h{font-size:.74rem;color:var(--ink-3);font-variant-numeric:tabular-nums}
+  .typerow{display:flex;flex-direction:column;gap:9px}
+  .typerow .ex{line-height:1.2}
+  .typerow .cap{font-size:.72rem;color:var(--ink-3);margin-top:2px}
+</style>
+
+<div class="page">
+
+  <div class="mokap-head">
+    <h1>Tasarım mokapı</h1>
+    <p>Sitenin nasıl görüneceği. Logodan çıkardığım pastel palet ve yuvarlak hatlı yazı tipiyle 27 ekran, altı gruba ayrıldı. Üstteki grup adına, sonra ekran adına basarak gezebilirsin.</p>
+    <div class="navwrap">
+      <div class="groups" id="groups" role="tablist" aria-label="Ekran grupları"></div>
+      <div class="tabs" id="tabs" role="tablist" aria-label="Ekranlar"></div>
+      <span class="screencount" id="screencount"></span>
+    </div>
+    <p class="note"><b>Not:</b><span>Ürün görselleri yerine geçici çizimler kullandım; gerçek fotoğraflarını çektiğinde yerlerine oturacak.</span></p>
+  </div>
+
+  <div class="frame">
+    <div class="chrome">
+      <i></i><i></i><i></i>
+      <span class="url" id="url">basoftbaby.com</span>
+    </div>
+
+    <!-- ===================== ANA SAYFA ===================== -->
+    <div id="s-ana" class="screen">
+      <div data-shopnav="promo"></div>
+
+      <div class="slider" id="hero-slider">
+        <div class="track" id="hero-track">
+
+          <!-- 1 -->
+          <div class="slide">
+            <div class="hero" style="background:linear-gradient(160deg,var(--sand-wash),var(--mint-wash))">
+              <div>
+                <h2>Minik bedenlere, yumuşacık kumaşlar</h2>
+                <p>%100 organik pamuk, dikişsiz bantlar, kolay çıtçıtlı kalıplar. Bebeğin hassas cildi için seçilmiş ürünler.</p>
+                <div class="cta">
+                  <span class="btn">Yeni gelenler</span>
+                  <span class="btn ghost">Bedene göre seç</span>
+                </div>
+              </div>
+              <div class="heroart">
+                <svg viewBox="0 0 200 160" aria-hidden="true">
+                  <ellipse cx="100" cy="140" rx="74" ry="12" fill="#F3C265" opacity=".22"/>
+                  <g transform="translate(0 -4)">
+                    <path d="M62 126 A 12 12 0 0 1 59 104 A 14 14 0 0 1 82 99 A 18 18 0 0 1 116 98 A 13 13 0 0 1 137 106 A 11 11 0 0 1 138 126 A 16 16 0 0 1 108 129 A 17 17 0 0 1 79 128 A 11 11 0 0 1 62 126 Z" fill="#FAE0AE" stroke="#D9A85B" stroke-width="2.4" stroke-linejoin="round"/>
+                    <g transform="rotate(-20 62 74)">
+                      <path d="M 62 48 A 26 26 0 1 0 62 100 A 30 30 0 0 1 62 48 Z" fill="#A8DDC7" stroke="#5FA98C" stroke-width="2.4" stroke-linejoin="round"/>
+                    </g>
+                    <g stroke="#B37A42" stroke-width="2.4" stroke-linejoin="round">
+                      <ellipse cx="102" cy="108" rx="22" ry="13" fill="#F2B76B"/>
+                      <circle cx="88" cy="70" r="7.5" fill="#EDA85C"/>
+                      <circle cx="116" cy="69" r="7.5" fill="#EDA85C"/>
+                      <circle cx="102" cy="82" r="17" fill="#F2B76B"/>
+                    </g>
+                    <ellipse cx="102" cy="88.5" rx="9.5" ry="7" fill="#FBE0BC"/>
+                    <ellipse cx="102" cy="85" rx="3" ry="2.2" fill="#8A5B2E"/>
+                    <path d="M90.5 78 q 4 -4.3 8 0 M108 77.6 q 4 -4.3 8 0" fill="none" stroke="#8A5B2E" stroke-width="1.9" stroke-linecap="round"/>
+                    <ellipse cx="88" cy="87" rx="4" ry="2.5" fill="#F5A79E" opacity=".7"/>
+                    <ellipse cx="116" cy="86" rx="4" ry="2.5" fill="#F5A79E" opacity=".7"/>
+                    <circle cx="44" cy="40" r="2.4" fill="#7BADD6"/>
+                    <circle cx="158" cy="52" r="2.4" fill="#F3C265"/>
+                    <circle cx="146" cy="28" r="1.9" fill="#77D9AB"/>
+                    <circle cx="66" cy="22" r="1.9" fill="#F36C62"/>
+                  </g>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2 -->
+          <div class="slide">
+            <div class="hero" style="background:linear-gradient(160deg,var(--blue-wash),var(--mint-wash))">
+              <div>
+                <h2>İlk siparişine %10 indirim</h2>
+                <p>Üye ol, kupon kodunu ödeme adımında kullan. Kampanyalardan ilk sen haberdar ol.</p>
+                <div class="cta">
+                  <span class="btn">Hemen üye ol</span>
+                </div>
+                <span class="kupon">Kupon: ILKALISVERIS</span>
+              </div>
+              <div class="heroart">
+                <svg viewBox="0 0 200 160" aria-hidden="true">
+                  <ellipse cx="100" cy="140" rx="70" ry="11" fill="#7BADD6" opacity=".18"/>
+                  <path d="M64 126 A 12 12 0 0 1 61 104 A 14 14 0 0 1 84 99 A 18 18 0 0 1 118 98 A 13 13 0 0 1 137 106 A 11 11 0 0 1 138 126 A 16 16 0 0 1 108 129 A 17 17 0 0 1 81 128 A 11 11 0 0 1 64 126 Z" fill="#FFFFFF" stroke="#A9CCE6" stroke-width="2.4" stroke-linejoin="round"/>
+                  <g stroke="#B37A42" stroke-width="2.4" stroke-linejoin="round">
+                    <ellipse cx="100" cy="110" rx="20" ry="13" fill="#FBEFDF"/>
+                    <ellipse cx="90" cy="60" rx="7" ry="17" fill="#FBEFDF" transform="rotate(-13 90 60)"/>
+                    <ellipse cx="111" cy="61" rx="7" ry="16" fill="#FBEFDF" transform="rotate(12 111 61)"/>
+                    <circle cx="100" cy="86" r="18" fill="#FBEFDF"/>
+                  </g>
+                  <ellipse cx="90" cy="61" rx="3.2" ry="10.5" fill="#F3BDB4" transform="rotate(-13 90 61)"/>
+                  <ellipse cx="111" cy="62" rx="3.2" ry="9.5" fill="#F3BDB4" transform="rotate(12 111 62)"/>
+                  <path d="M89 84 q 4.2 -4.6 8.4 0 M104 84 q 4.2 -4.6 8.4 0" fill="none" stroke="#8A5B2E" stroke-width="2.2" stroke-linecap="round"/>
+                  <ellipse cx="100.5" cy="92" rx="3.1" ry="2.3" fill="#E39187"/>
+                  <ellipse cx="86" cy="93" rx="4.4" ry="2.8" fill="#F5A79E" opacity=".7"/>
+                  <ellipse cx="115" cy="93" rx="4.4" ry="2.8" fill="#F5A79E" opacity=".7"/>
+                  <circle cx="44" cy="44" r="2.4" fill="#F36C62"/>
+                  <circle cx="156" cy="40" r="2.4" fill="#F3C265"/>
+                  <circle cx="150" cy="76" r="1.9" fill="#77D9AB"/>
+                  <circle cx="52" cy="80" r="1.9" fill="#7BADD6"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3 -->
+          <div class="slide">
+            <div class="hero" style="background:linear-gradient(160deg,var(--coral-wash),var(--sand-wash))">
+              <div>
+                <h2>Bebek hediye listesi oluştur</h2>
+                <p>İhtiyacın olanları listele, linkini yakınlarına gönder. Onlar listeden alsın, aynı hediye iki kez gelmesin.</p>
+                <div class="cta">
+                  <span class="btn">Listemi oluştur</span>
+                  <span class="btn ghost">Nasıl çalışır?</span>
+                </div>
+              </div>
+              <div class="heroart">
+                <svg viewBox="0 0 200 160" aria-hidden="true">
+                  <ellipse cx="100" cy="142" rx="62" ry="10" fill="#F36C62" opacity=".16"/>
+                  <rect x="56" y="74" width="88" height="62" rx="8" fill="#FBEFDF" stroke="#D9A85B" stroke-width="2.4"/>
+                  <rect x="48" y="58" width="104" height="22" rx="7" fill="#FAE0AE" stroke="#D9A85B" stroke-width="2.4"/>
+                  <rect x="90" y="58" width="20" height="78" fill="#A8DDC7"/>
+                  <rect x="48" y="58" width="104" height="22" rx="7" fill="none" stroke="#D9A85B" stroke-width="2.4"/>
+                  <path d="M100 58 C 100 40, 78 34, 76 48 C 74 58, 90 58, 100 58 Z" fill="#A8DDC7" stroke="#5FA98C" stroke-width="2.4" stroke-linejoin="round"/>
+                  <path d="M100 58 C 100 40, 122 34, 124 48 C 126 58, 110 58, 100 58 Z" fill="#A8DDC7" stroke="#5FA98C" stroke-width="2.4" stroke-linejoin="round"/>
+                  <circle cx="100" cy="56" r="5" fill="#77D9AB" stroke="#5FA98C" stroke-width="2.2"/>
+                  <circle cx="40" cy="42" r="2.4" fill="#7BADD6"/>
+                  <circle cx="164" cy="50" r="2.4" fill="#77D9AB"/>
+                  <circle cx="156" cy="24" r="1.9" fill="#F36C62"/>
+                  <circle cx="52" cy="22" r="1.9" fill="#F3C265"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <button class="arw prev" type="button" id="hero-prev" aria-label="Önceki afiş">‹</button>
+        <button class="arw next" type="button" id="hero-next" aria-label="Sonraki afiş">›</button>
+        <div class="sdots" id="hero-dots"></div>
+      </div>
+
+      <div class="pad stack">
+        <div>
+          <div class="sechead"><h2>Yaşa göre</h2><span class="more">Tüm bedenler</span></div>
+          <div class="ages" style="margin-top:12px">
+            <div class="age"><span class="ic" style="background:var(--coral-wash)"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8l-1 4a5 5 0 0 1-6 0Z" fill="#F36C62"/><rect x="7" y="8" width="10" height="11" rx="4" fill="#F36C62" opacity=".55"/></svg></span><span class="t">Yenidoğan</span><span class="s">0-3 ay</span></div>
+            <div class="age"><span class="ic" style="background:var(--mint-wash)"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8l-1 4a5 5 0 0 1-6 0Z" fill="#3FA478"/><rect x="7" y="8" width="10" height="11" rx="4" fill="#3FA478" opacity=".55"/></svg></span><span class="t">Bebek</span><span class="s">3-6 ay</span></div>
+            <div class="age"><span class="ic" style="background:var(--blue-wash)"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8l-1 4a5 5 0 0 1-6 0Z" fill="#3F82B4"/><rect x="7" y="8" width="10" height="11" rx="4" fill="#3F82B4" opacity=".55"/></svg></span><span class="t">Bebek</span><span class="s">6-12 ay</span></div>
+            <div class="age"><span class="ic" style="background:var(--sand-wash)"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8l-1 4a5 5 0 0 1-6 0Z" fill="#8F6410"/><rect x="7" y="8" width="10" height="11" rx="4" fill="#8F6410" opacity=".55"/></svg></span><span class="t">Yürüyen</span><span class="s">12-24 ay</span></div>
+            <div class="age"><span class="ic" style="background:var(--coral-wash)"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14v8a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3Z" fill="#F36C62" opacity=".55"/><path d="M9 9V7a3 3 0 0 1 6 0v2" fill="none" stroke="#F36C62" stroke-width="2"/></svg></span><span class="t">Hediye</span><span class="s">Liste oluştur</span></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="sechead"><h2>Bu haftanın favorileri</h2><span class="more">8 ürün listeleniyor</span></div>
+          <p style="font-size:.78rem;font-weight:700;color:var(--ink-3);margin-top:10px">Bebeğin yaşı</p>
+          <div class="agechips">
+            <button class="achip" type="button" data-on="1" style="background:var(--blue-wash);color:var(--blue-ink)">0–3 ay</button>
+            <button class="achip" type="button" style="background:var(--mint-wash);color:var(--mint-ink)">3–6 ay</button>
+            <button class="achip" type="button" style="background:var(--sand-wash);color:var(--sand-ink)">6–12 ay</button>
+            <button class="achip" type="button" style="background:var(--coral-wash);color:var(--coral-ink)">12–24 ay</button>
+          </div>
+          <div class="grid" style="margin-top:14px" id="grid-ana"></div>
+        </div>
+      </div>
+
+      <div class="trust">
+        <div class="tr"><span class="d" style="background:var(--mint-wash);color:var(--mint-ink)">✓</span><span><span class="t">14 gün koşulsuz iade</span><br><span class="s">Etiketi sökülmemiş ürünlerde</span></span></div>
+        <div class="tr"><span class="d" style="background:var(--blue-wash);color:var(--blue-ink)">✓</span><span><span class="t">Güvenli ödeme</span><br><span class="s">3D Secure, taksit imkânı</span></span></div>
+        <div class="tr"><span class="d" style="background:var(--sand-wash);color:var(--sand-ink)">✓</span><span><span class="t">Aynı gün kargo</span><br><span class="s">14:00'e kadar verilen siparişler</span></span></div>
+        <div class="tr"><span class="d" style="background:var(--coral-wash);color:var(--coral-ink)">✓</span><span><span class="t">Hediye paketi</span><br><span class="s">Ücretsiz, el yazısı notla</span></span></div>
+      </div>
+    </div>
+
+    <!-- ===================== KATEGORI ===================== -->
+    <div id="s-kategori" class="screen" hidden>
+      <div data-shopnav="promo"></div>
+
+      <div class="pad">
+        <div class="crumb">Ana sayfa · Zıbın &amp; Body</div>
+        <div class="sechead" style="margin-bottom:16px">
+          <h2>Zıbın &amp; Body</h2>
+          <span class="more">Sırala: Çok satan</span>
+        </div>
+        <div class="catlayout">
+          <aside class="filters">
+            <div class="fgroup">
+              <span class="ft">Beden</span>
+              <div class="chips">
+                <span class="chip" data-on="1">0-3 ay</span><span class="chip">3-6 ay</span>
+                <span class="chip">6-9 ay</span><span class="chip">9-12 ay</span><span class="chip">12-18 ay</span>
+              </div>
+            </div>
+            <div class="fgroup">
+              <span class="ft">Renk</span>
+              <div class="chips">
+                <span class="chip">Mint</span><span class="chip" data-on="1">Krem</span>
+                <span class="chip">Mercan</span><span class="chip">Mavi</span><span class="chip">Sarı</span>
+              </div>
+            </div>
+            <div class="fgroup">
+              <span class="ft">Kumaş</span>
+              <div class="chips">
+                <span class="chip">Organik pamuk</span><span class="chip">Müslin</span><span class="chip">Bambu</span>
+              </div>
+            </div>
+            <div class="fgroup">
+              <span class="ft">Fiyat</span>
+              <div class="chips"><span class="chip">0-250 TL</span><span class="chip">250-500 TL</span><span class="chip">500 TL+</span></div>
+            </div>
+            <div class="fgroup">
+              <span class="ft">Diğer</span>
+              <div class="chips"><span class="chip">İndirimdekiler</span><span class="chip">Stokta olanlar</span></div>
+            </div>
+          </aside>
+          <div>
+            <p class="note" style="margin-bottom:12px"><b>2 filtre seçili</b><span>· 18 ürün</span></p>
+            <div class="grid" id="grid-kat"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== URUN DETAY ===================== -->
+    <div id="s-urun" class="screen" hidden>
+      <div data-shopnav></div>
+
+      <div class="pad">
+        <div class="crumb">Ana sayfa · Zıbın &amp; Body · Organik Pamuk Zıbın</div>
+        <div class="pdp" style="margin-top:12px">
+          <div class="gallery">
+            <div class="gmain" style="background:var(--mint-wash)" id="pdp-main"></div>
+            <div class="thumbs" id="pdp-thumbs"></div>
+          </div>
+          <div class="pinfo">
+            <div>
+              <div class="badges" style="margin-bottom:8px">
+                <span class="tag mint">%100 Organik Pamuk</span>
+                <span class="tag blue">OEKO-TEX</span>
+                <span class="tag sand">Dikişsiz</span>
+              </div>
+              <h2>Organik Pamuk Zıbın · 3'lü Set</h2>
+              <div class="stars" style="margin-top:6px">
+                <span class="s">★★★★★</span><span>4,9 · 126 değerlendirme</span>
+              </div>
+            </div>
+
+            <div class="pricerow">
+              <span class="now">219,90 TL</span>
+              <span class="was">289,90 TL</span>
+              <span class="tag coral">%24 indirim</span>
+            </div>
+
+            <div class="opt">
+              <span class="lbl">Beden <a href="#">Beden rehberi (boy / kilo)</a></span>
+              <div class="sizes">
+                <span class="size">0-3 ay</span>
+                <span class="size" data-on="1">3-6 ay</span>
+                <span class="size">6-9 ay</span>
+                <span class="size" data-out="1">9-12 ay</span>
+                <span class="size">12-18 ay</span>
+              </div>
+            </div>
+
+            <div class="opt">
+              <span class="lbl">Renk · Mint</span>
+              <div class="colors">
+                <span class="cdot" data-on="1" style="background:#A8DDC7"></span>
+                <span class="cdot" style="background:#FBEFDF"></span>
+                <span class="cdot" style="background:#F5A79E"></span>
+                <span class="cdot" style="background:#A9CCE6"></span>
+                <span class="cdot" style="background:#F6D694"></span>
+              </div>
+            </div>
+
+            <div class="stockline low"><span class="d"></span>Son 3 adet — bu bedende stok azalıyor</div>
+
+            <div class="buyrow">
+              <span class="btn" style="flex:1;min-width:170px">Sepete ekle · 219,90 TL</span>
+              <span class="btn ghost sm">♡ Favori</span>
+            </div>
+
+            <div class="giftbox">
+              <span style="font-size:1.1rem;line-height:1">🎁</span>
+              <span><b>Hediye paketi ister misin?</b> Ödeme adımında kutu ve el yazısı not ekleyebilirsin. Paketin içine fiyatsız fiş koyuyoruz.</span>
+            </div>
+
+            <div class="acc">
+              <div class="accrow"><span>Kumaş ve yıkama</span><span>%100 organik pamuk · 30°C</span></div>
+              <div class="accrow"><span>Üretici / ithalatçı bilgisi</span><span>Görüntüle</span></div>
+              <div class="accrow"><span>Kargo ve teslimat</span><span>Aynı gün kargo</span></div>
+              <div class="accrow"><span>İade koşulları</span><span>14 gün koşulsuz</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:26px">
+          <div class="sechead"><h2>Bunlarla iyi gider</h2></div>
+          <div class="grid" style="margin-top:12px" id="grid-urun"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== SEPET ===================== -->
+    <div id="s-sepet" class="screen" hidden>
+      <div data-shopnav="sade"></div>
+
+      <div class="pad">
+        <div class="sechead" style="margin-bottom:14px"><h2>Sepetim · 3 ürün</h2></div>
+        <div class="cartlayout">
+          <div>
+            <div class="shipbar">
+              <span class="t">Ücretsiz kargoya 130,30 TL kaldı</span>
+              <span class="bar"><i style="width:83%"></i></span>
+            </div>
+            <div id="cart-items"></div>
+          </div>
+
+          <div class="summary">
+            <div class="srow"><span>Ara toplam</span><span>1.019,70 TL</span></div>
+            <div class="srow disc"><span>Kampanya · 2 al 1 öde</span><span>−100,00 TL</span></div>
+            <div class="srow disc"><span>Kupon · ILKALISVERIS</span><span>−91,97 TL</span></div>
+            <div class="srow"><span>Kargo</span><span>89,90 TL</span></div>
+            <div class="srow"><span>Hediye paketi</span><span>Ücretsiz</span></div>
+            <div class="srow tot"><span>Toplam</span><span>917,63 TL</span></div>
+
+            <div class="coupon">
+              <span class="fld">Kupon kodu</span>
+              <span class="btn ghost sm">Uygula</span>
+            </div>
+            <span class="btn" style="width:100%">Ödemeye geç</span>
+            <div class="paylogos">
+              <span class="p">3D Secure</span><span class="p">Taksit</span><span class="p">iyzico</span>
+            </div>
+            <p class="note" style="font-size:.76rem"><span>Ödeme adımında mesafeli satış sözleşmesini onaylayacaksın.</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== YONETIM ===================== -->
+    <div id="s-yonetim" class="screen" hidden>
+      <div class="adminlayout">
+        <aside class="side">
+          <div class="logo" style="padding:4px 8px 14px">
+            <svg width="26" height="26" viewBox="0 0 200 200" aria-label="BASoftbaby">
+              <circle cx="100" cy="100" r="96" fill="#FCF5E7" stroke="#E8D3AC" stroke-width="4"/>
+              <circle cx="100" cy="100" r="74" fill="#FFF"/>
+              <circle cx="104" cy="92" r="24" fill="#F2B76B" stroke="#B37A42" stroke-width="4"/>
+              <path d="M60 154 A 14 14 0 0 1 56 128 A 16 16 0 0 1 82 122 A 21 21 0 0 1 120 121 A 15 15 0 0 1 144 131 A 13 13 0 0 1 145 154 A 19 19 0 0 1 110 158 A 20 20 0 0 1 76 157 A 13 13 0 0 1 60 154 Z" fill="#FAE0AE" stroke="#D9A85B" stroke-width="4"/>
+            </svg>
+            <span class="w" style="font-size:.95rem">Yönetim</span>
+          </div>
+          <span class="si">Özet</span>
+          <span class="si" data-on="1">Siparişler</span>
+          <span class="si">Ürünler</span>
+          <span class="si">Stok</span>
+          <span class="si">Kampanyalar</span>
+          <span class="si">Kuponlar</span>
+          <span class="si">İadeler</span>
+          <span class="si">Müşteriler</span>
+          <span class="si">Raporlar</span>
+        </aside>
+
+        <div class="main">
+          <div class="stats">
+            <div class="stat"><span class="k">Bugün</span><span class="v">14</span><span class="c">sipariş · +3</span></div>
+            <div class="stat"><span class="k">Ciro</span><span class="v">12.480 ₺</span><span class="c">+18%</span></div>
+            <div class="stat"><span class="k">Kargo bekleyen</span><span class="v">6</span><span class="c warn">etiket basılmadı</span></div>
+            <div class="stat"><span class="k">Kritik stok</span><span class="v">3</span><span class="c warn">beden tükenmek üzere</span></div>
+          </div>
+
+          <div>
+            <div class="sechead" style="margin-bottom:11px">
+              <h2 style="font-size:1.1rem">Siparişler</h2>
+              <span class="btn mint sm">Seçilenlerin kargo etiketini bas</span>
+            </div>
+            <div class="tablewrap">
+              <table>
+                <thead>
+                  <tr><th>Sipariş</th><th>Müşteri</th><th>Tutar</th><th>Durum</th><th>Kargo</th><th></th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="num">#10428</td><td>Elif Y.</td><td class="num">917,63 ₺</td>
+                    <td><span class="tag mint">Ödendi</span></td><td class="num" style="color:var(--ink-3)">—</td>
+                    <td><span class="btn sm">Etiket bas</span></td>
+                  </tr>
+                  <tr>
+                    <td class="num">#10427</td><td>Merve K.</td><td class="num">1.249,80 ₺</td>
+                    <td><span class="tag mint">Ödendi</span></td><td class="num" style="color:var(--ink-3)">—</td>
+                    <td><span class="btn sm">Etiket bas</span></td>
+                  </tr>
+                  <tr>
+                    <td class="num">#10426</td><td>Zeynep A.</td><td class="num">449,90 ₺</td>
+                    <td><span class="tag blue">Kargoda</span></td><td class="num">YK 7734 2210</td>
+                    <td><span class="btn ghost sm">Takip</span></td>
+                  </tr>
+                  <tr>
+                    <td class="num">#10425</td><td>Ayşe D.</td><td class="num">689,70 ₺</td>
+                    <td><span class="tag sand">Ödeme bekliyor</span></td><td class="num" style="color:var(--ink-3)">—</td>
+                    <td><span class="btn ghost sm">İncele</span></td>
+                  </tr>
+                  <tr>
+                    <td class="num">#10424</td><td>Büşra T.</td><td class="num">329,90 ₺</td>
+                    <td><span class="tag mint">Teslim edildi</span></td><td class="num">ARAS 5512 9087</td>
+                    <td><span class="btn ghost sm">Fatura</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <div class="sechead" style="margin-bottom:11px">
+              <h2 style="font-size:1.1rem">Stok · varyant bazında</h2>
+              <span class="btn ghost sm">Excel ile toplu güncelle</span>
+            </div>
+            <div class="tablewrap">
+              <table>
+                <thead>
+                  <tr><th>Ürün</th><th>Beden</th><th>Renk</th><th>Barkod</th><th>Fiyat</th><th>Stok</th></tr>
+                </thead>
+                <tbody id="admin-stock"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== ARAMA ===================== -->
+    <div id="s-arama" class="screen" hidden>
+      <div data-shopnav="promo"></div>
+      <div class="pad">
+        <div class="field" style="max-width:420px;margin-bottom:18px">
+          <span class="inp dolu sel"><span>zıbın</span><span style="color:var(--ink-3)">✕</span></span>
+        </div>
+        <div class="sechead" style="margin-bottom:9px">
+          <h2>“zıbın” için 12 sonuç</h2>
+          <span class="more">Sırala: En uygun</span>
+        </div>
+        <div class="chips" style="margin-bottom:16px">
+          <span class="chip" data-on="1">Tümü</span><span class="chip">Zıbın &amp; Body</span>
+          <span class="chip">Tulum</span><span class="chip">Set ürünler</span>
+        </div>
+        <div class="grid" id="grid-arama"></div>
+      </div>
+    </div>
+
+    <!-- ===================== BEDEN REHBERI ===================== -->
+    <div id="s-beden" class="screen" hidden>
+      <div data-shopnav="sade"></div>
+      <div class="pad stack">
+        <div>
+          <div class="crumb">Ana sayfa · Beden rehberi</div>
+          <h2 style="font-size:1.4rem;margin-top:4px">Beden rehberi</h2>
+          <p style="color:var(--ink-2);font-size:.92rem;margin-top:7px;max-width:62ch">
+            Bebek bedenleri yaşa göre yazılır ama asıl ölçü boy ve kilodur. İki beden arasında kaldıysan
+            büyük olanı al: bebek üç ayda bir beden büyüyor, küçük gelen ürünü hiç giydiremezsin.
+          </p>
+        </div>
+
+        <div class="sizetable">
+          <table>
+            <thead>
+              <tr><th>Beden</th><th>Yaş</th><th>Boy</th><th>Kilo</th><th>Göğüs</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><b>50/56</b></td><td>0-1 ay</td><td class="num">50-56 cm</td><td class="num">3-4,5 kg</td><td class="num">40 cm</td></tr>
+              <tr><td><b>56/62</b></td><td>1-3 ay</td><td class="num">56-62 cm</td><td class="num">4,5-6 kg</td><td class="num">42 cm</td></tr>
+              <tr><td><b>62/68</b></td><td>3-6 ay</td><td class="num">62-68 cm</td><td class="num">6-8 kg</td><td class="num">44 cm</td></tr>
+              <tr><td><b>68/74</b></td><td>6-9 ay</td><td class="num">68-74 cm</td><td class="num">8-9 kg</td><td class="num">46 cm</td></tr>
+              <tr><td><b>74/80</b></td><td>9-12 ay</td><td class="num">74-80 cm</td><td class="num">9-10,5 kg</td><td class="num">48 cm</td></tr>
+              <tr><td><b>80/86</b></td><td>12-18 ay</td><td class="num">80-86 cm</td><td class="num">10,5-12 kg</td><td class="num">50 cm</td></tr>
+              <tr><td><b>86/92</b></td><td>18-24 ay</td><td class="num">86-92 cm</td><td class="num">12-13,5 kg</td><td class="num">52 cm</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="dsgrid">
+          <div class="panelbox">
+            <h3>Nasıl ölçülür</h3>
+            <p style="font-size:.86rem;color:var(--ink-2)">
+              Boy: bebeği sırtüstü yatır, topuktan başın tepesine ölç.<br>
+              Göğüs: kolların altından, göğsün en geniş yerinden çevir.<br>
+              Kilo: en son doktor ölçümü yeterli.
+            </p>
+          </div>
+          <div class="panelbox">
+            <h3>Kumaş payı</h3>
+            <p style="font-size:.86rem;color:var(--ink-2)">
+              Pamuklu ürünler ilk yıkamada %2-3 çekebilir, kalıplarımız bu payı hesaba katarak dikiliyor.
+              Kadife ve fitilli ürünler daha dar kalıptır, arada kaldıysan bir üst bedeni seç.
+            </p>
+          </div>
+          <div class="panelbox">
+            <h3>Yine de olmadıysa</h3>
+            <p style="font-size:.86rem;color:var(--ink-2)">
+              Etiketi sökülmemiş ürünü 14 gün içinde koşulsuz iade edebilirsin. Beden değişimi
+              kargo ücreti bize ait.
+            </p>
+            <span class="btn ghost sm" style="align-self:flex-start">İade koşulları</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== YORUMLAR ===================== -->
+    <div id="s-yorumlar" class="screen" hidden>
+      <div data-shopnav="sade"></div>
+      <div class="pad stack">
+        <div>
+          <div class="crumb">Organik Pamuk Zıbın · 3’lü Set</div>
+          <h2 style="font-size:1.4rem;margin-top:4px">Değerlendirmeler</h2>
+        </div>
+
+        <div class="revsum">
+          <div class="bigscore">
+            <span class="v">4,8</span>
+            <span class="s">★★★★★</span>
+            <span class="c">126 değerlendirme</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div class="barrow"><span>5 ★</span><span class="tr"><i style="width:78%"></i></span><span>98</span></div>
+            <div class="barrow"><span>4 ★</span><span class="tr"><i style="width:15%"></i></span><span>19</span></div>
+            <div class="barrow"><span>3 ★</span><span class="tr"><i style="width:4%"></i></span><span>5</span></div>
+            <div class="barrow"><span>2 ★</span><span class="tr"><i style="width:2%"></i></span><span>3</span></div>
+            <div class="barrow"><span>1 ★</span><span class="tr"><i style="width:1%"></i></span><span>1</span></div>
+            <p class="note" style="margin-top:6px"><span>Sadece ürünü satın alanlar değerlendirme yazabilir.</span></p>
+          </div>
+        </div>
+
+        <div class="chips">
+          <span class="chip" data-on="1">Tümü</span><span class="chip">Fotoğraflı (34)</span>
+          <span class="chip">En yeni</span><span class="chip">En yararlı</span>
+        </div>
+
+        <div>
+          <div class="review">
+            <div class="rvhead"><span class="who">Elif Y. <span class="tag mint" style="margin-left:6px">Doğrulanmış alışveriş</span></span><span class="when">2 gün önce</span></div>
+            <span class="s" style="color:var(--sand-ink);letter-spacing:2px;font-size:.85rem">★★★★★</span>
+            <span class="rvvar">3-6 ay · Mint</span>
+            <p class="rvbody">Kumaşı gerçekten çok yumuşak, oğlumun sırtında hiç iz bırakmadı. Çıtçıtları sağlam, gece alt değiştirirken uğraştırmıyor. İkinci seti de aldım.</p>
+            <div class="rvpics" id="rv-pics"></div>
+          </div>
+          <div class="review">
+            <div class="rvhead"><span class="who">Merve K. <span class="tag mint" style="margin-left:6px">Doğrulanmış alışveriş</span></span><span class="when">1 hafta önce</span></div>
+            <span class="s" style="color:var(--sand-ink);letter-spacing:2px;font-size:.85rem">★★★★★</span>
+            <span class="rvvar">0-3 ay · Krem</span>
+            <p class="rvbody">Hediye olarak aldım, paketi çok şirindi. Bedeni tam oturdu, rehberdeki tabloya göre seçtim.</p>
+          </div>
+          <div class="review">
+            <div class="rvhead"><span class="who">Zeynep A. <span class="tag mint" style="margin-left:6px">Doğrulanmış alışveriş</span></span><span class="when">2 hafta önce</span></div>
+            <span class="s" style="color:var(--sand-ink);letter-spacing:2px;font-size:.85rem">★★★★☆</span>
+            <span class="rvvar">6-9 ay · Mercan</span>
+            <p class="rvbody">Ürün güzel ama rengi fotoğraftakinden biraz daha açık geldi. Yine de memnunum, kumaşı kaliteli.</p>
+          </div>
+        </div>
+
+        <div class="panelbox" style="max-width:560px">
+          <h3>Değerlendirmeni yaz</h3>
+          <div class="form">
+            <div class="field">
+              <span class="lb">Puanın</span>
+              <span style="color:var(--sand-ink);letter-spacing:4px;font-size:1.4rem">★★★★★</span>
+            </div>
+            <div class="field">
+              <span class="lb">Yorumun</span>
+              <span class="inp area">Ürünle ilgili deneyimini yaz…</span>
+            </div>
+            <div class="field">
+              <span class="lb">Fotoğraf ekle</span>
+              <span class="hint">Bebeğinin üzerindeki fotoğraf, diğer annelerin en çok baktığı şey.</span>
+            </div>
+            <span class="btn sm" style="align-self:flex-start">Gönder</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== ODEME ===================== -->
+    <div id="s-odeme" class="screen" hidden>
+      <div data-shopnav="odeme"></div>
+      <div class="pad">
+        <div class="steps" style="margin-bottom:18px">
+          <span class="st" data-ok="1"><span class="n">✓</span>Sepet</span><span class="sep">›</span>
+          <span class="st" data-on="1"><span class="n">2</span>Teslimat</span><span class="sep">›</span>
+          <span class="st"><span class="n">3</span>Ödeme</span><span class="sep">›</span>
+          <span class="st"><span class="n">4</span>Onay</span>
+        </div>
+
+        <div class="cartlayout">
+          <div class="form">
+            <div class="panelbox">
+              <h3>Teslimat adresi</h3>
+              <div class="radiocards iki">
+                <button class="rcard" type="button" data-on="1">
+                  <span class="rd"></span>
+                  <span><span class="rt">Ev</span><span class="rs">Elif Yıldız · Bahçelievler Mah. 42/7<br>Çankaya / Ankara</span></span>
+                </button>
+                <button class="rcard" type="button">
+                  <span class="rd"></span>
+                  <span><span class="rt">Yeni adres ekle</span><span class="rs">Farklı bir adrese gönder</span></span>
+                </button>
+              </div>
+              <div class="check" data-on="1" style="margin-top:12px"><span class="bx">✓</span><span>Fatura adresim teslimat adresiyle aynı</span></div>
+            </div>
+
+            <div class="panelbox">
+              <h3>Kargo</h3>
+              <div class="radiocards">
+                <button class="rcard" type="button" data-on="1">
+                  <span class="rd"></span>
+                  <span><span class="rt">Yurtiçi Kargo · 1-2 iş günü</span><span class="rs">14:00’e kadar verilen siparişler aynı gün çıkar</span></span>
+                  <span class="rp" style="color:var(--mint-ink)">Ücretsiz</span>
+                </button>
+                <button class="rcard" type="button">
+                  <span class="rd"></span>
+                  <span><span class="rt">Aras Kargo · 2-3 iş günü</span><span class="rs">Standart teslimat</span></span>
+                  <span class="rp">49,90 ₺</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="panelbox">
+              <h3>Hediye seçenekleri</h3>
+              <div class="check" data-on="1"><span class="bx">✓</span><span><b>Hediye paketi</b> — kurdeleli kutu, ücretsiz. Paketin içine fiyatsız fiş koyulur.</span></div>
+              <div class="field" style="margin-top:10px">
+                <span class="lb">Hediye notu</span>
+                <span class="inp dolu area">Hoş geldin minik Deniz, sağlıkla büyü. Sevgiler, Elif teyzen.</span>
+                <span class="hint">El yazısı kartla gönderilir, en fazla 200 karakter.</span>
+              </div>
+            </div>
+
+            <div class="panelbox">
+              <h3>Ödeme</h3>
+              <div class="radiocards iki" style="margin-bottom:13px">
+                <button class="rcard" type="button" data-on="1">
+                  <span class="rd"></span>
+                  <span><span class="rt">Kredi / banka kartı</span><span class="rs">3D Secure ile, taksit imkânı</span></span>
+                </button>
+                <button class="rcard" type="button">
+                  <span class="rd"></span>
+                  <span><span class="rt">Havale / EFT</span><span class="rs">Ödeme onayı sonrası kargoya verilir</span></span>
+                </button>
+              </div>
+              <div class="form">
+                <div class="field">
+                  <span class="lb">Kart üzerindeki isim</span>
+                  <span class="inp dolu">ELİF YILDIZ</span>
+                </div>
+                <div class="field">
+                  <span class="lb">Kart numarası</span>
+                  <span class="inp dolu">5528 •••• •••• 4412</span>
+                </div>
+                <div class="frow uc">
+                  <div class="field"><span class="lb">Ay</span><span class="inp sel"><span>08</span></span></div>
+                  <div class="field"><span class="lb">Yıl</span><span class="inp sel"><span>2029</span></span></div>
+                  <div class="field"><span class="lb">CVC</span><span class="inp">•••</span></div>
+                </div>
+                <div class="field">
+                  <span class="lb">Taksit</span>
+                  <span class="inp sel"><span>Tek çekim · 827,73 ₺</span></span>
+                  <span class="hint">3 taksit 6 taksit seçenekleri bankana göre listelenir.</span>
+                </div>
+              </div>
+              <p class="note" style="margin-top:12px"><span>Kart bilgilerin bize gelmiyor, doğrudan iyzico'ya iletiliyor.</span></p>
+            </div>
+
+            <div class="panelbox">
+              <div class="check" data-on="1"><span class="bx">✓</span><span><a href="#">Ön bilgilendirme formunu</a> ve <a href="#">mesafeli satış sözleşmesini</a> okudum, onaylıyorum.</span></div>
+              <div class="check" style="margin-top:10px"><span class="bx"></span><span>Kampanya ve indirimlerden e-posta ile haberdar olmak istiyorum.</span></div>
+            </div>
+          </div>
+
+          <div class="summary" style="position:sticky;top:12px">
+            <h3 style="font-size:.95rem">Sipariş özeti</h3>
+            <div id="odeme-kalemler"></div>
+            <div class="srow"><span>Ara toplam</span><span>1.019,70 ₺</span></div>
+            <div class="srow disc"><span>Kampanya · 2 al 1 öde</span><span>−100,00 ₺</span></div>
+            <div class="srow disc"><span>Kupon · ILKALISVERIS</span><span>−91,97 ₺</span></div>
+            <div class="srow"><span>Kargo</span><span style="color:var(--mint-ink);font-weight:700">Ücretsiz</span></div>
+            <div class="srow tot"><span>Toplam</span><span>827,73 ₺</span></div>
+            <span class="btn" style="width:100%">Siparişi onayla ve öde</span>
+            <div class="paylogos"><span class="p">3D Secure</span><span class="p">iyzico</span><span class="p">SSL</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== SIPARIS ONAYI ===================== -->
+    <div id="s-onay" class="screen" hidden>
+      <div data-shopnav="odeme"></div>
+      <div class="pad">
+        <div class="steps" style="margin-bottom:22px">
+          <span class="st" data-ok="1"><span class="n">✓</span>Sepet</span><span class="sep">›</span>
+          <span class="st" data-ok="1"><span class="n">✓</span>Teslimat</span><span class="sep">›</span>
+          <span class="st" data-ok="1"><span class="n">✓</span>Ödeme</span><span class="sep">›</span>
+          <span class="st" data-on="1"><span class="n">4</span>Onay</span>
+        </div>
+
+        <div style="max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:18px">
+          <div style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px">
+            <span style="width:62px;height:62px;border-radius:50%;background:var(--mint-wash);color:var(--mint-ink);display:grid;place-items:center;font-size:1.7rem">✓</span>
+            <h2 style="font-size:1.5rem">Siparişin alındı</h2>
+            <p style="color:var(--ink-2);font-size:.93rem;max-width:44ch">
+              Sipariş numaran <b>#10428</b>. Onay e-postasını elif@example.com adresine gönderdik.
+            </p>
+          </div>
+
+          <div class="panelbox">
+            <h3>Şimdi ne olacak</h3>
+            <ol class="flow" style="margin-top:6px">
+              <li><span class="s">1</span><span class="b"><b>Hazırlanıyor.</b> Siparişini bugün paketliyoruz, hediye notun el yazısıyla yazılıyor.</span></li>
+              <li><span class="s">2</span><span class="b"><b>Kargoya veriliyor.</b> Takip numaran e-posta ve SMS ile gelecek.</span></li>
+              <li><span class="s">3</span><span class="b"><b>Teslimat.</b> Yurtiçi Kargo ile 1-2 iş günü içinde adresinde.</span></li>
+            </ol>
+          </div>
+
+          <div class="panelbox">
+            <h3>Sipariş özeti</h3>
+            <div id="onay-kalemler"></div>
+            <div class="srow tot"><span>Ödenen</span><span>827,73 ₺</span></div>
+            <p class="note"><span>e-Arşiv faturan hazırlanıyor, birkaç dakika içinde e-postana düşecek.</span></p>
+          </div>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+            <span class="btn">Siparişimi takip et</span>
+            <span class="btn ghost">Alışverişe devam et</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== BOS DURUMLAR ===================== -->
+    <div id="s-bos" class="screen" hidden>
+      <div data-shopnav="sade"></div>
+      <div class="pad stack">
+        <p class="note"><b>Boş durumlar</b><span>· müşteri hiçbir şey bulamadığında ne göreceği</span></p>
+
+        <div class="dsgrid">
+          <div class="panelbox">
+            <div class="empty">
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <path d="M26 36h48l-5 38a8 8 0 0 1-8 7H39a8 8 0 0 1-8-7Z" fill="#FBF3E4" stroke="#D9A85B" stroke-width="2.6" stroke-linejoin="round"/>
+                <path d="M38 36V30a12 12 0 0 1 24 0v6" fill="none" stroke="#D9A85B" stroke-width="2.6" stroke-linecap="round"/>
+                <path d="M42 56q8 7 16 0" fill="none" stroke="#D9A85B" stroke-width="2.6" stroke-linecap="round"/>
+              </svg>
+              <h3>Sepetin boş</h3>
+              <p>Beğendiğin ürünleri sepete ekle, buradan devam et.</p>
+              <span class="btn sm">Ürünlere göz at</span>
+            </div>
+          </div>
+
+          <div class="panelbox">
+            <div class="empty">
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <circle cx="45" cy="44" r="21" fill="#EAF3FA" stroke="#7BADD6" stroke-width="2.8"/>
+                <path d="M60 60 76 76" stroke="#7BADD6" stroke-width="3.4" stroke-linecap="round"/>
+                <path d="M38 40q3.5-4 7 0M45 52q0-4 6-4" fill="none" stroke="#7BADD6" stroke-width="2.4" stroke-linecap="round"/>
+              </svg>
+              <h3>Sonuç bulunamadı</h3>
+              <p>“zıbn” için bir şey bulamadık. Yazımı kontrol et ya da kategorilere göz at.</p>
+              <div class="chips" style="justify-content:center"><span class="chip">zıbın</span><span class="chip">body</span><span class="chip">tulum</span></div>
+            </div>
+          </div>
+
+          <div class="panelbox">
+            <div class="empty">
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <rect x="24" y="30" width="52" height="46" rx="8" fill="#FDEBE9" stroke="#F36C62" stroke-width="2.8"/>
+                <path d="M36 52h28" stroke="#F36C62" stroke-width="3.2" stroke-linecap="round"/>
+              </svg>
+              <h3>Bu beden tükendi</h3>
+              <p>3-6 ay bedeni şu an stokta yok. Gelince sana haber verelim mi?</p>
+              <span class="btn sm">Gelince haber ver</span>
+            </div>
+          </div>
+
+          <div class="panelbox">
+            <div class="empty">
+              <svg viewBox="0 0 100 100" aria-hidden="true">
+                <rect x="22" y="26" width="56" height="52" rx="9" fill="#E7F7EF" stroke="#3FA478" stroke-width="2.8"/>
+                <path d="M34 44h32M34 56h20" stroke="#3FA478" stroke-width="3.2" stroke-linecap="round"/>
+              </svg>
+              <h3>Henüz siparişin yok</h3>
+              <p>İlk siparişini verdiğinde burada takip edebileceksin.</p>
+              <span class="btn sm">Alışverişe başla</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== GIRIS / UYELIK ===================== -->
+    <div id="s-giris" class="screen" hidden>
+      <div data-shopnav="sade"></div>
+      <div class="pad">
+        <div style="max-width:420px;margin:0 auto;display:flex;flex-direction:column;gap:16px">
+          <div class="chips" style="justify-content:center">
+            <span class="chip" data-on="1">Giriş yap</span><span class="chip">Üye ol</span>
+          </div>
+          <div class="panelbox">
+            <h3>Tekrar hoş geldin</h3>
+            <div class="form">
+              <div class="field"><span class="lb">E-posta</span><span class="inp dolu">elif@example.com</span></div>
+              <div class="field">
+                <span class="lb">Şifre</span><span class="inp">••••••••</span>
+                <span class="hint" style="text-align:right"><a href="#" style="color:var(--blue-ink)">Şifremi unuttum</a></span>
+              </div>
+              <span class="btn" style="width:100%">Giriş yap</span>
+            </div>
+          </div>
+          <div class="panelbox">
+            <h3 style="font-size:.9rem">Üye olmadan da alışveriş yapabilirsin</h3>
+            <p style="font-size:.84rem;color:var(--ink-2)">Sipariş takibi için e-postan yeterli. Üye olursan adreslerin kayıtlı kalır ve ilk siparişine %10 indirim kazanırsın.</p>
+            <span class="btn ghost sm" style="align-self:flex-start">Üye olmadan devam et</span>
+          </div>
+          <p class="note" style="justify-content:center"><span>Üye olurken <a href="#" style="color:var(--blue-ink)">KVKK aydınlatma metnini</a> onaylaman istenir.</span></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== SIPARISLERIM ===================== -->
+    <div id="s-siparislerim" class="screen" hidden>
+      <div data-shopnav="sade"></div>
+      <div class="pad stack">
+        <div class="sechead"><h2 style="font-size:1.35rem">Siparişlerim</h2><span class="more">Hesabım</span></div>
+        <div class="chips">
+          <span class="chip" data-on="1">Tümü</span><span class="chip">Devam eden</span>
+          <span class="chip">Teslim edilen</span><span class="chip">İptal / iade</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px" id="siparis-listesi"></div>
+      </div>
+    </div>
+
+    <!-- ===================== SIPARIS DETAYI ===================== -->
+    <div id="s-siparisdetay" class="screen" hidden>
+      <div data-shopnav="sade"></div>
+      <div class="pad stack">
+        <div>
+          <div class="crumb">Hesabım · Siparişlerim · #10426</div>
+          <div class="sechead" style="margin-top:4px">
+            <h2 style="font-size:1.35rem">Sipariş #10426</h2>
+            <span class="tag blue">Kargoda</span>
+          </div>
+        </div>
+
+        <div class="panelbox">
+          <h3>Nerede</h3>
+          <ol class="flow" style="margin-top:6px">
+            <li><span class="s" style="background:var(--mint-wash);color:var(--mint-ink)">✓</span><span class="b"><b>Sipariş alındı</b> · 17 Eylül, 14:32</span></li>
+            <li><span class="s" style="background:var(--mint-wash);color:var(--mint-ink)">✓</span><span class="b"><b>Ödeme onaylandı</b> · 17 Eylül, 14:33</span></li>
+            <li><span class="s" style="background:var(--mint-wash);color:var(--mint-ink)">✓</span><span class="b"><b>Hazırlandı ve kargoya verildi</b> · 18 Eylül, 09:10</span></li>
+            <li><span class="s">4</span><span class="b"><b>Dağıtımda</b> · Yurtiçi Kargo · takip no <b>YK 7734 2210</b></span></li>
+            <li><span class="s">5</span><span class="b">Teslim edildi</span></li>
+          </ol>
+          <span class="btn ghost sm" style="align-self:flex-start;margin-top:4px">Kargo takip et</span>
+        </div>
+
+        <div class="panelbox">
+          <h3>Ürünler</h3>
+          <div id="detay-kalemler"></div>
+        </div>
+
+        <div class="dsgrid">
+          <div class="panelbox">
+            <h3>Teslimat adresi</h3>
+            <p style="font-size:.86rem;color:var(--ink-2)">Elif Yıldız<br>Bahçelievler Mah. 42/7<br>Çankaya / Ankara<br>0532 •• •• 12</p>
+          </div>
+          <div class="panelbox">
+            <h3>Ödeme</h3>
+            <p style="font-size:.86rem;color:var(--ink-2)">Kredi kartı · 5528 •••• 4412<br>Tek çekim · 449,90 ₺</p>
+            <span class="btn ghost sm" style="align-self:flex-start">Faturayı indir</span>
+          </div>
+          <div class="panelbox">
+            <h3>Bir sorun mu var</h3>
+            <p style="font-size:.86rem;color:var(--ink-2)">Teslimattan sonra 14 gün içinde iade talebi açabilirsin.</p>
+            <span class="btn ghost sm" style="align-self:flex-start">İade talebi oluştur</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== ADRES DEFTERI ===================== -->
+    <div id="s-adresler" class="screen" hidden>
+      <div data-shopnav="sade"></div>
+      <div class="pad stack">
+        <div class="sechead"><h2 style="font-size:1.35rem">Adreslerim</h2><span class="btn sm">Yeni adres ekle</span></div>
+
+        <div class="dsgrid">
+          <div class="panelbox">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+              <h3>Ev <span class="tag mint" style="margin-left:5px">Varsayılan</span></h3>
+            </div>
+            <p style="font-size:.86rem;color:var(--ink-2)">Elif Yıldız<br>Bahçelievler Mah. 42/7<br>Çankaya / Ankara · 06490<br>0532 •• •• 12</p>
+            <div style="display:flex;gap:8px"><span class="btn ghost sm">Düzenle</span><span class="btn ghost sm">Sil</span></div>
+          </div>
+          <div class="panelbox">
+            <h3>İş</h3>
+            <p style="font-size:.86rem;color:var(--ink-2)">Elif Yıldız<br>Ceyhun Atuf Kansu Cad. 118, Kat 3<br>Balgat / Ankara · 06520<br>0532 •• •• 12</p>
+            <div style="display:flex;gap:8px"><span class="btn ghost sm">Düzenle</span><span class="btn ghost sm">Sil</span></div>
+          </div>
+        </div>
+
+        <div class="panelbox" style="max-width:560px">
+          <h3>Yeni adres</h3>
+          <div class="form">
+            <div class="frow iki">
+              <div class="field"><span class="lb">Adres başlığı <i>*</i></span><span class="inp">Ev, İş…</span></div>
+              <div class="field"><span class="lb">Ad soyad <i>*</i></span><span class="inp">Alıcının adı</span></div>
+            </div>
+            <div class="frow iki">
+              <div class="field"><span class="lb">İl <i>*</i></span><span class="inp sel"><span>Seç</span></span></div>
+              <div class="field"><span class="lb">İlçe <i>*</i></span><span class="inp sel"><span>Seç</span></span></div>
+            </div>
+            <div class="field"><span class="lb">Açık adres <i>*</i></span><span class="inp area">Mahalle, cadde, sokak, bina ve daire no</span></div>
+            <div class="frow iki">
+              <div class="field"><span class="lb">Posta kodu</span><span class="inp">06490</span></div>
+              <div class="field"><span class="lb">Telefon <i>*</i></span><span class="inp">05•• ••• •• ••</span><span class="hint">Kargo için gerekli</span></div>
+            </div>
+            <div class="check"><span class="bx"></span><span>Varsayılan teslimat adresim olsun</span></div>
+            <div style="display:flex;gap:9px"><span class="btn sm">Kaydet</span><span class="btn ghost sm">Vazgeç</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== IADE TALEBI ===================== -->
+    <div id="s-iade" class="screen" hidden>
+      <div data-shopnav="sade"></div>
+      <div class="pad stack">
+        <div>
+          <div class="crumb">Hesabım · Siparişlerim · #10424 · İade</div>
+          <h2 style="font-size:1.35rem;margin-top:4px">İade talebi</h2>
+          <p style="font-size:.9rem;color:var(--ink-2);margin-top:6px;max-width:60ch">
+            Teslim tarihinden itibaren 14 gün içindesin. Etiketi sökülmemiş ve yıkanmamış ürünleri iade edebilirsin.
+          </p>
+        </div>
+
+        <div class="cartlayout">
+          <div class="form">
+            <div class="panelbox">
+              <h3>Hangi ürünleri iade ediyorsun</h3>
+              <div id="iade-kalemler"></div>
+            </div>
+
+            <div class="panelbox">
+              <h3>Sebep</h3>
+              <div class="radiocards">
+                <button class="rcard" type="button" data-on="1"><span class="rd"></span><span><span class="rt">Beden uymadı</span><span class="rs">Değişim istersen not kısmına yaz, kargo bizden</span></span></button>
+                <button class="rcard" type="button"><span class="rd"></span><span><span class="rt">Ürün beklediğim gibi değil</span><span class="rs">Renk, kumaş ya da görünüm farklı</span></span></button>
+                <button class="rcard" type="button"><span class="rd"></span><span><span class="rt">Üründe kusur var</span><span class="rs">Fotoğraf eklersen daha hızlı çözeriz</span></span></button>
+                <button class="rcard" type="button"><span class="rd"></span><span><span class="rt">Vazgeçtim</span><span class="rs">Sebep belirtmene gerek yok</span></span></button>
+              </div>
+              <div class="field" style="margin-top:12px">
+                <span class="lb">Eklemek istediğin bir şey</span>
+                <span class="inp area">İsteğe bağlı</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="summary" style="position:sticky;top:12px">
+            <h3 style="font-size:.95rem">Nasıl ilerleyecek</h3>
+            <ol class="flow">
+              <li><span class="s">1</span><span class="b">Talebini oluşturursun.</span></li>
+              <li><span class="s">2</span><span class="b">Sana <b>iade kargo kodu</b> gönderiyoruz, ücret bizden.</span></li>
+              <li><span class="s">3</span><span class="b">Ürün bize ulaşınca kontrol edilir.</span></li>
+              <li><span class="s">4</span><span class="b">Onaydan sonra <b>ödemen 3-7 iş gününde</b> kartına iade edilir.</span></li>
+            </ol>
+            <div class="srow tot"><span>İade tutarı</span><span>329,90 ₺</span></div>
+            <span class="btn" style="width:100%">İade talebini gönder</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== HEDIYE LISTESI OLUSTUR ===================== -->
+    <div id="s-hediyeolustur" class="screen" hidden>
+      <div data-shopnav="sade"></div>
+      <div class="pad stack">
+        <div class="regcard">
+          <h3>Bebek hediye listesi</h3>
+          <p>İhtiyacın olan ürünleri bir listede topla, linkini yakınlarına gönder. Onlar listeden alır, aynı hediye iki kez gelmez ve kimin ne aldığını sen görürsün.</p>
+        </div>
+
+        <div class="cartlayout">
+          <div class="panelbox">
+            <h3>Liste bilgileri</h3>
+            <div class="form">
+              <div class="frow iki">
+                <div class="field"><span class="lb">Bebeğin adı</span><span class="inp dolu">Deniz</span><span class="hint">Henüz adı yoksa boş bırakabilirsin</span></div>
+                <div class="field"><span class="lb">Doğum / beklenen tarih</span><span class="inp dolu sel"><span>14 Kasım 2026</span></span></div>
+              </div>
+              <div class="field">
+                <span class="lb">Listene not</span>
+                <span class="inp dolu area">Bize katılacak minik misafirimiz için ihtiyaç listemiz. İlginiz için teşekkürler!</span>
+              </div>
+              <div class="field">
+                <span class="lb">Kimler görebilir</span>
+                <div class="radiocards iki">
+                  <button class="rcard" type="button" data-on="1"><span class="rd"></span><span><span class="rt">Linki olan herkes</span><span class="rs">Arama sonuçlarında çıkmaz</span></span></button>
+                  <button class="rcard" type="button"><span class="rd"></span><span><span class="rt">Şifreli</span><span class="rs">Belirlediğin şifreyle açılır</span></span></button>
+                </div>
+              </div>
+              <div class="check" data-on="1"><span class="bx">✓</span><span>Kimin ne aldığını bana gösterme, sürpriz kalsın</span></div>
+            </div>
+          </div>
+
+          <div class="summary" style="position:sticky;top:12px">
+            <h3 style="font-size:.95rem">Listenin linki</h3>
+            <div class="linkbox">
+              <span style="flex:1 1 120px;min-width:0;overflow-wrap:anywhere">basoftbaby.com/hediye/deniz-k9f2</span>
+              <span class="btn ghost sm">Kopyala</span>
+            </div>
+            <div class="srow"><span>Listedeki ürün</span><span>6</span></div>
+            <div class="srow"><span>Alınan</span><span style="color:var(--mint-ink);font-weight:700">2</span></div>
+            <span class="btn" style="width:100%">Ürün ekle</span>
+            <span class="btn ghost sm" style="width:100%">WhatsApp ile paylaş</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="sechead" style="margin-bottom:11px"><h2 style="font-size:1.1rem">Listendeki ürünler</h2></div>
+          <div class="reglist" id="hediye-liste-yonet"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== PAYLASILAN HEDIYE LISTESI ===================== -->
+    <div id="s-hediyepaylas" class="screen" hidden>
+      <div data-shopnav="sade"></div>
+      <div class="pad stack">
+        <div class="regcard" style="align-items:flex-start">
+          <span class="tag coral">Hediye listesi</span>
+          <h3>Deniz’in hediye listesi</h3>
+          <p>Bize katılacak minik misafirimiz için ihtiyaç listemiz. İlginiz için teşekkürler!</p>
+          <p style="font-size:.8rem;color:var(--ink-3)">Beklenen tarih: 14 Kasım 2026 · 6 üründen 2’si alındı</p>
+        </div>
+
+        <p class="note"><b>Alınan ürünler işaretli.</b><span>Aynı hediyenin iki kez gelmemesi için sen aldığında otomatik kapanır.</span></p>
+
+        <div class="reglist" id="hediye-liste-paylas"></div>
+
+        <div class="panelbox" style="max-width:520px">
+          <h3>Nasıl çalışıyor</h3>
+          <p style="font-size:.86rem;color:var(--ink-2)">
+            Listeden bir ürün seçip normal şekilde satın alıyorsun. Teslimat adresi olarak
+            listeyi oluşturan kişinin adresini seçebilirsin, adresi görmene gerek kalmaz.
+            Hediye paketi ve notun ücretsiz.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== YONETIM: URUN FORMU ===================== -->
+    <div id="s-urunform" class="screen" hidden>
+      <div class="adminlayout">
+        <div data-adminnav="Ürünler"></div>
+        <div class="main">
+          <div class="sechead">
+            <div>
+              <div class="crumb">Ürünler · Yeni ürün</div>
+              <h2 style="font-size:1.2rem;margin-top:3px">Organik Pamuk Zıbın · 3’lü Set</h2>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <span class="btn ghost sm">Taslak kaydet</span>
+              <span class="btn sm">Yayınla</span>
+            </div>
+          </div>
+
+          <div class="cartlayout">
+            <div class="form">
+              <div class="panelbox">
+                <h3>Temel bilgiler</h3>
+                <div class="form">
+                  <div class="field"><span class="lb">Ürün adı <i>*</i></span><span class="inp dolu">Organik Pamuk Zıbın · 3’lü Set</span></div>
+                  <div class="field">
+                    <span class="lb">Adres satırı</span><span class="inp dolu">basoftbaby.com/urun/<b>organik-pamuk-zibin-3lu</b></span>
+                    <span class="hint">Ürün adından otomatik üretilir, istersen değiştirirsin.</span>
+                  </div>
+                  <div class="field"><span class="lb">Açıklama</span><span class="inp dolu area">%100 organik pamuktan, dikişsiz bantlarla üretilmiş üçlü zıbın seti. Çıtçıtlı kalıbı gece alt değiştirmeyi kolaylaştırır.</span></div>
+                  <div class="frow iki">
+                    <div class="field"><span class="lb">Kategori <i>*</i></span><span class="inp dolu sel"><span>Zıbın &amp; Body</span></span></div>
+                    <div class="field"><span class="lb">KDV oranı</span><span class="inp dolu sel"><span>%10</span></span></div>
+                  </div>
+                  <div class="field">
+                    <span class="lb">Ürün etiketleri</span>
+                    <div class="chips">
+                      <span class="chip" data-on="1">%100 pamuk</span><span class="chip" data-on="1">OEKO-TEX</span>
+                      <span class="chip" data-on="1">Dikişsiz</span><span class="chip">Organik</span><span class="chip">+ ekle</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="panelbox">
+                <h3>Görseller</h3>
+                <div style="border:2px dashed var(--line);border-radius:12px;padding:22px;text-align:center;color:var(--ink-3);font-size:.85rem">
+                  Fotoğrafları buraya sürükle ya da <b style="color:var(--blue-ink)">dosya seç</b><br>
+                  <span style="font-size:.76rem">Boyutları biz küçültüyoruz, telefondan çektiğin hâliyle yükleyebilirsin</span>
+                </div>
+                <div class="thumbs" id="form-gorseller" style="margin-top:12px"></div>
+                <p class="note"><span>İlk görsel listelerde kapak olarak kullanılır, sürükleyerek sırayı değiştirebilirsin.</span></p>
+              </div>
+
+              <div class="panelbox">
+                <div class="sechead" style="margin-bottom:4px">
+                  <h3>Varyantlar</h3>
+                  <span class="btn ghost sm">Satır ekle</span>
+                </div>
+                <p style="font-size:.82rem;color:var(--ink-2)">Stok ve barkod her beden-renk kombinasyonu için ayrı tutulur.</p>
+                <div class="tablewrap" style="margin-top:10px">
+                  <table>
+                    <thead><tr><th>Beden</th><th>Renk</th><th>SKU</th><th>Barkod</th><th>Fiyat</th><th>İndirimli</th><th>Stok</th><th>Desi</th></tr></thead>
+                    <tbody id="form-varyantlar"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="panelbox">
+                <h3>Ürün bilgi etiketi</h3>
+                <p style="font-size:.82rem;color:var(--ink-2)">Bebek tekstilinde yasal olarak zorunlu, ürün sayfasında gösterilir.</p>
+                <div class="form" style="margin-top:10px">
+                  <div class="frow iki">
+                    <div class="field"><span class="lb">Kumaş içeriği <i>*</i></span><span class="inp dolu">%100 organik pamuk</span></div>
+                    <div class="field"><span class="lb">Yıkama talimatı <i>*</i></span><span class="inp dolu">30°C hassas, çamaşır suyu kullanmayın</span></div>
+                  </div>
+                  <div class="frow iki">
+                    <div class="field"><span class="lb">Üretici / ithalatçı <i>*</i></span><span class="inp dolu">BASoftBaby · Ankara</span></div>
+                    <div class="field"><span class="lb">Menşe</span><span class="inp dolu">Türkiye</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:12px;position:sticky;top:12px">
+              <div class="panelbox">
+                <h3 style="font-size:.9rem">Durum</h3>
+                <div class="radiocards">
+                  <button class="rcard" type="button" data-on="1"><span class="rd"></span><span><span class="rt">Yayında</span><span class="rs">Sitede görünür</span></span></button>
+                  <button class="rcard" type="button"><span class="rd"></span><span><span class="rt">Taslak</span><span class="rs">Sadece sen görürsün</span></span></button>
+                </div>
+              </div>
+              <div class="panelbox">
+                <h3 style="font-size:.9rem">Özet</h3>
+                <div class="srow"><span>Varyant</span><span>5</span></div>
+                <div class="srow"><span>Toplam stok</span><span>52</span></div>
+                <div class="srow"><span>Tükenen beden</span><span style="color:var(--coral-ink);font-weight:700">1</span></div>
+                <div class="srow"><span>Görsel</span><span>4</span></div>
+              </div>
+              <div class="panelbox">
+                <h3 style="font-size:.9rem">Google’da görünüm</h3>
+                <p style="font-size:.78rem;color:var(--blue-ink);line-height:1.35">basoftbaby.com › urun › organik-pamuk-zibin</p>
+                <p style="font-size:.86rem;font-weight:700;line-height:1.3">Organik Pamuk Zıbın 3’lü Set | BASoftBaby</p>
+                <p style="font-size:.78rem;color:var(--ink-2)">%100 organik pamuktan, dikişsiz bantlarla üretilmiş üçlü zıbın seti…</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== YONETIM: KAMPANYA ===================== -->
+    <div id="s-kampanyaform" class="screen" hidden>
+      <div class="adminlayout">
+        <div data-adminnav="Kampanyalar"></div>
+        <div class="main">
+          <div class="sechead">
+            <div>
+              <div class="crumb">Kampanyalar · Yeni kampanya</div>
+              <h2 style="font-size:1.2rem;margin-top:3px">Kampanya kur</h2>
+            </div>
+            <span class="btn sm">Kampanyayı başlat</span>
+          </div>
+
+          <div class="cartlayout">
+            <div class="form">
+              <div class="panelbox">
+                <h3>Kampanya adı</h3>
+                <div class="field"><span class="inp dolu">Sonbahar zıbın indirimi</span><span class="hint">Müşteri bu adı sepette görür, anlaşılır olsun.</span></div>
+              </div>
+
+              <div class="panelbox">
+                <h3>Koşul · ne zaman geçerli</h3>
+                <div class="form">
+                  <div class="field"><span class="lb">Kural</span><span class="inp dolu sel"><span>Belirli kategoriden ürün alındığında</span></span></div>
+                  <div class="frow iki">
+                    <div class="field"><span class="lb">Kategori</span><span class="inp dolu sel"><span>Zıbın &amp; Body</span></span></div>
+                    <div class="field"><span class="lb">En az adet</span><span class="inp dolu">1</span></div>
+                  </div>
+                  <span class="hint">Diğer kurallar: sepet tutarı barajı, kupon kodu girilmesi, ilk sipariş olması, belirli ürünler.</span>
+                </div>
+              </div>
+
+              <div class="panelbox">
+                <h3>Etki · ne olacak</h3>
+                <div class="frow iki">
+                  <div class="field"><span class="lb">İndirim tipi</span><span class="inp dolu sel"><span>Yüzde indirim</span></span></div>
+                  <div class="field"><span class="lb">Değer</span><span class="inp dolu">20 %</span></div>
+                </div>
+              </div>
+
+              <div class="panelbox">
+                <h3>Tarih</h3>
+                <div class="frow iki">
+                  <div class="field"><span class="lb">Başlangıç</span><span class="inp dolu sel"><span>20 Eylül 2026, 00:00</span></span></div>
+                  <div class="field"><span class="lb">Bitiş</span><span class="inp dolu sel"><span>5 Ekim 2026, 23:59</span></span></div>
+                </div>
+                <p class="note" style="margin-top:9px"><span>Süresi dolunca kampanya kendiliğinden kapanır, elle kapatman gerekmez.</span></p>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:12px;position:sticky;top:12px">
+              <div class="panelbox">
+                <h3 style="font-size:.9rem">Önizleme</h3>
+                <p style="font-size:.82rem;color:var(--ink-2)">600 ₺’lik zıbın sepetinde:</p>
+                <div class="srow"><span>Ara toplam</span><span>600,00 ₺</span></div>
+                <div class="srow disc"><span>Bu kampanya</span><span>−120,00 ₺</span></div>
+                <div class="srow tot"><span>Ödenecek</span><span>480,00 ₺</span></div>
+              </div>
+              <div class="panelbox" style="background:var(--mint-wash);border-color:transparent">
+                <h3 style="font-size:.9rem;color:var(--mint-ink)">Çakışma kuralı</h3>
+                <p style="font-size:.82rem;color:var(--ink-2)">
+                  Aynı sepete başka bir kampanya da uyarsa <b>indirimler üst üste binmez</b>,
+                  müşteriye en çok kazandıran tek kampanya uygulanır. Bu kural tüm mağaza için geçerli.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== YONETIM: KUPONLAR ===================== -->
+    <div id="s-kuponform" class="screen" hidden>
+      <div class="adminlayout">
+        <div data-adminnav="Kuponlar"></div>
+        <div class="main">
+          <div class="sechead">
+            <h2 style="font-size:1.2rem">Kuponlar</h2>
+            <span class="btn sm">Yeni kupon</span>
+          </div>
+
+          <div class="tablewrap">
+            <table>
+              <thead><tr><th>Kod</th><th>İndirim</th><th>Koşul</th><th>Kullanım</th><th>Bitiş</th><th>Durum</th></tr></thead>
+              <tbody>
+                <tr><td><b>ILKALISVERIS</b></td><td class="num">%10</td><td>İlk sipariş</td><td class="num">248 / sınırsız</td><td class="num">—</td><td><span class="tag mint">Aktif</span></td></tr>
+                <tr><td><b>HOSGELDIN50</b></td><td class="num">50 ₺</td><td>300 ₺ üzeri</td><td class="num">96 / 500</td><td class="num">31.12.2026</td><td><span class="tag mint">Aktif</span></td></tr>
+                <tr><td><b>KARGOBEDAVA</b></td><td class="num">Ücretsiz kargo</td><td>Tüm sepetler</td><td class="num">412 / 1000</td><td class="num">30.09.2026</td><td><span class="tag mint">Aktif</span></td></tr>
+                <tr><td><b>ANNELERGUNU</b></td><td class="num">%15</td><td>Tüm sepetler</td><td class="num">1.204 / 1.204</td><td class="num">12.05.2026</td><td><span class="tag sand">Doldu</span></td></tr>
+                <tr><td><b>YAZ2026</b></td><td class="num">%25</td><td>Yaz kategorisi</td><td class="num">830 / 1000</td><td class="num">31.08.2026</td><td><span class="tag" style="background:var(--line-soft);color:var(--ink-3)">Süresi doldu</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="panelbox" style="max-width:560px">
+            <h3>Yeni kupon</h3>
+            <div class="form">
+              <div class="frow iki">
+                <div class="field"><span class="lb">Kupon kodu <i>*</i></span><span class="inp dolu">SONBAHAR20</span><span class="hint">Büyük harf, boşluksuz</span></div>
+                <div class="field"><span class="lb">İndirim</span><span class="inp dolu sel"><span>Yüzde · 20</span></span></div>
+              </div>
+              <div class="frow iki">
+                <div class="field"><span class="lb">Toplam kullanım limiti</span><span class="inp dolu">500</span></div>
+                <div class="field"><span class="lb">Müşteri başına</span><span class="inp dolu">1</span></div>
+              </div>
+              <div class="field"><span class="lb">Minimum sepet tutarı</span><span class="inp dolu">250 ₺</span></div>
+              <div class="check" data-on="1"><span class="bx">✓</span><span>İndirimdeki ürünlerde geçerli olmasın</span></div>
+              <span class="btn sm" style="align-self:flex-start">Kuponu oluştur</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== YONETIM: IADELER ===================== -->
+    <div id="s-iadeyonetim" class="screen" hidden>
+      <div class="adminlayout">
+        <div data-adminnav="İadeler"></div>
+        <div class="main">
+          <div class="sechead">
+            <h2 style="font-size:1.2rem">İade talepleri</h2>
+            <span class="btn ghost sm">Tümünü dışa aktar</span>
+          </div>
+
+          <div class="stats">
+            <div class="stat"><span class="k">Bekleyen</span><span class="v">3</span><span class="c warn">yanıt bekliyor</span></div>
+            <div class="stat"><span class="k">Kargoda</span><span class="v">2</span><span class="c">yolda</span></div>
+            <div class="stat"><span class="k">Bu ay iade</span><span class="v">%4,2</span><span class="c">sektör ortalaması altı</span></div>
+            <div class="stat"><span class="k">En sık sebep</span><span class="v" style="font-size:1rem">Beden</span><span class="c">%61</span></div>
+          </div>
+
+          <div class="tablewrap">
+            <table>
+              <thead><tr><th>Talep</th><th>Sipariş</th><th>Müşteri</th><th>Ürün</th><th>Sebep</th><th>Tutar</th><th>Durum</th><th></th></tr></thead>
+              <tbody>
+                <tr><td class="num">#İ-204</td><td class="num">#10424</td><td>Büşra T.</td><td>Kadife şapka</td><td>Beden uymadı</td><td class="num">189,90 ₺</td><td><span class="tag sand">Bekliyor</span></td><td><span class="btn sm">Onayla</span></td></tr>
+                <tr><td class="num">#İ-203</td><td class="num">#10419</td><td>Seda M.</td><td>Fitilli tulum</td><td>Kusurlu</td><td class="num">429,90 ₺</td><td><span class="tag sand">Bekliyor</span></td><td><span class="btn sm">İncele</span></td></tr>
+                <tr><td class="num">#İ-202</td><td class="num">#10411</td><td>Gizem A.</td><td>Müslin battaniye</td><td>Vazgeçti</td><td class="num">379,90 ₺</td><td><span class="tag blue">Kargoda</span></td><td><span class="btn ghost sm">Takip</span></td></tr>
+                <tr><td class="num">#İ-201</td><td class="num">#10402</td><td>Elif Y.</td><td>Bambu patik</td><td>Beden uymadı</td><td class="num">159,90 ₺</td><td><span class="tag mint">İade edildi</span></td><td><span class="btn ghost sm">Detay</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="note"><span>Onayladığında müşteriye iade kargo kodu otomatik gider, ürün ulaşınca ödeme iadesi tek tuşla yapılır.</span></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== YASAL SAYFA ===================== -->
+    <div id="s-yasal" class="screen" hidden>
+      <div data-shopnav="sade"></div>
+      <div class="pad stack">
+        <div>
+          <div class="crumb">Ana sayfa · Mesafeli satış sözleşmesi</div>
+          <h2 style="font-size:1.4rem;margin-top:4px">Mesafeli satış sözleşmesi</h2>
+          <p style="font-size:.82rem;color:var(--ink-3);margin-top:5px">Son güncelleme: 19 Eylül 2026</p>
+        </div>
+
+        <div class="toc">
+          <span>Taraflar</span><span>Konu</span><span>Ürün bilgileri</span><span>Cayma hakkı</span>
+          <span>Teslimat</span><span>Uyuşmazlık</span>
+        </div>
+
+        <div class="legal">
+          <h3>1. Taraflar</h3>
+          <p>İşbu sözleşme, bir tarafta <b>BASoftBaby</b> (Satıcı) ile diğer tarafta siparişi veren alıcı arasında, aşağıda belirtilen hüküm ve şartlar çerçevesinde elektronik ortamda kurulmuştur.</p>
+
+          <h3>2. Sözleşmenin konusu</h3>
+          <p>Alıcının, Satıcıya ait internet sitesinden elektronik ortamda siparişini verdiği ürünlerin satışı ve teslimi ile ilgili olarak 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği hükümleri gereğince tarafların hak ve yükümlülüklerinin belirlenmesidir.</p>
+
+          <h3>3. Cayma hakkı</h3>
+          <p>Alıcı, ürünü teslim aldığı tarihten itibaren <b>14 gün</b> içinde hiçbir gerekçe göstermeksizin ve cezai şart ödemeksizin sözleşmeden cayma hakkına sahiptir. Cayma hakkının kullanılabilmesi için ürünün:</p>
+          <ol>
+            <li>Kullanılmamış ve yıkanmamış olması,</li>
+            <li>Orijinal etiketlerinin sökülmemiş olması,</li>
+            <li>Ambalajının ürünü koruyacak şekilde muhafaza edilmiş olması gerekir.</li>
+          </ol>
+          <p>Hijyen gerekçesiyle emzik, biberon ve iç giyim ürünleri, ambalajı açılmış olması hâlinde cayma hakkı kapsamı dışındadır.</p>
+
+          <h3>4. Teslimat</h3>
+          <p>Ürünler, sipariş onayını takiben en geç 30 gün içinde alıcının bildirdiği adrese teslim edilir. Uygulamada siparişler 1-2 iş günü içinde kargoya verilmektedir.</p>
+
+          <h3>5. Uyuşmazlık durumunda</h3>
+          <p>Uyuşmazlıklarda Ticaret Bakanlığınca ilan edilen parasal sınırlar dâhilinde Tüketici Hakem Heyetleri, bu sınırı aşan durumlarda Tüketici Mahkemeleri yetkilidir.</p>
+        </div>
+
+        <p class="note"><b>Not:</b><span>Bu bir tasarım şablonu, hukuki metin değil. Gerçek metinleri bir avukata hazırlatman gerekiyor; ben sadece nerede duracaklarını ve nasıl görüneceklerini gösteriyorum. Aynı şablon KVKK, çerez politikası ve iade koşulları için de kullanılacak.</span></p>
+      </div>
+    </div>
+
+    <!-- ===================== SSS ===================== -->
+    <div id="s-sss" class="screen" hidden>
+      <div data-shopnav="sade"></div>
+      <div class="pad stack">
+        <div>
+          <h2 style="font-size:1.4rem">Sık sorulan sorular</h2>
+          <p style="color:var(--ink-2);font-size:.92rem;margin-top:6px">Aradığını bulamazsan WhatsApp’tan yazabilirsin, hafta içi 09:00-18:00 arası yanıtlıyoruz.</p>
+        </div>
+
+        <div class="chips">
+          <span class="chip" data-on="1">Tümü</span><span class="chip">Kargo</span>
+          <span class="chip">Beden</span><span class="chip">İade</span><span class="chip">Ödeme</span>
+        </div>
+
+        <div class="faq">
+          <div><span class="q"><span>Siparişim ne zaman kargoya verilir?</span><span>−</span></span>
+            <span class="a">14:00’e kadar verilen siparişler aynı gün kargoya verilir. Sonrasındakiler ertesi iş günü çıkar. Kargoya verildiğinde takip numaran e-posta ve SMS ile gelir.</span></div>
+          <div><span class="q"><span>Kargo ücreti ne kadar?</span><span>+</span></span></div>
+          <div><span class="q"><span>Bedeni nasıl seçmeliyim?</span><span>+</span></span></div>
+          <div><span class="q"><span>İade nasıl yapılıyor, kargo ücretini kim ödüyor?</span><span>+</span></span></div>
+          <div><span class="q"><span>Hediye paketi ve not ekleyebilir miyim?</span><span>+</span></span></div>
+          <div><span class="q"><span>Taksitli ödeme var mı?</span><span>+</span></span></div>
+          <div><span class="q"><span>Ürünler hangi kumaştan, sertifikası var mı?</span><span>+</span></span></div>
+          <div><span class="q"><span>Hediye listesi nasıl çalışıyor?</span><span>+</span></span></div>
+        </div>
+
+        <div class="panelbox" style="max-width:480px">
+          <h3>Hâlâ cevabını bulamadın mı</h3>
+          <div style="display:flex;gap:9px;flex-wrap:wrap">
+            <span class="btn mint sm">WhatsApp’tan yaz</span>
+            <span class="btn ghost sm">E-posta gönder</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== 404 ===================== -->
+    <div id="s-dortyuzdort" class="screen" hidden>
+      <div data-shopnav="sade"></div>
+      <div class="fourof">
+        <svg viewBox="0 0 200 160" style="width:200px;height:auto" aria-hidden="true">
+          <ellipse cx="100" cy="142" rx="56" ry="9" fill="#F3C265" opacity=".2"/>
+          <path d="M66 128 A 12 12 0 0 1 63 106 A 14 14 0 0 1 86 101 A 18 18 0 0 1 118 100 A 13 13 0 0 1 135 108 A 11 11 0 0 1 136 128 A 16 16 0 0 1 108 131 A 17 17 0 0 1 83 130 A 11 11 0 0 1 66 128 Z" fill="#FAE0AE" stroke="#D9A85B" stroke-width="2.4" stroke-linejoin="round"/>
+          <g stroke="#B37A42" stroke-width="2.4" stroke-linejoin="round">
+            <circle cx="86" cy="66" r="7.5" fill="#EDA85C"/>
+            <circle cx="114" cy="66" r="7.5" fill="#EDA85C"/>
+            <circle cx="100" cy="80" r="18" fill="#F2B76B"/>
+          </g>
+          <ellipse cx="100" cy="87" rx="10" ry="7.4" fill="#FBE0BC"/>
+          <ellipse cx="100" cy="83" rx="3.1" ry="2.3" fill="#8A5B2E"/>
+          <path d="M91 74.5 l7 4 M109 74.5 l-7 4" stroke="#8A5B2E" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+          <path d="M94 93 q 6 -4 12 0" fill="none" stroke="#8A5B2E" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+        <span class="big">404</span>
+        <h2 style="font-size:1.35rem">Bu sayfayı bulamadık</h2>
+        <p style="color:var(--ink-2);font-size:.93rem;max-width:40ch">Aradığın sayfa taşınmış ya da hiç var olmamış olabilir. Ayıcık da şaşırdı.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+          <span class="btn">Ana sayfaya dön</span>
+          <span class="btn ghost">Ürünlere göz at</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== EPOSTA SABLONLARI ===================== -->
+    <div id="s-epostalar" class="screen" hidden>
+      <div class="pad stack">
+        <div>
+          <h2 style="font-size:1.35rem">E-posta şablonları</h2>
+          <p style="color:var(--ink-2);font-size:.92rem;margin-top:6px;max-width:64ch">
+            Müşteriye otomatik giden e-postalar. Sitenin devamı gibi görünmeleri gerekiyor,
+            çünkü çoğu müşteri mağazayı en son burada görüyor.
+          </p>
+        </div>
+
+        <div class="mailgrid">
+          <div class="mail">
+            <div class="mh"><b>Sipariş onayı</b> · ödeme alınır alınmaz</div>
+            <div class="mb">
+              <div data-maillogo></div>
+              <h3>Siparişin bize ulaştı</h3>
+              <p>Merhaba Elif, <b>#10428</b> numaralı siparişini aldık. Bugün paketleyip kargoya veriyoruz.</p>
+              <div style="width:100%;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:11px 0;display:flex;flex-direction:column;gap:7px">
+                <div class="srow"><span>Organik Pamuk Zıbın · 3-6 ay · Mint × 2</span><span>439,80 ₺</span></div>
+                <div class="srow"><span>Müslin Battaniye · Mavi</span><span>379,90 ₺</span></div>
+                <div class="srow disc"><span>İndirimler</span><span>−191,97 ₺</span></div>
+                <div class="srow" style="font-weight:700;color:var(--ink)"><span>Toplam</span><span>827,73 ₺</span></div>
+              </div>
+              <p style="font-size:.8rem">Hediye notun el yazısıyla yazılıp paketin içine konulacak.</p>
+              <span class="btn sm">Siparişimi görüntüle</span>
+            </div>
+          </div>
+
+          <div class="mail">
+            <div class="mh"><b>Kargoya verildi</b> · etiket basıldığında</div>
+            <div class="mb">
+              <div data-maillogo></div>
+              <h3>Siparişin yola çıktı</h3>
+              <p>Merhaba Elif, <b>#10428</b> numaralı siparişin Yurtiçi Kargo’ya teslim edildi.</p>
+              <div style="width:100%;background:var(--mint-wash);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:3px">
+                <span style="font-size:.76rem;color:var(--ink-3);font-weight:700">TAKİP NUMARASI</span>
+                <span style="font-family:'Baloo 2',sans-serif;font-weight:700;font-size:1.1rem">YK 7734 2210</span>
+                <span style="font-size:.78rem;color:var(--ink-2)">Tahmini teslimat: 1-2 iş günü</span>
+              </div>
+              <span class="btn sm">Kargomu takip et</span>
+            </div>
+          </div>
+
+          <div class="mail">
+            <div class="mh"><b>Sepet hatırlatma</b> · 4 saat sonra, otomatik</div>
+            <div class="mb">
+              <div data-maillogo></div>
+              <h3>Sepetinde bir şey unuttun</h3>
+              <p>Merhaba, beğendiğin ürünler sepetinde bekliyor. Stoklar sınırlı, bazı bedenler tükenmek üzere.</p>
+              <div id="mail-sepet" style="width:100%"></div>
+              <p style="font-size:.8rem;color:var(--ink-2)">750 ₺ üzeri siparişlerde kargo bedava.</p>
+              <span class="btn sm">Sepetime dön</span>
+              <p style="font-size:.72rem;color:var(--ink-3)">Bu e-postaları almak istemiyorsan abonelikten çıkabilirsin.</p>
+            </div>
+          </div>
+        </div>
+
+        <p class="note"><span>Ayrıca şu şablonlar var: teslim edildi, iade onayı, iade tamamlandı, “gelince haber ver” bildirimi, şifre sıfırlama ve hediye listesi paylaşımı.</span></p>
+      </div>
+    </div>
+
+    <!-- ===================== TASARIM SISTEMI ===================== -->
+    <div id="s-sistem" class="screen" hidden>
+      <div class="pad stack">
+        <div>
+          <h2 style="font-size:1.3rem">Renk ve yazı sistemi</h2>
+          <p style="color:var(--ink-2);font-size:.93rem;margin-top:6px;max-width:64ch">
+            Renkleri doğrudan logondan aldım. Logodaki pastel tonlar büyük yüzeylerde ve çizimlerde kullanılıyor;
+            yazı ve düğmelerde ise aynı rengin okunabilir koyu tonu var, çünkü pastel mercan üzerine beyaz yazı telefonda okunmuyor.
+          </p>
+        </div>
+
+        <div class="dsgrid">
+          <div class="panelbox">
+            <h3>Marka renkleri</h3>
+            <div class="swatchrow">
+              <div class="swline"><span class="b" style="background:#7BADD6"></span><span><span class="n">Mavi · BA</span><br><span class="h">#7BADD6</span></span></div>
+              <div class="swline"><span class="b" style="background:#77D9AB"></span><span><span class="n">Nane · soft</span><br><span class="h">#77D9AB</span></span></div>
+              <div class="swline"><span class="b" style="background:#F36C62"></span><span><span class="n">Mercan · baby</span><br><span class="h">#F36C62</span></span></div>
+              <div class="swline"><span class="b" style="background:#F3C265"></span><span><span class="n">Bulut sarısı</span><br><span class="h">#F3C265</span></span></div>
+              <div class="swline"><span class="b" style="background:#F2B76B"></span><span><span class="n">Ayıcık</span><br><span class="h">#F2B76B</span></span></div>
+              <div class="swline"><span class="b" style="background:#FCF5E7;box-shadow:inset 0 0 0 1px #E8D3AC"></span><span><span class="n">Krem zemin</span><br><span class="h">#FCF5E7</span></span></div>
+            </div>
+          </div>
+
+          <div class="panelbox">
+            <h3>Yazıda kullanılan koyu tonlar</h3>
+            <div class="swatchrow">
+              <div class="swline"><span class="b" style="background:#2F6E9E"></span><span><span class="n">Mavi · bağlantı</span><br><span class="h">#2F6E9E</span></span></div>
+              <div class="swline"><span class="b" style="background:#2C8760"></span><span><span class="n">Nane · stokta, indirim</span><br><span class="h">#2C8760</span></span></div>
+              <div class="swline"><span class="b" style="background:#C2433A"></span><span><span class="n">Mercan · fiyat, uyarı</span><br><span class="h">#C2433A</span></span></div>
+              <div class="swline"><span class="b" style="background:#332F2A"></span><span><span class="n">Ana metin</span><br><span class="h">#332F2A</span></span></div>
+              <div class="swline"><span class="b" style="background:#6C655C"></span><span><span class="n">İkincil metin</span><br><span class="h">#6C655C</span></span></div>
+            </div>
+          </div>
+
+          <div class="panelbox">
+            <h3>Yazı tipleri</h3>
+            <div class="typerow">
+              <div>
+                <div class="ex disp" style="font-size:1.7rem">Minik bedenlere</div>
+                <div class="cap">Baloo 2 · başlıklar, fiyat, logo. Yuvarlak hatları logonun yazısıyla aynı karakterde.</div>
+              </div>
+              <div>
+                <div class="ex" style="font-size:1rem">%100 organik pamuk, dikişsiz bantlar ve kolay çıtçıtlı kalıplar.</div>
+                <div class="cap">Nunito Sans · gövde metni, düğmeler, tablolar. Türkçe karakterleri eksiksiz.</div>
+              </div>
+              <div>
+                <div class="ex" style="font-size:1rem;font-variant-numeric:tabular-nums">219,90 TL · 1.019,70 TL · #10428</div>
+                <div class="cap">Rakamlar sabit genişlikte, böylece fiyatlar ve tablo sütunları alt alta hizalı durur.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panelbox">
+            <h3>Düğmeler ve etiketler</h3>
+            <div style="display:flex;flex-wrap:wrap;gap:9px;align-items:center">
+              <span class="btn sm">Sepete ekle</span>
+              <span class="btn ghost sm">Beden rehberi</span>
+              <span class="btn mint sm">Etiket bas</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <span class="tag mint">Stokta</span>
+              <span class="tag coral">%24 indirim</span>
+              <span class="tag sand">Son 3 adet</span>
+              <span class="tag blue">OEKO-TEX</span>
+            </div>
+            <p style="font-size:.82rem;color:var(--ink-2)">
+              Mercan tek bir işi yapıyor: satın almaya götüren düğme. Nane olumlu durum, sarı dikkat, mavi bilgi.
+              Böylece müşteri sayfada nereye basacağını düşünmüyor.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- gecici urun gorselleri ----
+  var ART = {
+    zibin: '<svg viewBox="0 0 100 100" aria-hidden="true">'
+      + '<path d="M34 31 L21 36a4.5 4.5 0 0 0-2.4 5.6l2.6 6.4a3.4 3.4 0 0 0 4.5 1.8L36 47Z" fill="C2" stroke="C3" stroke-width="1.7" stroke-linejoin="round"/>'
+      + '<path d="M66 31 L79 36a4.5 4.5 0 0 1 2.4 5.6l-2.6 6.4a3.4 3.4 0 0 1-4.5 1.8L64 47Z" fill="C2" stroke="C3" stroke-width="1.7" stroke-linejoin="round"/>'
+      + '<path d="M36 29h28a6 6 0 0 1 6 6v29a8 8 0 0 1-5.2 7.5l-11.4 4.2a4 4 0 0 1-2.8 0l-11.4-4.2A8 8 0 0 1 30 64V35a6 6 0 0 1 6-6Z" fill="C2" stroke="C3" stroke-width="1.9" stroke-linejoin="round"/>'
+      + '<path d="M38 30 Q50 39.5 62 30" fill="none" stroke="C1" stroke-width="4.6" stroke-linecap="round"/>'
+      + '<circle cx="43.6" cy="46.5" r="3.5" fill="C1"/><circle cx="56.4" cy="46.5" r="3.5" fill="C1"/>'
+      + '<circle cx="50" cy="52.5" r="8.4" fill="C1"/><ellipse cx="50" cy="55" rx="4" ry="3.1" fill="C2"/>'
+      + '<circle cx="46.8" cy="50" r="1.15" fill="C3"/><circle cx="53.2" cy="50" r="1.15" fill="C3"/>'
+      + '<circle cx="44" cy="69.6" r="1.9" fill="C1"/><circle cx="50" cy="71.2" r="1.9" fill="C1"/><circle cx="56" cy="69.6" r="1.9" fill="C1"/>'
+      + '</svg>',
+    tulum: '<svg viewBox="0 0 100 100" aria-hidden="true">'
+      + '<path d="M35 27 L24 32a4 4 0 0 0-2.1 5l2.3 5.6a3 3 0 0 0 4 1.6L37 41Z" fill="C2" stroke="C3" stroke-width="1.7" stroke-linejoin="round"/>'
+      + '<path d="M65 27 L76 32a4 4 0 0 1 2.1 5l-2.3 5.6a3 3 0 0 1-4 1.6L63 41Z" fill="C2" stroke="C3" stroke-width="1.7" stroke-linejoin="round"/>'
+      + '<path d="M37 25h26a7 7 0 0 1 7 7v20a6 6 0 0 1-4.4 5.8l-1.2 15.6a5 5 0 0 1-5 4.6h-5.6a4.4 4.4 0 0 1-4.4-4.2l-.9-13.4-.9 13.4a4.4 4.4 0 0 1-4.4 4.2h-5.6a5 5 0 0 1-5-4.6l-1.2-15.6A6 6 0 0 1 30 52V32a7 7 0 0 1 7-7Z" fill="C2" stroke="C3" stroke-width="1.9" stroke-linejoin="round"/>'
+      + '<rect x="32.6" y="69" width="14.4" height="8.4" rx="4.2" fill="C1"/>'
+      + '<rect x="53" y="69" width="14.4" height="8.4" rx="4.2" fill="C1"/>'
+      + '<path d="M50 29v27" stroke="C1" stroke-width="2.2" stroke-linecap="round" fill="none"/>'
+      + '<circle cx="50" cy="28.5" r="2.7" fill="C1"/>'
+      + '<path d="M41.5 35v15M58.5 35v15" stroke="C1" stroke-width="1.5" stroke-linecap="round" fill="none" opacity=".65"/>'
+      + '</svg>',
+    battaniye: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect x="20" y="24" width="60" height="54" rx="10" fill="C2"/><path d="M20 62h60v6a10 10 0 0 1-10 10H30a10 10 0 0 1-10-10Z" fill="C1"/><path d="M30 36h16M30 46h24M54 36h16" stroke="C3" stroke-width="3" stroke-linecap="round" fill="none"/></svg>',
+    patik: '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M22 40h16a4 4 0 0 1 4 4v10c0 6-4 10-11 10H26a6 6 0 0 1-6-6V44a4 4 0 0 1 2-4Z" fill="C2"/><path d="M20 58h22v4a6 6 0 0 1-6 6H26a6 6 0 0 1-6-6Z" fill="C1"/><path d="M58 40h16a4 4 0 0 1 4 4v10c0 6-4 10-11 10H62a6 6 0 0 1-6-6V44a4 4 0 0 1 2-4Z" fill="C2"/><path d="M56 58h22v4a6 6 0 0 1-6 6H62a6 6 0 0 1-6-6Z" fill="C1"/><path d="M26 44h10M62 44h10" stroke="C3" stroke-width="2.5" stroke-linecap="round" fill="none"/></svg>',
+    sapka: '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M26 58a24 24 0 0 1 48 0Z" fill="C2"/><rect x="18" y="56" width="64" height="11" rx="5.5" fill="C1"/><circle cx="50" cy="30" r="7" fill="C3"/><path d="M50 37v-2" stroke="C3" stroke-width="3" stroke-linecap="round"/></svg>',
+    onluk: '<svg viewBox="0 0 100 100" aria-hidden="true">'
+      + '<path d="M50 24c8.5 0 12.5 3.6 12.5 3.6L69 31a19.5 19.5 0 0 1 7.5 16.5C76.5 62.5 64.6 73.5 50 73.5S23.5 62.5 23.5 47.5A19.5 19.5 0 0 1 31 31l6.5-3.4S41.5 24 50 24Z" fill="C2" stroke="C3" stroke-width="1.9" stroke-linejoin="round"/>'
+      + '<path d="M37.6 26.8a12.4 12.4 0 0 0 24.8 0" fill="C0" stroke="C3" stroke-width="1.9" stroke-linejoin="round"/>'
+      + '<path d="M33 60q17 7 34 0" fill="none" stroke="C1" stroke-width="3.2" stroke-linecap="round"/>'
+      + '<circle cx="44.5" cy="45" r="3" fill="C1"/><circle cx="55.5" cy="45" r="3" fill="C1"/>'
+      + '<path d="M44 52q6 4.5 12 0" fill="none" stroke="C1" stroke-width="2.4" stroke-linecap="round"/>'
+      + '</svg>'
+  };
+  function art(kind, c1, c2, c3, c0){
+    return ART[kind].replace(/C0/g, c0 || '#FFFFFF')
+                    .replace(/C1/g, c1).replace(/C2/g, c2).replace(/C3/g, c3);
+  }
+
+  var PAL = {
+    mint:   {bg:'#E6F7EE', c1:'#8FD9B7', c2:'#B9E9D2', c3:'#3FA478'},
+    krem:   {bg:'#FBF3E4', c1:'#EBD3A8', c2:'#F7E7C9', c3:'#B08A45'},
+    mercan: {bg:'#FDEBE9', c1:'#F5A79E', c2:'#FAC8C2', c3:'#C2433A'},
+    mavi:   {bg:'#EAF3FA', c1:'#A9CCE6', c2:'#CBE2F2', c3:'#3F82B4'},
+    sari:   {bg:'#FDF3DD', c1:'#F2CE85', c2:'#F9E6BC', c3:'#8F6410'}
+  };
+
+  var URUNLER = [
+    {ad:"Ayıcıklı organik body",    kind:"zibin",     pal:"mercan", fiyat:"249,90 ₺", eski:"",          rozet:["coral","Çok satan"], meta:"Kısa kollu, çıtçıtlı",  puan:"4,8", yorum:126, renkler:["mercan","krem","mint","mavi","sari"]},
+    {ad:"Fitilli pamuk tulum",      kind:"tulum",     pal:"mint",   fiyat:"429,90 ₺", eski:"499,90 ₺", rozet:["mint","İndirimde"],  meta:"Fermuarlı, ayaklı",      puan:"4,9", yorum:84,  renkler:["mint","krem","mavi"]},
+    {ad:"Müslin battaniye 120×120", kind:"battaniye", pal:"mavi",   fiyat:"379,90 ₺", eski:"",          rozet:["",""],                meta:"Çift kat, 4 mevsim",     puan:"4,7", yorum:203, renkler:["mavi","mint","krem","sari"]},
+    {ad:"Bambu patik · 2'li",       kind:"patik",     pal:"sari",   fiyat:"159,90 ₺", eski:"199,90 ₺", rozet:["coral","%20"],        meta:"Kaydırmaz tabanlı",      puan:"4,6", yorum:51,  renkler:["sari","krem","mercan"]},
+    {ad:"Kadife şapka",             kind:"sapka",     pal:"krem",   fiyat:"189,90 ₺", eski:"",          rozet:["sand","Son 3 adet"],  meta:"Kulak korumalı",         puan:"4,9", yorum:37,  renkler:["krem","mint","mavi","sari"]},
+    {ad:"Organik zıbın · 3'lü set", kind:"zibin",     pal:"mint",   fiyat:"219,90 ₺", eski:"289,90 ₺", rozet:["coral","%24"],        meta:"Uzun kollu, dikişsiz",   puan:"4,8", yorum:168, renkler:["mint","krem","mercan","mavi","sari"]},
+    {ad:"Pamuklu önlük · 3'lü",     kind:"onluk",     pal:"mercan", fiyat:"139,90 ₺", eski:"",          rozet:["mint","Yeni"],        meta:"Su geçirmez arkalı",     puan:"4,5", yorum:29,  renkler:["mercan","sari","mint"]},
+    {ad:"Uyku tulumu · 2.5 TOG",    kind:"tulum",     pal:"mavi",   fiyat:"629,90 ₺", eski:"749,90 ₺", rozet:["coral","%16"],        meta:"Kolsuz, fermuarlı",      puan:"4,9", yorum:92,  renkler:["mavi","krem","mint"]}
+  ];
+
+  function kart(u, i){
+    var p = PAL[u.pal];
+    var rozet = u.rozet[0] ? '<span class="tag '+u.rozet[0]+'">'+u.rozet[1]+'</span>' : '';
+    var sw = u.renkler.map(function(r){
+      return '<span class="sw" style="background:'+PAL[r].c1+'"></span>';
+    }).join('');
+    return '<article class="card">'
+      + '<div class="ph" style="background:'+p.bg+'">'
+      +   '<span class="dots" style="border-color:'+p.c1+'"></span>'
+      +   rozet
+      +   '<button class="fav" type="button" aria-label="'+u.ad+' favorilere ekle" aria-pressed="false">&#9825;</button>'
+      +   art(u.kind,p.c1,p.c2,p.c3,p.bg)
+      + '</div>'
+      + '<div class="cardbody">'
+      +   '<span class="nm">'+u.ad+'</span>'
+      +   '<span class="meta">'+u.meta+'</span>'
+      +   '<span class="swatches">'+sw+'</span>'
+      +   '<span class="prices"><span class="now">'+u.fiyat+'</span>'
+      +     (u.eski ? '<span class="was">'+u.eski+'</span>' : '')
+      +   '</span>'
+      +   '<span class="rating"><span class="st">&#9733;</span>'+u.puan
+      +     ' <span class="cnt">('+u.yorum+' değerlendirme)</span></span>'
+      +   '<button class="addbtn" type="button">Sepete ekle</button>'
+      + '</div></article>';
+  }
+
+  function doldur(id, liste){
+    var el = document.getElementById(id);
+    if (el) el.innerHTML = liste.map(kart).join('');
+  }
+  doldur('grid-ana',  URUNLER);
+  doldur('grid-kat',  URUNLER);
+  doldur('grid-urun', [URUNLER[3], URUNLER[6], URUNLER[2], URUNLER[4]]);
+
+  // urun detay gorselleri
+  var main = document.getElementById('pdp-main');
+  if (main) main.innerHTML = art('zibin', PAL.mint.c1, PAL.mint.c2, PAL.mint.c3, PAL.mint.bg);
+  var th = document.getElementById('pdp-thumbs');
+  if (th){
+    th.innerHTML = ['mint','krem','mercan','mavi'].map(function(k,i){
+      var p = PAL[k];
+      return '<div class="thumb" style="background:'+p.bg+'"'+(i===0?' data-on="1"':'')+'>'
+           + art('zibin', p.c1, p.c2, p.c3, p.bg) + '</div>';
+    }).join('');
+  }
+
+  // sepet kalemleri
+  var SEPET = [
+    {ad:"Organik Pamuk Zıbın · 3'lü", v:"3-6 ay · Mint",   f:"219,90 TL", kind:"zibin", pal:"mint",   adet:2},
+    {ad:"Müslin Battaniye 120×120",   v:"Tek beden · Mavi", f:"379,90 TL", kind:"battaniye", pal:"mavi", adet:1},
+    {ad:"Bambu Patik · 2'li",         v:"0-6 ay · Krem",   f:"199,90 TL", kind:"patik", pal:"krem",   adet:1}
+  ];
+  var ci = document.getElementById('cart-items');
+  if (ci){
+    ci.innerHTML = SEPET.map(function(s){
+      var p = PAL[s.pal];
+      return '<div class="citem">'
+        + '<div class="im" style="background:'+p.bg+'">'+art(s.kind,p.c1,p.c2,p.c3,p.bg)+'</div>'
+        + '<div class="cb"><span class="nm">'+s.ad+'</span><span class="vr">'+s.v+'</span>'
+        +   '<span class="qty"><span>−</span><span>'+s.adet+'</span><span>+</span></span></div>'
+        + '<span class="pr">'+s.f+'</span></div>';
+    }).join('');
+  }
+
+  // yonetim stok tablosu
+  var STOK = [
+    ["Organik Pamuk Zıbın · 3'lü","0-3 ay","Mint",  "8680001234567","219,90 ₺", 24, "ok"],
+    ["Organik Pamuk Zıbın · 3'lü","3-6 ay","Mint",  "8680001234574","219,90 ₺",  3, "az"],
+    ["Organik Pamuk Zıbın · 3'lü","6-9 ay","Krem",  "8680001234581","219,90 ₺", 17, "ok"],
+    ["Organik Pamuk Zıbın · 3'lü","9-12 ay","Mint", "8680001234598","219,90 ₺",  0, "yok"],
+    ["Ayıcık Desenli Tulum",      "3-6 ay","Krem",  "8680001235014","449,90 ₺", 11, "ok"],
+    ["Bambu Patik · 2'li",        "0-6 ay","Mercan","8680001236011","159,90 ₺",  2, "az"]
+  ];
+  var tb = document.getElementById('admin-stock');
+  if (tb){
+    var renk = {ok:'var(--mint-ink)', az:'var(--sand-ink)', yok:'var(--coral-ink)'};
+    var etiket = {ok:'', az:' · azalıyor', yok:' · tükendi'};
+    tb.innerHTML = STOK.map(function(r){
+      return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td>'
+        + '<td class="num" style="color:var(--ink-3)">'+r[3]+'</td>'
+        + '<td class="num">'+r[4]+'</td>'
+        + '<td><span class="stk"><i style="background:'+renk[r[6]]+'"></i>'
+        +   '<span style="color:'+renk[r[6]]+';font-weight:700">'+r[5]+etiket[r[6]]+'</span></span></td></tr>';
+    }).join('');
+  }
+
+  // hero kayan banner
+  (function(){
+    var slider = document.getElementById('hero-slider');
+    var track  = document.getElementById('hero-track');
+    var dotsEl = document.getElementById('hero-dots');
+    if (!slider || !track || !dotsEl) return;
+
+    var slides = track.querySelectorAll('.slide').length;
+    var i = 0, timer = null;
+    var yavas = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    for (var d = 0; d < slides; d++){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sdot';
+      b.setAttribute('aria-label', (d+1) + '. afişe git');
+      b.addEventListener('click', (function(n){ return function(){ git(n); baslat(); }; })(d));
+      dotsEl.appendChild(b);
+    }
+    var dots = dotsEl.querySelectorAll('.sdot');
+
+    function git(n){
+      i = (n + slides) % slides;
+      if (!yavas) track.classList.add('anim');
+      track.style.transform = 'translateX(' + (-i * 100) + '%)';
+      for (var k = 0; k < dots.length; k++){
+        if (k === i) dots[k].setAttribute('data-on','1');
+        else dots[k].removeAttribute('data-on');
+      }
+    }
+    function baslat(){
+      durdur();
+      if (yavas) return;                   // hareket azaltma aciksa kendiliginden donmesin
+      timer = setInterval(function(){ git(i + 1); }, 5000);
+    }
+    function durdur(){ if (timer){ clearInterval(timer); timer = null; } }
+
+    document.getElementById('hero-prev').addEventListener('click', function(){ git(i - 1); baslat(); });
+    document.getElementById('hero-next').addEventListener('click', function(){ git(i + 1); baslat(); });
+
+    slider.addEventListener('mouseenter', durdur);
+    slider.addEventListener('mouseleave', baslat);
+    slider.addEventListener('focusin', durdur);
+    slider.addEventListener('focusout', baslat);
+
+    // telefonda parmakla kaydirma
+    var x0 = null;
+    slider.addEventListener('touchstart', function(e){ x0 = e.touches[0].clientX; durdur(); }, {passive:true});
+    slider.addEventListener('touchend', function(e){
+      if (x0 === null) return;
+      var fark = e.changedTouches[0].clientX - x0;
+      if (Math.abs(fark) > 40) git(i + (fark < 0 ? 1 : -1));
+      x0 = null; baslat();
+    }, {passive:true});
+
+    git(0);
+    baslat();
+  })();
+
+  // sepete ekle ve favori — mokapta da gercekten calissin
+  var sepetAdet = 2;
+  function sepetiYaz(){
+    Array.prototype.forEach.call(document.querySelectorAll('.pill.cart'), function(el){
+      el.textContent = 'Sepet · ' + sepetAdet;
+    });
+  }
+  document.addEventListener('click', function(ev){
+    var ekle = ev.target.closest ? ev.target.closest('.addbtn') : null;
+    if (ekle){
+      sepetAdet += 1;
+      sepetiYaz();
+      ekle.setAttribute('data-done','1');
+      ekle.textContent = '✓ Sepete eklendi';
+      clearTimeout(ekle._t);
+      ekle._t = setTimeout(function(){
+        ekle.removeAttribute('data-done');
+        ekle.textContent = 'Sepete ekle';
+      }, 1800);
+      return;
+    }
+    var fav = ev.target.closest ? ev.target.closest('.fav') : null;
+    if (fav){
+      var acik = fav.getAttribute('data-on') === '1';
+      if (acik){ fav.removeAttribute('data-on'); fav.innerHTML = '&#9825;'; }
+      else { fav.setAttribute('data-on','1'); fav.innerHTML = '&#9829;'; }
+      fav.setAttribute('aria-pressed', String(!acik));
+      return;
+    }
+    var ac = ev.target.closest ? ev.target.closest('.achip') : null;
+    if (ac){
+      Array.prototype.forEach.call(ac.parentNode.children, function(x){ x.removeAttribute('data-on'); });
+      ac.setAttribute('data-on','1');
+    }
+  });
+
+  // ---- ortak magaza basligi ----
+  var LOGO_SVG = '<svg width="34" height="34" viewBox="0 0 200 200" aria-label="BASoftbaby">'
+    + '<circle cx="100" cy="100" r="96" fill="#FCF5E7" stroke="#E8D3AC" stroke-width="3"/>'
+    + '<circle cx="100" cy="100" r="74" fill="#FFF"/>'
+    + '<g transform="rotate(-20 74 84)"><path d="M 74 54 A 30 30 0 1 0 74 114 A 35 35 0 0 1 74 54 Z" fill="#A8DDC7" stroke="#5FA98C" stroke-width="3"/></g>'
+    + '<circle cx="88" cy="77" r="8.5" fill="#EDA85C" stroke="#B37A42" stroke-width="3"/>'
+    + '<circle cx="120" cy="76" r="8.5" fill="#EDA85C" stroke="#B37A42" stroke-width="3"/>'
+    + '<circle cx="104" cy="92" r="21" fill="#F2B76B" stroke="#B37A42" stroke-width="3"/>'
+    + '<path d="M60 154 A 14 14 0 0 1 56 128 A 16 16 0 0 1 82 122 A 21 21 0 0 1 120 121 A 15 15 0 0 1 144 131 A 13 13 0 0 1 145 154 A 19 19 0 0 1 110 158 A 20 20 0 0 1 76 157 A 13 13 0 0 1 60 154 Z" fill="#FAE0AE" stroke="#D9A85B" stroke-width="3"/></svg>';
+  var LOGO_YAZI = '<span class="w"><b style="color:#3F82B4">BA</b><b style="color:#3FA478">soft</b><b style="color:#E0564C">baby</b></span>';
+  var LOGO = '<div class="logo">' + LOGO_SVG + LOGO_YAZI + '</div>';
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-shopnav]'), function(el){
+    var tip = el.getAttribute('data-shopnav') || '';
+    var promo = (tip === 'promo')
+      ? '<div class="promo">750 TL ve üzeri siparişlerde kargo bedava · Aynı gün kargo</div>' : '';
+    var icerik;
+    if (tip === 'odeme'){
+      icerik = '<div class="nav">' + LOGO
+        + '<nav class="navlinks"></nav>'
+        + '<div class="navtools"><span class="pill" style="background:var(--mint-wash);color:var(--mint-ink);border-color:transparent">🔒 Güvenli ödeme</span></div></div>';
+    } else {
+      icerik = '<div class="nav">' + LOGO
+        + '<nav class="navlinks"><span>Yenidoğan</span><span>Zıbın &amp; Body</span><span>Tulum</span>'
+        +   '<span>Uyku</span><span>Aksesuar</span><span>Hediye listesi</span></nav>'
+        + '<div class="navtools"><span class="pill">Ara</span><span class="pill">Hesabım</span>'
+        +   '<span class="pill cart">Sepet · 2</span></div></div>';
+    }
+    el.outerHTML = promo + icerik;
+  });
+
+  var ADMIN_MENU = ['Özet','Siparişler','Ürünler','Stok','Kampanyalar','Kuponlar','İadeler','Müşteriler','Raporlar'];
+  Array.prototype.forEach.call(document.querySelectorAll('[data-adminnav]'), function(el){
+    var aktif = el.getAttribute('data-adminnav');
+    var html = '<aside class="side"><div class="logo" style="padding:4px 8px 14px">'
+      + LOGO_SVG.replace('width="34" height="34"','width="26" height="26"')
+      + '<span class="w" style="font-size:.95rem">Yönetim</span></div>'
+      + ADMIN_MENU.map(function(m){
+          return '<span class="si"' + (m === aktif ? ' data-on="1"' : '') + '>' + m + '</span>';
+        }).join('')
+      + '</aside>';
+    el.outerHTML = html;
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-maillogo]'), function(el){
+    el.outerHTML = '<div class="logo">'
+      + LOGO_SVG.replace('width="34" height="34"','width="28" height="28"') + LOGO_YAZI + '</div>';
+  });
+
+  // ---- yeni ekranlarin icerigi ----
+  doldur('grid-arama', [URUNLER[0], URUNLER[5], URUNLER[1], URUNLER[6]]);
+
+  var rvp = document.getElementById('rv-pics');
+  if (rvp){
+    rvp.innerHTML = ['mint','krem','mercan'].map(function(k){
+      var q = PAL[k];
+      return '<span style="background:'+q.bg+'">' + art('zibin', q.c1, q.c2, q.c3, q.bg) + '</span>';
+    }).join('');
+  }
+
+  function miniKalem(u, ek){
+    var q = PAL[u.pal];
+    return '<div class="citem">'
+      + '<div class="im" style="background:'+q.bg+'">' + art(u.kind,q.c1,q.c2,q.c3,q.bg) + '</div>'
+      + '<div class="cb"><span class="nm">'+u.ad+'</span><span class="vr">'+(ek||u.meta)+'</span></div>'
+      + '<span class="pr">'+u.fiyat+'</span></div>';
+  }
+  function kalemleriYaz(id, liste){
+    var el = document.getElementById(id);
+    if (el) el.innerHTML = liste.map(function(x){ return miniKalem(x[0], x[1]); }).join('');
+  }
+  kalemleriYaz('odeme-kalemler', [[URUNLER[5],'3-6 ay · Mint · 2 adet'],[URUNLER[2],'Tek beden · Mavi'],[URUNLER[3],'0-6 ay · Krem']]);
+  kalemleriYaz('onay-kalemler',  [[URUNLER[5],'3-6 ay · Mint · 2 adet'],[URUNLER[2],'Tek beden · Mavi'],[URUNLER[3],'0-6 ay · Krem']]);
+  kalemleriYaz('detay-kalemler', [[URUNLER[1],'3-6 ay · Krem · 1 adet']]);
+  kalemleriYaz('mail-sepet',     [[URUNLER[0],'6-9 ay · Mercan'],[URUNLER[4],'6-12 ay · Krem']]);
+
+  var iadeEl = document.getElementById('iade-kalemler');
+  if (iadeEl){
+    iadeEl.innerHTML = [[URUNLER[4],'6-12 ay · Krem','1'],[URUNLER[3],'0-6 ay · Sarı','1']]
+      .map(function(x, idx){
+        var u = x[0], q = PAL[u.pal];
+        return '<div class="citem" style="align-items:center">'
+          + '<span class="bx" style="width:17px;height:17px;border-radius:5px;flex:none;'
+          +   'border:2px solid '+(idx===0?'var(--mint-ink)':'var(--line)')+';'
+          +   'background:'+(idx===0?'var(--mint-ink)':'transparent')+';color:#fff;'
+          +   'display:grid;place-items:center;font-size:.7rem">'+(idx===0?'✓':'')+'</span>'
+          + '<div class="im" style="background:'+q.bg+'">' + art(u.kind,q.c1,q.c2,q.c3,q.bg) + '</div>'
+          + '<div class="cb"><span class="nm">'+u.ad+'</span><span class="vr">'+x[1]+' · '+x[2]+' adet</span></div>'
+          + '<span class="pr">'+u.fiyat+'</span></div>';
+      }).join('');
+  }
+
+  var SIPARISLER = [
+    {no:'#10428', tar:'19 Eylül 2026', tut:'827,73 ₺', dur:'Ödendi',        tag:'mint', ek:'Bugün kargoya verilecek', u:[0,2,3]},
+    {no:'#10426', tar:'17 Eylül 2026', tut:'449,90 ₺', dur:'Kargoda',       tag:'blue', ek:'Yurtiçi Kargo · YK 7734 2210', u:[1]},
+    {no:'#10424', tar:'11 Eylül 2026', tut:'329,90 ₺', dur:'Teslim edildi', tag:'mint', ek:'14 Eylül’de teslim edildi · 14 gün iade hakkın var', u:[4,3]},
+    {no:'#10402', tar:'28 Ağustos 2026', tut:'159,90 ₺', dur:'İade edildi', tag:'sand', ek:'Ödemen kartına iade edildi', u:[3]}
+  ];
+  var slEl = document.getElementById('siparis-listesi');
+  if (slEl){
+    slEl.innerHTML = SIPARISLER.map(function(o){
+      var kucuk = o.u.map(function(i){
+        var u = URUNLER[i], q = PAL[u.pal];
+        return '<span style="width:44px;height:44px;border-radius:10px;display:grid;place-items:center;background:'+q.bg+'">'
+             + art(u.kind,q.c1,q.c2,q.c3,q.bg) + '</span>';
+      }).join('');
+      return '<div class="panelbox">'
+        + '<div class="sechead" style="margin-bottom:2px">'
+        +   '<div style="display:flex;flex-direction:column;gap:2px">'
+        +     '<h3 style="font-size:.95rem">Sipariş '+o.no+'</h3>'
+        +     '<span style="font-size:.76rem;color:var(--ink-3)">'+o.tar+'</span></div>'
+        +   '<span class="tag '+o.tag+'">'+o.dur+'</span></div>'
+        + '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:6px">'+kucuk+'</div>'
+        + '<p style="font-size:.82rem;color:var(--ink-2)">'+o.ek+'</p>'
+        + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+        +   '<span class="btn ghost sm">Detay</span>'
+        +   '<span class="btn ghost sm">Faturayı indir</span>'
+        +   '<span style="margin-left:auto;font-family:\'Baloo 2\',sans-serif;font-weight:700">'+o.tut+'</span></div>'
+        + '</div>';
+    }).join('');
+  }
+
+  function hediyeSatir(u, adet, alan){
+    var q = PAL[u.pal];
+    return '<div class="regitem'+(alan?' alindi':'')+'">'
+      + '<div class="im" style="background:'+q.bg+'">' + art(u.kind,q.c1,q.c2,q.c3,q.bg) + '</div>'
+      + '<div class="info"><span class="nm">'+u.ad+'</span>'
+      +   '<span class="vr">'+u.meta+' · '+adet+' adet istendi</span></div>'
+      + (alan
+          ? '<span class="tag mint">Alındı</span>'
+          : '<span class="pr" style="font-family:\'Baloo 2\',sans-serif;font-weight:700">'+u.fiyat+'</span>'
+            + '<span class="btn sm">Bunu ben alayım</span>')
+      + '</div>';
+  }
+  var hy = document.getElementById('hediye-liste-yonet');
+  if (hy){
+    hy.innerHTML = [[0,2,false],[2,1,true],[1,1,false],[4,2,false],[3,2,true],[6,3,false]]
+      .map(function(r){
+        var u = URUNLER[r[0]], q = PAL[u.pal];
+        return '<div class="regitem'+(r[2]?' alindi':'')+'">'
+          + '<div class="im" style="background:'+q.bg+'">' + art(u.kind,q.c1,q.c2,q.c3,q.bg) + '</div>'
+          + '<div class="info"><span class="nm">'+u.ad+'</span><span class="vr">'+u.meta+'</span></div>'
+          + '<div style="display:flex;align-items:center;gap:8px">'
+          +   '<span class="qty"><span>−</span><span>'+r[1]+'</span><span>+</span></span>'
+          +   (r[2] ? '<span class="tag mint">Alındı</span>' : '<span class="btn ghost sm">Çıkar</span>')
+          + '</div></div>';
+      }).join('');
+  }
+  var hp = document.getElementById('hediye-liste-paylas');
+  if (hp){
+    hp.innerHTML = [[0,2,false],[2,1,true],[1,1,false],[4,2,false],[3,2,true],[6,3,false]]
+      .map(function(r){ return hediyeSatir(URUNLER[r[0]], r[1], r[2]); }).join('');
+  }
+
+  var fg = document.getElementById('form-gorseller');
+  if (fg){
+    fg.innerHTML = ['mint','krem','mercan','mavi'].map(function(k,i){
+      var q = PAL[k];
+      return '<div class="thumb" style="background:'+q.bg+'"'+(i===0?' data-on="1"':'')+'>'
+           + art('zibin', q.c1, q.c2, q.c3, q.bg) + '</div>';
+    }).join('');
+  }
+
+  var fv = document.getElementById('form-varyantlar');
+  if (fv){
+    fv.innerHTML = [
+      ['0-3 ay','Mint','ZBN-03-MNT','8680001234567','289,90','219,90','24','1'],
+      ['3-6 ay','Mint','ZBN-36-MNT','8680001234574','289,90','219,90','3','1'],
+      ['6-9 ay','Krem','ZBN-69-KRM','8680001234581','289,90','219,90','17','1'],
+      ['9-12 ay','Mint','ZBN-912-MNT','8680001234598','289,90','219,90','0','1'],
+      ['12-18 ay','Mercan','ZBN-1218-MRC','8680001234604','299,90','229,90','8','1']
+    ].map(function(r){
+      return '<tr>'
+        + '<td><span class="inp dolu" style="padding:5px 9px;font-size:.8rem">'+r[0]+'</span></td>'
+        + '<td><span class="inp dolu" style="padding:5px 9px;font-size:.8rem">'+r[1]+'</span></td>'
+        + '<td class="num" style="color:var(--ink-3)">'+r[2]+'</td>'
+        + '<td class="num" style="color:var(--ink-3)">'+r[3]+'</td>'
+        + '<td class="num">'+r[4]+' ₺</td>'
+        + '<td class="num" style="color:var(--coral-ink);font-weight:700">'+r[5]+' ₺</td>'
+        + '<td><span class="inp dolu" style="padding:5px 9px;font-size:.8rem;width:52px;'
+        +   (r[6]==='0' ? 'color:var(--coral-ink);font-weight:700' : '')+'">'+r[6]+'</span></td>'
+        + '<td class="num">'+r[7]+'</td></tr>';
+    }).join('');
+  }
+
+  // ---- ekran gezintisi ----
+  var EKRANLAR = [
+    {id:'ana',          ad:'Ana sayfa',      grup:'Vitrin',    url:'basoftbaby.com'},
+    {id:'kategori',     ad:'Kategori',       grup:'Vitrin',    url:'basoftbaby.com/zibin-body'},
+    {id:'urun',         ad:'Ürün detayı',    grup:'Vitrin',    url:'basoftbaby.com/urun/organik-pamuk-zibin-3lu'},
+    {id:'arama',        ad:'Arama sonuçları',grup:'Vitrin',    url:'basoftbaby.com/ara?q=zıbın'},
+    {id:'beden',        ad:'Beden rehberi',  grup:'Vitrin',    url:'basoftbaby.com/beden-rehberi'},
+    {id:'yorumlar',     ad:'Yorumlar',       grup:'Vitrin',    url:'basoftbaby.com/urun/organik-pamuk-zibin-3lu#yorumlar'},
+
+    {id:'sepet',        ad:'Sepet',          grup:'Satın alma',url:'basoftbaby.com/sepet'},
+    {id:'odeme',        ad:'Ödeme adımı',    grup:'Satın alma',url:'basoftbaby.com/odeme'},
+    {id:'onay',         ad:'Sipariş onayı',  grup:'Satın alma',url:'basoftbaby.com/siparis/10428'},
+    {id:'bos',          ad:'Boş durumlar',   grup:'Satın alma',url:'Boş durumlar'},
+
+    {id:'giris',        ad:'Giriş / üyelik', grup:'Hesap',     url:'basoftbaby.com/giris'},
+    {id:'siparislerim', ad:'Siparişlerim',   grup:'Hesap',     url:'basoftbaby.com/hesabim/siparislerim'},
+    {id:'siparisdetay', ad:'Sipariş detayı', grup:'Hesap',     url:'basoftbaby.com/hesabim/siparis/10426'},
+    {id:'adresler',     ad:'Adres defteri',  grup:'Hesap',     url:'basoftbaby.com/hesabim/adreslerim'},
+    {id:'iade',         ad:'İade talebi',    grup:'Hesap',     url:'basoftbaby.com/hesabim/iade/10424'},
+
+    {id:'hediyeolustur',ad:'Liste oluştur',  grup:'Hediye listesi', url:'basoftbaby.com/hediye-listesi/yonet'},
+    {id:'hediyepaylas', ad:'Paylaşılan liste',grup:'Hediye listesi',url:'basoftbaby.com/hediye/deniz-k9f2'},
+
+    {id:'yonetim',      ad:'Siparişler',     grup:'Yönetim',   url:'basoftbaby.com/yonetim/siparisler'},
+    {id:'urunform',     ad:'Ürün formu',     grup:'Yönetim',   url:'basoftbaby.com/yonetim/urunler/yeni'},
+    {id:'kampanyaform', ad:'Kampanya kur',   grup:'Yönetim',   url:'basoftbaby.com/yonetim/kampanyalar/yeni'},
+    {id:'kuponform',    ad:'Kuponlar',       grup:'Yönetim',   url:'basoftbaby.com/yonetim/kuponlar'},
+    {id:'iadeyonetim',  ad:'İade yönetimi',  grup:'Yönetim',   url:'basoftbaby.com/yonetim/iadeler'},
+
+    {id:'yasal',        ad:'Yasal sayfa',    grup:'Diğer',     url:'basoftbaby.com/mesafeli-satis-sozlesmesi'},
+    {id:'sss',          ad:'SSS',            grup:'Diğer',     url:'basoftbaby.com/sss'},
+    {id:'dortyuzdort',  ad:'404',            grup:'Diğer',     url:'basoftbaby.com/olmayan-sayfa'},
+    {id:'epostalar',    ad:'E-postalar',     grup:'Diğer',     url:'E-posta şablonları'},
+    {id:'sistem',       ad:'Renk ve yazı',   grup:'Diğer',     url:'Tasarım sistemi'}
+  ];
+
+  var gruplar = [];
+  EKRANLAR.forEach(function(e){ if (gruplar.indexOf(e.grup) < 0) gruplar.push(e.grup); });
+
+  var groupsEl = document.getElementById('groups');
+  var tabsEl   = document.getElementById('tabs');
+  var sayacEl  = document.getElementById('screencount');
+  var urlEl    = document.getElementById('url');
+  var aktifGrup = gruplar[0], aktifEkran = 'ana';
+
+  groupsEl.innerHTML = gruplar.map(function(g){
+    return '<button class="grp-btn" type="button" role="tab" data-g="'+g+'">'+g+'</button>';
+  }).join('');
+
+  function ekraniGoster(id){
+    aktifEkran = id;
+    EKRANLAR.forEach(function(e){
+      var el = document.getElementById('s-'+e.id);
+      if (el) el.hidden = (e.id !== id);
+    });
+    var bilgi = EKRANLAR.filter(function(e){ return e.id === id; })[0];
+    if (urlEl && bilgi) urlEl.textContent = bilgi.url;
+    Array.prototype.forEach.call(tabsEl.children, function(t){
+      t.setAttribute('aria-selected', String(t.getAttribute('data-s') === id));
+    });
+    try { localStorage.setItem('mokap-ekran', id); } catch(e){}
+  }
+
+  function grubuGoster(g, ilkEkran){
+    aktifGrup = g;
+    Array.prototype.forEach.call(groupsEl.children, function(b){
+      b.setAttribute('aria-selected', String(b.getAttribute('data-g') === g));
+    });
+    var liste = EKRANLAR.filter(function(e){ return e.grup === g; });
+    tabsEl.innerHTML = liste.map(function(e){
+      return '<button class="tab" type="button" role="tab" data-s="'+e.id+'">'+e.ad+'</button>';
+    }).join('');
+    Array.prototype.forEach.call(tabsEl.children, function(t){
+      t.addEventListener('click', function(){ ekraniGoster(t.getAttribute('data-s')); });
+    });
+    if (sayacEl) sayacEl.textContent = liste.length + ' ekran · toplam ' + EKRANLAR.length;
+    ekraniGoster(ilkEkran || liste[0].id);
+  }
+
+  Array.prototype.forEach.call(groupsEl.children, function(b){
+    b.addEventListener('click', function(){ grubuGoster(b.getAttribute('data-g')); });
+  });
+
+  var basla = 'ana';
+  try {
+    var kayit = localStorage.getItem('mokap-ekran');
+    if (kayit && EKRANLAR.some(function(e){ return e.id === kayit; })) basla = kayit;
+  } catch(e){}
+  var baslaGrup = (EKRANLAR.filter(function(e){ return e.id === basla; })[0] || EKRANLAR[0]).grup;
+  grubuGoster(baslaGrup, basla);
+
+})();
+</script>
+
+</body>
+</html>
