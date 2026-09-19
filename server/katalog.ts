@@ -31,7 +31,7 @@ type SatirTipi = {
   yikamaTalimati: string;
   ozellikler: string[];
   category: { slug: string };
-  variants: { beden: string; renk: string; stok: number }[];
+  variants: { id: string; beden: string; renk: string; stok: number }[];
 };
 
 function bedenSirasi(beden: string): number {
@@ -43,7 +43,7 @@ function bedenSirasi(beden: string): number {
 function urunYap(satir: SatirTipi): Urun {
   const varyantlar = [...satir.variants]
     .sort((a, b) => bedenSirasi(a.beden) - bedenSirasi(b.beden))
-    .map((v) => ({ beden: v.beden, renk: v.renk as RenkAdi, stok: v.stok }));
+    .map((v) => ({ id: v.id, beden: v.beden, renk: v.renk as RenkAdi, stok: v.stok }));
 
   // Renk listesi varyantlardan türetilir; ayrı bir sütunda tutulup
   // varyantlarla çelişmesin diye.

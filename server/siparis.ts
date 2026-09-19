@@ -1,0 +1,214 @@
+/**
+ * Sipariş oluşturma ve okuma.
+ *
+ * Siparişin tamamı tek bir veritabanı işlemi içinde yazılır: stok düşer,
+ * numara sayacı artar, sipariş ve satırları oluşur. Araya başka bir müşteri
+ * girip son adedi alırsa stok düşümü tutmaz ve işlem tümüyle geri alınır —
+ * yani yarım sipariş ya da eksiye düşmüş stok kalmaz.
+ *
+ * Ödeme henüz yok (iyzico 04. adımda). Sipariş "havale/EFT bekliyor" durumunda
+ * açılır; parayı gördüğünde ödeme durumunu panelden sen işaretlersin.
+ */
+
+import { db } from "@/server/veritabani";
+import { kargoHesapla, sepetIdOku, type SatisAyari } from "@/server/sepet";
+import { RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
+
+/**
+ * Onay sayfasını açan çerezin adı. Burada duruyor çünkü "use server" işaretli
+ * bir dosya yalnızca async fonksiyon dışa aktarabilir, sabit aktaramaz.
+ */
+export const SON_SIPARIS_CEREZI = "son-siparis";
+
+export type SiparisGirdisi = {
+  adSoyad: string;
+  eposta: string;
+  telefon: string;
+  adres: string;
+  ilce: string;
+  il: string;
+  postaKodu: string;
+  not: string;
+};
+
+export type SiparisSonucu =
+  | { tamam: true; numara: string }
+  | { tamam: false; hata: string };
+
+/** BA-2026-0001 */
+function numaraYaz(sayac: number, tarih: Date): string {
+  return `BA-${tarih.getFullYear()}-${String(sayac).padStart(4, "0")}`;
+}
+
+export async function siparisOlustur(
+  girdi: SiparisGirdisi,
+  ayar: SatisAyari,
+): Promise<SiparisSonucu> {
+  const cartId = await sepetIdOku();
+  if (!cartId) return { tamam: false, hata: "Sepetin boş görünüyor." };
+
+  const satirlar = await db.cartItem.findMany({
+    where: { cartId },
+    include: { variant: { include: { product: true } } },
+    orderBy: { id: "asc" },
+  });
+
+  const gecerli = satirlar.filter((s) => s.variant.product.aktif && s.variant.stok > 0);
+  if (gecerli.length === 0) return { tamam: false, hata: "Sepetin boş görünüyor." };
+
+  const yetersiz = gecerli.find((s) => s.adet > s.variant.stok);
+  if (yetersiz) {
+    return {
+      tamam: false,
+      hata: `${yetersiz.variant.product.ad} (${yetersiz.variant.beden}) için elde ${yetersiz.variant.stok} adet kaldı. Sepetteki adedi düşürüp tekrar dene.`,
+    };
+  }
+
+  const kalemler = gecerli.map((s) => {
+    const fiyatKurus = s.variant.fiyatKurus ?? s.variant.product.fiyatKurus;
+    return {
+      variantId: s.variantId,
+      urunAd: s.variant.product.ad,
+      slug: s.variant.product.slug,
+      beden: s.variant.beden,
+      renk: s.variant.renk,
+      adet: s.adet,
+      fiyatKurus,
+    };
+  });
+
+  const araToplamKurus = kalemler.reduce((t, k) => t + k.fiyatKurus * k.adet, 0);
+  const kargoKurus = kargoHesapla(araToplamKurus, ayar);
+  const simdi = new Date();
+
+  try {
+    const numara = await db.$transaction(async (islem) => {
+      for (const k of kalemler) {
+        // Koşullu düşüm: stok yetmiyorsa hiçbir satır güncellenmez.
+        const sonuc = await islem.productVariant.updateMany({
+          where: { id: k.variantId, stok: { gte: k.adet } },
+          data: { stok: { decrement: k.adet } },
+        });
+        if (sonuc.count !== 1) throw new Error("STOK");
+      }
+
+      const ayarSatiri = await islem.storeSetting.upsert({
+        where: { id: "tek" },
+        update: { sonSiparisNo: { increment: 1 } },
+        create: { id: "tek", sonSiparisNo: 1 },
+        select: { sonSiparisNo: true },
+      });
+
+      const siparis = await islem.order.create({
+        data: {
+          numara: numaraYaz(ayarSatiri.sonSiparisNo, simdi),
+          adSoyad: girdi.adSoyad,
+          eposta: girdi.eposta,
+          telefon: girdi.telefon,
+          adres: girdi.adres,
+          ilce: girdi.ilce,
+          il: girdi.il,
+          postaKodu: girdi.postaKodu,
+          not: girdi.not,
+          araToplamKurus,
+          kargoKurus,
+          toplamKurus: araToplamKurus + kargoKurus,
+          satirlar: { create: kalemler },
+        },
+        select: { numara: true },
+      });
+
+      await islem.cartItem.deleteMany({ where: { cartId } });
+      return siparis.numara;
+    });
+
+    return { tamam: true, numara };
+  } catch (hata) {
+    if (hata instanceof Error && hata.message === "STOK") {
+      return {
+        tamam: false,
+        hata: "Sepetindeki ürünlerden biri sen ödeme sayfasındayken tükendi. Sepetini bir kontrol et.",
+      };
+    }
+    throw hata;
+  }
+}
+
+export type SiparisSatiri = {
+  urunAd: string;
+  slug: string;
+  beden: string;
+  renk: string;
+  renkAdi: string;
+  adet: number;
+  fiyatKurus: number;
+  araToplamKurus: number;
+};
+
+export type Siparis = {
+  numara: string;
+  durum: string;
+  odemeYontemi: string;
+  odemeDurumu: string;
+  adSoyad: string;
+  eposta: string;
+  telefon: string;
+  adres: string;
+  ilce: string;
+  il: string;
+  postaKodu: string;
+  not: string;
+  araToplamKurus: number;
+  kargoKurus: number;
+  toplamKurus: number;
+  kargoTakipNo: string | null;
+  olusturuldu: Date;
+  satirlar: SiparisSatiri[];
+};
+
+type SiparisSatiriKaydi = {
+  urunAd: string;
+  slug: string;
+  beden: string;
+  renk: string;
+  adet: number;
+  fiyatKurus: number;
+};
+
+function siparisYap(
+  s: Omit<Siparis, "satirlar"> & { satirlar: SiparisSatiriKaydi[] },
+): Siparis {
+  return {
+    ...s,
+    satirlar: s.satirlar.map((k) => ({
+      ...k,
+      renkAdi: RENK_ADLARI[k.renk as RenkAdi] ?? k.renk,
+      araToplamKurus: k.fiyatKurus * k.adet,
+    })),
+  };
+}
+
+/**
+ * Sipariş takibi. Numara tek başına yetmez: e-posta da tutmalı, yoksa numara
+ * deneyerek başkasının adresi görülebilirdi.
+ */
+export async function siparisGetir(numara: string, eposta: string): Promise<Siparis | undefined> {
+  const kayit = await db.order.findUnique({
+    where: { numara: numara.trim().toUpperCase() },
+    include: { satirlar: { orderBy: { id: "asc" } } },
+  });
+  if (!kayit) return undefined;
+  if (kayit.eposta.toLocaleLowerCase("tr") !== eposta.trim().toLocaleLowerCase("tr")) {
+    return undefined;
+  }
+  return siparisYap(kayit);
+}
+
+/** Panel için: e-posta doğrulaması aranmaz, panel zaten şifreli. */
+export async function siparisGetirPanel(numara: string): Promise<Siparis | undefined> {
+  const kayit = await db.order.findUnique({
+    where: { numara: numara.trim().toUpperCase() },
+    include: { satirlar: { orderBy: { id: "asc" } } },
+  });
+  return kayit ? siparisYap(kayit) : undefined;
+}

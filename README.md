@@ -48,9 +48,19 @@ gönderimlerde yazılmıyor, yani sildiğin örnek ürünler geri gelmiyor.
 
 ## Yönetim paneli
 
-`/yonetim` adresinde. Ürün ekleme ve düzenleme, beden-renk stokları, duyuru
-şeridi. Açılabilmesi için `YONETIM_SIFRE` tanımlı olmalı; tanımlı değilse panel
+`/yonetim` adresinde. Siparişler, ürün ekleme ve düzenleme, beden-renk stokları,
+duyuru şeridi ve satış ayarları (kargo ücreti, bedava kargo eşiği, havale
+bilgisi). Açılabilmesi için `YONETIM_SIFRE` tanımlı olmalı; tanımlı değilse panel
 kendini tamamen kapatır (404 verir), yani ayar unutulursa açıkta kalmaz.
+
+## Sipariş akışı
+
+Sepet veritabanında durur, tarayıcıda yalnızca sepetin kimliğini taşıyan
+httpOnly bir çerez vardır. Müşteri üye olmadan sipariş verir; ödeme şimdilik
+havale/EFT. Stok sipariş anında tek bir veritabanı işlemi içinde düşer, aynı
+anda gelen iki sipariş son adedi birlikte alamaz. Müşteri siparişini numarası
+ve e-postasıyla `/siparis-takip` adresinden görür. Bütün ekranlar düz HTML
+formuyla çalışır, JavaScript kapalı tarayıcıda da sipariş verilebilir.
 
 ## Belgeler
 
@@ -86,5 +96,8 @@ fatura e-arşiv, yayın Vercel üzerinde.
 - [x] 01. adım: proje iskeleti ve marka sistemi
 - [x] 02. adım: katalog vitrini (ana sayfa, kategori, süzgeç, ürün detayı)
 - [x] Veritabanı (Neon Postgres) ve yönetim paneli
+- [x] Sepet, sipariş ve sipariş takibi (havale/EFT ile)
 - [ ] Gerçek ürünlerin girilmesi
-- [ ] 03. adım: sepet, üyelik ve sipariş
+- [ ] Havale hesabının panele girilmesi
+- [ ] Üyelik (alan adı ve e-posta servisi gelince)
+- [ ] 04. adım: kredi kartıyla ödeme (iyzico)

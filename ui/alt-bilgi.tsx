@@ -1,6 +1,9 @@
+import Link from "next/link";
+
 /**
  * Alt bilgi. Yasal metinler ve ETBİS numarası 07. adımda gerçekleriyle
  * doldurulacak; buradaki yerler onların nerede duracağını gösteriyor.
+ * Sipariş takibi ise gerçek bir sayfa, onun için bağlantısı var.
  */
 const SUTUNLAR: { baslik: string; satirlar: string[] }[] = [
   { baslik: "Alışveriş", satirlar: ["Yenidoğan", "Zıbın & Body", "Tulum", "Uyku", "Aksesuar"] },
@@ -23,6 +26,12 @@ export default function AltBilgi() {
         <div className="flex flex-col gap-2">
           <p className="font-baslik text-lg font-bold">BASoftbaby</p>
           <p className="text-sm text-metin-2">Minik bedenlere, yumuşacık kumaşlar.</p>
+          <Link
+            href="/siparis-takip"
+            className="mt-1 text-sm font-bold text-mavi-koyu hover:underline"
+          >
+            Sipariş takibi
+          </Link>
         </div>
 
         {SUTUNLAR.map((s) => (

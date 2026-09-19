@@ -1,13 +1,15 @@
-"use client";
+import Link from "next/link";
+import { sepetAdedi } from "@/server/sepet";
 
-import { useSepet } from "@/ui/sepet-durumu";
-
-export default function SepetSayaci() {
-  const { toplamAdet } = useSepet();
+export default async function SepetSayaci() {
+  const adet = await sepetAdedi();
 
   return (
-    <span className="rounded-full bg-mercan-soluk px-3 py-1.5 text-xs font-bold text-mercan-koyu">
-      Sepet{toplamAdet > 0 ? ` · ${toplamAdet}` : ""}
-    </span>
+    <Link
+      href="/sepet"
+      className="rounded-full bg-mercan-soluk px-3 py-1.5 text-xs font-bold text-mercan-koyu transition hover:brightness-95"
+    >
+      Sepet{adet > 0 ? ` · ${adet}` : ""}
+    </Link>
   );
 }

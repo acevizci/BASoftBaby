@@ -10,16 +10,10 @@ function bul(varyantlar: Varyant[], beden: string, renk: RenkAdi): Varyant | und
 }
 
 export default function VaryantSecici({
-  slug,
-  ad,
-  fiyatKurus,
   bedenler,
   renkler,
   varyantlar,
 }: {
-  slug: string;
-  ad: string;
-  fiyatKurus: number;
   bedenler: string[];
   renkler: RenkAdi[];
   varyantlar: Varyant[];
@@ -93,11 +87,7 @@ export default function VaryantSecici({
         )}
       </p>
 
-      <SepeteEkle
-        urun={{ slug, ad, beden, renk, fiyatKurus }}
-        devreDisi={stok === 0}
-        tamGenislik
-      />
+      <SepeteEkle variantId={secili?.id} devreDisi={stok === 0} tamGenislik />
     </div>
   );
 }

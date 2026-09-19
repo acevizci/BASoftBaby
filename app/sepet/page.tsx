@@ -1,0 +1,168 @@
+import Link from "next/link";
+import type { Metadata } from "next";
+import UrunGorseli from "@/ui/urun-gorseli";
+import { sepetGetir } from "@/server/sepet";
+import { adetDegistir, satirSil } from "@/server/sepet-islem";
+import { fiyatYaz, type GorselTipi, type RenkAdi } from "@/ui/katalog-bicim";
+
+export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Sepetim", robots: { index: false } };
+
+export default async function SepetSayfasi() {
+  const sepet = await sepetGetir();
+
+  if (sepet.satirlar.length === 0) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center">
+        <h1 className="text-2xl sm:text-3xl">Sepetin boş</h1>
+        <p className="mt-3 text-metin-2">
+          Beğendiğin ürünü sepete eklediğinde burada görünecek.
+        </p>
+        <Link
+          href="/urunler"
+          className="mt-6 inline-block rounded-full bg-mercan px-6 py-3 font-bold text-white transition hover:brightness-95"
+        >
+          Ürünlere göz at
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-8">
+      <h1 className="text-2xl sm:text-3xl">Sepetim</h1>
+      <p className="mt-1 text-sm text-metin-2">{sepet.toplamAdet} ürün</p>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
+        <ul className="flex flex-col gap-3">
+          {sepet.satirlar.map((s) => (
+            <li
+              key={s.variantId}
+              className="flex gap-4 rounded-marka border border-cizgi bg-yuzey p-4"
+            >
+              <Link href={`/urun/${s.slug}`} className="w-20 flex-none sm:w-24">
+                <UrunGorseli
+                  tip={s.gorsel as GorselTipi}
+                  palet={s.palet as RenkAdi}
+                  className="aspect-square rounded-[12px]"
+                />
+              </Link>
+
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                  <Link href={`/urun/${s.slug}`} className="font-baslik font-bold hover:text-mercan-koyu">
+                    {s.ad}
+                  </Link>
+                  <span className="rakam font-baslik font-bold text-mercan-koyu">
+                    {fiyatYaz(s.araToplamKurus)}
+                  </span>
+                </div>
+
+                <p className="text-sm text-metin-2">
+                  {s.beden} · {s.renkAdi}
+                  <span className="rakam text-metin-3"> · birim {fiyatYaz(s.fiyatKurus)}</span>
+                </p>
+
+                {s.stok === 0 ? (
+                  <p className="text-sm font-bold text-mercan-koyu">
+                    Bu ürün tükendi, siparişe giremez. Satırı kaldırman gerekiyor.
+                  </p>
+                ) : s.stok <= 3 ? (
+                  <p className="text-sm font-semibold text-mercan-koyu">Son {s.stok} adet</p>
+                ) : null}
+
+                <div className="mt-auto flex flex-wrap items-center gap-3">
+                  <form action={adetDegistir} className="flex items-center gap-2">
+                    <input type="hidden" name="variantId" value={s.variantId} />
+                    <label className="text-xs font-bold text-metin-2" htmlFor={`adet-${s.variantId}`}>
+                      Adet
+                    </label>
+                    <input
+                      id={`adet-${s.variantId}`}
+                      name="adet"
+                      type="number"
+                      min={1}
+                      max={Math.max(1, s.stok)}
+                      defaultValue={s.adet}
+                      className="rakam w-16 rounded-[10px] border-[1.5px] border-cizgi bg-yuzey px-2 py-1.5 text-sm outline-none focus:border-mercan"
+                    />
+                    <button
+                      type="submit"
+                      className="rounded-full border border-cizgi px-3 py-1.5 text-xs font-bold text-metin-2 hover:border-metin-3"
+                    >
+                      Güncelle
+                    </button>
+                  </form>
+
+                  <form action={satirSil}>
+                    <input type="hidden" name="variantId" value={s.variantId} />
+                    <button
+                      type="submit"
+                      className="rounded-full border border-cizgi px-3 py-1.5 text-xs font-bold text-metin-2 hover:border-mercan hover:text-mercan-koyu"
+                    >
+                      Kaldır
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        <aside className="h-fit rounded-marka border border-cizgi bg-yuzey p-5 lg:sticky lg:top-4">
+          <h2 className="text-lg">Özet</h2>
+
+          <dl className="mt-4 flex flex-col gap-2 text-sm">
+            <div className="flex justify-between">
+              <dt className="text-metin-2">Ara toplam</dt>
+              <dd className="rakam font-semibold">{fiyatYaz(sepet.araToplamKurus)}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-metin-2">Kargo</dt>
+              <dd className="rakam font-semibold">
+                {sepet.kargoKurus === 0 ? (
+                  <span className="text-nane-koyu">Bedava</span>
+                ) : (
+                  fiyatYaz(sepet.kargoKurus)
+                )}
+              </dd>
+            </div>
+            <div className="mt-2 flex justify-between border-t border-cizgi pt-3">
+              <dt className="font-baslik font-bold">Toplam</dt>
+              <dd className="rakam font-baslik text-lg font-bold text-mercan-koyu">
+                {fiyatYaz(sepet.toplamKurus)}
+              </dd>
+            </div>
+          </dl>
+
+          {sepet.bedavayaKalanKurus > 0 && (
+            <p className="mt-3 rounded-[10px] bg-nane-soluk px-3 py-2 text-xs font-semibold text-nane-koyu">
+              <span className="rakam">{fiyatYaz(sepet.bedavayaKalanKurus)}</span> daha eklersen
+              kargo bedava.
+            </p>
+          )}
+
+          {sepet.sorunluMu ? (
+            <p className="mt-4 rounded-[10px] bg-mercan-soluk px-3 py-2 text-sm font-semibold text-mercan-koyu">
+              Tükenen ürünü kaldırınca siparişe geçebilirsin.
+            </p>
+          ) : (
+            <Link
+              href="/odeme"
+              className="mt-4 block rounded-full bg-mercan px-6 py-3 text-center font-bold text-white transition hover:brightness-95"
+            >
+              Siparişi tamamla
+            </Link>
+          )}
+
+          <Link
+            href="/urunler"
+            className="mt-3 block text-center text-sm font-bold text-mavi-koyu hover:underline"
+          >
+            Alışverişe devam et
+          </Link>
+        </aside>
+      </div>
+    </div>
+  );
+}

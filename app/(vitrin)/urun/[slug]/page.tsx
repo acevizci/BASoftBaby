@@ -96,9 +96,6 @@ export default async function UrunSayfasi({ params }: PageProps<"/urun/[slug]">)
           </p>
 
           <VaryantSecici
-            slug={urun.slug}
-            ad={urun.ad}
-            fiyatKurus={urun.fiyatKurus}
             bedenler={bedenler}
             renkler={urun.renkler}
             varyantlar={urun.varyantlar}

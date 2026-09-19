@@ -36,9 +36,9 @@ export const metadata: Metadata = {
   },
 };
 
-// Tarihi gelen ya da biten duyuru, kimse bir şey kaydetmese de en geç beş
-// dakikada devreye girsin. Panelden yapılan değişiklikler zaten anında yansır.
-export const revalidate = 300;
+// Üst çubuktaki sepet rozeti çereze baktığı için bütün sayfalar istek anında
+// üretiliyor. Bu bir mağaza için doğrusu: fiyat, stok ve duyuru her zaman o
+// anki hâliyle görünür, beş dakikalık eski bir kopya gösterilmez.
 
 export const viewport: Viewport = {
   themeColor: [

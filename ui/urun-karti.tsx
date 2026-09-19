@@ -73,18 +73,7 @@ export default function UrunKarti({ urun }: { urun: Urun }) {
           )}
         </p>
 
-        <SepeteEkle
-          tamGenislik
-          kucuk
-          devreDisi={stok === 0}
-          urun={{
-            slug: urun.slug,
-            ad: urun.ad,
-            beden: ilkVaryant.beden,
-            renk: ilkVaryant.renk,
-            fiyatKurus: urun.fiyatKurus,
-          }}
-        />
+        <SepeteEkle tamGenislik kucuk devreDisi={stok === 0} variantId={ilkVaryant?.id} />
       </div>
     </article>
   );

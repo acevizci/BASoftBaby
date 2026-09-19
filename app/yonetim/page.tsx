@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { db } from "@/server/veritabani";
-import { fiyatYaz } from "@/ui/katalog-bicim";
+import { RENK_ADLARI, fiyatYaz, type RenkAdi } from "@/ui/katalog-bicim";
 
 export const dynamic = "force-dynamic";
 
 const KRITIK_STOK = 3;
 
 export default async function YonetimOzeti() {
-  const [urunSayisi, kapaliUrun, duyuruSayisi, azalanlar, tukenenler] = await Promise.all([
+  const [urunSayisi, kapaliUrun, duyuruSayisi, azalanlar, tukenenler, bekleyenSiparis] =
+    await Promise.all([
     db.product.count({ where: { aktif: true } }),
     db.product.count({ where: { aktif: false } }),
     db.announcement.count({ where: { aktif: true } }),
@@ -18,9 +19,11 @@ export default async function YonetimOzeti() {
       take: 10,
     }),
     db.productVariant.count({ where: { stok: 0 } }),
+    db.order.count({ where: { durum: { in: ["bekliyor", "hazirlaniyor"] } } }),
   ]);
 
   const kutular = [
+    { ad: "Bekleyen sipariş", deger: String(bekleyenSiparis) },
     { ad: "Yayında ürün", deger: String(urunSayisi) },
     { ad: "Kapalı ürün", deger: String(kapaliUrun) },
     { ad: "Tükenen beden", deger: String(tukenenler) },
@@ -39,7 +42,7 @@ export default async function YonetimOzeti() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {kutular.map((k) => (
           <div key={k.ad} className="rounded-marka border border-cizgi bg-yuzey p-4">
             <p className="text-xs font-semibold text-metin-3">{k.ad}</p>
@@ -65,7 +68,7 @@ export default async function YonetimOzeti() {
                   {v.product.ad}
                 </Link>
                 <span className="text-metin-3">
-                  {v.beden} · {v.renk}
+                  {v.beden} · {RENK_ADLARI[v.renk as RenkAdi] ?? v.renk}
                 </span>
                 <span className="rakam ml-auto font-bold text-mercan-koyu">{v.stok} adet</span>
                 <span className="rakam text-metin-3">{fiyatYaz(v.product.fiyatKurus)}</span>

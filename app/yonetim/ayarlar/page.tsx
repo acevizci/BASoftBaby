@@ -1,0 +1,96 @@
+import { ayarlariGetir } from "@/server/sepet";
+import { satisAyariKaydet } from "@/server/yonetim";
+import { fiyatYaz } from "@/ui/katalog-bicim";
+
+export const dynamic = "force-dynamic";
+
+const GIRDI =
+  "rounded-[10px] border-[1.5px] border-cizgi bg-yuzey px-3 py-2 text-sm text-metin outline-none focus:border-mercan";
+const ETIKET = "text-xs font-bold text-metin-2";
+
+/** Kuruşu form kutusuna yazılabilir hale getirir: 4990 → "49,90" */
+function kurusYaz(kurus: number): string {
+  return (kurus / 100).toFixed(2).replace(".", ",");
+}
+
+export default async function AyarEkrani({ searchParams }: PageProps<"/yonetim/ayarlar">) {
+  const { kayit } = await searchParams;
+  const ayar = await ayarlariGetir();
+
+  return (
+    <div className="flex flex-col gap-5">
+      <h1 className="text-2xl">Satış ayarları</h1>
+
+      {kayit === "1" && (
+        <p className="rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">
+          Kaydedildi.
+        </p>
+      )}
+
+      {!ayar.havaleBilgisi && (
+        <p className="rounded-marka bg-mercan-soluk px-4 py-3 text-sm font-semibold text-mercan-koyu">
+          Banka bilgisi boş. Müşteri sipariş verebiliyor ama ödemeyi nereye yapacağını
+          göremiyor; hesap açılınca burayı doldur.
+        </p>
+      )}
+
+      <form action={satisAyariKaydet} className="flex flex-col gap-5">
+        <section className="rounded-marka border border-cizgi bg-yuzey p-5">
+          <h2 className="text-lg">Kargo</h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <label className="flex flex-col gap-1.5">
+              <span className={ETIKET}>Kargo ücreti (₺)</span>
+              <input
+                name="kargo"
+                inputMode="decimal"
+                defaultValue={kurusYaz(ayar.kargoKurus)}
+                className={`${GIRDI} rakam`}
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={ETIKET}>Bedava kargo eşiği (₺)</span>
+              <input
+                name="esik"
+                inputMode="decimal"
+                defaultValue={kurusYaz(ayar.bedavaKargoEsigi)}
+                className={`${GIRDI} rakam`}
+              />
+            </label>
+          </div>
+          <p className="mt-3 text-xs text-metin-3">
+            Şu an: sepet <span className="rakam">{fiyatYaz(ayar.bedavaKargoEsigi)}</span> ve
+            üzerindeyse kargo bedava, altındaysa{" "}
+            <span className="rakam">{fiyatYaz(ayar.kargoKurus)}</span>. Eşiğe 0 yazarsan kargo
+            her siparişte ücretli olur.
+          </p>
+        </section>
+
+        <section className="rounded-marka border border-cizgi bg-yuzey p-5">
+          <h2 className="text-lg">Havale / EFT bilgisi</h2>
+          <p className="mt-1 text-xs text-metin-3">
+            Sipariş veren müşteriye onay ekranında aynen bu yazı gösterilir. Banka adı, hesap
+            sahibi ve IBAN yazman yeterli.
+          </p>
+          <label className="mt-4 flex flex-col gap-1.5">
+            <span className={ETIKET}>Metin</span>
+            <textarea
+              name="havaleBilgisi"
+              rows={5}
+              maxLength={1000}
+              defaultValue={ayar.havaleBilgisi}
+              placeholder={"Banka: ...\nHesap sahibi: ...\nIBAN: TR.. .... .... .... .... .... .."}
+              className={GIRDI}
+            />
+          </label>
+        </section>
+
+        <button
+          type="submit"
+          className="self-start rounded-full bg-mercan px-6 py-3 font-bold text-white transition hover:brightness-95"
+        >
+          Ayarları kaydet
+        </button>
+      </form>
+    </div>
+  );
+}

@@ -19,6 +19,8 @@ export type Kategori = {
 };
 
 export type Varyant = {
+  /** Sepete eklerken forma yazılan varyant kimliği */
+  id: string;
   beden: string;
   renk: RenkAdi;
   stok: number;

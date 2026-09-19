@@ -11,6 +11,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
+import { DURUMLAR, ODEME_DURUMLARI } from "@/ui/siparis-bicim";
 
 function vitriniYenile() {
   revalidatePath("/", "layout");
@@ -187,4 +188,46 @@ export async function seritAyariKaydet(form: FormData): Promise<void> {
   });
   vitriniYenile();
   redirect("/yonetim/duyuru?kayit=1");
+}
+
+/* ── Siparişler ─────────────────────────────────────────────────────────── */
+
+/**
+ * Sipariş durumu ve ödeme durumu. Yalnızca bilinen değerler kabul edilir;
+ * form kurcalanıp durum alanına rastgele metin yazılamaz.
+ */
+export async function siparisDurumuKaydet(veri: FormData): Promise<void> {
+  const numara = String(veri.get("numara") ?? "").trim().toUpperCase();
+  const durum = String(veri.get("durum") ?? "");
+  const odemeDurumu = String(veri.get("odemeDurumu") ?? "");
+  const kargoTakipNo = String(veri.get("kargoTakipNo") ?? "").trim();
+  if (!numara) return;
+
+  if (!(DURUMLAR as readonly string[]).includes(durum)) return;
+  if (!(ODEME_DURUMLARI as readonly string[]).includes(odemeDurumu)) return;
+
+  await db.order.update({
+    where: { numara },
+    data: { durum, odemeDurumu, kargoTakipNo: kargoTakipNo || null },
+  });
+
+  vitriniYenile();
+  redirect(`/yonetim/siparisler/${numara}?kayit=1`);
+}
+
+/* ── Satış ayarları ─────────────────────────────────────────────────────── */
+
+export async function satisAyariKaydet(veri: FormData): Promise<void> {
+  const kargo = kurusaCevir(veri.get("kargo")) ?? 0;
+  const esik = kurusaCevir(veri.get("esik")) ?? 0;
+  const havaleBilgisi = String(veri.get("havaleBilgisi") ?? "").trim().slice(0, 1000);
+
+  await db.storeSetting.upsert({
+    where: { id: "tek" },
+    update: { kargoKurus: kargo, bedavaKargoEsigi: esik, havaleBilgisi },
+    create: { id: "tek", kargoKurus: kargo, bedavaKargoEsigi: esik, havaleBilgisi },
+  });
+
+  vitriniYenile();
+  redirect("/yonetim/ayarlar?kayit=1");
 }

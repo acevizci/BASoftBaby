@@ -56,20 +56,29 @@ app/
   (vitrin)/               herkese açık sayfalar
     [kategori]/           kategori listesi, filtreler
     urun/[slug]/          ürün detayı, varyant seçimi
-    sepet/ odeme/         sepet ve ödeme adımı
-  (hesap)/                oturum gerekli
-    siparislerim/ adreslerim/ iade/
-  (yonetim)/              rol = admin gerekli
-    urunler/ siparisler/ kampanyalar/ stok/ raporlar/
-  api/
-    odeme/iyzico/         ödeme dönüş ve bildirim ucu
-    kargo/durum/          taşıyıcı durum bildirimi
-    cron/                 zamanlı işler
+  sepet/                  sepet
+  odeme/                  adres ve sipariş özeti
+  siparis/[numara]/       sipariş onayı (yalnız siparişi verene açık)
+  siparis-takip/          numara + e-posta ile sipariş sorgulama
+  yonetim/                şifreyle korunuyor
+    siparisler/ urunler/ stok/ duyuru/ ayarlar/
+
+  — henüz yok, sırası gelince —
+  (hesap)/                üyelik: siparislerim, adreslerim, iade
+  api/odeme/iyzico/       ödeme dönüş ve bildirim ucu
+  api/kargo/durum/        taşıyıcı durum bildirimi
+  api/cron/               zamanlı işler
 
 server/                   iş kuralları — tek kaynak
   veritabani.ts           Prisma bağlantısı
-  duyuru.ts katalog.ts yonetim.ts fiyatlama.ts sepet.ts siparis.ts
-  odeme.ts kargo.ts fatura.ts eposta.ts stok.ts
+  katalog.ts              ürün, kategori, varyant okuma
+  duyuru.ts               duyuru şeridi
+  sepet.ts                sepet okuma, kargo hesabı, satış ayarları
+  sepet-islem.ts          sepete ekle / adet değiştir / sil
+  siparis.ts              sipariş oluşturma ve sorgulama
+  siparis-islem.ts        ödeme formunun server action'ı
+  yonetim.ts              panelin yazma işlemleri
+  — henüz yok: fiyatlama.ts odeme.ts kargo.ts fatura.ts eposta.ts
 
 db/
   schema.prisma           veri modeli
@@ -79,6 +88,9 @@ db/
 middleware.ts             yönetim panelinin şifre koruması
 
 ui/                       ortak arayüz parçaları
+  katalog-bicim.ts        Prisma'ya bulaşmayan saf görünüm sabitleri
+  siparis-bicim.ts        sipariş durumlarının adları ve renkleri
+  siparis-karti.tsx       sipariş özeti (onay, takip ve panelde aynı)
 public/marka/             logo dosyaları
 ```
 

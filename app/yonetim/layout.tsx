@@ -8,9 +8,11 @@ export const metadata: Metadata = {
 
 const MENU = [
   { yol: "/yonetim", ad: "Özet" },
+  { yol: "/yonetim/siparisler", ad: "Siparişler" },
   { yol: "/yonetim/urunler", ad: "Ürünler" },
   { yol: "/yonetim/stok", ad: "Stok" },
   { yol: "/yonetim/duyuru", ad: "Duyuru şeridi" },
+  { yol: "/yonetim/ayarlar", ad: "Satış ayarları" },
 ];
 
 export default function YonetimDuzeni({ children }: LayoutProps<"/yonetim">) {
