@@ -1,5 +1,5 @@
 import Link from "next/link";
-import UrunGorseli from "@/ui/urun-gorseli";
+import UrunFoto from "@/ui/urun-foto";
 import SepeteEkle from "@/ui/sepete-ekle";
 import { PALET, RENK_ADLARI, fiyatYaz, toplamStok, type Urun } from "@/ui/katalog-bicim";
 
@@ -33,7 +33,13 @@ export default function UrunKarti({ urun }: { urun: Urun }) {
   return (
     <article className="flex flex-col overflow-hidden rounded-marka border border-cizgi bg-yuzey shadow-sm">
       <Link href={`/urun/${urun.slug}`} className="relative block">
-        <UrunGorseli tip={urun.gorsel} palet={urun.palet} className="aspect-square rounded-none" />
+        <UrunFoto
+          fotograf={urun.fotograflar[0]}
+          gorsel={urun.gorsel}
+          palet={urun.palet}
+          className="aspect-square w-full rounded-none"
+          sizes="(min-width: 1024px) 300px, 50vw"
+        />
         {urun.rozet && (
           <span
             className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-wide ${ROZET_SINIFI[urun.rozet.ton]}`}

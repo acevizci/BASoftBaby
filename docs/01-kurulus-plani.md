@@ -45,7 +45,7 @@ bir beden tükendi olarak işaretlendiğinde vitrinde anında kapanıyor.
 | --- | --- |
 | Site ve panel | Next.js + TypeScript + Tailwind CSS |
 | Veritabanı | PostgreSQL (Neon), Prisma ile |
-| Görseller | Cloudflare R2, otomatik boyutlandırma ve WebP |
+| Görseller | Vercel Blob, yüklerken otomatik boyutlandırma ve WebP (K-12) |
 | Üyelik | Auth.js — müşteri ve admin girişi |
 | Ödeme | iyzico — 3D Secure, taksit, iade |
 | Kargo | Geliver veya Navlungo — Yurtiçi, Aras, MNG, PTT tek API |
@@ -160,7 +160,7 @@ sipariş için sepet, sepet için ürün gerekiyor.
 03. adımda üyelik yapılmadı: şifre sıfırlama ve e-posta doğrulama için alan adı
 ve e-posta servisi gerekiyor, ikisi de henüz yok. Yerine üyeliksiz sipariş
 konuldu; müşteri siparişini numarası ve e-postasıyla görüyor. Üyelik, alan adı
-alınınca 04. adımla birlikte gelecek. Görsel yükleme de (Cloudflare R2) gerçek
+alınınca 04. adımla birlikte gelecek. Görsel yükleme (Vercel Blob) yapıldı; geri kalanı gerçek
 ürün fotoğrafları çekildiğinde yapılacak.
 
 04 ve 05. adımlar (ödeme ve kargo) şirket evrakına bağlı olduğu için sıradan

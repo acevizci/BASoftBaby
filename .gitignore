@@ -37,3 +37,6 @@ next-env.d.ts
 
 # prisma tarafindan uretilen istemci
 db/uretilen/
+
+# Yerelde yuklenen urun fotograflari; yayinda Vercel Blob kullaniliyor
+.yuklenen/

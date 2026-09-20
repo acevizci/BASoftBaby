@@ -13,6 +13,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
 import { DURUMLAR, ODEME_DURUMLARI } from "@/ui/siparis-bicim";
 import { BANNER_GORSELLERI, BANNER_PALETLERI } from "@/server/banner";
+import { GorselHatasi, gorselDosyalariniSil, gorselYukle } from "@/server/gorsel-depo";
 
 function vitriniYenile() {
   revalidatePath("/", "layout");
@@ -388,4 +389,123 @@ export async function bannerSuresiKaydet(veri: FormData): Promise<void> {
 
   vitriniYenile();
   redirect("/yonetim/banner?kayit=1");
+}
+
+/* ---------------------------------------------------------------- fotoğraf */
+
+/**
+ * Ürüne fotoğraf ekler. Birden çok dosya seçilebiliyor; biri bozuksa
+ * diğerleri yine de yükleniyor ve kaç tanesinin başarısız olduğu ekrana
+ * dönüyor. Yükleme sırası seçim sırası.
+ */
+export async function fotografEkle(veri: FormData): Promise<void> {
+  const slug = String(veri.get("slug") ?? "");
+  const urun = await db.product.findUnique({
+    where: { slug },
+    select: { id: true, ad: true, images: { select: { sira: true } } },
+  });
+  if (!urun) redirect("/yonetim/urunler");
+
+  const dosyalar = veri.getAll("fotograf").filter((d): d is File => d instanceof File && d.size > 0);
+  if (dosyalar.length === 0) redirect(`/yonetim/urunler/${slug}?fhata=bos`);
+
+  const altMetin = String(veri.get("altMetin") ?? "").trim() || urun.ad;
+  let sira = urun.images.reduce((e, g) => Math.max(e, g.sira), 0);
+  const hatalar: string[] = [];
+
+  for (const dosya of dosyalar) {
+    try {
+      const y = await gorselYukle(dosya);
+      sira += 1;
+      await db.productImage.create({
+        data: {
+          productId: urun.id,
+          yol: y.yol,
+          kucukYol: y.kucukYol,
+          genislik: y.genislik,
+          yukseklik: y.yukseklik,
+          boyutBayt: y.boyutBayt,
+          altMetin,
+          sira,
+        },
+      });
+    } catch (hata) {
+      hatalar.push(hata instanceof GorselHatasi ? hata.message : "Fotoğraf yüklenemedi.");
+      console.error("Fotoğraf yüklenemedi:", hata);
+    }
+  }
+
+  vitriniYenile();
+  if (hatalar.length > 0) {
+    redirect(`/yonetim/urunler/${slug}?fhata=${encodeURIComponent(hatalar[0])}`);
+  }
+  redirect(`/yonetim/urunler/${slug}?fkayit=${dosyalar.length - hatalar.length}`);
+}
+
+export async function fotografSil(veri: FormData): Promise<void> {
+  const id = String(veri.get("id") ?? "");
+  const slug = String(veri.get("slug") ?? "");
+  if (!id) return;
+
+  const kayit = await db.productImage.findUnique({
+    where: { id },
+    select: { yol: true, kucukYol: true },
+  });
+  await db.productImage.delete({ where: { id } });
+  if (kayit) await gorselDosyalariniSil([kayit.yol, kayit.kucukYol]);
+
+  vitriniYenile();
+  redirect(`/yonetim/urunler/${slug}?fsil=1`);
+}
+
+/**
+ * Fotoğrafı bir sıra yukarı ya da aşağı taşır. Sürükle bırak yerine düğme,
+ * çünkü JavaScript kapalıyken de çalışması gerekiyor. İlk sıradaki fotoğraf
+ * kapak fotoğrafı.
+ */
+export async function fotografTasi(veri: FormData): Promise<void> {
+  const id = String(veri.get("id") ?? "");
+  const slug = String(veri.get("slug") ?? "");
+  const yon = String(veri.get("yon") ?? "") === "yukari" ? -1 : 1;
+  if (!id) return;
+
+  const kayit = await db.productImage.findUnique({
+    where: { id },
+    select: { productId: true },
+  });
+  if (!kayit) return;
+
+  const hepsi = await db.productImage.findMany({
+    where: { productId: kayit.productId },
+    orderBy: { sira: "asc" },
+    select: { id: true },
+  });
+
+  const yer = hepsi.findIndex((g) => g.id === id);
+  const hedef = yer + yon;
+  if (yer === -1 || hedef < 0 || hedef >= hepsi.length) {
+    redirect(`/yonetim/urunler/${slug}`);
+  }
+
+  [hepsi[yer], hepsi[hedef]] = [hepsi[hedef], hepsi[yer]];
+
+  // Sıra numaraları baştan yazılıyor: elle girilmiş boşluklu numaralar da
+  // böylece düzeliyor.
+  await db.$transaction(
+    hepsi.map((g, i) => db.productImage.update({ where: { id: g.id }, data: { sira: i + 1 } })),
+  );
+
+  vitriniYenile();
+  redirect(`/yonetim/urunler/${slug}`);
+}
+
+export async function fotografAdiKaydet(veri: FormData): Promise<void> {
+  const id = String(veri.get("id") ?? "");
+  const slug = String(veri.get("slug") ?? "");
+  const altMetin = String(veri.get("altMetin") ?? "").trim().slice(0, 200);
+  if (!id) return;
+
+  await db.productImage.update({ where: { id }, data: { altMetin } });
+  vitriniYenile();
+  redirect(`/yonetim/urunler/${slug}?fkayit=0`);
 }

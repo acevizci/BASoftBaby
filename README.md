@@ -76,6 +76,22 @@ gerekiyor. Bu yüzden başlangıç verisi üç örnek banner yazıyor. Örnekler
 yazılır (`StoreSetting.bannerTohumu` işareti), panelden silinirse sonraki
 yayında geri gelmezler.
 
+## Ürün fotoğrafları
+
+Panelde ürünü açınca altta **Fotoğraflar** bölümü var. Birden fazla dosya birden
+seçilebiliyor; her fotoğraf yüklenirken en fazla 1400 piksele küçültülüp webp'ye
+çevriliyor, kartlar için 600 piksellik ikinci bir kopya da saklanıyor. Telefonla
+çekilmiş büyük dosyalar sorun değil.
+
+Ok düğmeleriyle sıralanıyor, ilk sıradaki kapak fotoğrafı oluyor. Fotoğrafı olan
+ürün kartta, ürün sayfasında ve sepette fotoğrafıyla görünüyor; olmayan ürün
+çizimiyle görünmeye devam ediyor, yani ürünler tek tek geçirilebiliyor.
+
+Dosyalar yayında **Vercel Blob**'da duruyor. Çalışması için Vercel panelinde
+Storage bölümünden bir Blob deposu oluşturulup projeye bağlanması gerekiyor;
+bağlanmadan yüklemeye çalışılırsa panel bunu söylüyor. Yerelde geliştirirken
+jeton gerekmiyor, dosyalar `.yuklenen/` klasörüne yazılıyor.
+
 ## Yardım sayfaları
 
 Alt bilgideki Yardım sütunu gerçek sayfalara gidiyor: beden rehberi, kargo ve
@@ -134,6 +150,7 @@ fatura e-arşiv, yayın Vercel üzerinde.
 - [x] Kampanya ve kupon motoru
 - [x] Panelden yönetilen, dönen ana sayfa banner'ı
 - [x] Yardım sayfaları (beden, kargo, iade, SSS)
+- [x] Panelden ürün fotoğrafı yükleme
 - [ ] Gerçek ürünlerin girilmesi
 - [ ] Havale hesabının panele girilmesi
 - [ ] Üyelik (alan adı ve e-posta servisi gelince)

@@ -94,10 +94,20 @@ model ProductImage {
   productId String
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  /// Cloudflare R2'deki dosya yolu. Boyutlar bundan türetilir
-  yol      String
+  /// Büyük görselin adresi (yayında Vercel Blob URL'i, yerelde /yuklenen/...)
+  yol String
+  /// Kartlarda kullanılan küçük kopya
+  kucukYol String @default("")
+
+  /// Büyük görselin ölçüleri: img etiketine yazılıyor, sayfa zıplamasın diye
+  genislik Int @default(0)
+  yukseklik Int @default(0)
+  boyutBayt Int @default(0)
+
   altMetin String
   sira     Int    @default(0)
+
+  olusturuldu DateTime @default(now())
 
   @@index([productId, sira])
 }

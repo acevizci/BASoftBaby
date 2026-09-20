@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import UrunFoto from "@/ui/urun-foto";
 import UrunGorseli from "@/ui/urun-gorseli";
 import UrunKarti from "@/ui/urun-karti";
 import VaryantSecici from "@/ui/varyant-secici";
@@ -60,11 +61,33 @@ export default async function UrunSayfasi({ params }: PageProps<"/urun/[slug]">)
 
       <div className="mt-4 grid gap-8 lg:grid-cols-2">
         <div className="flex flex-col gap-3">
-          <UrunGorseli tip={urun.gorsel} palet={urun.palet} className="aspect-square" />
+          <UrunFoto
+            fotograf={urun.fotograflar[0]}
+            gorsel={urun.gorsel}
+            palet={urun.palet}
+            className="aspect-square w-full rounded-marka"
+            sizes="(min-width: 1024px) 560px, 100vw"
+            oncelikli
+          />
+          {/* Fotoğraf varsa küçük görseller diğer fotoğraflar, yoksa ürünün
+              renk seçenekleri gösteriliyor. */}
           <div className="grid grid-cols-4 gap-3">
-            {urun.renkler.slice(0, 4).map((r) => (
-              <UrunGorseli key={r} tip={urun.gorsel} palet={r} className="aspect-square" />
-            ))}
+            {urun.fotograflar.length > 1
+              ? urun.fotograflar.slice(1, 5).map((f) => (
+                  <UrunFoto
+                    key={f.id}
+                    fotograf={f}
+                    gorsel={urun.gorsel}
+                    palet={urun.palet}
+                    className="aspect-square w-full rounded-marka"
+                    sizes="140px"
+                  />
+                ))
+              : urun.renkler
+                  .slice(0, 4)
+                  .map((r) => (
+                    <UrunGorseli key={r} tip={urun.gorsel} palet={r} className="aspect-square" />
+                  ))}
           </div>
         </div>
 

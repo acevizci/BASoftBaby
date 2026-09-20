@@ -252,6 +252,47 @@ seçenek değil, erişilebilirlik gereği.
 
 ---
 
+### K-12 · Ürün fotoğrafları Vercel Blob'da, yüklerken küçültülüyor
+**20 Eylül 2026**
+
+Panelden ürün fotoğrafı yüklenebiliyor. Fotoğrafı olan ürün kartta, ürün
+sayfasında ve sepette fotoğrafıyla görünüyor; olmayan ürün eskisi gibi çizimle
+görünmeye devam ediyor. Yani geçiş ürün ürün yapılabiliyor, hepsini birden
+çekmek gerekmiyor.
+
+**Depo Cloudflare R2 değil, Vercel Blob.** İlk mimaride R2 yazıyordu. Vercel
+Blob'a geçildi çünkü kurulumu Neon'la aynı: panelde bir depo oluşturuluyor,
+jeton projeye kendiliğinden ekleniyor. R2 ayrı hesap, ayrı kova, ayrı anahtar ve
+CORS ayarı demekti. Taşınması gerekirse yalnızca
+[`../server/gorsel-depo.ts`](../server/gorsel-depo.ts) değişiyor, çağıran taraf
+depoyu bilmiyor.
+
+**Yerelde disk.** Jeton yokken dosyalar proje kökündeki `.yuklenen/` klasörüne
+yazılıp bir route handler ile sunuluyor. `public/` kullanılamıyor: oranın içeriği
+derleme anında sabitleniyor, sonradan yazılan dosya sunulmuyor.
+
+**Vercel'de jeton yoksa açıkça hata veriliyor.** Sessizce yerel diske yazsaydı
+fotoğraflar yüklenmiş görünür, ilk dağıtımda yok olurdu. Ölçüt `NODE_ENV` değil
+`VERCEL` değişkeni, çünkü `next start` yerelde de üretim kipinde çalışıyor.
+
+**Her fotoğraf yüklenirken küçültülüyor:** en fazla 1400 piksel genişlik, ayrıca
+kartlar için 600 piksellik ikinci bir kopya, ikisi de webp. Telefondan gelen
+2-3 MB'lık bir fotoğraf 200 KB'ın altına iniyor. Dosya biçimine tarayıcının
+söylediğine değil, dosyanın kendisine bakılarak karar veriliyor.
+
+**Next'in görsel iyileştiricisi kullanılmıyor**, çünkü dosyalar zaten
+küçültülmüş durumda ve iyileştiricinin aylık sınırı var. Hangi kopyanın
+indirileceğine tarayıcı `srcset` ile karar veriyor.
+
+**Sıralama sürükle bırak değil, ok düğmeleri:** panelin geri kalanı gibi burası
+da JavaScript kapalı tarayıcıda çalışıyor. İlk sıradaki fotoğraf kapak.
+
+**Nerede:** [`../server/gorsel-depo.ts`](../server/gorsel-depo.ts),
+[`../ui/fotograf-yonetimi.tsx`](../ui/fotograf-yonetimi.tsx),
+[`../ui/urun-foto.tsx`](../ui/urun-foto.tsx)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı
@@ -277,3 +318,9 @@ tanımladı ve panele girdi. Şifre koda ya da depoya hiçbir zaman yazılmıyor
 Yönetim panelindeki **Satış ayarları** ekranında banka adı, hesap sahibi ve IBAN
 alanı boş. Doldurulana kadar sipariş veren müşteri parayı nereye yatıracağını
 göremiyor. Şirket kurulunca (A-03) hesap açılıp buraya yazılacak.
+
+### A-08 · Fotoğraf deposunun açılması
+Vercel panelinde **Storage → Create Database → Blob** ile bir depo oluşturulup
+projeye bağlanması gerekiyor. Bağlanınca `BLOB_READ_WRITE_TOKEN` değişkeni
+kendiliğinden ekleniyor. Bu yapılana kadar yayındaki panelden fotoğraf
+yüklenmeye çalışılırsa "Fotoğraf deposu bağlı değil" uyarısı çıkıyor.

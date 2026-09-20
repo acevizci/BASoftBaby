@@ -26,16 +26,29 @@ export type Varyant = {
   stok: number;
 };
 
+/** Panelden yüklenmiş gerçek ürün fotoğrafı. */
+export type Fotograf = {
+  id: string;
+  yol: string;
+  kucukYol: string;
+  altMetin: string;
+  genislik: number;
+  yukseklik: number;
+};
+
 export type Urun = {
-  /** Kampanya kapsamı hesabı için; ekranda görünmez */
+  /** Kampanya hesabı için; ekranda görünmez */
   id: string;
   categoryId: string;
   slug: string;
   ad: string;
   ozet: string;
   kategori: string;
+  /** Fotoğraf yoksa gösterilen çizim ve renk paleti */
   gorsel: GorselTipi;
   palet: RenkAdi;
+  /** Yüklenmiş fotoğraflar, sıralı. Boşsa çizim gösterilir. */
+  fotograflar: Fotograf[];
   fiyatKurus: number;
   eskiFiyatKurus?: number;
   /** O an geçerli kampanyanın ürüne düşen hâli; yoksa indirim yok */

@@ -17,7 +17,7 @@ tarayıcı hiçbir zaman iyzico veya kargo API anahtarını görmüyor.
   Müşteri (tarayıcı)                                    Dış servisler
   Yönetici (/yonetim)                                   ─────────────
          │                                              PostgreSQL · Neon
-         │ HTTPS                                        Cloudflare R2
+         │ HTTPS                                        Vercel Blob
          ▼                                              iyzico
   ┌────────────────────────────────┐   sunucudan        Kargo API
   │  Next.js · Vercel              │   sunucuya    ───► e-Arşiv
@@ -34,7 +34,7 @@ tarayıcı hiçbir zaman iyzico veya kargo API anahtarını görmüyor.
 | Servis | Görevi |
 | --- | --- |
 | PostgreSQL (Neon) | Ürün, stok, sipariş, müşteri |
-| Cloudflare R2 | Ürün görselleri, kargo etiketi ve fatura PDF'leri |
+| Vercel Blob | Ürün fotoğrafları (K-12). Kargo etiketi ve fatura PDF'leri de buraya gelecek |
 | iyzico | Kart ödemesi, 3D Secure, iade |
 | Kargo API | Gönderi açma, barkod, takip |
 | e-Arşiv | Fatura kesme |
@@ -76,6 +76,7 @@ app/
 
 server/                   iş kuralları — tek kaynak
   veritabani.ts           Prisma bağlantısı
+  gorsel-depo.ts          fotoğraf yükleme, küçültme, silme
   katalog.ts              ürün, kategori, varyant okuma
   duyuru.ts               duyuru şeridi
   sepet.ts                sepet okuma, kargo hesabı, satış ayarları

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import UrunGorseli from "@/ui/urun-gorseli";
+import UrunFoto from "@/ui/urun-foto";
 import { sepetGetir } from "@/server/sepet";
 import { adetDegistir, kuponKaldir, kuponUygula, satirSil } from "@/server/sepet-islem";
 import { fiyatYaz, type GorselTipi, type RenkAdi } from "@/ui/katalog-bicim";
@@ -41,10 +41,12 @@ export default async function SepetSayfasi() {
               className="flex gap-4 rounded-marka border border-cizgi bg-yuzey p-4"
             >
               <Link href={`/urun/${s.slug}`} className="w-20 flex-none sm:w-24">
-                <UrunGorseli
-                  tip={s.gorsel as GorselTipi}
+                <UrunFoto
+                  fotograf={s.fotograf}
+                  gorsel={s.gorsel as GorselTipi}
                   palet={s.palet as RenkAdi}
-                  className="aspect-square rounded-[12px]"
+                  className="aspect-square w-full rounded-[12px]"
+                  sizes="96px"
                 />
               </Link>
 

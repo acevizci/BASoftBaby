@@ -35,6 +35,8 @@ export type SepetSatiri = {
   renkAdi: string;
   gorsel: string;
   palet: string;
+  /** Yüklenmiş ilk fotoğraf; yoksa çizim gösterilir. */
+  fotograf?: { id: string; yol: string; kucukYol: string; altMetin: string; genislik: number; yukseklik: number };
   adet: number;
   /** Birim fiyat, kuruş */
   fiyatKurus: number;
@@ -129,7 +131,11 @@ export async function sepetGetir(): Promise<Sepet> {
   const [satirlar, ayar] = await Promise.all([
     db.cartItem.findMany({
       where: { cartId: id },
-      include: { variant: { include: { product: true } } },
+      include: {
+        variant: {
+          include: { product: { include: { images: { orderBy: { sira: "asc" }, take: 1 } } } },
+        },
+      },
       orderBy: { id: "asc" },
     }),
     ayarlariGetir(),
@@ -154,6 +160,16 @@ export async function sepetGetir(): Promise<Sepet> {
         renkAdi: RENK_ADLARI[s.variant.renk as RenkAdi] ?? s.variant.renk,
         gorsel: s.variant.product.gorsel,
         palet: s.variant.product.palet,
+        fotograf: s.variant.product.images[0]
+          ? {
+              id: s.variant.product.images[0].id,
+              yol: s.variant.product.images[0].yol,
+              kucukYol: s.variant.product.images[0].kucukYol || s.variant.product.images[0].yol,
+              altMetin: s.variant.product.images[0].altMetin || s.variant.product.ad,
+              genislik: s.variant.product.images[0].genislik,
+              yukseklik: s.variant.product.images[0].yukseklik,
+            }
+          : undefined,
         adet,
         fiyatKurus: fiyat,
         araToplamKurus: fiyat * adet,

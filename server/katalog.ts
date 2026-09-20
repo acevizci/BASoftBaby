@@ -14,6 +14,7 @@ export * from "@/ui/katalog-bicim";
 const URUN_ICEREN = {
   category: true,
   variants: { orderBy: { renk: "asc" } },
+  images: { orderBy: { sira: "asc" } },
 } as const;
 
 type SatirTipi = {
@@ -35,6 +36,14 @@ type SatirTipi = {
   ozellikler: string[];
   category: { slug: string };
   variants: { id: string; beden: string; renk: string; stok: number }[];
+  images: {
+    id: string;
+    yol: string;
+    kucukYol: string;
+    altMetin: string;
+    genislik: number;
+    yukseklik: number;
+  }[];
 };
 
 function bedenSirasi(beden: string): number {
@@ -70,6 +79,14 @@ function urunYap(satir: SatirTipi, kampanyalar: KampanyaKaydi[] = []): Urun {
     kategori: satir.category.slug,
     gorsel: satir.gorsel as GorselTipi,
     palet: satir.palet as RenkAdi,
+    fotograflar: satir.images.map((g) => ({
+      id: g.id,
+      yol: g.yol,
+      kucukYol: g.kucukYol || g.yol,
+      altMetin: g.altMetin || satir.ad,
+      genislik: g.genislik,
+      yukseklik: g.yukseklik,
+    })),
     fiyatKurus: satir.fiyatKurus,
     eskiFiyatKurus: satir.eskiFiyatKurus ?? undefined,
     kampanya,
