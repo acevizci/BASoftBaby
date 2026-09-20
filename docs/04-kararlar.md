@@ -320,13 +320,13 @@ alanı boş. Doldurulana kadar sipariş veren müşteri parayı nereye yatıraca
 göremiyor. Şirket kurulunca (A-03) hesap açılıp buraya yazılacak.
 
 ### A-08 · Fotoğraf deposunun açılması
-Vercel panelinde **Storage → Create Database → Blob** ile bir depo oluşturulup
-projeye bağlanması gerekiyor. Bağlanınca `BLOB_READ_WRITE_TOKEN` değişkeni
-kendiliğinden ekleniyor. Bu yapılana kadar yayındaki panelden fotoğraf
-yüklenmeye çalışılırsa "Fotoğraf deposu bağlı değil" uyarısı çıkıyor.
+**20 Eylül 2026'da kapandı.** Aykut Vercel panelinde **Storage → Create
+Database → Blob** ile depoyu oluşturup projeye bağladı; yayındaki panelden
+fotoğraf yükleniyor. Depo yeni biçimde, yani OIDC ile bağlandığı için kodda
+bir düzeltme gerekti (aşağısı).
 
-**Depo bağlı olduğu hâlde aynı uyarı çıkıyorsa** üç sebebi olabiliyor, üçü de
-20 Eylül 2026'da ele alındı:
+**Depo bağlı olduğu hâlde "bağlı değil" uyarısı çıkıyorsa** dört sebebi
+olabiliyor, dördü de 20 Eylül 2026'da ele alındı:
 
 1. **Değişken eklendi ama yeniden dağıtım yapılmadı.** Vercel ortam
    değişkenlerini dağıtım anında yazıyor; çalışan dağıtım sonradan eklenen
