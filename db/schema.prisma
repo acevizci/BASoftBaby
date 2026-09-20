@@ -152,6 +152,19 @@ model StoreSetting {
 
   /// Örnek bannerlar bir kez yazıldı mı. Silinen banner yayında geri gelmesin diye.
   bannerTohumu Boolean @default(false)
+
+  /// Satıcı künyesi. Mesafeli satışta müşteriye gösterilmesi zorunlu; alt
+  /// bilgide ve yasal metinlerin altında bu alanlar basılıyor. Boş olanlar
+  /// hiç gösterilmiyor, yarım künye yerine eksik satır görünmesin diye.
+  unvan         String @default("")
+  vergiDairesi  String @default("")
+  vergiNo       String @default("")
+  mersisNo      String @default("")
+  /// ETBİS kayıt numarası — e-ticaret sitelerinde sitede görünmesi zorunlu.
+  etbisNo       String @default("")
+  sirketAdresi  String @default("")
+  destekTelefon String @default("")
+  destekEposta  String @default("")
 }
 
 /// Ziyaretçinin sepeti. Tarayıcıdaki `sepet` çerezi bu kaydın id'sini tutar;
@@ -212,6 +225,11 @@ model Order {
 
   /// Kargo firması takip numarası; 05. adımda kargo entegrasyonu dolduracak.
   kargoTakipNo String?
+
+  /// Müşterinin ön bilgilendirme formu ile mesafeli satış sözleşmesini
+  /// onayladığı an. Onay kutusu işaretlenmeden sipariş oluşmuyor; kaydı
+  /// burada duruyor ki sonradan "onaylamadım" denemesin.
+  sozlesmeOnayi DateTime?
 
   /// Sipariş üye olarak verildiyse hesabı. Üyeliksiz siparişlerde boş kalır;
   /// hesap silinse bile sipariş kaydı ayakta kalsın diye ilişki SetNull.
@@ -371,4 +389,25 @@ model Address {
   guncellendi DateTime @updatedAt
 
   @@index([customerId, varsayilan])
+}
+
+/// Yasal metin sayfası: mesafeli satış sözleşmesi, ön bilgilendirme formu,
+/// KVKK aydınlatma metni, çerez politikası.
+///
+/// İçerik panelden düzenleniyor, koda gömülü değil: avukattan gelen metin
+/// yayın beklemeden yapıştırılabilsin. `taslakMi` işaretliyken sayfanın
+/// tepesinde metnin taslak olduğu yazıyor — müşteri onaylanmış sanmasın.
+model LegalPage {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  baslik      String
+  ozet        String   @default("")
+  /// Düz metin. Boş satır paragrafı, "## " ile başlayan satır başlığı,
+  /// "- " ile başlayan satır madde olur (bkz. ui/yasal-metin.tsx).
+  icerik      String
+  taslakMi    Boolean  @default(true)
+  sira        Int      @default(0)
+  guncellendi DateTime @updatedAt
+
+  @@index([sira])
 }

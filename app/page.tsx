@@ -1,6 +1,10 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import HeroBanner from "@/ui/hero-banner";
 import UrunKarti from "@/ui/urun-karti";
+import YapisalVeri from "@/ui/yapisal-veri";
+import { kunyeGetir } from "@/server/yasal";
+import { siteAdresi, tamAdres } from "@/server/site";
 import { kategorileriGetir, oneCikanUrunler } from "@/server/katalog";
 import { ayarlariGetir, type SatisAyari } from "@/server/sepet";
 import { fiyatYaz } from "@/ui/katalog-bicim";
@@ -28,16 +32,43 @@ function guvenSatirlari(ayar: SatisAyari): string[] {
   ];
 }
 
+export const metadata: Metadata = { alternates: { canonical: "/" } };
+
 export default async function AnaSayfa() {
-  const [urunler, kategoriler, ayar] = await Promise.all([
+  const [urunler, kategoriler, ayar, kunye] = await Promise.all([
     oneCikanUrunler(8),
     kategorileriGetir(),
     ayarlariGetir(),
+    kunyeGetir(),
   ]);
   const guven = guvenSatirlari(ayar);
 
   return (
     <>
+      {/* Mağazanın kimliği: arama sonucunda site adı ve künye doğru görünsün.
+          Telefon ve adres yalnızca künyeye girilmişse yazılıyor. */}
+      <YapisalVeri
+        veri={{
+          "@context": "https://schema.org",
+          "@type": "OnlineStore",
+          name: kunye.unvan || "BASoftBaby",
+          alternateName: "BASoftBaby",
+          url: siteAdresi(),
+          logo: tamAdres("/marka/basoftbaby-logo-yatay.svg"),
+          description: "Organik pamuklu bebek kıyafetleri, zıbın, tulum ve uyku ürünleri.",
+          ...(kunye.destekTelefon || kunye.destekEposta
+            ? {
+                contactPoint: {
+                  "@type": "ContactPoint",
+                  contactType: "customer support",
+                  ...(kunye.destekTelefon ? { telephone: kunye.destekTelefon } : {}),
+                  ...(kunye.destekEposta ? { email: kunye.destekEposta } : {}),
+                },
+              }
+            : {}),
+        }}
+      />
+
       <HeroBanner />
 
       <section className="mx-auto max-w-6xl px-4 py-12">

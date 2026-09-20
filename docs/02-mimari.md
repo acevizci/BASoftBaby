@@ -65,13 +65,15 @@ app/
   odeme/                  adres ve sipariş özeti
   siparis/[numara]/       sipariş onayı (yalnız siparişi verene açık)
   siparis-takip/          numara + e-posta ile sipariş sorgulama
+  yasal/[slug]/           sözleşmeler, KVKK, çerez politikası
+  sitemap.ts robots.ts    site haritası ve arama motoru kuralları
   (hesap)/                üyelik — adres satırına segment eklemez
     giris/ kayit/         giriş ve hesap açma
     hesabim/              siparişlerim (ana ekran)
       adresler/           adres defteri
       bilgiler/           ad-telefon ve şifre değiştirme
   yonetim/                şifreyle korunuyor
-    siparisler/ urunler/ stok/ kampanyalar/ banner/ duyuru/ ayarlar/
+    siparisler/ urunler/ stok/ kampanyalar/ banner/ duyuru/ ayarlar/ yasal/
 
   — henüz yok, sırası gelince —
   (hesap)/iade/           iade talebi açma
@@ -90,6 +92,8 @@ server/                   iş kuralları — tek kaynak
   siparis-islem.ts        ödeme formunun server action'ı
   uyelik.ts               şifre özeti, oturum, hesap okuma
   uyelik-islem.ts         kayıt, giriş, adres defteri işlemleri
+  yasal.ts                yasal metinler ve satıcı künyesi
+  site.ts                 sitenin kendi adresi (sitemap ve canonical için)
   kampanya.ts             indirim motoru — en çok indiren kazanır
   banner.ts               ana sayfa banner'ları
   yonetim.ts              panelin yazma işlemleri
@@ -163,6 +167,9 @@ değil)
 (sipariş anındaki kopya), `birimFiyatKurus`, `adet`
 
 ### Para, kargo, kampanya
+
+**LegalPage** *(kuruldu)* — `slug`, `baslik`, `ozet`, `icerik`, `taslakMi`.
+Metin panelden düzenleniyor; taslakken sayfa arama motorlarına kapalı.
 
 **Payment** — `orderId`, `saglayici`, `saglayiciRef` (iyzico ödeme kimliği),
 `durum`, `tutarKurus`, `hamYanit`. Kart numarası hiçbir zaman burada değil.

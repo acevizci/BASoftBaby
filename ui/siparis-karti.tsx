@@ -114,6 +114,16 @@ export default function SiparisKarti({
             <p className="mt-1 text-metin-2">{siparis.not}</p>
           </div>
         )}
+        {siparis.sozlesmeOnayi && (
+          <div className="sm:col-span-2">
+            <p className="text-xs font-bold text-metin-2">Sözleşmeler</p>
+            <p className="mt-1 text-metin-3">
+              Ön bilgilendirme formu ve mesafeli satış sözleşmesi{" "}
+              <span className="rakam">{tarihYaz(siparis.sozlesmeOnayi)}</span> tarihinde
+              onaylandı.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

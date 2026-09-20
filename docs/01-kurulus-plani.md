@@ -154,7 +154,7 @@ sipariş için sepet, sepet için ürün gerekiyor.
 | 04 | Ödeme | iyzico entegrasyonu, 3D Secure, taksit, sipariş onay e-postaları |
 | 05 | Kargo ve fatura | Kargo entegrasyonu, barkodlu etiket, takip bildirimi, e-arşiv fatura |
 | 06 | Kampanya ve indirim motoru ✅ | Kupon, kategori indirimi, ücretsiz kargo barajı, tarihli kampanyalar |
-| 07 | Yasal metinler, SEO, açılış | Sözleşmeler, KVKK, ETBİS, ölçümleme, alan adı ve açılış |
+| 07 | Yasal metinler, SEO, açılış ◑ | Sözleşme sayfaları, KVKK, ETBİS alanı, site haritası, yapısal veri ve ölçümleme yapıldı; avukat onayı, şirket künyesi ve alan adı bekleniyor |
 
 02. adımın sonunda ürünler girilmeye başlanabilir.
 
@@ -171,6 +171,12 @@ biri onun siparişlerini görürdü (bkz. 04-kararlar K-14).
 
 Görsel yükleme (Vercel Blob) yapıldı; geri kalanı gerçek ürün fotoğrafları
 çekildiğinde yapılacak.
+
+07. adımın kodla yapılabilen kısmı 20 Eylül 2026'da bitti: dört yasal metin
+sayfası (panelden düzenlenebilir), sipariş sırasında sözleşme onayı, künye ve
+ETBİS alanları, site haritası, robots, canonical adresler, ürün ve mağaza
+yapısal verisi, çerezsiz ölçümleme. Adımın kalanı kod işi değil: metinlerin
+avukat onayı (A-05), künyenin doldurulması (A-03) ve alan adı (A-02).
 
 04 ve 05. adımlar (ödeme ve kargo) şirket evrakına bağlı olduğu için sıradan
 çıkıp 06. adıma geçildi: kampanya ve indirim motoru 19 Eylül 2026'da bitti.

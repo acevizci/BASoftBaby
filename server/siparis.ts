@@ -25,6 +25,12 @@ import { RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
 export const SON_SIPARIS_CEREZI = "son-siparis";
 
 export type SiparisGirdisi = {
+  /**
+   * Ön bilgilendirme formu ile mesafeli satış sözleşmesinin onaylandığı an.
+   * Onay kutusu işaretlenmeden sipariş formu buraya hiç gelmiyor; tarih
+   * kayda geçiyor ki sonradan "onaylamadım" denemesin (mevzuat gereği).
+   */
+  sozlesmeOnayi: Date;
   adSoyad: string;
   eposta: string;
   telefon: string;
@@ -121,6 +127,7 @@ export async function siparisOlustur(
         data: {
           numara: numaraYaz(ayarSatiri.sonSiparisNo, simdi),
           customerId: customerId ?? null,
+          sozlesmeOnayi: girdi.sozlesmeOnayi,
           adSoyad: girdi.adSoyad,
           eposta: girdi.eposta,
           telefon: girdi.telefon,
@@ -192,6 +199,7 @@ export type Siparis = {
   kargoKurus: number;
   toplamKurus: number;
   kargoTakipNo: string | null;
+  sozlesmeOnayi: Date | null;
   olusturuldu: Date;
   satirlar: SiparisSatiri[];
 };

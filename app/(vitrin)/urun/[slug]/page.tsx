@@ -5,6 +5,8 @@ import UrunFoto from "@/ui/urun-foto";
 import UrunGorseli from "@/ui/urun-gorseli";
 import UrunKarti from "@/ui/urun-karti";
 import VaryantSecici from "@/ui/varyant-secici";
+import YapisalVeri from "@/ui/yapisal-veri";
+import { tamAdres } from "@/server/site";
 import {
   benzerUrunler,
   fiyatYaz,
@@ -17,9 +19,18 @@ export async function generateMetadata({ params }: PageProps<"/urun/[slug]">): P
   const { slug } = await params;
   const urun = await urunGetir(slug);
   if (!urun) return {};
+  const fotograf = urun.fotograflar[0];
   return {
     title: urun.ad,
     description: `${urun.ozet} · ${urun.kumasIcerigi}`,
+    alternates: { canonical: `/urun/${urun.slug}` },
+    openGraph: {
+      title: urun.ad,
+      description: urun.ozet,
+      type: "website",
+      url: `/urun/${urun.slug}`,
+      images: fotograf ? [{ url: fotograf.yol }] : undefined,
+    },
   };
 }
 
@@ -42,8 +53,34 @@ export default async function UrunSayfasi({ params }: PageProps<"/urun/[slug]">)
     ? Math.round((1 - satisKurus / ustuCizili) * 100)
     : 0;
 
+  const stokVar = urun.varyantlar.some((v) => v.stok > 0);
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
+      {/* Google ürünü fiyatı ve stok durumuyla tanısın; veri ekrandakiyle aynı
+          kaynaktan geliyor. Puan ve yorum sayısı bilerek konulmadı: şu anki
+          değerler örnek veri, gerçek müşteri yorumu değil. */}
+      <YapisalVeri
+        veri={{
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: urun.ad,
+          description: `${urun.ozet} · ${urun.kumasIcerigi}`,
+          sku: urun.slug,
+          brand: { "@type": "Brand", name: "BASoftBaby" },
+          image: urun.fotograflar.map((f) => tamAdres(f.yol)),
+          offers: {
+            "@type": "Offer",
+            url: tamAdres(`/urun/${urun.slug}`),
+            priceCurrency: "TRY",
+            price: (satisKurus / 100).toFixed(2),
+            availability: stokVar
+              ? "https://schema.org/InStock"
+              : "https://schema.org/OutOfStock",
+          },
+        }}
+      />
+
       <nav className="text-xs text-metin-3">
         <Link href="/" className="hover:underline">
           Ana sayfa

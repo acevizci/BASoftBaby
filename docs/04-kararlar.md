@@ -348,10 +348,85 @@ Aynı sebeple hesap ekranından e-posta değiştirilemiyor.
 
 ---
 
+### K-15 · Yasal metinler veritabanında, panelden düzenleniyor
+**20 Eylül 2026**
+
+Mesafeli satış sözleşmesi, ön bilgilendirme formu, KVKK aydınlatma metni ve
+çerez politikası artık `/yasal/<sayfa>` adreslerinde. Metinler koda gömülü
+değil: veritabanında duruyor ve panelden (Yönetim → Yasal metinler)
+düzenleniyor. Avukattan gelen metin böylece yayın beklemeden yapıştırılıyor —
+yasal metin en çok değişen ama en az kod gerektiren içerik.
+
+**Taslak işareti.** Her sayfa taslak olarak başlıyor: tepesinde "bu metin
+taslaktır, hukuki incelemesi tamamlanmadı" uyarısı çıkıyor, sayfa arama
+motorlarına kapalı kalıyor ve site haritasına girmiyor. Panelde "metin hazır"
+işaretlenince üçü birden düzeliyor. Onaylanmamış bir sözleşmenin Google'da
+geçerli metin gibi görünmesi, hiç olmamasından kötü.
+
+**Metin HTML olarak yorumlanmıyor.** Düz yazı olarak saklanıp düz yazı olarak
+basılıyor; yalnızca boş satır paragraf, `## ` başlık, `- ` madde ve `**kalın**`
+olarak biçimleniyor. Markdown kütüphanesi eklenseydi içeriye HTML geçirme yolu
+da açılırdı.
+
+**Künye ayrı bir alan değil, ayarın parçası.** Unvan, adres, vergi dairesi ve
+numarası, MERSİS ve ETBİS numarası, destek telefonu ve e-postası satış ayarında
+duruyor; alt bilgide, yasal metinlerin altında ve ana sayfanın yapısal
+verisinde aynı kaynaktan basılıyor. Boş alan hiç gösterilmiyor: yarım künye
+yerine hiç künye daha dürüst.
+
+**Sipariş verirken onay zorunlu.** Ödeme formunda ön bilgilendirme formu ile
+sözleşmenin okunduğu kutusu işaretlenmeden sipariş oluşmuyor; kontrol sunucuda
+yapılıyor, onay anı siparişe yazılıyor ve sipariş kartında görünüyor. Mevzuat
+onayın kanıtlanabilmesini istiyor.
+
+**Nerede:** [`../server/yasal.ts`](../server/yasal.ts),
+[`../ui/yasal-metin.tsx`](../ui/yasal-metin.tsx),
+[`../app/yasal/[slug]`](../app/yasal),
+[`../app/yonetim/yasal`](../app/yonetim/yasal)
+
+---
+
+### K-16 · SEO kurulumu ve çerezsiz ölçümleme
+**20 Eylül 2026**
+
+**Site haritası ve robots.** `/sitemap.xml` ana sayfayı, kategorileri,
+ürünleri, yardım sayfalarını ve yayımlanmış yasal metinleri listeliyor; saatte
+bir yenileniyor, yani panelden eklenen ürün bir sonraki dağıtımı beklemiyor.
+`/robots.txt` yönetim panelini, hesap sayfalarını, sepeti, ödemeyi ve sipariş
+adreslerini dizine kapatıyor.
+
+**Canonical adres.** Kategori sayfasında süzgeçler canonical adrese girmiyor:
+aynı listenin onlarca kopyası dizine girip birbirinin sırasını yemesin.
+
+**Yapısal veri.** Ürün sayfasında fiyat, para birimi ve stok durumu; ana
+sayfada mağaza künyesi. Veri ekrandakiyle aynı kaynaktan geliyor, yani arama
+sonucundaki fiyatla sitedeki fiyat ayrışmıyor. **Puan ve yorum sayısı bilerek
+konulmadı:** şu anki değerler örnek veri, gerçek müşteri yorumu değil.
+
+**Site adresi tek değişkende.** `SITE_URL` tanımlıysa o, değilse Vercel'in
+verdiği üretim adresi, o da yoksa yerel adres kullanılıyor. Alan adı alınınca
+tek değişkenle sitemap, canonical ve yapısal veri birlikte düzeliyor.
+
+**Ölçümleme Vercel Analytics.** Çerez kullanmıyor, ziyaretçiyi tanımlamıyor ve
+siteler arasında izlemiyor; hangi sayfanın kaç kez açıldığı görülüyor, kişi
+görülmüyor. **Bu yüzden çerez onay bandı konulmadı:** sitedeki çerezlerin
+tamamı (sepet, oturum, kupon, son sipariş) sitenin çalışması için zorunlu,
+zorunlu çerezler için açık rıza gerekmiyor, bilgilendirme yetiyor — o da çerez
+politikası sayfasında. Google Analytics seçilseydi banner zorunlu olurdu.
+
+**Nerede:** [`../app/sitemap.ts`](../app/sitemap.ts),
+[`../app/robots.ts`](../app/robots.ts),
+[`../server/site.ts`](../server/site.ts),
+[`../ui/yapisal-veri.tsx`](../ui/yapisal-veri.tsx)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı
-Araştırılıyor. 07. adımda (açılış) gerekli.
+Araştırılıyor. Açılış için gerekli. Alındığında Vercel'e bağlanıp `SITE_URL`
+ortam değişkeni tanımlanacak: sitemap, canonical adresler ve yapısal veri
+tek değişkenle birlikte düzeliyor (K-16).
 
 ### A-03 · Şirket ve vergi levhası
 Hazırlıklara başlandı. 04. adımda (ödeme) iyzico sanal POS başvurusu için
@@ -360,10 +435,12 @@ gerekli olacak.
 ### A-04 · Logonun orijinal dosyası
 Mevcut değil. Vektör yeniden çizim şimdilik resmî kaynak.
 
-### A-05 · Yasal metinler
-Mesafeli satış sözleşmesi, KVKK aydınlatma metni, çerez politikası ve iade
-koşullarının gerçek metinleri bir avukata hazırlatılmalı. Depodaki tasarım
-yalnızca bu metinlerin nerede duracağını gösteriyor.
+### A-05 · Yasal metinlerin hukuki onayı
+Dört metnin taslağı yazıldı ve panelden düzenlenebilir hâlde sitede duruyor
+(K-15), ama hiçbiri avukat onayından geçmedi: hepsi taslak işaretli, yani
+sayfada uyarı çıkıyor ve arama motorlarına kapalılar. Avukattan gelen metin
+panele yapıştırılıp "metin hazır" işaretlendiğinde yayımlanmış olacaklar.
+Şirket kurulmadan (A-03) künye de doldurulamıyor.
 
 ### A-06 · Yönetim paneli şifresi
 **19 Eylül 2026'da kapandı.** Aykut Vercel'de `YONETIM_SIFRE` ortam değişkenini

@@ -15,6 +15,7 @@ const MENU = [
   { yol: "/yonetim/banner", ad: "Ana sayfa banner" },
   { yol: "/yonetim/duyuru", ad: "Duyuru şeridi" },
   { yol: "/yonetim/ayarlar", ad: "Satış ayarları" },
+  { yol: "/yonetim/yasal", ad: "Yasal metinler" },
 ];
 
 export default function YonetimDuzeni({ children }: LayoutProps<"/yonetim">) {

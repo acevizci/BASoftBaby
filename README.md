@@ -2,9 +2,10 @@
 
 Online bebek kıyafetleri ve aksesuarları mağazası.
 
-> Yol haritasında **01, 02, 03, 03b ve 06. adımlar** tamam: proje iskeleti ve
-> marka sistemi, katalog vitrini, yönetim paneli, sepet ve sipariş, üyelik,
-> kampanya motoru. Veriler Neon Postgres'te, panelden girilen her değişiklik
+> Yol haritasında **01, 02, 03, 03b ve 06. adımlar** tamam, **07. adımın kod
+> kısmı** da bitti: proje iskeleti ve marka sistemi, katalog vitrini, yönetim
+> paneli, sepet ve sipariş, üyelik, kampanya motoru, yasal metinler, SEO ve
+> ölçümleme. Veriler Neon Postgres'te, panelden girilen her değişiklik
 > anında mağazaya yansıyor. Sırada ödeme (iyzico) ve kargo var; ikisi de şirket
 > evrakına bağlı.
 
@@ -44,6 +45,7 @@ gönderimlerde yazılmıyor, yani sildiğin örnek ürünler geri gelmiyor.
 | `ui/` | Ortak arayüz parçaları: duyuru şeridi, üst çubuk, alt bilgi |
 | `server/` | İş kuralları. Sayfalar veriyi hep buradan okur |
 | `app/(hesap)/` | Giriş, kayıt ve hesap sayfaları |
+| `app/yasal/` | Sözleşmeler, KVKK ve çerez politikası sayfaları |
 | `public/marka/` | Logo dosyaları (SVG ve PNG) |
 | `docs/` | Plan, mimari, tasarım sistemi, kararlar |
 | `tasarim/` | Gezilebilir tasarım mokapı |
@@ -82,6 +84,47 @@ numara ve e-postayla görülüyor. Gerekçesi: doğrulanmamış bir e-posta o ku
 sahibi olduğunun kanıtı değil.
 
 Yönetim paneli bu üyelikten ayrı; o `YONETIM_SIFRE` ile korunmaya devam ediyor.
+
+## Yasal metinler ve künye
+
+Mesafeli satış sözleşmesi, ön bilgilendirme formu, KVKK aydınlatma metni ve
+çerez politikası `/yasal/<sayfa>` adreslerinde ve alt bilgiden bağlantılı.
+Metinler koda gömülü değil: **panelden düzenleniyor** (Yönetim → Yasal
+metinler), yani avukattan gelen metin yayın beklemeden yapıştırılabiliyor.
+
+Her metin **taslak** olarak duruyor: sayfanın tepesinde uyarı çıkıyor, sayfa
+arama motorlarına kapalı ve site haritasına girmiyor. Panelde "metin hazır"
+işaretlenince üçü birden düzeliyor — bunu avukat onayı gelmeden işaretleme.
+
+Aynı ekranda **künye** var: unvan, adres, vergi dairesi ve numarası, MERSİS ve
+ETBİS numarası, destek telefonu ve e-postası. Bu bilgiler alt bilgide, yasal
+metinlerin altında ve ana sayfanın yapısal verisinde görünüyor; boş bıraktığın
+satır hiç basılmıyor.
+
+Sipariş verirken **sözleşme onayı zorunlu**: kutu işaretlenmeden sipariş
+oluşmuyor, kontrol sunucuda yapılıyor ve onay anı siparişe yazılıp sipariş
+kartında görünüyor.
+
+## Arama motorları ve ölçümleme
+
+`/sitemap.xml` ve `/robots.txt` kendiliğinden üretiliyor. Harita ana sayfayı,
+kategorileri, ürünleri, yardım sayfalarını ve **yayımlanmış** yasal metinleri
+listeliyor; saatte bir yenilendiği için panelden eklenen ürün bir sonraki
+dağıtımı beklemiyor. Robots dosyası yönetim panelini, hesap sayfalarını,
+sepeti, ödemeyi ve sipariş adreslerini dizine kapatıyor.
+
+Ürün sayfalarında fiyat ve stok durumu yapısal veri olarak da veriliyor, yani
+Google ürünü tanıyor. Kategori sayfalarında süzgeçler canonical adrese
+girmiyor.
+
+Alan adı alınınca Vercel'de **`SITE_URL`** tanımlanmalı: site haritası,
+canonical adresler ve yapısal veri bu değişkeni kullanıyor. Tanımlı değilse
+Vercel'in verdiği üretim adresi kullanılıyor.
+
+Ziyaret sayıları **Vercel Analytics** ile ölçülüyor: çerez kullanmıyor,
+ziyaretçiyi tanımlamıyor. Bu yüzden çerez onay bandı yok — sitedeki çerezlerin
+tamamı (sepet, oturum, kupon, son sipariş) zorunlu çerez. Ölçümün çalışması
+için Vercel panelinde Analytics'in açılması gerekiyor.
 
 ## Hareketli alanlar
 

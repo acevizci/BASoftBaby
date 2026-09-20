@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { BILGI_SAYFALARI } from "@/app/(bilgi)/bilgi-bicim";
+import { kunyeGetir, yasalSayfalariGetir } from "@/server/yasal";
 
 /**
- * Alt bilgi. Alışveriş ve Yardım sütunları gerçek sayfalara gidiyor; Kurumsal
- * sütunundaki yasal metinler henüz yazılmadığı için düz yazı duruyor, bağlantı
- * verilince tıklanıp boş sayfaya düşerdi.
+ * Alt bilgi. Üç sütun da gerçek sayfalara gidiyor: yasal metinler artık
+ * veritabanında duruyor ve panelden düzenleniyor. Künye (unvan, vergi, ETBİS)
+ * satış ayarlarından geliyor; şirket kurulana kadar alanlar boş kalıyor ve boş
+ * satır ekrana hiç basılmıyor.
  */
 const KATEGORILER = [
   { yol: "/yenidogan", ad: "Yenidoğan" },
@@ -14,16 +16,11 @@ const KATEGORILER = [
   { yol: "/aksesuar", ad: "Aksesuar" },
 ];
 
-const YASAL = [
-  "Mesafeli satış sözleşmesi",
-  "Ön bilgilendirme formu",
-  "Gizlilik ve KVKK",
-  "Çerez politikası",
-];
-
 const BAG = "text-metin-3 transition hover:text-metin hover:underline";
 
-export default function AltBilgi() {
+export default async function AltBilgi() {
+  const [yasal, kunye] = await Promise.all([yasalSayfalariGetir(), kunyeGetir()]);
+
   return (
     <footer className="mt-auto border-t border-cizgi-soluk bg-yuzey-sicak">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-4">
@@ -66,19 +63,33 @@ export default function AltBilgi() {
 
         <div className="flex flex-col gap-2">
           <p className="text-sm font-bold">Kurumsal</p>
-          <ul className="flex flex-col gap-1.5 text-sm text-metin-3">
-            {YASAL.map((y) => (
-              <li key={y}>{y}</li>
+          <ul className="flex flex-col gap-1.5 text-sm">
+            {yasal.map((y) => (
+              <li key={y.slug}>
+                <Link href={`/yasal/${y.slug}`} className={BAG}>
+                  {y.baslik}
+                </Link>
+              </li>
             ))}
           </ul>
-          <p className="text-xs text-metin-3">Şirket kaydı tamamlanınca eklenecek.</p>
+          {kunye.unvan ? (
+            <p className="mt-1 text-xs text-metin-3">
+              {kunye.unvan}
+              {kunye.sirketAdresi && <span className="block">{kunye.sirketAdresi}</span>}
+              {kunye.destekEposta && <span className="block">{kunye.destekEposta}</span>}
+            </p>
+          ) : (
+            <p className="text-xs text-metin-3">Şirket künyesi kayıt tamamlanınca eklenecek.</p>
+          )}
         </div>
       </div>
 
       <div className="border-t border-cizgi-soluk">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-xs text-metin-3">
           <span>© {new Date().getFullYear()} BASoftBaby</span>
-          <span>ETBİS kaydı açılışta eklenecek</span>
+          <span className="rakam">
+            {kunye.etbisNo ? `ETBİS: ${kunye.etbisNo}` : "ETBİS kaydı açılışta eklenecek"}
+          </span>
         </div>
       </div>
     </footer>

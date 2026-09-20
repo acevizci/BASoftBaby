@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Baloo_2, Nunito_Sans } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { siteAdresi } from "@/server/site";
 import DuyuruSeridi from "@/ui/duyuru-seridi";
 import UstCubuk from "@/ui/ust-cubuk";
 import AltBilgi from "@/ui/alt-bilgi";
@@ -22,6 +24,9 @@ const govdeYazisi = Nunito_Sans({
 });
 
 export const metadata: Metadata = {
+  // Göreli adresler buna göre mutlaklaşıyor: canonical, openGraph ve sitemap
+  // hep aynı adresi göstersin. Alan adı alınınca SITE_URL tanımlanacak.
+  metadataBase: new URL(siteAdresi()),
   title: {
     default: "BASoftBaby · Bebek kıyafetleri ve aksesuarları",
     template: "%s · BASoftBaby",
@@ -55,6 +60,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <UstCubuk />
         <main className="flex-1">{children}</main>
         <AltBilgi />
+        {/* Ölçümleme: çerez kullanmıyor, ziyaretçiyi tanımlıyor ve siteler
+            arasında izlemiyor. Bu yüzden çerez onay bandı gerekmiyor (K-16).
+            Vercel'de Analytics açık değilse hiçbir veri gitmiyor. */}
+        <Analytics />
       </body>
     </html>
   );

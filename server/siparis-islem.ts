@@ -26,7 +26,14 @@ function temiz(veri: FormData, alan: string): string {
 }
 
 /** Sunucu tarafı doğrulama; tarayıcının `required` kontrolüne güvenilmez. */
-function eksikMi(g: Record<string, string>): boolean {
+function eksikMi(g: {
+  adSoyad: string;
+  eposta: string;
+  telefon: string;
+  adres: string;
+  ilce: string;
+  il: string;
+}): boolean {
   if (g.adSoyad.length < 3) return true;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(g.eposta)) return true;
   // Türkiye cep telefonu: rakamları say, 10 veya 11 hane bekle
@@ -37,7 +44,12 @@ function eksikMi(g: Record<string, string>): boolean {
 }
 
 export async function siparisiTamamla(veri: FormData): Promise<void> {
+  // Mesafeli satışta ön bilgilendirme formu ile sözleşmenin onaylanması
+  // zorunlu: kutu işaretli değilse sipariş hiç oluşturulmuyor.
+  if (veri.get("sozlesme") === null) redirect("/odeme?hata=sozlesme");
+
   const girdi = {
+    sozlesmeOnayi: new Date(),
     adSoyad: temiz(veri, "adSoyad"),
     eposta: temiz(veri, "eposta").toLowerCase(),
     telefon: temiz(veri, "telefon"),

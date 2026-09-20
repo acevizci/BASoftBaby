@@ -267,6 +267,193 @@ const BANNERLAR = [
   },
 ];
 
+/**
+ * Yasal metinlerin başlangıç taslakları.
+ *
+ * Metinler koda gömülü değil, veritabanında duruyor ve panelden düzenleniyor:
+ * avukattan gelen metin yayın beklemeden yapıştırılabilsin. Buradakiler
+ * taslak işaretiyle yazılıyor, yani sayfanın tepesinde "bu metin taslak"
+ * uyarısı çıkıyor. Var olan sayfanın içeriğine dokunulmuyor — panelden
+ * yapılan düzeltme tohum tekrar çalışınca geri alınmasın.
+ */
+const YASAL_SAYFALAR = [
+  {
+    slug: "on-bilgilendirme-formu",
+    baslik: "Ön bilgilendirme formu",
+    ozet: "Sipariş vermeden önce bilmen gerekenler: ürün, fiyat, teslimat, cayma hakkı.",
+    sira: 1,
+    icerik: `Bu form, 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli
+Sözleşmeler Yönetmeliği uyarınca, siparişini vermeden önce bilmen gerekenleri
+özetler. Siparişi onayladığında bu formu okuduğunu kabul etmiş olursun.
+
+## Satıcı
+Satıcının unvanı, adresi, vergi bilgileri ve iletişim kanalları sayfanın
+altındaki künyede yer alır.
+
+## Ürün ve fiyat
+Sipariş ettiğin ürünlerin adı, adedi, bedeni ve rengi ile birim fiyatları
+sipariş özetinde gösterilir. Fiyatlara KDV dahildir. Kargo ücreti ve varsa
+indirim, sipariş özetinde ayrı satırlarda görünür; ödeyeceğin toplam tutar
+siparişi onaylamadan önce ekranda yazar.
+
+## Ödeme
+Ödeme şu anda havale/EFT ile alınmaktadır. Siparişi verdikten sonra banka
+bilgileri ekranda gösterilir; açıklama kısmına sipariş numaranı yazman
+gerekir. Kredi kartıyla ödeme eklendiğinde bu bölüm güncellenecektir.
+
+## Teslimat
+Ürünler, ödemenin hesaba geçmesinden sonra hazırlanır ve anlaşmalı kargo
+firmasına teslim edilir. Kargo süresi ve ücretleri "Kargo ve teslimat"
+sayfasında yazılıdır. Teslimat, siparişte belirttiğin adrese yapılır.
+
+## Cayma hakkı
+Teslim tarihinden itibaren 14 gün içinde hiçbir gerekçe göstermeden ve ceza
+ödemeden cayma hakkın vardır. Cayma bildirimini künyedeki iletişim
+kanallarından iletebilirsin. Cayma hakkının kullanılabilmesi için ürünün
+kullanılmamış, etiketleri sökülmemiş ve tekrar satılabilir durumda olması
+gerekir.
+
+## Cayma hakkının kullanılamadığı hâller
+Hijyen kuralları gereği ambalajı açıldığında iade edilemeyen ürünler ile
+müşterinin isteği üzerine kişiye özel hazırlanan ürünlerde cayma hakkı
+kullanılamaz. Bu ürünler, ürün sayfasında açıkça belirtilir.
+
+## İade ve geri ödeme
+İade edilen ürün elimize ulaştıktan sonra ödeme, 14 gün içinde ödeme yaptığın
+yönteme iade edilir. Ayrıntılar "İade ve değişim" sayfasındadır.
+
+## Şikâyet ve itiraz
+Uyuşmazlıklarda, parasal sınırlar dâhilinde Tüketici Hakem Heyetlerine veya
+Tüketici Mahkemelerine başvurabilirsin. Parasal sınırlar her yıl Ticaret
+Bakanlığı tarafından belirlenir.`,
+  },
+  {
+    slug: "mesafeli-satis-sozlesmesi",
+    baslik: "Mesafeli satış sözleşmesi",
+    ozet: "Sipariş verdiğinde kurulan sözleşmenin metni.",
+    sira: 2,
+    icerik: `Bu sözleşme, sipariş verdiğin anda satıcı ile alıcı arasında kurulur.
+Siparişi onaylamadan önce ön bilgilendirme formunu da okuman gerekir.
+
+## Taraflar
+SATICI: Sayfanın altındaki künyede unvanı, adresi, vergi dairesi ve numarası,
+MERSİS ve ETBİS bilgileri ile iletişim kanalları yazılı tüzel/gerçek kişi.
+
+ALICI: Sipariş formunda ad, adres ve iletişim bilgilerini veren kişi.
+
+## Konu
+Sözleşmenin konusu, alıcının satıcıya ait internet sitesinden elektronik
+ortamda sipariş verdiği ürünlerin satışı ve teslimidir. Ürünlerin temel
+nitelikleri, satış fiyatı, ödeme ve teslimat bilgileri sipariş özetinde ve ön
+bilgilendirme formunda yer alır.
+
+## Genel hükümler
+- Alıcı, sipariş öncesinde ön bilgilendirme formunu okuduğunu ve onayladığını
+  kabul eder.
+- Ürün, ödemenin satıcıya ulaşmasının ardından hazırlanır ve yasal süre içinde
+  kargoya verilir.
+- Kargo firması kaynaklı gecikmelerde satıcı, alıcıyı bilgilendirir.
+- Ürünün hasarlı ya da eksik teslim edildiği durumlarda alıcı, teslim aldığı
+  anda kargo görevlisine tutanak tutturmalı ve satıcıya bildirmelidir.
+- Sipariş edilen ürünün tükenmesi hâlinde satıcı, durumu alıcıya bildirir ve
+  ödenen tutarı iade eder.
+
+## Cayma hakkı
+Alıcı, teslim tarihinden itibaren 14 gün içinde cayma hakkını kullanabilir.
+Cayma hakkının kapsamı, kullanım şekli, istisnaları ve geri ödeme süresi ön
+bilgilendirme formunda ayrıntılı olarak açıklanmıştır.
+
+## Kişisel veriler
+Sipariş sırasında verilen kişisel veriler, siparişin yerine getirilmesi
+amacıyla işlenir. Ayrıntılar "Gizlilik ve KVKK" sayfasındadır.
+
+## Yetkili merciler
+Uyuşmazlıklarda Tüketici Hakem Heyetleri ve Tüketici Mahkemeleri yetkilidir.
+
+## Yürürlük
+Alıcının siparişi onaylamasıyla bu sözleşme kurulmuş sayılır ve taraflar
+hükümleriyle bağlı olur. Sözleşmenin bir örneği alıcının e-posta adresine
+gönderilir.`,
+  },
+  {
+    slug: "gizlilik-kvkk",
+    baslik: "Gizlilik ve KVKK",
+    ozet: "Kişisel verilerinin nasıl işlendiği, kimlerle paylaşıldığı ve hakların.",
+    sira: 3,
+    icerik: `Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu uyarınca, kişisel
+verilerinin nasıl işlendiğini açıklar.
+
+## Veri sorumlusu
+Veri sorumlusu, sayfanın altındaki künyede yer alan satıcıdır.
+
+## İşlenen veriler
+- Kimlik ve iletişim: ad soyad, e-posta, telefon
+- Teslimat: adres, ilçe, il, posta kodu, sipariş notu
+- Sipariş: sipariş numarası, ürünler, tutarlar, ödeme ve kargo durumu
+- Hesap: e-posta, şifrenin geri döndürülemez özeti, adres defteri
+- Teknik: oturum ve sepet çerezleri
+
+Şifrenin kendisi hiçbir yerde saklanmaz; yalnızca geri döndürülemez bir özeti
+tutulur. Kart bilgisi ise hiçbir aşamada bize ulaşmaz.
+
+## İşleme amaçları
+- Siparişin alınması, hazırlanması, kargolanması ve takibi
+- İade ve değişim taleplerinin karşılanması
+- Yasal saklama ve faturalandırma yükümlülüklerinin yerine getirilmesi
+- Talep ve şikâyetlerin yanıtlanması
+
+## Hukuki sebep
+Veriler, sözleşmenin kurulması ve ifası ile satıcının hukuki yükümlülüklerini
+yerine getirmesi hukuki sebeplerine dayanarak işlenir. Pazarlama amaçlı
+e-posta gönderimi, yalnızca ayrıca açık rıza verilmesi hâlinde yapılır.
+
+## Aktarım
+Veriler; kargo firmasına (teslimat için), ödeme kuruluşuna (ödeme için),
+muhasebe ve e-fatura hizmet sağlayıcısına ve yetkili kamu kurumlarına, yalnızca
+ilgili işlemin gerektirdiği ölçüde aktarılır.
+
+## Saklama süresi
+Sipariş ve fatura kayıtları, ilgili mevzuatın öngördüğü süre boyunca saklanır.
+Hesap verileri, hesap silinene kadar tutulur.
+
+## Haklar
+KVKK'nın 11. maddesi uyarınca; verilerine erişme, düzeltilmesini veya
+silinmesini isteme, işlemeye itiraz etme ve zararın giderilmesini talep etme
+haklarına sahipsin. Taleplerini künyedeki iletişim kanallarından iletebilirsin;
+başvurular en geç 30 gün içinde yanıtlanır.`,
+  },
+  {
+    slug: "cerez-politikasi",
+    baslik: "Çerez politikası",
+    ozet: "Sitede hangi çerezler var, ne işe yarıyorlar.",
+    sira: 4,
+    icerik: `Bu sayfa, sitede hangi çerezlerin kullanıldığını ve neden kullanıldığını
+açıklar.
+
+## Kullanılan çerezler
+- **sepet** — sepetinin kimliğini taşır. İçeriği tarayıcıda değil sunucuda
+  durur; çerez httpOnly'dir, yani JavaScript okuyamaz. 30 gün yaşar.
+- **oturum** — giriş yaptıysan hesabını tanır. Yine httpOnly'dir ve içinde
+  şifren bulunmaz. 30 gün yaşar, çıkış yapınca silinir.
+- **kupon** — yazdığın kupon kodunu sipariş tamamlanana kadar taşır.
+- **son-siparis** — sipariş onay sayfasını yalnızca siparişi veren kişiye
+  açmak için kullanılır, bir gün yaşar.
+
+## Reklam ve takip çerezi yok
+Sitede reklam çerezi, sosyal medya piksel kodu veya kişiyi siteler arasında
+izleyen üçüncü taraf çerezi kullanılmaz.
+
+## Ölçümleme
+Ziyaret sayıları, çerez kullanmayan ve ziyaretçiyi tanımlamayan bir ölçümleme
+ile toplanır; hangi sayfanın kaç kez açıldığı görülür, kişi görülmez.
+
+## Çerezleri kapatmak
+Yukarıdaki çerezlerin tamamı sitenin çalışması için zorunludur: kapatılırsa
+sepet ve giriş çalışmaz. Tarayıcının ayarlarından çerezleri her zaman
+silebilir veya engelleyebilirsin.`,
+  },
+];
+
 const DUYURULAR = [
   { metin: "750 TL ve üzeri siparişlerde kargo bedava", sira: 1 },
   { metin: "Aynı gün kargo · saat 16:00'a kadar verilen siparişler bugün çıkar", sira: 2 },
@@ -358,6 +545,11 @@ async function main() {
     }
   }
 
+  for (const y of YASAL_SAYFALAR) {
+    const varOlan = await db.legalPage.findUnique({ where: { slug: y.slug } });
+    if (!varOlan) await db.legalPage.create({ data: { ...y, taslakMi: true } });
+  }
+
   for (const d of DUYURULAR) {
     const varOlan = await db.announcement.findFirst({ where: { metin: d.metin } });
     if (!varOlan) await db.announcement.create({ data: d });
@@ -369,14 +561,15 @@ async function main() {
     create: { id: "tek", tohumAtildi: true },
   });
 
-  const [kategori, urun, varyant, duyuru] = await Promise.all([
+  const [kategori, urun, varyant, duyuru, yasal] = await Promise.all([
     db.category.count(),
     db.product.count(),
     db.productVariant.count(),
     db.announcement.count(),
+    db.legalPage.count(),
   ]);
   console.log(
-    `Tamam: ${kategori} kategori, ${urun} ürün, ${varyant} varyant, ${duyuru} duyuru.`,
+    `Tamam: ${kategori} kategori, ${urun} ürün, ${varyant} varyant, ${duyuru} duyuru, ${yasal} yasal metin.`,
   );
 }
 

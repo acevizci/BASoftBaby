@@ -21,6 +21,8 @@ const HATALAR: Record<string, string> = {
   "sifre-kisa": `Hesap şifresi en az ${EN_KISA_SIFRE} karakter olmalı. Hesap istemiyorsan şifre alanını boş bırakabilirsin.`,
   "eposta-kayitli":
     "Bu e-posta ile bir hesap zaten var. Giriş yapıp devam edebilir ya da şifre alanını boş bırakıp üyeliksiz sipariş verebilirsin.",
+  sozlesme:
+    "Siparişi tamamlamak için ön bilgilendirme formunu ve mesafeli satış sözleşmesini onaylaman gerekiyor.",
 };
 
 export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">) {
@@ -261,6 +263,43 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
                 </label>
               </>
             )}
+          </section>
+
+          <section className="rounded-marka border border-cizgi bg-yuzey p-5">
+            <h2 className="text-lg">Sözleşmeler</h2>
+            <label className="mt-3 flex items-start gap-3">
+              <input
+                type="checkbox"
+                name="sozlesme"
+                required
+                className="mt-1 h-4 w-4 accent-[var(--mercan)]"
+              />
+              <span className="text-sm text-metin-2">
+                <Link
+                  href="/yasal/on-bilgilendirme-formu"
+                  target="_blank"
+                  className="font-bold text-mavi-koyu hover:underline"
+                >
+                  Ön bilgilendirme formunu
+                </Link>{" "}
+                ve{" "}
+                <Link
+                  href="/yasal/mesafeli-satis-sozlesmesi"
+                  target="_blank"
+                  className="font-bold text-mavi-koyu hover:underline"
+                >
+                  mesafeli satış sözleşmesini
+                </Link>{" "}
+                okudum, onaylıyorum.
+              </span>
+            </label>
+            <p className="mt-3 text-xs text-metin-3">
+              Kişisel verilerinin nasıl işlendiğini{" "}
+              <Link href="/yasal/gizlilik-kvkk" className="font-bold text-mavi-koyu hover:underline">
+                Gizlilik ve KVKK
+              </Link>{" "}
+              sayfasında bulabilirsin.
+            </p>
           </section>
 
           <button

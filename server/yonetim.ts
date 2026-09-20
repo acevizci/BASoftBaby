@@ -234,6 +234,63 @@ export async function satisAyariKaydet(veri: FormData): Promise<void> {
   redirect("/yonetim/ayarlar?kayit=1");
 }
 
+/* ── Yasal metinler ve künye ────────────────────────────────────────────── */
+
+/**
+ * Yasal metni kaydeder.
+ *
+ * Metin düz yazı olarak saklanıyor ve ekranda da düz yazı olarak basılıyor
+ * (bkz. ui/yasal-metin.tsx): HTML olarak yorumlanmadığı için avukattan gelen
+ * metin olduğu gibi yapıştırılabiliyor.
+ */
+export async function yasalKaydet(veri: FormData): Promise<void> {
+  const slug = String(veri.get("slug") ?? "").trim();
+  if (!slug) redirect("/yonetim/yasal");
+
+  const baslik = String(veri.get("baslik") ?? "").trim().slice(0, 120);
+  const ozet = String(veri.get("ozet") ?? "").trim().slice(0, 300);
+  const icerik = String(veri.get("icerik") ?? "").trim().slice(0, 60_000);
+  // Onay kutusu "metin hazır" diye soruyor; kayıtta tutulan ise taslak işareti.
+  const taslakMi = veri.get("hazir") === null;
+
+  if (!baslik || !icerik) redirect(`/yonetim/yasal?duzenle=${slug}&hata=eksik`);
+
+  const sonuc = await db.legalPage.updateMany({
+    where: { slug },
+    data: { baslik, ozet, icerik, taslakMi },
+  });
+  if (sonuc.count === 0) redirect("/yonetim/yasal");
+
+  vitriniYenile();
+  redirect(`/yonetim/yasal?duzenle=${slug}&kayit=1`);
+}
+
+/** Satıcı künyesi: mesafeli satışta sitede görünmesi zorunlu bilgiler. */
+export async function kunyeKaydet(veri: FormData): Promise<void> {
+  const al = (ad: string, sinir = 200) =>
+    String(veri.get(ad) ?? "").trim().slice(0, sinir);
+
+  const girdi = {
+    unvan: al("unvan"),
+    vergiDairesi: al("vergiDairesi"),
+    vergiNo: al("vergiNo", 30),
+    mersisNo: al("mersisNo", 30),
+    etbisNo: al("etbisNo", 60),
+    sirketAdresi: al("sirketAdresi", 400),
+    destekTelefon: al("destekTelefon", 40),
+    destekEposta: al("destekEposta", 120),
+  };
+
+  await db.storeSetting.upsert({
+    where: { id: "tek" },
+    update: girdi,
+    create: { id: "tek", ...girdi },
+  });
+
+  vitriniYenile();
+  redirect("/yonetim/yasal?kayit=kunye");
+}
+
 /* ── Kampanyalar ────────────────────────────────────────────────────────── */
 
 const TIPLER = ["yuzde", "tutar"];

@@ -26,9 +26,15 @@ export async function generateMetadata({
   params,
 }: PageProps<"/[kategori]">): Promise<Metadata> {
   const { kategori } = await params;
-  if (kategori === TUMU) return { title: "Tüm ürünler" };
+  // Süzgeçler canonical adrese girmiyor: aynı listenin onlarca kopyası
+  // dizine girip birbirinin sırasını yemesin.
+  if (kategori === TUMU) {
+    return { title: "Tüm ürünler", alternates: { canonical: `/${TUMU}` } };
+  }
   const k = await kategoriGetir(kategori);
-  return k ? { title: k.ad, description: k.aciklama } : {};
+  return k
+    ? { title: k.ad, description: k.aciklama, alternates: { canonical: `/${k.slug}` } }
+    : {};
 }
 
 /** Bir süzgeci açıp kapatan bağlantı adresini üretir. */
