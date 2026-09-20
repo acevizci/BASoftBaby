@@ -71,6 +71,11 @@ kullanmıyor. Cihazında "hareketi azalt" ayarı açık olan ziyaretçide ikisi 
 durur; şeritte mesajlar sabit görünür, banner'da ilk banner kalır. Bu
 erişilebilirlik gereği, kapatılabilir bir ayar değil.
 
+Banner tek başınayken dönmez, sabit durur: geçişi görmek için en az iki banner
+gerekiyor. Bu yüzden başlangıç verisi üç örnek banner yazıyor. Örnekler bir kez
+yazılır (`StoreSetting.bannerTohumu` işareti), panelden silinirse sonraki
+yayında geri gelmezler.
+
 ## Kampanyalar
 
 Yüzde ya da sabit tutar indirimi; tüm ürünlere, bir kategoriye ya da tek ürüne

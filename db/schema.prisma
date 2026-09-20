@@ -139,6 +139,9 @@ model StoreSetting {
 
   /// Ana sayfadaki banner kaç saniyede bir değişsin
   bannerSaniye Int @default(6)
+
+  /// Örnek bannerlar bir kez yazıldı mı. Silinen banner yayında geri gelmesin diye.
+  bannerTohumu Boolean @default(false)
 }
 
 /// Ziyaretçinin sepeti. Tarayıcıdaki `sepet` çerezi bu kaydın id'sini tutar;

@@ -231,13 +231,75 @@ const URUNLER: TohumUrun[] = [
   },
 ];
 
+/**
+ * Ana sayfadaki dönen banner boş görünmesin diye üç örnek. Panelden
+ * düzenlenebilir ya da silinebilir; bir kez yazıldıktan sonra geri gelmezler.
+ */
+const BANNERLAR = [
+  {
+    baslik: "Minik bedenlere, yumuşacık kumaşlar",
+    altYazi:
+      "%100 organik pamuk, dikişsiz bantlar, kolay çıtçıtlı kalıplar. Bebeğin hassas cildi için seçilmiş ürünler.",
+    dugmeYazi: "Tüm ürünler",
+    dugmeLink: "/urunler",
+    palet: "sari",
+    gorsel: "amblem",
+    sira: 1,
+  },
+  {
+    baslik: "Yenidoğan setleri hazır",
+    altYazi:
+      "Hastane çantasına giren her şey tek pakette: zıbın, tulum, şapka ve patik.",
+    dugmeYazi: "Yenidoğan ürünleri",
+    dugmeLink: "/yenidogan",
+    palet: "mint",
+    gorsel: "zibin",
+    sira: 2,
+  },
+  {
+    baslik: "750 TL üzeri kargo bizden",
+    altYazi: "Aynı gün kargo, 14 gün içinde koşulsuz iade.",
+    dugmeYazi: "Alışverişe başla",
+    dugmeLink: "/urunler",
+    palet: "mercan",
+    gorsel: "battaniye",
+    sira: 3,
+  },
+];
+
 const DUYURULAR = [
   { metin: "750 TL ve üzeri siparişlerde kargo bedava", sira: 1 },
   { metin: "Aynı gün kargo · saat 16:00'a kadar verilen siparişler bugün çıkar", sira: 2 },
   { metin: "Hediye paketi ücretsiz", sira: 3 },
 ];
 
+/**
+ * Örnek bannerlar, başlangıç verisinden ayrı bir işaretle korunuyor: mağaza
+ * çoktan tohumlanmış olsa bile bir kez yazılsınlar, ama panelden silindikten
+ * sonra bir daha geri gelmesinler.
+ */
+async function bannerTohumla() {
+  const ayar = await db.storeSetting.findUnique({ where: { id: "tek" } });
+  if (ayar?.bannerTohumu) return;
+
+  for (const b of BANNERLAR) {
+    const varOlan = await db.heroBanner.findFirst({ where: { baslik: b.baslik } });
+    if (!varOlan) await db.heroBanner.create({ data: b });
+  }
+
+  await db.storeSetting.upsert({
+    where: { id: "tek" },
+    update: { bannerTohumu: true },
+    create: { id: "tek", bannerTohumu: true },
+  });
+
+  console.log(`${BANNERLAR.length} örnek banner yazıldı.`);
+}
+
 async function main() {
+  // Başlangıç verisinden bağımsız: kendi işaretiyle bir kez çalışır.
+  await bannerTohumla();
+
   const birKez = process.argv.includes("--bir-kez");
   if (birKez) {
     const ayar = await db.storeSetting.findUnique({ where: { id: "tek" } });
