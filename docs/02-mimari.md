@@ -56,6 +56,11 @@ app/
   (vitrin)/               herkese açık sayfalar
     [kategori]/           kategori listesi, filtreler
     urun/[slug]/          ürün detayı, varyant seçimi
+  (bilgi)/                yardım sayfaları, ortak çerçeve + geçiş bağlantıları
+    beden-rehberi/        boy-kilo tablosu, kalıp notları
+    kargo-teslimat/       ücret ve süreler (rakamlar satış ayarından)
+    iade-degisim/         14 gün, adımlar, para iadesi
+    sikca-sorulanlar/     başlıklara ayrılmış SSS
   sepet/                  sepet
   odeme/                  adres ve sipariş özeti
   siparis/[numara]/       sipariş onayı (yalnız siparişi verene açık)

@@ -76,6 +76,18 @@ gerekiyor. Bu yüzden başlangıç verisi üç örnek banner yazıyor. Örnekler
 yazılır (`StoreSetting.bannerTohumu` işareti), panelden silinirse sonraki
 yayında geri gelmezler.
 
+## Yardım sayfaları
+
+Alt bilgideki Yardım sütunu gerçek sayfalara gidiyor: beden rehberi, kargo ve
+teslimat, iade ve değişim, sıkça sorulanlar. Kargo ücreti ve bedava kargo sınırı
+bu sayfalarda ve ana sayfadaki güven satırında **sabit yazılmıyor**, satış
+ayarından okunuyor; panelden ücret değişince metin de değişiyor, sepetle
+çelişmiyor.
+
+Kurumsal sütunundaki yasal metinler (mesafeli satış sözleşmesi, ön
+bilgilendirme formu, KVKK, çerez politikası) avukat işi ve şirket kaydına bağlı;
+bu yüzden bağlantı verilmedi, düz yazı duruyor.
+
 ## Kampanyalar
 
 Yüzde ya da sabit tutar indirimi; tüm ürünlere, bir kategoriye ya da tek ürüne
@@ -121,6 +133,7 @@ fatura e-arşiv, yayın Vercel üzerinde.
 - [x] Sepet, sipariş ve sipariş takibi (havale/EFT ile)
 - [x] Kampanya ve kupon motoru
 - [x] Panelden yönetilen, dönen ana sayfa banner'ı
+- [x] Yardım sayfaları (beden, kargo, iade, SSS)
 - [ ] Gerçek ürünlerin girilmesi
 - [ ] Havale hesabının panele girilmesi
 - [ ] Üyelik (alan adı ve e-posta servisi gelince)

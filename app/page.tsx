@@ -2,6 +2,8 @@ import Link from "next/link";
 import HeroBanner from "@/ui/hero-banner";
 import UrunKarti from "@/ui/urun-karti";
 import { kategorileriGetir, oneCikanUrunler } from "@/server/katalog";
+import { ayarlariGetir, type SatisAyari } from "@/server/sepet";
+import { fiyatYaz } from "@/ui/katalog-bicim";
 
 const YAS_KUTULARI = [
   { ad: "Yenidoğan", yas: "0-3 ay", beden: "0-3 ay" },
@@ -10,15 +12,29 @@ const YAS_KUTULARI = [
   { ad: "Yürüyen", yas: "12-24 ay", beden: "12-18 ay" },
 ];
 
-const GUVEN = [
-  "%100 organik pamuk",
-  "750 TL üzeri kargo bedava",
-  "14 gün içinde iade",
-  "Aynı gün kargo",
-];
+/**
+ * Kargo sınırı panelden değişebildiği için sabit yazılmıyor: ayarla sepetin
+ * söylediği rakam birbirini tutmazsa müşteri haklı olarak yanıltıldığını
+ * düşünür.
+ */
+function guvenSatirlari(ayar: SatisAyari): string[] {
+  return [
+    "%100 organik pamuk",
+    ayar.bedavaKargoEsigi > 0
+      ? `${fiyatYaz(ayar.bedavaKargoEsigi)} üzeri kargo bedava`
+      : "Aynı gün kargo",
+    "14 gün içinde iade",
+    "Üyeliksiz sipariş",
+  ];
+}
 
 export default async function AnaSayfa() {
-  const [urunler, kategoriler] = await Promise.all([oneCikanUrunler(8), kategorileriGetir()]);
+  const [urunler, kategoriler, ayar] = await Promise.all([
+    oneCikanUrunler(8),
+    kategorileriGetir(),
+    ayarlariGetir(),
+  ]);
+  const guven = guvenSatirlari(ayar);
 
   return (
     <>
@@ -72,7 +88,7 @@ export default async function AnaSayfa() {
 
       <section className="border-t border-cizgi-soluk bg-yuzey-sicak">
         <ul className="mx-auto flex max-w-6xl flex-wrap justify-center gap-x-8 gap-y-2 px-4 py-6 text-sm font-semibold text-metin-2">
-          {GUVEN.map((g) => (
+          {guven.map((g) => (
             <li key={g}>{g}</li>
           ))}
         </ul>
