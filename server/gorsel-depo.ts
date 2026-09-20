@@ -6,8 +6,8 @@ import sharp from "sharp";
 /**
  * Yüklenen ürün fotoğraflarının saklandığı yer.
  *
- * Yayında Vercel Blob kullanılıyor; `BLOB_READ_WRITE_TOKEN` tanımlıysa oraya
- * gidiyor. Yerelde geliştirirken jeton olmadığı için dosyalar proje kökündeki
+ * Yayında Vercel Blob kullanılıyor; deponun jetonu tanımlıysa oraya gidiyor.
+ * Yerelde geliştirirken jeton olmadığı için dosyalar proje kökündeki
  * `.yuklenen/` klasörüne yazılıyor ve `/yuklenen/...` adresinden bir route
  * handler ile sunuluyor. `public/` kullanılmıyor: oranın içeriği derleme
  * anında sabitleniyor, derlemeden sonra yazılan dosya sunulmuyor.
@@ -44,8 +44,26 @@ export const YEREL_KLASOR = path.join(process.cwd(), ".yuklenen");
 /** Dosya adı yalnızca üretilen biçimde olabilir: dizin dolaşmayı baştan keser. */
 export const YEREL_AD_KALIBI = /^[a-z0-9]+-[a-z0-9]+-[bk]\.webp$/;
 
-function blobVarMi(): boolean {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+/**
+ * Blob deposunun jetonu.
+ *
+ * Vercel depoyu projeye bağlarken değişkene bir ön ek verilmesine izin
+ * veriyor; o durumda jeton `BLOB_READ_WRITE_TOKEN` değil, örneğin
+ * `FOTOGRAF_READ_WRITE_TOKEN` adıyla geliyor. Bu yüzden önce standart ada,
+ * sonra `_READ_WRITE_TOKEN` ile biten ve değeri blob jetonuna benzeyen
+ * değişkenlere bakılıyor. Bulunan jeton çağrılara açıkça veriliyor: kütüphane
+ * kendi başına yalnızca standart ada bakıyor, ön ekli adı görmüyor.
+ */
+function blobJetonu(): string | undefined {
+  const dogrudan = process.env.BLOB_READ_WRITE_TOKEN?.trim();
+  if (dogrudan) return dogrudan;
+
+  for (const [anahtar, deger] of Object.entries(process.env)) {
+    if (anahtar.endsWith("_READ_WRITE_TOKEN") && deger?.trim().startsWith("vercel_blob_rw_")) {
+      return deger.trim();
+    }
+  }
+  return undefined;
 }
 
 /** Aynı fotoğraf iki kez yüklenirse birbirini ezmesin diye rastgele bir ön ek. */
@@ -54,10 +72,12 @@ function ad(): string {
 }
 
 async function yaz(dosyaAdi: string, veri: Buffer): Promise<string> {
-  if (blobVarMi()) {
+  const jeton = blobJetonu();
+  if (jeton) {
     const { put } = await import("@vercel/blob");
     const sonuc = await put(`urun/${dosyaAdi}`, veri, {
       access: "public",
+      token: jeton,
       contentType: "image/webp",
       addRandomSuffix: false,
       cacheControlMaxAge: 60 * 60 * 24 * 365,
@@ -70,8 +90,16 @@ async function yaz(dosyaAdi: string, veri: Buffer): Promise<string> {
   // Ölçüt NODE_ENV değil `VERCEL`, çünkü `next start` yerelde de üretim
   // kipinde çalışıyor ve orada yerel diske yazmak doğru davranış.
   if (process.env.VERCEL) {
+    // Hatayı okuyan kişi Vercel panelinde ne yapacağını bilsin diye bu
+    // dağıtımda jetona benzeyen değişkenlerin *adları* yazılıyor; değerleri
+    // hiçbir zaman yazılmıyor.
+    const benzer = Object.keys(process.env).filter(
+      (a) => a.includes("BLOB") || a.endsWith("_READ_WRITE_TOKEN"),
+    );
     throw new GorselHatasi(
-      "Fotoğraf deposu bağlı değil. Vercel panelinde Storage bölümünden bir Blob deposu oluşturup projeye bağla.",
+      benzer.length > 0
+        ? `Fotoğraf deposunun jetonu okunamadı. Bu dağıtımda şu değişkenler var: ${benzer.join(", ")}. Beklenen ad BLOB_READ_WRITE_TOKEN ve değerin "vercel_blob_rw_" ile başlaması.`
+        : "Fotoğraf deposu bu dağıtımda bağlı değil. Vercel'de Storage bölümünden Blob deposunu projeye bağladıktan sonra Deployments'tan yeniden dağıtım (Redeploy) gerekiyor: ortam değişkenleri yalnızca yeni dağıtımlara geçiyor. Depo bağlıysa jetonun Production ve Preview ortamlarının ikisinde de işaretli olduğuna bak.",
     );
   }
 
@@ -151,9 +179,10 @@ export async function gorselDosyalariniSil(yollar: string[]): Promise<void> {
   if (temiz.length === 0) return;
 
   try {
-    if (blobVarMi()) {
+    const jeton = blobJetonu();
+    if (jeton) {
       const { del } = await import("@vercel/blob");
-      await del(temiz);
+      await del(temiz, { token: jeton });
       return;
     }
     await Promise.all(

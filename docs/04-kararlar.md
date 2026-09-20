@@ -324,3 +324,21 @@ Vercel panelinde **Storage → Create Database → Blob** ile bir depo oluşturu
 projeye bağlanması gerekiyor. Bağlanınca `BLOB_READ_WRITE_TOKEN` değişkeni
 kendiliğinden ekleniyor. Bu yapılana kadar yayındaki panelden fotoğraf
 yüklenmeye çalışılırsa "Fotoğraf deposu bağlı değil" uyarısı çıkıyor.
+
+**Depo bağlı olduğu hâlde aynı uyarı çıkıyorsa** üç sebebi olabiliyor, üçü de
+20 Eylül 2026'da ele alındı:
+
+1. **Değişken eklendi ama yeniden dağıtım yapılmadı.** Vercel ortam
+   değişkenlerini dağıtım anında yazıyor; çalışan dağıtım sonradan eklenen
+   değişkeni görmüyor. Deployments listesinden **Redeploy** gerekiyor.
+2. **Depo bağlanırken ön ek verildi.** O zaman jetonun adı
+   `BLOB_READ_WRITE_TOKEN` değil, örneğin `FOTOGRAF_READ_WRITE_TOKEN` oluyor ve
+   kütüphane kendi başına bakmıyordu. Artık `_READ_WRITE_TOKEN` ile biten ve
+   değeri `vercel_blob_rw_` ile başlayan değişken de bulunuyor, bulunan jeton
+   çağrılara açıkça veriliyor.
+3. **Jeton yalnızca bir ortamda işaretli.** Production'da tanımlı olup Preview
+   dağıtımı denenirse (ya da tersi) yine bulunamıyor.
+
+Uyarı metni de ayrıntılandı: jetona benzeyen bir değişken varsa adı ekrana
+yazılıyor (değeri asla yazılmıyor), hiç yoksa yeniden dağıtım ve ortam
+işaretleri hatırlatılıyor.
