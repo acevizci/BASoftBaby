@@ -157,6 +157,39 @@ ${takip}${await altBilgi()}`,
   );
 }
 
+/** Kargoya verildiğinde: takip numarası ve taşıyıcının sorgulama adresi. */
+export async function kargoyaVerildiEpostasi(
+  siparis: SiparisEpostasi,
+  kargo: { tasiyiciAdi: string; takipNo: string; takipAdresi?: string },
+): Promise<EpostaSonucu> {
+  const takipSatiri = kargo.takipAdresi
+    ? `\n\nGönderini buradan takip edebilirsin:\n${kargo.takipAdresi}`
+    : "";
+
+  return gonder(
+    siparis.eposta,
+    `Siparişin kargoya verildi · ${siparis.numara}`,
+    `Merhaba ${siparis.adSoyad},
+
+${siparis.numara} numaralı siparişin ${kargo.tasiyiciAdi} ile yola çıktı.
+Takip numarası: ${kargo.takipNo}${takipSatiri}${await altBilgi()}`,
+  );
+}
+
+/** Teslim edildiğinde: iade hakkı bu tarihten işliyor. */
+export async function teslimEdildiEpostasi(siparis: SiparisEpostasi): Promise<EpostaSonucu> {
+  return gonder(
+    siparis.eposta,
+    `Siparişin teslim edildi · ${siparis.numara}`,
+    `Merhaba ${siparis.adSoyad},
+
+${siparis.numara} numaralı siparişin teslim edildi. Ellerine sağlık!
+
+Bir sorun varsa ya da iade etmek istersen 14 gün içinde bize yazman yeterli;
+koşulları "İade ve değişim" sayfasında bulabilirsin.${await altBilgi()}`,
+  );
+}
+
 export async function sifreSifirlamaEpostasi(
   kime: string,
   adSoyad: string,

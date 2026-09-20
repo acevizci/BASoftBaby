@@ -2,11 +2,12 @@
 
 Online bebek kıyafetleri ve aksesuarları mağazası.
 
-> Yol haritasında **01, 02, 03, 03b ve 06. adımlar** tamam; **04 ve 07. adımların
-> kod kısmı** da bitti: proje iskeleti ve marka sistemi, katalog vitrini, yönetim
-> paneli, sepet ve sipariş, üyelik, kampanya motoru, kartla ödeme, e-postalar,
-> yasal metinler, SEO ve ölçümleme. Kartla ödeme iyzico anahtarlarını, e-postalar
-> Resend anahtarını bekliyor; ikisi de tanımlı değilken mağaza çalışıyor. Veriler Neon Postgres'te, panelden girilen her değişiklik
+> **Yol haritasındaki yedi adımın kodu da yazıldı.** Proje iskeleti ve marka
+> sistemi, katalog vitrini, yönetim paneli, sepet ve sipariş, üyelik, kampanya
+> motoru, kartla ödeme, e-postalar, kargo ve fatura, yasal metinler, SEO ve
+> ölçümleme. Geriye dış hesaplar kaldı: iyzico, Resend, kargo toplayıcısı ve
+> e-arşiv sağlayıcısı. Hiçbiri tanımlı değilken de mağaza çalışıyor — sipariş
+> alınıyor, kargoya veriliyor, fatura kesiliyor. Veriler Neon Postgres'te, panelden girilen her değişiklik
 > anında mağazaya yansıyor. Sırada ödeme (iyzico) ve kargo var; ikisi de şirket
 > evrakına bağlı.
 
@@ -129,6 +130,35 @@ sonrası o hesabın bütün oturumları kapanır.
 adresle verilmiş **eski siparişler hesaba bağlanır** — doğrulama olmadan
 bağlanmaz, çünkü doğrulanmamış bir adres o kutunun sahibi olunduğunun kanıtı
 değildir. Şifre sıfırlamak da adresi doğrulanmış sayar.
+
+## Kargo
+
+Sipariş ekranındaki **Kargo** bölümünde taşıyıcıyı seçip takip numarasını
+yazıyorsun. Kaydedince sipariş "kargoda" oluyor ve müşteriye taşıyıcının kendi
+sorgulama bağlantısıyla birlikte e-posta gidiyor; aynı numarayı tekrar
+kaydetmek ikinci e-posta göndermiyor.
+
+**Etiketi yazdır** bağlantısı barkodlu bir kargo etiketi açıyor: gönderici
+künyesi, alıcı adresi ve Code 128 barkodu. Barkod, takip numarası girilmişse
+onu, girilmemişse sipariş numarasını taşıyor. Tarayıcının yazdır komutuyla
+basılıyor; yazdırmada yalnızca etiket kalıyor.
+
+Kargo toplayıcısı (Geliver/Navlungo) henüz bağlı değil — hesap şirket kaydına
+bağlı. Bağlanınca gönderi kendiliğinden açılacak; etiket, bildirim ve durum
+akışı aynı kalacak. `KARGO_BILDIRIM_SIRRI` tanımlanırsa `/api/kargo/durum`
+ucundan gelen durum bildirimleriyle sipariş "kargoda" ve "teslim edildi"
+olarak kendi kendine ilerliyor, teslimde müşteriye e-posta gidiyor.
+
+## Fatura
+
+Sipariş ekranından **Fatura oluştur** dediğinde numara veriliyor ve KDV,
+sipariş toplamından geriye ayrıştırılıyor (fiyatlar KDV dahil). Oran satış
+ayarlarından değiştiriliyor; **kesilmiş faturalar sonradan değişmiyor.**
+
+**Faturayı yazdır** e-arşiv düzeninde bir belge açıyor: satıcı künyesi, alıcı,
+kalemler, matrah, KDV ve genel toplam. Resmî faturayı e-arşivde kestikten
+sonra numarasını ve belgesinin adresini aynı ekrana yazabilir, durumu
+"kesildi" yapabilirsin.
 
 ## Yasal metinler ve künye
 

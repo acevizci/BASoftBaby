@@ -521,6 +521,76 @@ aynı cevap veriliyor, yoksa hangi adreslerin kayıtlı olduğu tek tek denenere
 
 ---
 
+### K-19 · Kargo toplayıcısız kuruldu, elle giriş tam çalışıyor
+**20 Eylül 2026**
+
+Kargo tarafı yapıldı: gönderi kaydı, barkodlu etiket, müşteri bildirimi, durum
+akışı ve taşıyıcının kendi sorgulama sayfasına bağlantı.
+
+**Toplayıcı (Geliver/Navlungo) bağlanmadı.** Hesap ve API anahtarı şirket
+kaydına bağlı; dahası bu servislerin alan adlarını doğrulayamadan yazılacak
+bir uyarlama, ilk gerçek denemede kırılırdı. Onun yerine sağlayıcıdan bağımsız
+olan her şey yapıldı ve bugün kullanılabilir durumda: mağaza anlaşmalı
+kargodan aldığı takip numarasını panele yazıyor, gerisi kendiliğinden
+işliyor. Toplayıcı gelince değişecek tek yer gönderiyi açan çağrı olacak;
+kayıt düzeni, etiket, bildirim ve durum akışı aynı kalacak.
+
+**Takip numarası girilince sipariş kargoda oluyor ve e-posta gidiyor.** Aynı
+numara tekrar kaydedilirse ikinci e-posta gitmiyor: panelde bir şeyi
+düzeltmek müşteriye yeni bildirim göndermemeli.
+
+**Etiketteki barkod kendi kodumuzda üretiliyor.** Code 128-B, SVG olarak.
+Kütüphane eklenmedi: gereken tek şey desen tablosu ve otuz satırlık bir
+döngü, üstelik SVG yazıcıda çözünürlükten bağımsız keskin çıkıyor. Tablo
+bağımsız denetlendi: 107 desen, her biri 11 modül, benzersiz ve bilinen 'A',
+'B', başlangıç ve bitiş desenleriyle birebir.
+
+**Durum bildirimi ucu sırsız çalışmıyor.** `KARGO_BILDIRIM_SIRRI` tanımlı
+değilse uç 404 veriyor. Herkese açık bir uçla siparişlerin durumu dışarıdan
+değiştirilebilirdi. Aynı bildirim iki kez gelirse ikincisi hiçbir şey
+yapmıyor (K-06); taşıyıcılar bildirimi tekrarlıyor.
+
+**Nerede:** [`../server/kargo.ts`](../server/kargo.ts),
+[`../server/kargo-islem.ts`](../server/kargo-islem.ts),
+[`../ui/barkod.tsx`](../ui/barkod.tsx),
+[`../app/yonetim/siparisler/[numara]/etiket`](../app/yonetim/siparisler),
+[`../app/api/kargo/durum`](../app/api/kargo/durum)
+
+---
+
+### K-20 · Fatura önce kendi belgemiz, sağlayıcı sonra
+**20 Eylül 2026**
+
+Fatura kaydı, KDV ayrıştırması, numara sayacı ve yazdırılabilir e-arşiv
+belgesi yapıldı.
+
+**Otomatik e-arşiv sağlayıcısı (Paraşüt, Bizim Hesap) bağlanmadı**, çünkü
+hesap ve vergi kaydı şirket kuruluşuna bağlı. Mağaza bugün faturayı panelden
+yazdırıp kesiyor; resmî fatura dışarıda kesildiyse numarası ve belgesinin
+adresi kayda yazılabiliyor. Sağlayıcı gelince kaydı ona gönderen bir çağrı
+ekleniyor, düzen değişmiyor.
+
+**KDV toplamdan geriye ayrıştırılıyor**, çünkü fiyatlar KDV dahil giriliyor.
+Kuruş tam sayı olduğu için KDV, toplamdan matrah çıkarılarak bulunuyor: iki
+ayrı yuvarlama yapılsaydı matrah + KDV toplamı tutmayabilirdi. Oran satış
+ayarlarından değiştirilebiliyor (bebek tekstilinde 10).
+
+**Kesilmiş fatura sonradan değişmiyor.** Oran ve tutarlar faturaya
+kopyalanıyor; panelden oran değiştirilse bile eski belge olduğu gibi kalıyor.
+Denemede bu ayrıca doğrulandı.
+
+**Fatura numarası sipariş numarası gibi tek işlem içinde artıyor**, yani aynı
+anda iki fatura kesilse bile numaralar çakışmıyor. Aynı siparişe ikinci fatura
+açılmıyor.
+
+**Panele yapıştırılan belge adresi yalnızca http(s) olabiliyor:**
+`javascript:` ile başlayan bir adres tıklandığında tarayıcıda çalışırdı.
+
+**Nerede:** [`../server/fatura.ts`](../server/fatura.ts),
+[`../app/yonetim/siparisler/[numara]/fatura`](../app/yonetim/siparisler)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı
@@ -596,3 +666,10 @@ ediyor.
 Şu an yanlış şifre denemesi sayılmıyor. scrypt her denemeyi kendiliğinden
 yavaşlatıyor, ama sürekli deneyen birine karşı hesap ya da IP başına bir sınır
 gerekiyor. Ödeme adımıyla birlikte ele alınacak.
+
+### A-11 · Kargo toplayıcısı ve fatura sağlayıcısı
+Kargo (Geliver/Navlungo) ve e-arşiv fatura (Paraşüt/Bizim Hesap) hesapları
+şirket kuruluşuna bağlı (A-03). Kod ikisi olmadan da çalışıyor: takip numarası
+panelden giriliyor, fatura panelden yazdırılıyor (K-19, K-20). Hesaplar
+açılınca entegrasyonlar tek modülde yazılacak; o zaman API dokümanlarına
+bakılıp alan adları doğrulanmalı.

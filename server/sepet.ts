@@ -215,6 +215,10 @@ export type SatisAyari = {
   kargoKurus: number;
   bedavaKargoEsigi: number;
   havaleBilgisi: string;
+  /** Faturada kullanılan KDV oranı (yüzde). */
+  kdvOrani: number;
+  /** Panelde kargo alanına önceden seçili gelen taşıyıcı. */
+  varsayilanTasiyici: string;
 };
 
 export async function ayarlariGetir(): Promise<SatisAyari> {
@@ -223,6 +227,8 @@ export async function ayarlariGetir(): Promise<SatisAyari> {
     kargoKurus: ayar?.kargoKurus ?? 4990,
     bedavaKargoEsigi: ayar?.bedavaKargoEsigi ?? 75000,
     havaleBilgisi: ayar?.havaleBilgisi ?? "",
+    kdvOrani: ayar?.kdvOrani ?? 10,
+    varsayilanTasiyici: ayar?.varsayilanTasiyici ?? "yurtici",
   };
 }
 

@@ -152,7 +152,7 @@ sipariş için sepet, sepet için ürün gerekiyor.
 | 03 | Sepet ve sipariş ✅ | Sepet, adres formu, sipariş oluşturma, havale ile ödeme, sipariş takibi |
 | 03b | Üyelik ✅ | Kayıt, giriş, siparişlerim, adres defteri, siparişte hesap açma. Şifre sıfırlama ve e-posta doğrulaması 04 ile gelecek |
 | 04 | Ödeme ◑ | iyzico ödeme formu, 3D Secure, taksit, sipariş ve ödeme onay e-postaları, şifre sıfırlama, e-posta doğrulama — kod bitti, anahtarlar bekleniyor |
-| 05 | Kargo ve fatura | Kargo entegrasyonu, barkodlu etiket, takip bildirimi, e-arşiv fatura |
+| 05 | Kargo ve fatura ◑ | Gönderi kaydı, barkodlu etiket, takip bildirimi, durum akışı, fatura ve KDV — toplayıcı ve e-arşiv sağlayıcısı bekleniyor |
 | 06 | Kampanya ve indirim motoru ✅ | Kupon, kategori indirimi, ücretsiz kargo barajı, tarihli kampanyalar |
 | 07 | Yasal metinler, SEO, açılış ◑ | Sözleşme sayfaları, KVKK, ETBİS alanı, site haritası, yapısal veri ve ölçümleme yapıldı; avukat onayı, şirket künyesi ve alan adı bekleniyor |
 
@@ -187,4 +187,13 @@ iyzico anahtarları sanal POS başvurusuna (A-03), Resend anahtarı alan adına
 (A-02) bağlı. İkisi de tanımlı değilken mağaza çalışmaya devam ediyor — kart
 seçeneği görünmüyor, e-posta gönderilmiyor.
 
-Geriye 05 (kargo ve fatura) ile 07'nin kod dışı kalanı kaldı.
+05. adımın sağlayıcıdan bağımsız kısmı da 20 Eylül 2026'da yapıldı: gönderi
+kaydı, barkodlu kargo etiketi, kargoya verildi ve teslim edildi e-postaları,
+taşıyıcı durum bildirimi ucu, fatura kaydı ve yazdırılabilir e-arşiv belgesi.
+Kargo toplayıcısı ile e-arşiv sağlayıcısı bağlanmadı (A-11): ikisi de şirket
+kaydına bağlı. O zamana kadar takip numarası panelden giriliyor, fatura
+panelden yazdırılıyor — yani mağaza bugün sipariş gönderip fatura kesebilir.
+
+Geriye kod dışı işler kaldı: şirket ve vergi kaydı (A-03), alan adı (A-02),
+yasal metinlerin avukat onayı (A-05), iyzico ve Resend anahtarları (A-09),
+kargo ve fatura hesapları (A-11).

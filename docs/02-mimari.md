@@ -68,6 +68,7 @@ app/
   yasal/[slug]/           sözleşmeler, KVKK, çerez politikası
   api/odeme/iyzico/donus/ iyzico dönüş ucu
   api/cron/odeme-temizlik/ yarıda kalan ödemelerin temizliği
+  api/kargo/durum/        taşıyıcı durum bildirimi
   sitemap.ts robots.ts    site haritası ve arama motoru kuralları
   (hesap)/                üyelik — adres satırına segment eklemez
     giris/ kayit/         giriş ve hesap açma
@@ -77,10 +78,11 @@ app/
       bilgiler/           ad-telefon ve şifre değiştirme
   yonetim/                şifreyle korunuyor
     siparisler/ urunler/ stok/ kampanyalar/ banner/ duyuru/ ayarlar/ yasal/
+      siparisler/[numara]/etiket/  yazdırılabilir barkodlu kargo etiketi
+      siparisler/[numara]/fatura/  yazdırılabilir e-arşiv faturası
 
   — henüz yok, sırası gelince —
   (hesap)/iade/           iade talebi açma
-  api/kargo/durum/        taşıyıcı durum bildirimi
 
 server/                   iş kuralları — tek kaynak
   veritabani.ts           Prisma bağlantısı
@@ -100,8 +102,10 @@ server/                   iş kuralları — tek kaynak
   yonetim.ts              panelin yazma işlemleri
   odeme.ts                iyzico: ödeme formu ve sonuç doğrulama
   odeme-akis.ts           girişim kaydı, dönüşün işlenmesi, stok iadesi
-  eposta.ts               sipariş, ödeme, sıfırlama ve doğrulama e-postaları
-  — henüz yok: kargo.ts fatura.ts
+  eposta.ts               sipariş, ödeme, kargo, sıfırlama ve doğrulama e-postaları
+  kargo.ts                taşıyıcılar, gönderi kaydı, takip adresleri
+  kargo-islem.ts          taşıyıcı durum bildiriminin işlenmesi
+  fatura.ts               fatura kaydı, KDV ayrıştırması, numara sayacı
 
 db/
   schema.prisma           veri modeli
@@ -177,6 +181,14 @@ değil)
 
 **LegalPage** *(kuruldu)* — `slug`, `baslik`, `ozet`, `icerik`, `taslakMi`.
 Metin panelden düzenleniyor; taslakken sayfa arama motorlarına kapalı.
+
+**Shipment** *(kuruldu)* — `orderId`, `tasiyici`, `takipNo`, `barkod`,
+`durum`; toplayıcı bağlanınca `saglayici`, `saglayiciRef`, `etiketAdresi`
+dolacak.
+
+**Invoice** *(kuruldu)* — `orderId`, `numara`, `tarih`, `kdvOrani`,
+`matrahKurus`, `kdvKurus`, `toplamKurus`, `durum`; resmî fatura dışarıda
+kesildiyse `saglayiciRef` ve `pdfAdresi`.
 
 **Payment** *(kuruldu)* — `orderId`, `saglayici`, `jeton` (tekil, aynı dönüş
 iki kez işlenmesin diye), `saglayiciRef` (iyzico ödeme kimliği), `durum`,

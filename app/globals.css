@@ -336,3 +336,34 @@ a.serit-mesaj:hover {
     display: none;
   }
 }
+
+/* Yazdırma: kargo etiketi ve fatura kâğıda basılıyor. Kenar çubuğu, düğmeler
+   ve gezinme basılmasın diye .yazdirma-gizle işaretli her şey çıkarılıyor;
+   belge de kâğıdın tamamına yayılsın diye kenar boşlukları sıfırlanıyor. */
+@media print {
+  .yazdirma-gizle,
+  header,
+  footer,
+  nav[aria-label],
+  aside {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  .etiket,
+  .belge {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    border: none;
+    padding: 0;
+  }
+
+  @page {
+    margin: 10mm;
+  }
+}

@@ -1,5 +1,6 @@
 import { ayarlariGetir } from "@/server/sepet";
 import { satisAyariKaydet } from "@/server/yonetim";
+import { TASIYICILAR } from "@/server/kargo";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 
 export const dynamic = "force-dynamic";
@@ -35,6 +36,42 @@ export default async function AyarEkrani({ searchParams }: PageProps<"/yonetim/a
       )}
 
       <form action={satisAyariKaydet} className="flex flex-col gap-5">
+        <section className="rounded-marka border border-cizgi bg-yuzey p-5">
+          <h2 className="text-lg">Fatura ve kargo firması</h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <label className="flex flex-col gap-1.5">
+              <span className={ETIKET}>KDV oranı (%)</span>
+              <input
+                name="kdvOrani"
+                inputMode="numeric"
+                defaultValue={String(ayar.kdvOrani)}
+                className={`${GIRDI} rakam`}
+              />
+              <span className="text-xs text-metin-3">
+                Faturada kullanılıyor. Fiyatlar KDV dahil girildiği için matrah bu orandan
+                geriye hesaplanıyor. Kesilmiş faturalar sonradan değişmez.
+              </span>
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={ETIKET}>Varsayılan taşıyıcı</span>
+              <select
+                name="varsayilanTasiyici"
+                defaultValue={ayar.varsayilanTasiyici}
+                className={GIRDI}
+              >
+                {TASIYICILAR.map((t) => (
+                  <option key={t.kod} value={t.kod}>
+                    {t.ad}
+                  </option>
+                ))}
+              </select>
+              <span className="text-xs text-metin-3">
+                Sipariş ekranındaki kargo alanına önceden seçili gelir.
+              </span>
+            </label>
+          </div>
+        </section>
+
         <section className="rounded-marka border border-cizgi bg-yuzey p-5">
           <h2 className="text-lg">Kargo</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">

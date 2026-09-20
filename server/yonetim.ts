@@ -14,6 +14,9 @@ import { db } from "@/server/veritabani";
 import { DURUMLAR, ODEME_DURUMLARI } from "@/ui/siparis-bicim";
 import { BANNER_GORSELLERI, BANNER_PALETLERI } from "@/server/banner";
 import { GorselHatasi, gorselDosyalariniSil, gorselYukle } from "@/server/gorsel-depo";
+import { TASIYICILAR, takipAdresi, tasiyiciAdi } from "@/server/kargo";
+import { faturaOlustur } from "@/server/fatura";
+import { kargoyaVerildiEpostasi } from "@/server/eposta";
 
 function vitriniYenile() {
   revalidatePath("/", "layout");
@@ -217,6 +220,129 @@ export async function siparisDurumuKaydet(veri: FormData): Promise<void> {
   redirect(`/yonetim/siparisler/${numara}?kayit=1`);
 }
 
+/* ── Kargo ve fatura ────────────────────────────────────────────────────── */
+
+/**
+ * Gönderiyi kaydeder ve müşteriye haber verir.
+ *
+ * Takip numarası girildiğinde sipariş kendiliğinden "kargoda" oluyor ve
+ * müşteriye taşıyıcının sorgulama adresiyle birlikte e-posta gidiyor. Aynı
+ * numara tekrar kaydedilirse e-posta bir daha gitmiyor: panelde bir şeyi
+ * düzeltmek müşteriye ikinci bildirim göndermemeli.
+ */
+export async function kargoKaydet(veri: FormData): Promise<void> {
+  const numara = String(veri.get("numara") ?? "").trim().toUpperCase();
+  const tasiyici = String(veri.get("tasiyici") ?? "").trim();
+  const takipNo = String(veri.get("takipNo") ?? "").trim().slice(0, 60);
+  if (!numara) return;
+  if (!TASIYICILAR.some((t) => t.kod === tasiyici)) redirect(`/yonetim/siparisler/${numara}`);
+
+  const siparis = await db.order.findUnique({
+    where: { numara },
+    select: {
+      id: true,
+      numara: true,
+      adSoyad: true,
+      eposta: true,
+      toplamKurus: true,
+      odemeYontemi: true,
+      durum: true,
+      gonderiler: { orderBy: { olusturuldu: "desc" }, take: 1 },
+    },
+  });
+  if (!siparis) redirect("/yonetim/siparisler");
+
+  const oncekiTakip = siparis.gonderiler[0]?.takipNo ?? "";
+  const gonderi = siparis.gonderiler[0];
+
+  if (gonderi) {
+    await db.shipment.update({
+      where: { id: gonderi.id },
+      data: {
+        tasiyici,
+        takipNo,
+        barkod: takipNo || siparis.numara,
+        durum: takipNo ? "verildi" : "hazirlandi",
+      },
+    });
+  } else {
+    await db.shipment.create({
+      data: {
+        orderId: siparis.id,
+        tasiyici,
+        takipNo,
+        barkod: takipNo || siparis.numara,
+        durum: takipNo ? "verildi" : "hazirlandi",
+      },
+    });
+  }
+
+  // Sipariş kartındaki takip numarası da aynı değeri göstersin.
+  await db.order.update({
+    where: { id: siparis.id },
+    data: {
+      kargoTakipNo: takipNo || null,
+      durum: takipNo && siparis.durum !== "teslim" ? "kargoda" : siparis.durum,
+    },
+  });
+
+  if (takipNo && takipNo !== oncekiTakip) {
+    await kargoyaVerildiEpostasi(
+      {
+        numara: siparis.numara,
+        adSoyad: siparis.adSoyad,
+        eposta: siparis.eposta,
+        toplamKurus: siparis.toplamKurus,
+        odemeYontemi: siparis.odemeYontemi,
+      },
+      {
+        tasiyiciAdi: tasiyiciAdi(tasiyici),
+        takipNo,
+        takipAdresi: takipAdresi(tasiyici, takipNo),
+      },
+    );
+  }
+
+  vitriniYenile();
+  redirect(`/yonetim/siparisler/${numara}?kayit=kargo`);
+}
+
+/** Faturayı oluşturur; zaten varsa yazdırma sayfasına gider. */
+export async function faturaHazirla(veri: FormData): Promise<void> {
+  const numara = String(veri.get("numara") ?? "").trim().toUpperCase();
+  if (!numara) return;
+
+  await faturaOlustur(numara);
+  vitriniYenile();
+  redirect(`/yonetim/siparisler/${numara}/fatura`);
+}
+
+/** Resmî fatura dışarıda kesildiyse numarası ve belgesi buraya yazılıyor. */
+export async function faturaKaydiGuncelle(veri: FormData): Promise<void> {
+  const numara = String(veri.get("numara") ?? "").trim().toUpperCase();
+  const saglayiciRef = String(veri.get("saglayiciRef") ?? "").trim().slice(0, 60);
+  const pdfAdresi = String(veri.get("pdfAdresi") ?? "").trim().slice(0, 500);
+  const durum = String(veri.get("durum") ?? "taslak");
+  if (!numara) return;
+  if (!["taslak", "kesildi", "iptal"].includes(durum)) return;
+
+  // Bağlantı yalnızca http(s) olabilir: panele yapıştırılan bir javascript:
+  // adresi tıklandığında tarayıcıda çalışırdı.
+  const guvenliAdres = /^https?:\/\//.test(pdfAdresi) ? pdfAdresi : "";
+
+  await db.invoice.updateMany({
+    where: { order: { numara } },
+    data: {
+      saglayiciRef: saglayiciRef || null,
+      pdfAdresi: guvenliAdres || null,
+      durum,
+    },
+  });
+
+  vitriniYenile();
+  redirect(`/yonetim/siparisler/${numara}?kayit=fatura`);
+}
+
 /* ── Satış ayarları ─────────────────────────────────────────────────────── */
 
 export async function satisAyariKaydet(veri: FormData): Promise<void> {
@@ -224,10 +350,32 @@ export async function satisAyariKaydet(veri: FormData): Promise<void> {
   const esik = kurusaCevir(veri.get("esik")) ?? 0;
   const havaleBilgisi = String(veri.get("havaleBilgisi") ?? "").trim().slice(0, 1000);
 
+  // KDV oranı faturada kullanılıyor; 0-100 dışında bir değer kabul edilmiyor.
+  const kdvHam = Number(String(veri.get("kdvOrani") ?? "").replace(",", "."));
+  const kdvOrani = Number.isFinite(kdvHam) ? Math.min(100, Math.max(0, Math.round(kdvHam))) : 10;
+
+  const tasiyiciKodu = String(veri.get("varsayilanTasiyici") ?? "yurtici");
+  const varsayilanTasiyici = TASIYICILAR.some((t) => t.kod === tasiyiciKodu)
+    ? tasiyiciKodu
+    : "yurtici";
+
   await db.storeSetting.upsert({
     where: { id: "tek" },
-    update: { kargoKurus: kargo, bedavaKargoEsigi: esik, havaleBilgisi },
-    create: { id: "tek", kargoKurus: kargo, bedavaKargoEsigi: esik, havaleBilgisi },
+    update: {
+      kargoKurus: kargo,
+      bedavaKargoEsigi: esik,
+      havaleBilgisi,
+      kdvOrani,
+      varsayilanTasiyici,
+    },
+    create: {
+      id: "tek",
+      kargoKurus: kargo,
+      bedavaKargoEsigi: esik,
+      havaleBilgisi,
+      kdvOrani,
+      varsayilanTasiyici,
+    },
   });
 
   vitriniYenile();

@@ -165,6 +165,14 @@ model StoreSetting {
   sirketAdresi  String @default("")
   destekTelefon String @default("")
   destekEposta  String @default("")
+
+  /// Faturada kullanılan KDV oranı (yüzde). Bebek tekstilinde 10; ürün
+  /// grubuna göre değişirse panelden güncelleniyor.
+  kdvOrani Int @default(10)
+  /// Fatura numarası sayacı. Fatura oluşturulurken aynı işlem içinde artıyor.
+  sonFaturaNo Int @default(0)
+  /// Panelde kargo alanına önceden seçili gelen taşıyıcı.
+  varsayilanTasiyici String @default("yurtici")
 }
 
 /// Ziyaretçinin sepeti. Tarayıcıdaki `sepet` çerezi bu kaydın id'sini tutar;
@@ -241,6 +249,8 @@ model Order {
   guncellendi DateTime    @updatedAt
   satirlar    OrderItem[]
   odemeler    Payment[]
+  gonderiler  Shipment[]
+  fatura      Invoice?
 
   @@index([durum, olusturuldu])
   @@index([eposta])
@@ -472,4 +482,69 @@ model Payment {
 
   @@index([orderId])
   @@index([durum, olusturuldu])
+}
+
+/// Kargo gönderisi.
+///
+/// Taşıyıcı toplayıcısı (Geliver/Navlungo) bağlanana kadar panelden elle
+/// giriliyor: mağaza sahibi anlaşmalı kargodan aldığı takip numarasını
+/// yazıyor, müşteriye bildirim kendiliğinden gidiyor. Toplayıcı gelince
+/// `saglayici`, `saglayiciRef` ve `etiketAdresi` dolacak, geri kalan akış
+/// aynı kalacak (K-19).
+model Shipment {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  /// yurtici · aras · mng · ptt · surat · diger
+  tasiyici String
+  takipNo  String
+  /// Etikette basılan barkod. Takip numarası varsa o, yoksa sipariş numarası.
+  barkod   String
+
+  /// Toplayıcı bağlanınca dolacak alanlar.
+  saglayici    String?
+  saglayiciRef String?
+  etiketAdresi String?
+
+  /// hazirlandi · verildi · yolda · teslim · iade
+  durum       String   @default("hazirlandi")
+  olusturuldu DateTime @default(now())
+  guncellendi DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([takipNo])
+}
+
+/// e-Arşiv fatura kaydı.
+///
+/// Fatura sağlayıcısı (Paraşüt, Bizim Hesap) bağlanana kadar fatura burada
+/// oluşturulup panelden yazdırılıyor; kesilen resmî faturanın numarası ve
+/// bağlantısı sonradan buraya yazılabiliyor. Tutarlar sipariş anındaki
+/// hâlinden kopyalanıyor, sonradan değişen KDV oranı eski faturayı
+/// bozmuyor (K-20).
+model Invoice {
+  id      String @id @default(cuid())
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  /// BA-F-2026-0001
+  numara String   @unique
+  tarih  DateTime @default(now())
+
+  /// Yüzde olarak KDV oranı; matrah ve KDV kuruş.
+  kdvOrani    Int
+  matrahKurus Int
+  kdvKurus    Int
+  toplamKurus Int
+
+  /// Resmî fatura dışarıda kesildiyse numarası ve belgesi.
+  saglayici    String?
+  saglayiciRef String?
+  pdfAdresi    String?
+
+  /// taslak · kesildi · iptal
+  durum       String   @default("taslak")
+  olusturuldu DateTime @default(now())
+  guncellendi DateTime @updatedAt
 }

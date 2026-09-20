@@ -103,8 +103,20 @@ export default function SiparisKarti({
           <p className="rakam text-metin-2">{siparis.telefon}</p>
           {siparis.kargoTakipNo && (
             <p className="mt-2">
-              <span className="text-xs font-bold text-metin-2">Kargo takip no</span>
+              <span className="text-xs font-bold text-metin-2">
+                Kargo takip no{siparis.tasiyiciAdi ? ` · ${siparis.tasiyiciAdi}` : ""}
+              </span>
               <span className="rakam block">{siparis.kargoTakipNo}</span>
+              {siparis.takipAdresi && (
+                <a
+                  href={siparis.takipAdresi}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-bold text-mavi-koyu hover:underline"
+                >
+                  Kargoyu takip et
+                </a>
+              )}
             </p>
           )}
         </div>

@@ -17,6 +17,7 @@ import { db } from "@/server/veritabani";
 import { kargoHesapla, kuponOku, sepetIdOku, type SatisAyari } from "@/server/sepet";
 import { enIyiKampanya, gecerliKampanyalar } from "@/server/kampanya";
 import { RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
+import { takipAdresi, tasiyiciAdi } from "@/server/kargo";
 
 /**
  * Onay sayfasını açan çerezin adı. Burada duruyor çünkü "use server" işaretli
@@ -208,8 +209,16 @@ export type Siparis = {
   /** Başarılı kart ödemesinin iyzico kimliği ve taksidi; panelde görünüyor. */
   odemeRef?: string;
   taksit?: number;
+  /** Kargo gönderisi varsa taşıyıcının adı ve sorgulama adresi. */
+  tasiyiciAdi?: string;
+  takipAdresi?: string;
   olusturuldu: Date;
   satirlar: SiparisSatiri[];
+};
+
+type GonderiKaydi = {
+  tasiyici: string;
+  takipNo: string;
 };
 
 type OdemeKaydi = {
@@ -240,15 +249,23 @@ type SiparisSatiriKaydi = {
 };
 
 function siparisYap(
-  s: Omit<Siparis, "satirlar" | "sonOdemeHatasi" | "odemeRef" | "taksit"> & {
+  s: Omit<
+    Siparis,
+    "satirlar" | "sonOdemeHatasi" | "odemeRef" | "taksit" | "tasiyiciAdi" | "takipAdresi"
+  > & {
     satirlar: SiparisSatiriKaydi[];
     odemeler: OdemeKaydi[];
+    gonderiler: GonderiKaydi[];
   },
 ): Siparis {
-  const { odemeler, ...kalan } = s;
+  const { odemeler, gonderiler, ...kalan } = s;
+  const gonderi = gonderiler[0];
+
   return {
     ...kalan,
     ...odemeOzeti(odemeler),
+    tasiyiciAdi: gonderi ? tasiyiciAdi(gonderi.tasiyici) : undefined,
+    takipAdresi: gonderi ? takipAdresi(gonderi.tasiyici, gonderi.takipNo) : undefined,
     satirlar: s.satirlar.map((k) => ({
       ...k,
       renkAdi: RENK_ADLARI[k.renk as RenkAdi] ?? k.renk,
@@ -267,6 +284,7 @@ export async function siparisGetir(numara: string, eposta: string): Promise<Sipa
     include: {
       satirlar: { orderBy: { id: "asc" } },
       odemeler: { orderBy: { olusturuldu: "asc" } },
+      gonderiler: { orderBy: { olusturuldu: "desc" }, take: 1 },
     },
   });
   if (!kayit) return undefined;
@@ -285,6 +303,7 @@ export async function siparisGetirPanel(numara: string): Promise<Siparis | undef
     include: {
       satirlar: { orderBy: { id: "asc" } },
       odemeler: { orderBy: { olusturuldu: "asc" } },
+      gonderiler: { orderBy: { olusturuldu: "desc" }, take: 1 },
     },
   });
   return kayit ? siparisYap(kayit) : undefined;
