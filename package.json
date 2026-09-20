@@ -4,12 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma migrate deploy && tsx db/tohum.ts --bir-kez && next build",
+    "build": "prisma generate && tsx db/goc.ts && tsx db/tohum.ts --bir-kez && next build",
     "start": "next start",
     "lint": "eslint",
     "kontrol": "tsc --noEmit && eslint",
     "tohum": "tsx db/tohum.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "goc": "tsx db/goc.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",

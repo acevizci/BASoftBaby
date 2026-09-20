@@ -32,11 +32,16 @@ Vercel'in proje ayarlarında durur.
 | --- | --- |
 | `npm run dev` | Geliştirme sunucusu, kaydettiğin an ekranda |
 | `npm run build` | Yayına çıkacak sürümü derler |
+| `npm run goc` | Bekleyen veritabanı göçlerini uygular (yapı da bunu çağırır) |
 | `npm run kontrol` | Tip ve kod denetimi — göndermeden önce bunu çalıştır |
 | `npm run tohum` | Kategorileri, örnek ürünleri ve duyuruları veritabanına yazar |
 
 Yayına ilk gönderimde bu veri kendiliğinden bir kez yazılıyor; sonraki
 gönderimlerde yazılmıyor, yani sildiğin örnek ürünler geri gelmiyor.
+
+Göçler de yapı sırasında uygulanıyor. İki dağıtım aynı anda başlarsa
+(önizleme + yayın) ikisi de aynı veritabanına baktığı için göç kilidi meşgul
+çıkabiliyor; yapı bu durumda düşmüyor, bekleyip yeniden deniyor (K-25).
 
 ## Klasörler
 

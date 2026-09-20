@@ -765,6 +765,54 @@ yeni hâli birkaç yüz milisaniye sonra görünüyor (K-22).
 
 ---
 
+### K-25 · Göç kilidi meşgulse yapı düşmüyor, bekliyor
+**20 Eylül 2026**
+
+Dağıtım `prisma migrate deploy` adımında düştü:
+
+```
+Error: P1002 — Timed out trying to acquire a postgres advisory lock
+```
+
+Sebep, önce göründüğü gibi bir arıza değil. `migrate deploy` işe başlarken
+veritabanında bir danışma kilidi alıyor: aynı anda iki dağıtım aynı göçü
+uygulamaya kalkıp veritabanını bozmasın diye. Bir dala gönderip hemen ardından
+`main`'e birleştirilince Vercel önizleme ve yayın yapılarını yan yana
+başlatıyor, ikisi de aynı Neon veritabanına bakıyor. Kilidi biri alıyor, öteki
+on saniye bekleyip pes ediyor ve bütün yapı düşüyor. **Kilit doğru davranıyordu;
+yanlış olan ilk denemede pes etmekti.**
+
+Göç artık `prisma migrate deploy`'u doğrudan çağırmıyor,
+[`../db/goc.ts`](../db/goc.ts) üzerinden geçiyor. Üç şey yapıyor:
+
+1. **Göç havuzdan değil doğrudan bağlantıyla.** Havuz (PgBouncer) her sorguyu
+   başka bir arka bağlantıya verebiliyor; oturuma bağlı olan danışma kilidi
+   böyle bir bağlantıda güvenilir değil — kilit alınmış görünüp kaybolabiliyor.
+   Neon'da havuzlu adresin sunucu adında `-pooler` geçiyor; göç için o parça
+   ve yalnızca havuza ait ayarlar (`pgbouncer`, `connection_limit`) düşürülüyor.
+   Neon dışında bir sağlayıcıda adres olduğu gibi kalıyor. Ayrı bir adres
+   verilmek istenirse `MIGRATE_DATABASE_URL` tanımlanıyor.
+2. **Önce veritabanını uyandır.** Neon kullanılmayan veritabanını uyutuyor,
+   uykudan kalkması saniyeler sürüyor. Kilit denemesinin on saniyesi uyanmaya
+   harcanmasın diye önce basit bir sorgu gönderiliyor.
+3. **Kilit meşgulse bekle ve yeniden dene.** Beş deneme, bekleme her seferinde
+   ikiye katlanıyor (5, 10, 20, 40 sn). Öteki dağıtımın göçü bitince kilit
+   düşüyor ve bizimki geçiyor. Kilitle ilgisi olmayan hatalarda beklenmiyor:
+   yanlış şifre ya da bozuk göç ilk denemede yapıyı düşürmeye devam ediyor,
+   çünkü beklemekle düzelmeyecek.
+
+Denendi: kilit elle tutulurken (`pg_advisory_lock`) yapı başlatıldı; ilk deneme
+zaman aşımına uğradı, beş saniye beklendi, ikinci deneme kilit serbest kalınca
+geçti ve yapı sıfır koduyla bitti. Adres dönüşümü de dört durumda denendi
+(havuzlu, havuzsuz, yerel, çözümlenemeyen).
+
+Uygulanacak göç yoksa bunların hiçbiri fark ettirmiyor: komut saniyenin altında
+"No pending migrations" deyip çıkıyor.
+
+**Nerede:** [`../db/goc.ts`](../db/goc.ts), `package.json` (`build`, `goc`)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı
