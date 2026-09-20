@@ -184,6 +184,44 @@ fiyat, stok ve duyuru her zaman o anki hâliyle görünüyor.
 
 ---
 
+### K-10 · Kampanya motoru: en çok indiren kazanır
+**19 Eylül 2026**
+
+K-02'de verilen karar koda döküldü. Bir sepete birden çok kampanya uyuyorsa
+yalnızca **en çok indiren** uygulanıyor; kupon kodları da bu kurala tabi.
+Müşteri sepette hangi kampanyanın uygulandığını adıyla görüyor. Geçerli bir
+kupon daha az indiriyorsa uygulanmıyor ve müşteriye nedeni yazıyor.
+
+**Kampanya türleri:** yüzde ya da sabit tutar; kapsam tüm ürünler, tek kategori
+ya da tek ürün olabilir. İsteğe bağlı kupon kodu, sepet alt sınırı ve tarih
+aralığı var. Kuponu olmayan kampanyalar koşul tuttuğu anda kendiliğinden
+devreye giriyor.
+
+**Ürün fiyatına yansıma:** Yalnızca kuponsuz ve sepet alt sınırı olmayan
+kampanyalar ürün kartında ve ürün sayfasında indirimli fiyat olarak görünüyor.
+"500 TL üzerine %10" gibi bir kampanyayı tek ürünün fiyatında göstermek
+müşteriyi yanıltırdı; o indirim sepette çıkıyor.
+
+**Sepet eksiye düşmez:** Sabit tutar indirimi kapsamına giren satırların
+toplamını aşamıyor. Sepetin tamamı indirimle karşılansa bile kargo ücreti
+duruyor — ürün bedava olabilir, taşıma bedava olmuyor. Bedava kargo eşiği
+indirimden sonraki tutara bakıyor.
+
+**Kupon bir siparişlik:** Sipariş verilince kupon çerezi siliniyor, müşteri
+farkında olmadan tekrar kullanamıyor. Uygulanan kampanyanın adı ve indirim
+tutarı siparişe kopyalanıyor; kampanya sonradan silinse de sipariş bozulmuyor.
+
+**Türkçe yerel tuzağı:** Kupon kodu ve e-posta birer kimlik, Türkçe metin
+değil. `toLocaleUpperCase("tr")` "i" harfini "İ" yaptığı için "hosgeldin" yazan
+müşteri HOSGELDIN kuponunu tutturamıyordu; aynı şekilde "I" harfi "ı" olduğu
+için büyük harfle yazılmış e-postayla sipariş sorgulanamıyordu. İkisi de yerelden
+bağımsız `toUpperCase()` / `toLowerCase()` ile düzeltildi.
+
+**Nerede:** [`../server/kampanya.ts`](../server/kampanya.ts),
+[`../app/yonetim/kampanyalar`](../app/yonetim/kampanyalar)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

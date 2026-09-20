@@ -12,6 +12,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ayarlariGetir } from "@/server/sepet";
+import { KUPON_CEREZI } from "@/server/kampanya";
 import { SON_SIPARIS_CEREZI, siparisOlustur } from "@/server/siparis";
 
 function temiz(veri: FormData, alan: string): string {
@@ -32,7 +33,7 @@ function eksikMi(g: Record<string, string>): boolean {
 export async function siparisiTamamla(veri: FormData): Promise<void> {
   const girdi = {
     adSoyad: temiz(veri, "adSoyad"),
-    eposta: temiz(veri, "eposta").toLocaleLowerCase("tr"),
+    eposta: temiz(veri, "eposta").toLowerCase(),
     telefon: temiz(veri, "telefon"),
     adres: temiz(veri, "adres"),
     ilce: temiz(veri, "ilce"),
@@ -52,6 +53,8 @@ export async function siparisiTamamla(veri: FormData): Promise<void> {
 
   // Onay sayfası bu çerezle açılır; olmayanlar e-postayla takip sayfasından bakar.
   const kavanoz = await cookies();
+  // Kupon bir siparişlik: kalırsa müşteri farkında olmadan tekrar kullanır.
+  kavanoz.delete(KUPON_CEREZI);
   kavanoz.set(SON_SIPARIS_CEREZI, sonuc.numara, {
     httpOnly: true,
     sameSite: "lax",

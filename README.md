@@ -49,8 +49,8 @@ gönderimlerde yazılmıyor, yani sildiğin örnek ürünler geri gelmiyor.
 ## Yönetim paneli
 
 `/yonetim` adresinde. Siparişler, ürün ekleme ve düzenleme, beden-renk stokları,
-duyuru şeridi ve satış ayarları (kargo ücreti, bedava kargo eşiği, havale
-bilgisi). Açılabilmesi için `YONETIM_SIFRE` tanımlı olmalı; tanımlı değilse panel
+duyuru şeridi, kampanyalar ve satış ayarları (kargo ücreti, bedava kargo eşiği,
+havale bilgisi). Açılabilmesi için `YONETIM_SIFRE` tanımlı olmalı; tanımlı değilse panel
 kendini tamamen kapatır (404 verir), yani ayar unutulursa açıkta kalmaz.
 
 ## Sipariş akışı
@@ -61,6 +61,14 @@ havale/EFT. Stok sipariş anında tek bir veritabanı işlemi içinde düşer, a
 anda gelen iki sipariş son adedi birlikte alamaz. Müşteri siparişini numarası
 ve e-postasıyla `/siparis-takip` adresinden görür. Bütün ekranlar düz HTML
 formuyla çalışır, JavaScript kapalı tarayıcıda da sipariş verilebilir.
+
+## Kampanyalar
+
+Yüzde ya da sabit tutar indirimi; tüm ürünlere, bir kategoriye ya da tek ürüne
+uygulanabilir. İsteğe bağlı kupon kodu, sepet alt sınırı ve tarih aralığı
+verilebilir. **İndirimler üst üste binmez:** bir sepete birden çok kampanya
+uyarsa yalnızca en çok indiren uygulanır, müşteri de hangisi olduğunu sepette
+görür.
 
 ## Belgeler
 
@@ -97,6 +105,7 @@ fatura e-arşiv, yayın Vercel üzerinde.
 - [x] 02. adım: katalog vitrini (ana sayfa, kategori, süzgeç, ürün detayı)
 - [x] Veritabanı (Neon Postgres) ve yönetim paneli
 - [x] Sepet, sipariş ve sipariş takibi (havale/EFT ile)
+- [x] Kampanya ve kupon motoru
 - [ ] Gerçek ürünlerin girilmesi
 - [ ] Havale hesabının panele girilmesi
 - [ ] Üyelik (alan adı ve e-posta servisi gelince)

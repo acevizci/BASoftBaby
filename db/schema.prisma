@@ -14,13 +14,14 @@ datasource db {
 }
 
 model Category {
-  id       String    @id @default(cuid())
-  slug     String    @unique
-  ad       String
-  aciklama String?
-  sira     Int       @default(0)
-  aktif    Boolean   @default(true)
-  products Product[]
+  id        String     @id @default(cuid())
+  slug      String     @unique
+  ad        String
+  aciklama  String?
+  sira      Int        @default(0)
+  aktif     Boolean    @default(true)
+  products  Product[]
+  campaigns Campaign[]
 
   @@index([aktif, sira])
 }
@@ -61,8 +62,9 @@ model Product {
   olusturuldu DateTime @default(now())
   guncellendi DateTime @updatedAt
 
-  variants ProductVariant[]
-  images   ProductImage[]
+  variants  ProductVariant[]
+  images    ProductImage[]
+  campaigns Campaign[]
 
   @@index([categoryId, aktif])
 }
@@ -185,6 +187,10 @@ model Order {
   not       String @default("")
 
   araToplamKurus Int
+  /// Uygulanan kampanyanın indirimi. İndirimler üst üste binmez (K-02).
+  indirimKurus   Int     @default(0)
+  /// Müşteriye gösterilen kampanya adı; sonradan kampanya silinse de kalır.
+  kampanyaAdi    String?
   kargoKurus     Int
   toplamKurus    Int
 
@@ -217,4 +223,46 @@ model OrderItem {
   fiyatKurus Int
 
   @@index([orderId])
+}
+
+/// Kampanya ve kupon.
+///
+/// İndirimler ÜST ÜSTE BİNMEZ: bir sepete birden çok kampanya uyuyorsa
+/// yalnızca en çok indiren uygulanır (bkz. docs/04-kararlar.md, K-02).
+/// Kupon kodu olanlar müşteri kodu yazana kadar uygulanmaz; kodu boş olanlar
+/// koşulları tuttuğu anda kendiliğinden devreye girer.
+model Campaign {
+  id String @id @default(cuid())
+  ad String
+
+  /// yuzde · tutar
+  tip   String @default("yuzde")
+  /// yuzde ise 20 (= %20), tutar ise kuruş
+  deger Int
+
+  /// tumu · kategori · urun
+  kapsam     String    @default("tumu")
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  productId  String?
+  product    Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  /// Boşsa kampanya kendiliğinden uygulanır; doluysa müşteri bu kodu yazmalı.
+  kuponKodu String? @unique
+
+  /// Sepet ara toplamı bu tutarın altındaysa kampanya uygulanmaz.
+  enAzSepetKurus Int @default(0)
+
+  aktif     Boolean   @default(true)
+  baslangic DateTime?
+  bitis     DateTime?
+
+  /// Kaç siparişte uygulandığı; panelde raporlama için.
+  kullanim    Int      @default(0)
+  olusturuldu DateTime @default(now())
+  guncellendi DateTime @updatedAt
+
+  @@index([aktif, baslangic, bitis])
+  @@index([categoryId])
+  @@index([productId])
 }

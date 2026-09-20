@@ -152,7 +152,7 @@ sipariş için sepet, sepet için ürün gerekiyor.
 | 03 | Sepet ve sipariş ✅ | Sepet, adres formu, sipariş oluşturma, havale ile ödeme, sipariş takibi |
 | 04 | Ödeme | iyzico entegrasyonu, 3D Secure, taksit, sipariş onay e-postaları |
 | 05 | Kargo ve fatura | Kargo entegrasyonu, barkodlu etiket, takip bildirimi, e-arşiv fatura |
-| 06 | Kampanya ve indirim motoru | Kupon, kategori indirimi, ücretsiz kargo barajı, tarihli kampanyalar |
+| 06 | Kampanya ve indirim motoru ✅ | Kupon, kategori indirimi, ücretsiz kargo barajı, tarihli kampanyalar |
 | 07 | Yasal metinler, SEO, açılış | Sözleşmeler, KVKK, ETBİS, ölçümleme, alan adı ve açılış |
 
 02. adımın sonunda ürünler girilmeye başlanabilir.
@@ -162,3 +162,6 @@ ve e-posta servisi gerekiyor, ikisi de henüz yok. Yerine üyeliksiz sipariş
 konuldu; müşteri siparişini numarası ve e-postasıyla görüyor. Üyelik, alan adı
 alınınca 04. adımla birlikte gelecek. Görsel yükleme de (Cloudflare R2) gerçek
 ürün fotoğrafları çekildiğinde yapılacak.
+
+04 ve 05. adımlar (ödeme ve kargo) şirket evrakına bağlı olduğu için sıradan
+çıkıp 06. adıma geçildi: kampanya ve indirim motoru 19 Eylül 2026'da bitti.

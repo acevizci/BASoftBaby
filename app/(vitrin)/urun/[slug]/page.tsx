@@ -33,8 +33,12 @@ export default async function UrunSayfasi({ params }: PageProps<"/urun/[slug]">)
   ]);
   const bedenler = urununBedenleri(urun);
 
-  const indirimYuzdesi = urun.eskiFiyatKurus
-    ? Math.round((1 - urun.fiyatKurus / urun.eskiFiyatKurus) * 100)
+  // Kampanya varsa asıl fiyat kampanyalı fiyattır, üstü çizilen de liste
+  // fiyatı olur. Kampanya yoksa ürüne elle girilmiş eski fiyat kullanılır.
+  const satisKurus = urun.kampanya ? urun.kampanya.indirimliFiyatKurus : urun.fiyatKurus;
+  const ustuCizili = urun.kampanya ? urun.fiyatKurus : urun.eskiFiyatKurus;
+  const indirimYuzdesi = ustuCizili
+    ? Math.round((1 - satisKurus / ustuCizili) * 100)
     : 0;
 
   return (
@@ -79,21 +83,26 @@ export default async function UrunSayfasi({ params }: PageProps<"/urun/[slug]">)
             </p>
           </div>
 
-          <p className="flex flex-wrap items-baseline gap-3">
-            <span className="rakam font-baslik text-3xl font-bold text-mercan-koyu">
-              {fiyatYaz(urun.fiyatKurus)}
-            </span>
-            {urun.eskiFiyatKurus && (
-              <>
-                <span className="rakam text-lg text-metin-3 line-through">
-                  {fiyatYaz(urun.eskiFiyatKurus)}
-                </span>
-                <span className="rakam rounded-full bg-nane-soluk px-2.5 py-1 text-sm font-bold text-nane-koyu">
-                  %{indirimYuzdesi} indirim
-                </span>
-              </>
+          <div>
+            <p className="flex flex-wrap items-baseline gap-3">
+              <span className="rakam font-baslik text-3xl font-bold text-mercan-koyu">
+                {fiyatYaz(satisKurus)}
+              </span>
+              {ustuCizili && (
+                <>
+                  <span className="rakam text-lg text-metin-3 line-through">
+                    {fiyatYaz(ustuCizili)}
+                  </span>
+                  <span className="rakam rounded-full bg-nane-soluk px-2.5 py-1 text-sm font-bold text-nane-koyu">
+                    %{indirimYuzdesi} indirim
+                  </span>
+                </>
+              )}
+            </p>
+            {urun.kampanya && (
+              <p className="mt-1 text-sm font-bold text-nane-koyu">{urun.kampanya.ad}</p>
             )}
-          </p>
+          </div>
 
           <VaryantSecici
             bedenler={bedenler}

@@ -1,0 +1,172 @@
+/**
+ * Kampanya ve indirim motoru.
+ *
+ * Tek kural: **indirimler üst üste binmez.** Bir sepete birden çok kampanya
+ * uyuyorsa yalnızca en çok indiren uygulanır (docs/04-kararlar.md, K-02).
+ * Kupon kodları da bu kurala tabi: yazılan kupon, kendiliğinden uygulanan bir
+ * kampanyadan az indiriyorsa devreye girmez.
+ *
+ * Hesap her yerde aynı fonksiyondan geçer — sepette, ödeme ekranında ve
+ * sipariş yazılırken — ki müşterinin gördüğü tutarla tahsil edilen tutar
+ * ayrışmasın.
+ */
+
+import { db } from "@/server/veritabani";
+
+export type KampanyaKaydi = {
+  id: string;
+  ad: string;
+  tip: string;
+  deger: number;
+  kapsam: string;
+  categoryId: string | null;
+  productId: string | null;
+  kuponKodu: string | null;
+  enAzSepetKurus: number;
+};
+
+/** İndirim hesabı için bir sepet satırından gereken en az bilgi. */
+export type IndirimSatiri = {
+  productId: string;
+  categoryId: string;
+  araToplamKurus: number;
+};
+
+export type UygulananKampanya = {
+  id: string;
+  ad: string;
+  indirimKurus: number;
+  kuponMu: boolean;
+};
+
+export const KUPON_CEREZI = "kupon";
+
+function kapsamdaMi(k: KampanyaKaydi, satir: IndirimSatiri): boolean {
+  if (k.kapsam === "urun") return k.productId === satir.productId;
+  if (k.kapsam === "kategori") return k.categoryId === satir.categoryId;
+  return true;
+}
+
+/**
+ * Tek bir kampanyanın indirimi. Kampanyanın kapsamına giren satırların
+ * toplamı taban alınır; tutar indirimi bu tabanı aşamaz, yani indirim hiçbir
+ * zaman sepeti eksiye düşürmez.
+ */
+export function kampanyaIndirimi(
+  k: KampanyaKaydi,
+  satirlar: IndirimSatiri[],
+  araToplamKurus: number,
+): number {
+  if (araToplamKurus < k.enAzSepetKurus) return 0;
+
+  const taban = satirlar
+    .filter((s) => kapsamdaMi(k, s))
+    .reduce((t, s) => t + s.araToplamKurus, 0);
+  if (taban <= 0) return 0;
+
+  if (k.tip === "tutar") return Math.min(k.deger, taban);
+  if (k.deger <= 0) return 0;
+  return Math.floor((taban * Math.min(k.deger, 100)) / 100);
+}
+
+/**
+ * Uyan kampanyalar içinden en çok indireni seçer. Eşitlik olursa listede önce
+ * gelen kazanır; çağıranlar listeyi oluşturma tarihine göre sıralı verir, yani
+ * sonuç her seferinde aynıdır.
+ */
+export function enIyiKampanya(
+  kampanyalar: KampanyaKaydi[],
+  satirlar: IndirimSatiri[],
+  araToplamKurus: number,
+): UygulananKampanya | undefined {
+  let enIyi: UygulananKampanya | undefined;
+
+  for (const k of kampanyalar) {
+    const indirimKurus = kampanyaIndirimi(k, satirlar, araToplamKurus);
+    if (indirimKurus <= 0) continue;
+    if (!enIyi || indirimKurus > enIyi.indirimKurus) {
+      enIyi = { id: k.id, ad: k.ad, indirimKurus, kuponMu: Boolean(k.kuponKodu) };
+    }
+  }
+
+  return enIyi;
+}
+
+const SECIM = {
+  id: true,
+  ad: true,
+  tip: true,
+  deger: true,
+  kapsam: true,
+  categoryId: true,
+  productId: true,
+  kuponKodu: true,
+  enAzSepetKurus: true,
+} as const;
+
+function tarihSuzgeci(simdi: Date) {
+  return {
+    aktif: true,
+    AND: [
+      { OR: [{ baslangic: null }, { baslangic: { lte: simdi } }] },
+      { OR: [{ bitis: null }, { bitis: { gte: simdi } }] },
+    ],
+  };
+}
+
+/**
+ * O an geçerli kampanyalar. Kuponlu olanlar yalnızca doğru kod yazıldıysa
+ * listeye girer; kod büyük-küçük harfe duyarlı değildir.
+ */
+export async function gecerliKampanyalar(
+  kuponKodu?: string,
+  simdi: Date = new Date(),
+): Promise<KampanyaKaydi[]> {
+  // Kod bir kimlik; Türkçe yerelde büyütmek "i" harfini bozar.
+  const kod = kuponKodu?.trim().toUpperCase();
+
+  return db.campaign.findMany({
+    where: {
+      ...tarihSuzgeci(simdi),
+      OR: [{ kuponKodu: null }, ...(kod ? [{ kuponKodu: kod }] : [])],
+    },
+    select: SECIM,
+    orderBy: { olusturuldu: "asc" },
+  });
+}
+
+/**
+ * Ürün kartında ve ürün sayfasında gösterilecek indirim.
+ *
+ * Yalnızca kendiliğinden uygulanan ve sepet alt sınırı olmayan kampanyalar
+ * buraya girer: "500 TL üzerine %10" gibi bir kampanyayı tek ürünün fiyatında
+ * göstermek müşteriyi yanıltır, o indirim sepette çıkar.
+ */
+export async function urunIndirimleri(
+  simdi: Date = new Date(),
+): Promise<KampanyaKaydi[]> {
+  return db.campaign.findMany({
+    where: { ...tarihSuzgeci(simdi), kuponKodu: null, enAzSepetKurus: 0 },
+    select: SECIM,
+    orderBy: { olusturuldu: "asc" },
+  });
+}
+
+/** Bir ürünün kartında görünecek indirimli fiyat; indirim yoksa undefined. */
+export function urunKampanyasi(
+  kampanyalar: KampanyaKaydi[],
+  urun: { productId: string; categoryId: string; fiyatKurus: number },
+): { ad: string; indirimliFiyatKurus: number } | undefined {
+  const satir: IndirimSatiri = {
+    productId: urun.productId,
+    categoryId: urun.categoryId,
+    araToplamKurus: urun.fiyatKurus,
+  };
+  const enIyi = enIyiKampanya(kampanyalar, [satir], urun.fiyatKurus);
+  if (!enIyi) return undefined;
+
+  return {
+    ad: enIyi.ad,
+    indirimliFiyatKurus: urun.fiyatKurus - enIyi.indirimKurus,
+  };
+}

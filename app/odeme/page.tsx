@@ -175,6 +175,17 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
               <dt className="text-metin-2">Ara toplam</dt>
               <dd className="rakam font-semibold">{fiyatYaz(sepet.araToplamKurus)}</dd>
             </div>
+            {sepet.kampanya && (
+              <div className="flex justify-between">
+                <dt className="text-nane-koyu">
+                  İndirim
+                  <span className="block text-xs text-metin-3">{sepet.kampanya.ad}</span>
+                </dt>
+                <dd className="rakam font-semibold text-nane-koyu">
+                  -{fiyatYaz(sepet.indirimKurus)}
+                </dd>
+              </div>
+            )}
             <div className="flex justify-between">
               <dt className="text-metin-2">Kargo</dt>
               <dd className="rakam font-semibold">

@@ -64,14 +64,17 @@ export default function UrunKarti({ urun }: { urun: Urun }) {
 
         <p className="mt-auto flex items-baseline gap-2 pt-1">
           <span className="rakam font-baslik text-lg font-bold text-mercan-koyu">
-            {fiyatYaz(urun.fiyatKurus)}
+            {fiyatYaz(urun.kampanya ? urun.kampanya.indirimliFiyatKurus : urun.fiyatKurus)}
           </span>
-          {urun.eskiFiyatKurus && (
+          {(urun.kampanya || urun.eskiFiyatKurus) && (
             <span className="rakam text-sm text-metin-3 line-through">
-              {fiyatYaz(urun.eskiFiyatKurus)}
+              {fiyatYaz(urun.kampanya ? urun.fiyatKurus : urun.eskiFiyatKurus!)}
             </span>
           )}
         </p>
+        {urun.kampanya && (
+          <p className="text-xs font-bold text-nane-koyu">{urun.kampanya.ad}</p>
+        )}
 
         <SepeteEkle tamGenislik kucuk devreDisi={stok === 0} variantId={ilkVaryant?.id} />
       </div>

@@ -12,6 +12,12 @@
 
 import { cookies } from "next/headers";
 import { db } from "@/server/veritabani";
+import {
+  KUPON_CEREZI,
+  enIyiKampanya,
+  gecerliKampanyalar,
+  type UygulananKampanya,
+} from "@/server/kampanya";
 import { RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
 
 const CEREZ = "sepet";
@@ -20,6 +26,8 @@ const CEREZ_OMRU = 60 * 60 * 24 * 30;
 
 export type SepetSatiri = {
   variantId: string;
+  productId: string;
+  categoryId: string;
   slug: string;
   ad: string;
   beden: string;
@@ -39,6 +47,15 @@ export type Sepet = {
   satirlar: SepetSatiri[];
   toplamAdet: number;
   araToplamKurus: number;
+  /** Uygulanan kampanya; indirimler üst üste binmez, en çok indiren kazanır */
+  kampanya?: UygulananKampanya;
+  indirimKurus: number;
+  /** Müşterinin yazdığı kupon kodu */
+  kuponKodu?: string;
+  /** Kod yazılmış ama geçerli bir kampanyaya denk gelmiyor */
+  kuponGecersizMi: boolean;
+  /** Kod geçerli ama başka bir kampanya daha çok indirdiği için uygulanmadı */
+  kuponYetersizMi: boolean;
   kargoKurus: number;
   toplamKurus: number;
   /** Bedava kargoya kalan tutar; kargo zaten bedavaysa sıfır */
@@ -51,6 +68,9 @@ const BOS_SEPET: Sepet = {
   satirlar: [],
   toplamAdet: 0,
   araToplamKurus: 0,
+  indirimKurus: 0,
+  kuponGecersizMi: false,
+  kuponYetersizMi: false,
   kargoKurus: 0,
   toplamKurus: 0,
   bedavayaKalanKurus: 0,
@@ -95,9 +115,16 @@ function fiyatHesapla(urunFiyat: number, varyantFiyat: number | null): number {
   return varyantFiyat ?? urunFiyat;
 }
 
+export async function kuponOku(): Promise<string | undefined> {
+  const kavanoz = await cookies();
+  return kavanoz.get(KUPON_CEREZI)?.value || undefined;
+}
+
 export async function sepetGetir(): Promise<Sepet> {
   const id = await sepetIdOku();
   if (!id) return BOS_SEPET;
+
+  const kuponKodu = await kuponOku();
 
   const [satirlar, ayar] = await Promise.all([
     db.cartItem.findMany({
@@ -118,6 +145,8 @@ export async function sepetGetir(): Promise<Sepet> {
       const adet = Math.min(s.adet, s.variant.stok);
       return {
         variantId: s.variantId,
+        productId: s.variant.productId,
+        categoryId: s.variant.product.categoryId,
         slug: s.variant.product.slug,
         ad: s.variant.product.ad,
         beden: s.variant.beden,
@@ -134,15 +163,33 @@ export async function sepetGetir(): Promise<Sepet> {
 
   const araToplamKurus = cikti.reduce((t, s) => t + s.araToplamKurus, 0);
   const toplamAdet = cikti.reduce((t, s) => t + s.adet, 0);
-  const kargoKurus = kargoHesapla(araToplamKurus, ayar);
-  const kalan = ayar.bedavaKargoEsigi - araToplamKurus;
+
+  const kampanyalar = await gecerliKampanyalar(kuponKodu);
+  const kampanya = enIyiKampanya(kampanyalar, cikti, araToplamKurus);
+  const indirimKurus = kampanya?.indirimKurus ?? 0;
+
+  // Kupon yazılmışsa müşteriye ne olduğunu söyleyebilmek için iki durumu
+  // ayırıyoruz: kod hiç tutmadı mı, yoksa tuttu da başka kampanya mı kazandı.
+  const kuponVar = Boolean(kuponKodu);
+  const kuponEslesti = kuponVar && kampanyalar.some((k) => k.kuponKodu);
+  const kuponUygulandi = kampanya?.kuponMu ?? false;
+
+  // Bedava kargo eşiği indirimden SONRAKİ tutara bakar.
+  const indirimliAraToplam = araToplamKurus - indirimKurus;
+  const kargoKurus = kargoHesapla(indirimliAraToplam, ayar, cikti.length > 0);
+  const kalan = ayar.bedavaKargoEsigi - indirimliAraToplam;
 
   return {
     satirlar: cikti,
     toplamAdet,
     araToplamKurus,
+    kampanya,
+    indirimKurus,
+    kuponKodu,
+    kuponGecersizMi: kuponVar && !kuponEslesti,
+    kuponYetersizMi: kuponEslesti && !kuponUygulandi,
     kargoKurus,
-    toplamKurus: araToplamKurus + kargoKurus,
+    toplamKurus: indirimliAraToplam + kargoKurus,
     bedavayaKalanKurus: kargoKurus > 0 && kalan > 0 ? kalan : 0,
     sorunluMu: cikti.some((s) => s.stok === 0 || s.adet === 0),
   };
@@ -163,10 +210,20 @@ export async function ayarlariGetir(): Promise<SatisAyari> {
   };
 }
 
-/** Sepet boşken kargo da sıfırdır; eşik sıfırsa kargo hep ücretlidir. */
-export function kargoHesapla(araToplamKurus: number, ayar: SatisAyari): number {
-  if (araToplamKurus === 0) return 0;
-  if (ayar.bedavaKargoEsigi > 0 && araToplamKurus >= ayar.bedavaKargoEsigi) return 0;
+/**
+ * Kargo ücreti. Eşiğe indirimden SONRAKİ tutara bakılır.
+ *
+ * "Sepet boş mu" ayrı bir parametre, çünkü tutarın sıfır olması sepetin boş
+ * olduğu anlamına gelmiyor: kupon sepetin tamamını karşılamış da olabilir. O
+ * durumda ürün bedava, kargo yine de ücretli.
+ */
+export function kargoHesapla(
+  indirimliAraToplamKurus: number,
+  ayar: SatisAyari,
+  sepetDoluMu: boolean,
+): number {
+  if (!sepetDoluMu) return 0;
+  if (ayar.bedavaKargoEsigi > 0 && indirimliAraToplamKurus >= ayar.bedavaKargoEsigi) return 0;
   return ayar.kargoKurus;
 }
 

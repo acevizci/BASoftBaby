@@ -6,6 +6,7 @@
  */
 
 import { db } from "@/server/veritabani";
+import { urunIndirimleri, urunKampanyasi, type KampanyaKaydi } from "@/server/kampanya";
 import { BEDENLER, type RenkAdi, type RozetTonu, type GorselTipi, type Urun, type Kategori } from "@/ui/katalog-bicim";
 
 export * from "@/ui/katalog-bicim";
@@ -16,6 +17,8 @@ const URUN_ICEREN = {
 } as const;
 
 type SatirTipi = {
+  id: string;
+  categoryId: string;
   slug: string;
   ad: string;
   ozet: string;
@@ -40,7 +43,7 @@ function bedenSirasi(beden: string): number {
 }
 
 /** Veritabanı satırını sayfaların beklediği biçime çevirir. */
-function urunYap(satir: SatirTipi): Urun {
+function urunYap(satir: SatirTipi, kampanyalar: KampanyaKaydi[] = []): Urun {
   const varyantlar = [...satir.variants]
     .sort((a, b) => bedenSirasi(a.beden) - bedenSirasi(b.beden))
     .map((v) => ({ id: v.id, beden: v.beden, renk: v.renk as RenkAdi, stok: v.stok }));
@@ -52,7 +55,15 @@ function urunYap(satir: SatirTipi): Urun {
     if (!renkler.includes(v.renk)) renkler.push(v.renk);
   }
 
+  const kampanya = urunKampanyasi(kampanyalar, {
+    productId: satir.id,
+    categoryId: satir.categoryId,
+    fiyatKurus: satir.fiyatKurus,
+  });
+
   return {
+    id: satir.id,
+    categoryId: satir.categoryId,
     slug: satir.slug,
     ad: satir.ad,
     ozet: satir.ozet,
@@ -61,6 +72,7 @@ function urunYap(satir: SatirTipi): Urun {
     palet: satir.palet as RenkAdi,
     fiyatKurus: satir.fiyatKurus,
     eskiFiyatKurus: satir.eskiFiyatKurus ?? undefined,
+    kampanya,
     rozet:
       satir.rozetTon && satir.rozetYazi
         ? { ton: satir.rozetTon as RozetTonu, yazi: satir.rozetYazi }
@@ -98,9 +110,12 @@ export async function kategoriGetir(slug: string): Promise<Kategori | undefined>
 }
 
 export async function urunGetir(slug: string): Promise<Urun | undefined> {
-  const satir = await db.product.findUnique({ where: { slug }, include: URUN_ICEREN });
+  const [satir, kampanyalar] = await Promise.all([
+    db.product.findUnique({ where: { slug }, include: URUN_ICEREN }),
+    urunIndirimleri(),
+  ]);
   if (!satir || !satir.aktif) return undefined;
-  return urunYap(satir as SatirTipi);
+  return urunYap(satir as SatirTipi, kampanyalar);
 }
 
 export type UrunSuzgeci = {
@@ -112,7 +127,8 @@ export type UrunSuzgeci = {
 };
 
 export async function urunleriGetir(suzgec: UrunSuzgeci = {}): Promise<Urun[]> {
-  const satirlar = await db.product.findMany({
+  const [satirlar, kampanyalar] = await Promise.all([
+    db.product.findMany({
     where: {
       aktif: true,
       ...(suzgec.kategori ? { category: { slug: suzgec.kategori } } : {}),
@@ -124,28 +140,36 @@ export async function urunleriGetir(suzgec: UrunSuzgeci = {}): Promise<Urun[]> {
     },
     include: URUN_ICEREN,
     orderBy: { olusturuldu: "asc" },
-  });
-  return satirlar.map((s) => urunYap(s as SatirTipi));
+    }),
+    urunIndirimleri(),
+  ]);
+  return satirlar.map((s) => urunYap(s as SatirTipi, kampanyalar));
 }
 
 /** Ana sayfadaki "Bu haftanın favorileri" şeridi. */
 export async function oneCikanUrunler(adet = 8): Promise<Urun[]> {
-  const satirlar = await db.product.findMany({
-    where: { aktif: true },
-    include: URUN_ICEREN,
-    orderBy: { yorumSayisi: "desc" },
-    take: adet,
-  });
-  return satirlar.map((s) => urunYap(s as SatirTipi));
+  const [satirlar, kampanyalar] = await Promise.all([
+    db.product.findMany({
+      where: { aktif: true },
+      include: URUN_ICEREN,
+      orderBy: { yorumSayisi: "desc" },
+      take: adet,
+    }),
+    urunIndirimleri(),
+  ]);
+  return satirlar.map((s) => urunYap(s as SatirTipi, kampanyalar));
 }
 
 export async function benzerUrunler(urun: Urun, adet = 4): Promise<Urun[]> {
-  const ayni = await db.product.findMany({
-    where: { aktif: true, slug: { not: urun.slug }, category: { slug: urun.kategori } },
-    include: URUN_ICEREN,
-    take: adet,
-  });
-  if (ayni.length >= adet) return ayni.map((s) => urunYap(s as SatirTipi));
+  const [ayni, kampanyalar] = await Promise.all([
+    db.product.findMany({
+      where: { aktif: true, slug: { not: urun.slug }, category: { slug: urun.kategori } },
+      include: URUN_ICEREN,
+      take: adet,
+    }),
+    urunIndirimleri(),
+  ]);
+  if (ayni.length >= adet) return ayni.map((s) => urunYap(s as SatirTipi, kampanyalar));
 
   const digerleri = await db.product.findMany({
     where: {
@@ -156,5 +180,5 @@ export async function benzerUrunler(urun: Urun, adet = 4): Promise<Urun[]> {
     include: URUN_ICEREN,
     take: adet - ayni.length,
   });
-  return [...ayni, ...digerleri].map((s) => urunYap(s as SatirTipi));
+  return [...ayni, ...digerleri].map((s) => urunYap(s as SatirTipi, kampanyalar));
 }

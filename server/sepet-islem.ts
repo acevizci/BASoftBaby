@@ -9,10 +9,12 @@
  * veritabanı işlemi içinde yapılır (bkz. server/siparis.ts).
  */
 
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
 import { sepetIdAlVeyaKur, sepetIdOku } from "@/server/sepet";
+import { KUPON_CEREZI } from "@/server/kampanya";
 
 /** En fazla bu kadar adet tek kalemde satılır; yanlışlıkla 999 girilmesin. */
 const EN_FAZLA = 20;
@@ -86,5 +88,33 @@ export async function satirSil(veri: FormData): Promise<void> {
   if (!cartId || !variantId) return;
 
   await db.cartItem.deleteMany({ where: { cartId, variantId } });
+  sepetiYenile();
+}
+
+/** Kupon kodunu çereze yazar; geçerli olup olmadığını sepet ekranı söyler. */
+export async function kuponUygula(veri: FormData): Promise<void> {
+  // Kupon kodu bir kimlik, Türkçe metin değil: Türkçe yerelde "i" harfi "İ"ye
+  // dönüyor ve "hosgeldin" yazan müşteri HOSGELDIN kuponunu tutturamıyordu.
+  const kod = String(veri.get("kupon") ?? "").trim().toUpperCase().slice(0, 40);
+
+  const kavanoz = await cookies();
+  if (kod) {
+    kavanoz.set(KUPON_CEREZI, kod, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+  } else {
+    kavanoz.delete(KUPON_CEREZI);
+  }
+
+  sepetiYenile();
+}
+
+export async function kuponKaldir(): Promise<void> {
+  const kavanoz = await cookies();
+  kavanoz.delete(KUPON_CEREZI);
   sepetiYenile();
 }

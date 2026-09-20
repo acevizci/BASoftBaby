@@ -11,7 +11,8 @@
  */
 
 import { db } from "@/server/veritabani";
-import { kargoHesapla, sepetIdOku, type SatisAyari } from "@/server/sepet";
+import { kargoHesapla, kuponOku, sepetIdOku, type SatisAyari } from "@/server/sepet";
+import { enIyiKampanya, gecerliKampanyalar } from "@/server/kampanya";
 import { RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
 
 /**
@@ -78,7 +79,19 @@ export async function siparisOlustur(
   });
 
   const araToplamKurus = kalemler.reduce((t, k) => t + k.fiyatKurus * k.adet, 0);
-  const kargoKurus = kargoHesapla(araToplamKurus, ayar);
+
+  // İndirim sepetteki hesabın aynısından geçer; müşterinin gördüğü tutarla
+  // yazılan tutar ayrışmasın.
+  const indirimSatirlari = gecerli.map((s) => ({
+    productId: s.variant.productId,
+    categoryId: s.variant.product.categoryId,
+    araToplamKurus: (s.variant.fiyatKurus ?? s.variant.product.fiyatKurus) * s.adet,
+  }));
+  const kampanyalar = await gecerliKampanyalar(await kuponOku());
+  const kampanya = enIyiKampanya(kampanyalar, indirimSatirlari, araToplamKurus);
+  const indirimKurus = kampanya?.indirimKurus ?? 0;
+
+  const kargoKurus = kargoHesapla(araToplamKurus - indirimKurus, ayar, true);
   const simdi = new Date();
 
   try {
@@ -111,12 +124,21 @@ export async function siparisOlustur(
           postaKodu: girdi.postaKodu,
           not: girdi.not,
           araToplamKurus,
+          indirimKurus,
+          kampanyaAdi: kampanya?.ad ?? null,
           kargoKurus,
-          toplamKurus: araToplamKurus + kargoKurus,
+          toplamKurus: araToplamKurus - indirimKurus + kargoKurus,
           satirlar: { create: kalemler },
         },
         select: { numara: true },
       });
+
+      if (kampanya) {
+        await islem.campaign.update({
+          where: { id: kampanya.id },
+          data: { kullanim: { increment: 1 } },
+        });
+      }
 
       await islem.cartItem.deleteMany({ where: { cartId } });
       return siparis.numara;
@@ -159,6 +181,8 @@ export type Siparis = {
   postaKodu: string;
   not: string;
   araToplamKurus: number;
+  indirimKurus: number;
+  kampanyaAdi: string | null;
   kargoKurus: number;
   toplamKurus: number;
   kargoTakipNo: string | null;
@@ -198,7 +222,9 @@ export async function siparisGetir(numara: string, eposta: string): Promise<Sipa
     include: { satirlar: { orderBy: { id: "asc" } } },
   });
   if (!kayit) return undefined;
-  if (kayit.eposta.toLocaleLowerCase("tr") !== eposta.trim().toLocaleLowerCase("tr")) {
+  // E-posta da kimlik: Türkçe yerelde küçültmek "I" harfini "ı" yapıp
+  // eşleşmeyi bozar.
+  if (kayit.eposta.toLowerCase() !== eposta.trim().toLowerCase()) {
     return undefined;
   }
   return siparisYap(kayit);

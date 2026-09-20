@@ -56,6 +56,19 @@ export default function SiparisKarti({
           <dt className="text-metin-2">Ara toplam</dt>
           <dd className="rakam font-semibold">{fiyatYaz(siparis.araToplamKurus)}</dd>
         </div>
+        {siparis.indirimKurus > 0 && (
+          <div className="flex justify-between">
+            <dt className="text-nane-koyu">
+              İndirim
+              {siparis.kampanyaAdi ? (
+                <span className="block text-xs text-metin-3">{siparis.kampanyaAdi}</span>
+              ) : null}
+            </dt>
+            <dd className="rakam font-semibold text-nane-koyu">
+              -{fiyatYaz(siparis.indirimKurus)}
+            </dd>
+          </div>
+        )}
         <div className="flex justify-between">
           <dt className="text-metin-2">Kargo</dt>
           <dd className="rakam font-semibold">

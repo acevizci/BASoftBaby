@@ -231,3 +231,90 @@ export async function satisAyariKaydet(veri: FormData): Promise<void> {
   vitriniYenile();
   redirect("/yonetim/ayarlar?kayit=1");
 }
+
+/* ── Kampanyalar ────────────────────────────────────────────────────────── */
+
+const TIPLER = ["yuzde", "tutar"];
+const KAPSAMLAR = ["tumu", "kategori", "urun"];
+
+function tariheCevir(deger: FormDataEntryValue | null): Date | null {
+  const metin = String(deger ?? "").trim();
+  if (!metin) return null;
+  const t = new Date(metin);
+  return Number.isNaN(t.getTime()) ? null : t;
+}
+
+export async function kampanyaKaydet(veri: FormData): Promise<void> {
+  const id = String(veri.get("id") ?? "").trim();
+  const ad = String(veri.get("ad") ?? "").trim().slice(0, 80);
+  const tip = String(veri.get("tip") ?? "yuzde");
+  const kapsam = String(veri.get("kapsam") ?? "tumu");
+  if (!ad || !TIPLER.includes(tip) || !KAPSAMLAR.includes(kapsam)) return;
+
+  // Yüzde tam sayı, tutar kuruş. İkisi de aynı kutudan geliyor.
+  const ham = String(veri.get("deger") ?? "").trim();
+  const deger =
+    tip === "yuzde"
+      ? Math.max(1, Math.min(100, Math.round(Number(ham.replace(",", ".")) || 0)))
+      : (kurusaCevir(ham) ?? 0);
+  if (deger <= 0) return;
+
+  const kuponKodu =
+    String(veri.get("kuponKodu") ?? "").trim().toUpperCase().slice(0, 40) || null;
+
+  const veriler = {
+    ad,
+    tip,
+    deger,
+    kapsam,
+    categoryId: kapsam === "kategori" ? String(veri.get("categoryId") ?? "") || null : null,
+    productId: kapsam === "urun" ? String(veri.get("productId") ?? "") || null : null,
+    kuponKodu,
+    enAzSepetKurus: kurusaCevir(veri.get("enAzSepet")) ?? 0,
+    aktif: veri.get("aktif") === "on",
+    baslangic: tariheCevir(veri.get("baslangic")),
+    bitis: tariheCevir(veri.get("bitis")),
+  };
+
+  // Kapsam kategori ya da ürünse hedef seçilmiş olmalı, yoksa kampanya
+  // sessizce herkese uygulanırdı.
+  if (kapsam === "kategori" && !veriler.categoryId) return;
+  if (kapsam === "urun" && !veriler.productId) return;
+
+  // Kupon kodu benzersiz; aynı kodu ikinci kez vermek çökme değil, uyarı.
+  if (kuponKodu) {
+    const varOlan = await db.campaign.findUnique({
+      where: { kuponKodu },
+      select: { id: true },
+    });
+    if (varOlan && varOlan.id !== id) redirect("/yonetim/kampanyalar?hata=kupon");
+  }
+
+  if (id) {
+    await db.campaign.update({ where: { id }, data: veriler });
+  } else {
+    await db.campaign.create({ data: veriler });
+  }
+
+  vitriniYenile();
+  redirect("/yonetim/kampanyalar?kayit=1");
+}
+
+export async function kampanyaCevir(veri: FormData): Promise<void> {
+  const id = String(veri.get("id") ?? "");
+  if (!id) return;
+
+  const k = await db.campaign.findUnique({ where: { id }, select: { aktif: true } });
+  if (!k) return;
+
+  await db.campaign.update({ where: { id }, data: { aktif: !k.aktif } });
+  vitriniYenile();
+}
+
+export async function kampanyaSil(veri: FormData): Promise<void> {
+  const id = String(veri.get("id") ?? "");
+  if (!id) return;
+
+  await db.campaign.delete({ where: { id } });
+  vitriniYenile();
+}

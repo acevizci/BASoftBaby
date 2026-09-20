@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import UrunGorseli from "@/ui/urun-gorseli";
 import { sepetGetir } from "@/server/sepet";
-import { adetDegistir, satirSil } from "@/server/sepet-islem";
+import { adetDegistir, kuponKaldir, kuponUygula, satirSil } from "@/server/sepet-islem";
 import { fiyatYaz, type GorselTipi, type RenkAdi } from "@/ui/katalog-bicim";
 
 export const dynamic = "force-dynamic";
@@ -117,6 +117,17 @@ export default async function SepetSayfasi() {
               <dt className="text-metin-2">Ara toplam</dt>
               <dd className="rakam font-semibold">{fiyatYaz(sepet.araToplamKurus)}</dd>
             </div>
+            {sepet.kampanya && (
+              <div className="flex justify-between">
+                <dt className="text-nane-koyu">
+                  İndirim
+                  <span className="block text-xs text-metin-3">{sepet.kampanya.ad}</span>
+                </dt>
+                <dd className="rakam font-semibold text-nane-koyu">
+                  -{fiyatYaz(sepet.indirimKurus)}
+                </dd>
+              </div>
+            )}
             <div className="flex justify-between">
               <dt className="text-metin-2">Kargo</dt>
               <dd className="rakam font-semibold">
@@ -134,6 +145,51 @@ export default async function SepetSayfasi() {
               </dd>
             </div>
           </dl>
+
+          <div className="mt-4 border-t border-cizgi pt-4">
+            {sepet.kuponKodu ? (
+              <form action={kuponKaldir} className="flex items-center justify-between gap-2">
+                <span className="text-sm">
+                  Kupon: <span className="rakam font-bold">{sepet.kuponKodu}</span>
+                </span>
+                <button
+                  type="submit"
+                  className="rounded-full border border-cizgi px-3 py-1.5 text-xs font-bold text-metin-2 hover:border-mercan hover:text-mercan-koyu"
+                >
+                  Kaldır
+                </button>
+              </form>
+            ) : (
+              <form action={kuponUygula} className="flex items-end gap-2">
+                <label className="flex flex-1 flex-col gap-1.5">
+                  <span className="text-xs font-bold text-metin-2">Kupon kodun varsa</span>
+                  <input
+                    name="kupon"
+                    placeholder="KUPONKODU"
+                    className="rakam w-full rounded-[10px] border-[1.5px] border-cizgi bg-yuzey px-3 py-2 text-sm uppercase outline-none focus:border-mercan"
+                  />
+                </label>
+                <button
+                  type="submit"
+                  className="rounded-full border border-cizgi px-4 py-2 text-xs font-bold text-metin-2 hover:border-metin-3"
+                >
+                  Uygula
+                </button>
+              </form>
+            )}
+
+            {sepet.kuponGecersizMi && (
+              <p className="mt-2 text-xs font-semibold text-mercan-koyu">
+                Bu kupon geçerli değil ya da süresi dolmuş.
+              </p>
+            )}
+            {sepet.kuponYetersizMi && (
+              <p className="mt-2 text-xs font-semibold text-metin-2">
+                Kuponun geçerli, ama şu an sepetinde daha çok indiren bir kampanya var; o
+                uygulandı. İndirimler üst üste binmiyor.
+              </p>
+            )}
+          </div>
 
           {sepet.bedavayaKalanKurus > 0 && (
             <p className="mt-3 rounded-[10px] bg-nane-soluk px-3 py-2 text-xs font-semibold text-nane-koyu">

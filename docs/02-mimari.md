@@ -61,7 +61,7 @@ app/
   siparis/[numara]/       sipariş onayı (yalnız siparişi verene açık)
   siparis-takip/          numara + e-posta ile sipariş sorgulama
   yonetim/                şifreyle korunuyor
-    siparisler/ urunler/ stok/ duyuru/ ayarlar/
+    siparisler/ urunler/ stok/ kampanyalar/ duyuru/ ayarlar/
 
   — henüz yok, sırası gelince —
   (hesap)/                üyelik: siparislerim, adreslerim, iade
@@ -77,8 +77,9 @@ server/                   iş kuralları — tek kaynak
   sepet-islem.ts          sepete ekle / adet değiştir / sil
   siparis.ts              sipariş oluşturma ve sorgulama
   siparis-islem.ts        ödeme formunun server action'ı
+  kampanya.ts             indirim motoru — en çok indiren kazanır
   yonetim.ts              panelin yazma işlemleri
-  — henüz yok: fiyatlama.ts odeme.ts kargo.ts fatura.ts eposta.ts
+  — henüz yok: odeme.ts kargo.ts fatura.ts eposta.ts
 
 db/
   schema.prisma           veri modeli

@@ -27,6 +27,9 @@ export type Varyant = {
 };
 
 export type Urun = {
+  /** Kampanya kapsamı hesabı için; ekranda görünmez */
+  id: string;
+  categoryId: string;
   slug: string;
   ad: string;
   ozet: string;
@@ -35,6 +38,8 @@ export type Urun = {
   palet: RenkAdi;
   fiyatKurus: number;
   eskiFiyatKurus?: number;
+  /** O an geçerli kampanyanın ürüne düşen hâli; yoksa indirim yok */
+  kampanya?: { ad: string; indirimliFiyatKurus: number };
   rozet?: { ton: RozetTonu; yazi: string };
   puan: number;
   yorumSayisi: number;
