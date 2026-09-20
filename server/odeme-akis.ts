@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "@/server/veritabani";
 import { odemeSorgula } from "@/server/odeme";
+import { odemeAlindiEpostasi } from "@/server/eposta";
 
 /**
  * Ödeme akışının sipariş tarafı: girişim kaydı, dönüşün işlenmesi, ödeme
@@ -111,7 +112,16 @@ export async function odemeDonusunuIsle(jeton: string): Promise<DonusSonucu> {
       id: true,
       durum: true,
       hata: true,
-      order: { select: { id: true, numara: true, toplamKurus: true, durum: true } },
+      order: {
+        select: {
+          id: true,
+          numara: true,
+          toplamKurus: true,
+          durum: true,
+          adSoyad: true,
+          eposta: true,
+        },
+      },
     },
   });
   if (!girisim) return { durum: "bulunamadi" };
@@ -167,6 +177,17 @@ export async function odemeDonusunuIsle(jeton: string): Promise<DonusSonucu> {
   await db.order.update({
     where: { id: girisim.order.id },
     data: { odemeDurumu: "odendi", durum: "hazirlaniyor" },
+  });
+
+  // Kartta onay e-postası burada gidiyor: ödeme belli olmadan "siparişin
+  // alındı" demek, tutmayan ödemede yanlış bilgi vermek olurdu. Aynı dönüş
+  // ikinci kez gelse bu satıra ulaşılmıyor, yani e-posta bir kez gidiyor.
+  await odemeAlindiEpostasi({
+    numara: girisim.order.numara,
+    adSoyad: girisim.order.adSoyad,
+    eposta: girisim.order.eposta,
+    toplamKurus: girisim.order.toplamKurus,
+    odemeYontemi: "kart",
   });
 
   return { durum: "basarili", numara: girisim.order.numara };

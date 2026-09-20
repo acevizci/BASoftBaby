@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { cikisYap } from "@/server/uyelik-islem";
+import { cikisYap, dogrulamayiTekrarGonder } from "@/server/uyelik-islem";
 import { girisYapan } from "@/server/uyelik";
 import { HESAP_SAYFALARI, IKINCIL_DUGME } from "../hesap-bicim";
 
@@ -30,6 +30,24 @@ export default async function HesapDuzeni({ children }: { children: React.ReactN
           </button>
         </form>
       </div>
+
+      {!musteri.epostaDogrulandiMi && (
+        <div className="mt-4 rounded-marka bg-sari-soluk px-4 py-3 text-sm text-sari-koyu">
+          <p className="font-semibold">E-posta adresin henüz doğrulanmadı.</p>
+          <p className="mt-1">
+            Doğrulayınca, üye olmadan bu adresle verdiğin eski siparişler de hesabına
+            bağlanır.
+          </p>
+          <form action={dogrulamayiTekrarGonder} className="mt-3">
+            <button
+              type="submit"
+              className="rounded-full border border-sari-koyu px-4 py-1.5 text-xs font-bold transition hover:bg-yuzey"
+            >
+              Doğrulama bağlantısını gönder
+            </button>
+          </form>
+        </div>
+      )}
 
       <nav aria-label="Hesap sayfaları" className="mt-5 flex flex-wrap gap-2">
         {HESAP_SAYFALARI.map((s) => (

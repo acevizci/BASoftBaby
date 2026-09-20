@@ -71,6 +71,7 @@ app/
   sitemap.ts robots.ts    site haritası ve arama motoru kuralları
   (hesap)/                üyelik — adres satırına segment eklemez
     giris/ kayit/         giriş ve hesap açma
+    sifremi-unuttum/ sifre-sifirla/ eposta-dogrula/
     hesabim/              siparişlerim (ana ekran)
       adresler/           adres defteri
       bilgiler/           ad-telefon ve şifre değiştirme
@@ -99,7 +100,8 @@ server/                   iş kuralları — tek kaynak
   yonetim.ts              panelin yazma işlemleri
   odeme.ts                iyzico: ödeme formu ve sonuç doğrulama
   odeme-akis.ts           girişim kaydı, dönüşün işlenmesi, stok iadesi
-  — henüz yok: kargo.ts fatura.ts eposta.ts
+  eposta.ts               sipariş, ödeme, sıfırlama ve doğrulama e-postaları
+  — henüz yok: kargo.ts fatura.ts
 
 db/
   schema.prisma           veri modeli
@@ -149,6 +151,9 @@ rol alanları yasal metinlerle birlikte 07. adımda gelecek.
 
 **CustomerSession** *(kuruldu)* — çerezdeki jetonun SHA-256 özeti `id`,
 `customerId`, `biter`. Jetonun kendisi veritabanında durmuyor.
+
+**CustomerToken** *(kuruldu)* — şifre sıfırlama ve e-posta doğrulama jetonu;
+`id` yine jetonun özeti, `tur`, `biter`, `kullanildi`. Tek kullanımlık.
 
 **BabyProfile** — `customerId`, `ad`, `dogumTarihi` veya `beklenenTarih`
 (bedene göre öneri ve yaş e-postaları için)

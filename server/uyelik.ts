@@ -34,6 +34,7 @@ export type Musteri = {
   eposta: string;
   adSoyad: string;
   telefon: string;
+  epostaDogrulandiMi: boolean;
 };
 
 export type Adres = {
@@ -152,7 +153,15 @@ export async function girisYapan(): Promise<Musteri | undefined> {
     select: {
       id: true,
       biter: true,
-      customer: { select: { id: true, eposta: true, adSoyad: true, telefon: true } },
+      customer: {
+        select: {
+          id: true,
+          eposta: true,
+          adSoyad: true,
+          telefon: true,
+          epostaDogrulandi: true,
+        },
+      },
     },
   });
   if (!oturum) return undefined;
@@ -174,7 +183,95 @@ export async function girisYapan(): Promise<Musteri | undefined> {
     }
   }
 
-  return oturum.customer;
+  const { epostaDogrulandi, ...musteri } = oturum.customer;
+  return { ...musteri, epostaDogrulandiMi: epostaDogrulandi !== null };
+}
+
+// ─── E-posta jetonları ───────────────────────────────────────────────────
+
+/** Şifre sıfırlama bağlantısı 1 saat, doğrulama bağlantısı 3 gün yaşıyor. */
+const JETON_OMRU_SAAT = { sifirlama: 1, dogrulama: 72 } as const;
+
+export type JetonTuru = keyof typeof JETON_OMRU_SAAT;
+
+/**
+ * Tek kullanımlık jeton üretir; geriye e-postaya konacak hâli döner.
+ *
+ * Veritabanında jetonun kendisi değil SHA-256 özeti duruyor (oturumda olduğu
+ * gibi): veritabanını görebilen biri kimsenin şifresini sıfırlayamasın.
+ * Aynı türden eski jetonlar siliniyor, yani en son gönderilen bağlantı
+ * geçerli oluyor.
+ */
+export async function jetonUret(customerId: string, tur: JetonTuru): Promise<string> {
+  const jeton = randomBytes(32).toString("base64url");
+
+  await db.customerToken.deleteMany({ where: { customerId, tur } });
+  await db.customerToken.create({
+    data: {
+      id: jetonOzeti(jeton),
+      customerId,
+      tur,
+      biter: new Date(Date.now() + JETON_OMRU_SAAT[tur] * 60 * 60 * 1000),
+    },
+  });
+
+  return jeton;
+}
+
+/**
+ * Jetonu harcar: geçerliyse hesabın id'sini döndürür ve jetonu kullanılmış
+ * işaretler. Aynı bağlantı ikinci kez çalışmaz.
+ */
+export async function jetonHarca(
+  jeton: string,
+  tur: JetonTuru,
+): Promise<{ customerId: string; eposta: string } | undefined> {
+  if (!jeton) return undefined;
+
+  const kayit = await db.customerToken.findUnique({
+    where: { id: jetonOzeti(jeton) },
+    select: {
+      id: true,
+      tur: true,
+      biter: true,
+      kullanildi: true,
+      customer: { select: { id: true, eposta: true } },
+    },
+  });
+
+  if (!kayit || kayit.tur !== tur || kayit.kullanildi) return undefined;
+  if (kayit.biter.getTime() < Date.now()) return undefined;
+
+  // Koşullu güncelleme: aynı bağlantıya iki kez tıklanırsa ikincisi boş döner.
+  const harcandi = await db.customerToken.updateMany({
+    where: { id: kayit.id, kullanildi: null },
+    data: { kullanildi: new Date() },
+  });
+  if (harcandi.count === 0) return undefined;
+
+  return { customerId: kayit.customer.id, eposta: kayit.customer.eposta };
+}
+
+/**
+ * E-postayı doğrulanmış işaretler ve o adresle üyeliksiz verilmiş siparişleri
+ * hesaba bağlar.
+ *
+ * Bağlama ancak burada yapılabiliyor: doğrulanmamış bir adres o kutunun
+ * sahibi olunduğunun kanıtı değil, yani başkasının adresiyle hesap açan biri
+ * onun siparişlerini görebilirdi (K-14).
+ */
+export async function epostayiDogrulanmisSay(customerId: string, eposta: string): Promise<number> {
+  await db.customer.update({
+    where: { id: customerId },
+    data: { epostaDogrulandi: new Date() },
+  });
+
+  const baglanan = await db.order.updateMany({
+    where: { eposta, customerId: null },
+    data: { customerId },
+  });
+
+  return baglanan.count;
 }
 
 // ─── Okuma ───────────────────────────────────────────────────────────────

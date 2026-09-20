@@ -151,7 +151,7 @@ sipariş için sepet, sepet için ürün gerekiyor.
 | 02 | Katalog ve yönetim paneli ✅ | Ürün, kategori, beden-renk varyantları, stok |
 | 03 | Sepet ve sipariş ✅ | Sepet, adres formu, sipariş oluşturma, havale ile ödeme, sipariş takibi |
 | 03b | Üyelik ✅ | Kayıt, giriş, siparişlerim, adres defteri, siparişte hesap açma. Şifre sıfırlama ve e-posta doğrulaması 04 ile gelecek |
-| 04 | Ödeme | iyzico entegrasyonu, 3D Secure, taksit, sipariş onay e-postaları |
+| 04 | Ödeme ◑ | iyzico ödeme formu, 3D Secure, taksit, sipariş ve ödeme onay e-postaları, şifre sıfırlama, e-posta doğrulama — kod bitti, anahtarlar bekleniyor |
 | 05 | Kargo ve fatura | Kargo entegrasyonu, barkodlu etiket, takip bildirimi, e-arşiv fatura |
 | 06 | Kampanya ve indirim motoru ✅ | Kupon, kategori indirimi, ücretsiz kargo barajı, tarihli kampanyalar |
 | 07 | Yasal metinler, SEO, açılış ◑ | Sözleşme sayfaları, KVKK, ETBİS alanı, site haritası, yapısal veri ve ölçümleme yapıldı; avukat onayı, şirket künyesi ve alan adı bekleniyor |
@@ -164,10 +164,9 @@ giriş, siparişlerim, adres defteri ve sipariş verirken hesap açma. Üyelik h
 zaman zorunlu değil — üyeliksiz sipariş olduğu gibi duruyor ve numara +
 e-postayla sorgulanmaya devam ediyor.
 
-E-posta servisi isteyen üç parça 04. adıma kaldı: şifre sıfırlama, e-posta
-doğrulaması ve üyelik öncesinde verilmiş siparişlerin hesaba bağlanması.
-Sonuncusu doğrulama olmadan yapılamaz, çünkü başkasının e-postasıyla hesap açan
-biri onun siparişlerini görürdü (bkz. 04-kararlar K-14).
+E-posta servisi isteyen üç parça 04. adımda yapıldı: şifre sıfırlama, e-posta
+doğrulaması ve doğrulama sonrasında üyelik öncesi siparişlerin hesaba
+bağlanması (K-18).
 
 Görsel yükleme (Vercel Blob) yapıldı; geri kalanı gerçek ürün fotoğrafları
 çekildiğinde yapılacak.
@@ -180,3 +179,12 @@ avukat onayı (A-05), künyenin doldurulması (A-03) ve alan adı (A-02).
 
 04 ve 05. adımlar (ödeme ve kargo) şirket evrakına bağlı olduğu için sıradan
 çıkıp 06. adıma geçildi: kampanya ve indirim motoru 19 Eylül 2026'da bitti.
+
+04. adımın kodu 20 Eylül 2026'da yazıldı ve denendi: kartla ödeme iyzico'nun
+ödeme ekranında (3D Secure ve taksit orada), sipariş ve ödeme onay
+e-postaları, şifre sıfırlama, e-posta doğrulama. İki dış anahtar bekleniyor:
+iyzico anahtarları sanal POS başvurusuna (A-03), Resend anahtarı alan adına
+(A-02) bağlı. İkisi de tanımlı değilken mağaza çalışmaya devam ediyor — kart
+seçeneği görünmüyor, e-posta gönderilmiyor.
+
+Geriye 05 (kargo ve fatura) ile 07'nin kod dışı kalanı kaldı.

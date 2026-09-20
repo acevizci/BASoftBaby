@@ -42,7 +42,7 @@ export type SiparisGirdisi = {
 };
 
 export type SiparisSonucu =
-  | { tamam: true; numara: string }
+  | { tamam: true; numara: string; toplamKurus: number }
   | { tamam: false; hata: string };
 
 /** BA-2026-0001 */
@@ -160,7 +160,7 @@ export async function siparisOlustur(
       return siparis.numara;
     });
 
-    return { tamam: true, numara };
+    return { tamam: true, numara, toplamKurus: araToplamKurus - indirimKurus + kargoKurus };
   } catch (hata) {
     if (hata instanceof Error && hata.message === "STOK") {
       return {

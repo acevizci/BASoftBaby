@@ -29,7 +29,8 @@ import {
   sepetiSiparistenDoldur,
   siparisiIptalEtVeStoguIadeEt,
 } from "@/server/odeme-akis";
-import { girisYapan, oturumAc, sifreKisaMi, sifreOzetle } from "@/server/uyelik";
+import { girisYapan, jetonUret, oturumAc, sifreKisaMi, sifreOzetle } from "@/server/uyelik";
+import { dogrulamaEpostasi, siparisAlindiEpostasi } from "@/server/eposta";
 
 function temiz(veri: FormData, alan: string): string {
   return String(veri.get(alan) ?? "").trim();
@@ -99,6 +100,13 @@ export async function siparisiTamamla(veri: FormData): Promise<void> {
     });
     await oturumAc(yeni.id);
     customerId = yeni.id;
+
+    // Doğrulama bağlantısı: doğrulanınca eski siparişleri de hesaba bağlanır.
+    await dogrulamaEpostasi(
+      girdi.eposta,
+      girdi.adSoyad,
+      await jetonUret(yeni.id, "dogrulama"),
+    );
   }
 
   // Kart yalnızca anahtarlar tanımlıyken seçilebiliyor; form kurcalansa bile
@@ -152,6 +160,20 @@ export async function siparisiTamamla(veri: FormData): Promise<void> {
   revalidatePath("/", "layout");
 
   if (kartMi) redirect(await odemeyeYonlendir(sonuc.numara));
+
+  // Havalede sipariş burada tamamlanıyor: onay e-postası şimdi gidiyor.
+  // Kartta ödeme sonucu belli olunca gidiyor (dönüş ucunda).
+  await siparisAlindiEpostasi(
+    {
+      numara: sonuc.numara,
+      adSoyad: girdi.adSoyad,
+      eposta: girdi.eposta,
+      toplamKurus: sonuc.toplamKurus,
+      odemeYontemi: "havale",
+    },
+    ayar.havaleBilgisi,
+  );
+
   redirect(`/siparis/${sonuc.numara}`);
 }
 

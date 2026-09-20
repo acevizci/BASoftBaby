@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { girisYapan, siparislerimiGetir } from "@/server/uyelik";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import { durumAdi, durumRengi, odemeAdi } from "@/ui/siparis-bicim";
-import { KART } from "../hesap-bicim";
+import { BILDIRIMLER, IYI_KUTU, KART } from "../hesap-bicim";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Siparişlerim", robots: { index: false } };
@@ -21,15 +21,32 @@ function tarihYaz(t: Date): string {
  * başkasının adresiyle hesap açan biri onun siparişlerini görebilirdi
  * (docs/04-kararlar.md, K-14).
  */
-export default async function SiparislerimSayfasi() {
+export default async function SiparislerimSayfasi({ searchParams }: PageProps<"/hesabim">) {
   const musteri = await girisYapan();
   if (!musteri) redirect("/giris?hata=giris&nereye=%2Fhesabim");
 
+  const { kayit, baglanan } = await searchParams;
   const siparisler = await siparislerimiGetir(musteri.id);
+
+  const bildirim = typeof kayit === "string" ? BILDIRIMLER[kayit] : undefined;
+  // Doğrulamadan sonra kaç eski siparişin bağlandığını söylüyoruz; müşteri
+  // listenin neden uzadığını anlasın.
+  const baglananSayisi = Number(baglanan);
+  const baglamaNotu =
+    kayit === "dogrulandi" && Number.isFinite(baglananSayisi) && baglananSayisi > 0
+      ? ` Üye olmadan verdiğin ${baglananSayisi} sipariş hesabına bağlandı.`
+      : "";
 
   return (
     <section className="mt-6">
-      <h2 className="text-lg">Siparişlerim</h2>
+      {bildirim && (
+        <p className={IYI_KUTU}>
+          {bildirim}
+          {baglamaNotu}
+        </p>
+      )}
+
+      <h2 className="mt-4 text-lg">Siparişlerim</h2>
 
       {siparisler.length === 0 ? (
         <div className={`mt-4 ${KART}`}>

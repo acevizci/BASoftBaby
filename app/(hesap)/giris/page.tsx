@@ -62,8 +62,13 @@ export default async function GirisSayfasi({ searchParams }: PageProps<"/giris">
         </Link>
       </p>
 
+      <p className="mt-2 text-sm text-metin-2">
+        <Link href="/sifremi-unuttum" className="font-bold text-mavi-koyu hover:underline">
+          Şifreni mi unuttun?
+        </Link>
+      </p>
+
       <p className="mt-2 text-sm text-metin-3">
-        Şifreni unuttuysan bize yazabilirsin; şifre sıfırlama e-postası çok yakında eklenecek.
         Üye olmadan verdiğin siparişleri{" "}
         <Link href="/siparis-takip" className="font-bold text-mavi-koyu hover:underline">
           sipariş takibi

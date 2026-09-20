@@ -42,4 +42,6 @@ export const BILDIRIMLER: Record<string, string> = {
   adres: "Adres kaydedildi.",
   silindi: "Adres silindi.",
   varsayilan: "Varsayılan adres değişti.",
+  dogrulandi: "E-posta adresin doğrulandı.",
+  "dogrulama-gonderildi": "Doğrulama bağlantısı e-posta adresine gönderildi.",
 };

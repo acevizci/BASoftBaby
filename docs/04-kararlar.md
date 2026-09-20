@@ -478,6 +478,49 @@ sızdırılamıyor. Alan iyzico'nun kendi dokümanındaki yer tutucuyla gönderi
 
 ---
 
+### K-18 · E-posta Resend ile; doğrulama eski siparişleri bağlıyor
+**20 Eylül 2026**
+
+Sipariş onayı, ödeme onayı, şifre sıfırlama ve e-posta doğrulama e-postaları
+eklendi. Gönderim Resend'in HTTP ucuna doğrudan yapılıyor; paket eklenmedi,
+tek bir POST yetiyor.
+
+**Anahtar yoksa gönderilmiyor, akış bozulmuyor.** `RESEND_ANAHTARI` tanımlı
+değilse e-posta atlanıp günlüğe yazılıyor. Gönderim hata verse de sipariş,
+kayıt ya da sıfırlama akışı olduğu gibi tamamlanıyor: e-posta gitmedi diye
+alınmış bir sipariş kaybolmamalı.
+
+**Kart siparişinde onay e-postası ödeme sonucundan sonra gidiyor.** Ödeme
+belli olmadan "siparişin alındı" demek, tutmayan ödemede yanlış bilgi vermek
+olurdu. Havalede sipariş anında gidiyor, çünkü orada beklenen şey zaten
+müşterinin ödemesi. Aynı dönüş iki kez gelirse e-posta ikinci kez gitmiyor:
+gönderim, kaydın "başarılı"ya geçtiği tek seferlik yolda.
+
+**Doğrulama bağlantısı düğmeyle harcanıyor.** Kurumsal e-posta tarayıcıları
+gelen bağlantıları kendiliğinden ziyaret ediyor; jeton sayfa açılır açılmaz
+harcansaydı müşteri bağlantıya tıkladığında süresi dolmuş olurdu.
+
+**Doğrulama, üyelikten önceki siparişleri hesaba bağlıyor.** K-14'te
+bırakılan iş buydu: doğrulanmamış adres o kutunun sahibi olunduğunun kanıtı
+değildi, artık kanıt var. Şifre sıfırlama da adresi doğrulanmış sayıyor —
+bağlantı o kutuya gitti ve tıklandı.
+
+**Jetonlar oturum gibi saklanıyor:** veritabanında jetonun kendisi değil
+SHA-256 özeti duruyor, her jeton tek kullanımlık, sıfırlama 1 saat doğrulama
+3 gün yaşıyor. Aynı türden yeni jeton üretilince eskisi siliniyor.
+
+**Sıfırlama isteği hesap var mı söylemiyor:** adres kayıtlı olsa da olmasa da
+aynı cevap veriliyor, yoksa hangi adreslerin kayıtlı olduğu tek tek denenerek
+öğrenilebilirdi. Sıfırlama sonrası o hesabın bütün oturumları kapanıyor.
+
+**Nerede:** [`../server/eposta.ts`](../server/eposta.ts),
+[`../server/uyelik.ts`](../server/uyelik.ts),
+[`../app/(hesap)/sifremi-unuttum`](../app/(hesap)/sifremi-unuttum),
+[`../app/(hesap)/sifre-sifirla`](../app/(hesap)/sifre-sifirla),
+[`../app/(hesap)/eposta-dogrula`](../app/(hesap)/eposta-dogrula)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı
@@ -542,10 +585,12 @@ işaretleri hatırlatılıyor. Depo bağlıyken yazma başarısız olursa kütü
 hatası da panelde görünüyor, günlüklerde kalmıyor.
 
 ### A-09 · E-posta servisi
-Şifre sıfırlama, e-posta doğrulaması, sipariş onay e-postası ve eski
-siparişlerin hesaba bağlanması buna bağlı. Planda Resend var; alan adı (A-02)
-alınınca 04. adımda kurulacak. O zamana kadar şifresini unutan müşterinin
-yazması gerekiyor.
+**20 Eylül 2026'da kodu bitti (K-18), anahtarı bekliyor.** Şifre sıfırlama,
+e-posta doğrulaması, sipariş ve ödeme onayı yazıldı ve denendi. Çalışması için
+Resend'de hesap açılıp `RESEND_ANAHTARI` Vercel'e girilmeli; gönderen adresin
+alan adının Resend'de doğrulanması gerektiği için alan adına (A-02) bağlı.
+Anahtar tanımlanana kadar e-postalar gönderilmiyor, akışlar çalışmaya devam
+ediyor.
 
 ### A-10 · Giriş denemesi sınırı
 Şu an yanlış şifre denemesi sayılmıyor. scrypt her denemeyi kendiliğinden

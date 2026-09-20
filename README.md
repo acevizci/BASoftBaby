@@ -2,10 +2,11 @@
 
 Online bebek kıyafetleri ve aksesuarları mağazası.
 
-> Yol haritasında **01, 02, 03, 03b ve 06. adımlar** tamam, **07. adımın kod
-> kısmı** da bitti: proje iskeleti ve marka sistemi, katalog vitrini, yönetim
-> paneli, sepet ve sipariş, üyelik, kampanya motoru, yasal metinler, SEO ve
-> ölçümleme. Veriler Neon Postgres'te, panelden girilen her değişiklik
+> Yol haritasında **01, 02, 03, 03b ve 06. adımlar** tamam; **04 ve 07. adımların
+> kod kısmı** da bitti: proje iskeleti ve marka sistemi, katalog vitrini, yönetim
+> paneli, sepet ve sipariş, üyelik, kampanya motoru, kartla ödeme, e-postalar,
+> yasal metinler, SEO ve ölçümleme. Kartla ödeme iyzico anahtarlarını, e-postalar
+> Resend anahtarını bekliyor; ikisi de tanımlı değilken mağaza çalışıyor. Veriler Neon Postgres'te, panelden girilen her değişiklik
 > anında mağazaya yansıyor. Sırada ödeme (iyzico) ve kargo var; ikisi de şirket
 > evrakına bağlı.
 
@@ -105,6 +106,29 @@ sipariş iptal olur, stok geri verilir ve **sepet geri doldurulur** — müşter
 ürünleri baştan seçmek zorunda kalmaz. Ödeme ekranını kapatıp gidenler için 15
 dakikada bir çalışan zamanlı iş (`vercel.json`) 30 dakikayı geçen girişimleri
 temizler.
+
+## E-postalar
+
+Sipariş onayı, ödeme onayı, şifre sıfırlama ve e-posta doğrulama e-postaları
+**Resend** ile gönderilir. Çalışması için `RESEND_ANAHTARI` ve
+`EPOSTA_GONDEREN` tanımlanmalı; gönderen adresin alan adı Resend'de
+doğrulanmış olmalı. Anahtar yokken e-posta gönderilmez, **akışlar çalışmaya
+devam eder**: sipariş alınır, hesap açılır, bağlantı üretilir; yalnızca
+gönderilemediği günlüğe yazılır.
+
+Kart siparişinde onay e-postası ödeme sonucundan sonra gider; havalede sipariş
+anında.
+
+## Üyelikte e-posta
+
+**Şifremi unuttum** `/sifremi-unuttum` adresinde: adres kayıtlı olsa da olmasa
+da aynı cevap verilir. Bağlantı 1 saat geçerli, tek kullanımlık; sıfırlama
+sonrası o hesabın bütün oturumları kapanır.
+
+**E-posta doğrulama** kayıt sırasında gönderilir. Doğrulanınca, üye olmadan o
+adresle verilmiş **eski siparişler hesaba bağlanır** — doğrulama olmadan
+bağlanmaz, çünkü doğrulanmamış bir adres o kutunun sahibi olunduğunun kanıtı
+değildir. Şifre sıfırlamak da adresi doğrulanmış sayar.
 
 ## Yasal metinler ve künye
 

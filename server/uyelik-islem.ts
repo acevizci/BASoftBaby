@@ -13,13 +13,17 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
 import {
+  epostayiDogrulanmisSay,
   girisYapan,
+  jetonHarca,
+  jetonUret,
   oturumAc,
   oturumKapat,
   sifreKisaMi,
   sifreOzetle,
   sifreTutuyorMu,
 } from "@/server/uyelik";
+import { dogrulamaEpostasi, sifreSifirlamaEpostasi } from "@/server/eposta";
 
 function temiz(veri: FormData, alan: string): string {
   return String(veri.get(alan) ?? "").trim();
@@ -61,6 +65,7 @@ export async function kayitOl(veri: FormData): Promise<void> {
     select: { id: true },
   });
 
+  await dogrulamaGonder(musteri.id, eposta, adSoyad);
   await oturumAc(musteri.id);
   revalidatePath("/", "layout");
   redirect(nereye);
@@ -135,6 +140,99 @@ export async function sifreDegistir(veri: FormData): Promise<void> {
 
   revalidatePath("/", "layout");
   redirect("/hesabim/bilgiler?kayit=sifre");
+}
+
+// ─── E-posta doğrulama ve şifre sıfırlama ────────────────────────────────
+
+/** Doğrulama bağlantısını üretip gönderir; gönderilemezse akış bozulmuyor. */
+async function dogrulamaGonder(
+  customerId: string,
+  eposta: string,
+  adSoyad: string,
+): Promise<void> {
+  const jeton = await jetonUret(customerId, "dogrulama");
+  await dogrulamaEpostasi(eposta, adSoyad, jeton);
+}
+
+export async function dogrulamayiTekrarGonder(): Promise<void> {
+  const musteri = await girisYapan();
+  if (!musteri) redirect("/giris?nereye=%2Fhesabim");
+  if (musteri.epostaDogrulandiMi) redirect("/hesabim");
+
+  await dogrulamaGonder(musteri.id, musteri.eposta, musteri.adSoyad);
+  redirect("/hesabim?kayit=dogrulama-gonderildi");
+}
+
+/**
+ * Doğrulama bağlantısındaki jetonu harcar.
+ *
+ * Bağlantı düğmeyle onaylanıyor, doğrudan açılışta değil: kurumsal e-posta
+ * tarayıcıları gelen bağlantıları kendiliğinden ziyaret ediyor ve jeton
+ * müşteri görmeden harcanmış olurdu.
+ */
+export async function epostayiDogrula(veri: FormData): Promise<void> {
+  const jeton = temiz(veri, "jeton");
+  const sonuc = await jetonHarca(jeton, "dogrulama");
+  if (!sonuc) redirect("/eposta-dogrula?hata=jeton");
+
+  const baglanan = await epostayiDogrulanmisSay(sonuc.customerId, sonuc.eposta);
+
+  // Bağlantıya başka bir tarayıcıdan tıklanmış olabilir; doğrulayan kişi
+  // adresin sahibi olduğunu kanıtladığı için oturum açılıyor.
+  await oturumAc(sonuc.customerId);
+  revalidatePath("/", "layout");
+  redirect(`/hesabim?kayit=dogrulandi&baglanan=${baglanan}`);
+}
+
+/**
+ * Şifre sıfırlama isteği.
+ *
+ * Adres kayıtlı olsa da olmasa da aynı cevap veriliyor: yoksa hangi
+ * adreslerin kayıtlı olduğu tek tek denenerek öğrenilebilirdi.
+ */
+export async function sifreSifirlamaIste(veri: FormData): Promise<void> {
+  const eposta = temiz(veri, "eposta").toLowerCase();
+
+  if (epostaGecerliMi(eposta)) {
+    const musteri = await db.customer.findUnique({
+      where: { eposta },
+      select: { id: true, adSoyad: true },
+    });
+    if (musteri) {
+      const jeton = await jetonUret(musteri.id, "sifirlama");
+      await sifreSifirlamaEpostasi(eposta, musteri.adSoyad, jeton);
+    }
+  }
+
+  redirect("/sifremi-unuttum?gonderildi=1");
+}
+
+export async function sifreyiSifirla(veri: FormData): Promise<void> {
+  const jeton = temiz(veri, "jeton");
+  const yeni = String(veri.get("yeniSifre") ?? "");
+
+  if (sifreKisaMi(yeni)) {
+    redirect(`/sifre-sifirla?jeton=${encodeURIComponent(jeton)}&hata=kisa`);
+  }
+
+  const sonuc = await jetonHarca(jeton, "sifirlama");
+  if (!sonuc) redirect("/sifre-sifirla?hata=jeton");
+
+  await db.customer.update({
+    where: { id: sonuc.customerId },
+    data: { sifreOzeti: await sifreOzetle(yeni) },
+  });
+
+  // Şifre sıfırlandıysa eski oturumlar da düşmeli: hesap başkasının eline
+  // geçtiği için sıfırlanıyor olabilir.
+  await db.customerSession.deleteMany({ where: { customerId: sonuc.customerId } });
+
+  // Bağlantı o kutuya gitti ve tıklandı: adresin sahibi olduğu kanıtlandı.
+  await epostayiDogrulanmisSay(sonuc.customerId, sonuc.eposta);
+  await oturumAc(sonuc.customerId);
+
+  revalidatePath("/", "layout");
+  redirect("/hesabim?kayit=sifre");
 }
 
 // ─── Adres defteri ───────────────────────────────────────────────────────

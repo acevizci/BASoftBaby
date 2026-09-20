@@ -345,12 +345,36 @@ model Customer {
   adSoyad     String
   telefon     String   @default("")
   sifreOzeti  String
+  /// E-postanın sahibi olduğu kanıtlandığı an. Doğrulanana kadar o adresle
+  /// üyeliksiz verilmiş siparişler hesaba bağlanmıyor (K-14).
+  epostaDogrulandi DateTime?
   olusturuldu DateTime @default(now())
   guncellendi DateTime @updatedAt
 
-  oturumlar CustomerSession[]
-  adresler  Address[]
+  oturumlar  CustomerSession[]
+  adresler   Address[]
   siparisler Order[]
+  jetonlar   CustomerToken[]
+}
+
+/// Tek kullanımlık e-posta jetonu: şifre sıfırlama ve e-posta doğrulama.
+///
+/// Oturumda olduğu gibi jetonun kendisi değil SHA-256 özeti saklanıyor:
+/// veritabanını görebilen biri kimsenin şifresini sıfırlayamasın. Kullanılan
+/// jeton bir daha çalışmıyor, süresi geçen de.
+model CustomerToken {
+  id         String   @id
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  /// sifirlama · dogrulama
+  tur         String
+  biter       DateTime
+  kullanildi  DateTime?
+  olusturuldu DateTime @default(now())
+
+  @@index([customerId, tur])
+  @@index([biter])
 }
 
 /// Açık oturum.
