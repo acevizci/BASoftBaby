@@ -148,7 +148,7 @@ sipariş için sepet, sepet için ürün gerekiyor.
 | # | Adım | İçerik |
 | --- | --- | --- |
 | 01 | Marka ve iskelet ✅ | Renk ve yazı tipi sistemi, proje kurulumu, boş sitenin canlıya alınması |
-| 02 | Katalog ve yönetim paneli ✅ | Ürün, kategori, beden-renk varyantları, stok |
+| 02 | Katalog ve yönetim paneli ✅ | Ürün, kategori, beden-renk varyantları, stok. Kategoriler panelden açılıp sıralanıyor (K-24) |
 | 03 | Sepet ve sipariş ✅ | Sepet, adres formu, sipariş oluşturma, havale ile ödeme, sipariş takibi |
 | 03b | Üyelik ✅ | Kayıt, giriş, siparişlerim, adres defteri, siparişte hesap açma. Şifre sıfırlama ve e-posta doğrulaması 04 ile gelecek |
 | 04 | Ödeme ◑ | iyzico ödeme formu, 3D Secure, taksit, sipariş ve ödeme onay e-postaları, şifre sıfırlama, e-posta doğrulama — kod bitti, anahtarlar bekleniyor |

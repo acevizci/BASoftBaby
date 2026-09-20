@@ -232,6 +232,107 @@ export async function siparisDurumuKaydet(veri: FormData): Promise<void> {
   redirect(`/yonetim/siparisler/${numara}?kayit=1`);
 }
 
+/* ── Kategoriler ────────────────────────────────────────────────────────── */
+
+/**
+ * Kategori ekler ya da günceller.
+ *
+ * **Slug yalnızca ilk oluşturmada addan üretiliyor.** Kategori adresi
+ * (`/zibin-body`) slug'tan geliyor; sonradan değiştirmek verilmiş bağlantıları
+ * ve arama motorundaki sırayı kırar. Adı değiştirmek serbest, adres sabit
+ * kalıyor (K-24).
+ */
+export async function kategoriKaydet(veri: FormData): Promise<void> {
+  const id = String(veri.get("id") ?? "").trim();
+  const ad = String(veri.get("ad") ?? "").trim().slice(0, 60);
+  const aciklama = String(veri.get("aciklama") ?? "").trim().slice(0, 200);
+  const aktif = veri.get("aktif") !== null;
+
+  if (!ad) redirect(`/yonetim/kategoriler?hata=ad${id ? `&duzenle=${id}` : ""}`);
+
+  if (id) {
+    await db.category.update({ where: { id }, data: { ad, aciklama, aktif } });
+    vitriniYenile();
+    redirect("/yonetim/kategoriler?kayit=1");
+  }
+
+  // Yeni kategori: slug addan üretiliyor, çakışırsa sonuna sayı ekleniyor.
+  const taban = slugYap(ad) || "kategori";
+  let slug = taban;
+  for (let sayi = 2; await db.category.findUnique({ where: { slug } }); sayi += 1) {
+    slug = `${taban}-${sayi}`;
+  }
+
+  const sonSira = await db.category.aggregate({ _max: { sira: true } });
+  await db.category.create({
+    data: { slug, ad, aciklama, aktif, sira: (sonSira._max.sira ?? 0) + 1 },
+  });
+
+  vitriniYenile();
+  redirect("/yonetim/kategoriler?kayit=1");
+}
+
+/**
+ * Kategoriyi siler.
+ *
+ * İçinde ürün varsa silinmiyor: ürünün kategorisi zorunlu, silinseydi ürünler
+ * de giderdi. Böyle bir durumda kategori kapatılabiliyor — kapalı kategori
+ * vitrinde görünmüyor, ürünleri kendi sayfalarından erişilebilir kalıyor.
+ */
+export async function kategoriSil(veri: FormData): Promise<void> {
+  const id = String(veri.get("id") ?? "").trim();
+  if (!id) redirect("/yonetim/kategoriler");
+
+  const urunAdedi = await db.product.count({ where: { categoryId: id } });
+  if (urunAdedi > 0) redirect("/yonetim/kategoriler?hata=dolu");
+
+  await db.category.delete({ where: { id } });
+  vitriniYenile();
+  redirect("/yonetim/kategoriler?kayit=silindi");
+}
+
+/** Kategoriyi açar/kapatır; kapalı kategori vitrinde görünmüyor. */
+export async function kategoriCevir(veri: FormData): Promise<void> {
+  const id = String(veri.get("id") ?? "").trim();
+  if (!id) redirect("/yonetim/kategoriler");
+
+  const mevcut = await db.category.findUniqueOrThrow({
+    where: { id },
+    select: { aktif: true },
+  });
+  await db.category.update({ where: { id }, data: { aktif: !mevcut.aktif } });
+
+  vitriniYenile();
+  redirect("/yonetim/kategoriler");
+}
+
+/** Sıralama ok düğmeleriyle: panelin geri kalanı gibi JavaScript'siz çalışıyor. */
+export async function kategoriTasi(veri: FormData): Promise<void> {
+  const id = String(veri.get("id") ?? "").trim();
+  const yon = String(veri.get("yon") ?? "") === "yukari" ? -1 : 1;
+  if (!id) redirect("/yonetim/kategoriler");
+
+  const hepsi = await db.category.findMany({
+    orderBy: { sira: "asc" },
+    select: { id: true },
+  });
+
+  const yer = hepsi.findIndex((k) => k.id === id);
+  const hedef = yer + yon;
+  if (yer === -1 || hedef < 0 || hedef >= hepsi.length) redirect("/yonetim/kategoriler");
+
+  [hepsi[yer], hepsi[hedef]] = [hepsi[hedef], hepsi[yer]];
+
+  // Sıra numaraları baştan yazılıyor: elle girilmiş boşluklu numaralar da
+  // böylece düzeliyor.
+  await db.$transaction(
+    hepsi.map((k, i) => db.category.update({ where: { id: k.id }, data: { sira: i + 1 } })),
+  );
+
+  vitriniYenile();
+  redirect("/yonetim/kategoriler");
+}
+
 /* ── Kargo ve fatura ────────────────────────────────────────────────────── */
 
 /**

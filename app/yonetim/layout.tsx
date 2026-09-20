@@ -10,6 +10,7 @@ const MENU = [
   { yol: "/yonetim", ad: "Özet" },
   { yol: "/yonetim/siparisler", ad: "Siparişler" },
   { yol: "/yonetim/urunler", ad: "Ürünler" },
+  { yol: "/yonetim/kategoriler", ad: "Kategoriler" },
   { yol: "/yonetim/stok", ad: "Stok" },
   { yol: "/yonetim/kampanyalar", ad: "Kampanyalar" },
   { yol: "/yonetim/banner", ad: "Ana sayfa banner" },

@@ -719,6 +719,52 @@ yaş süzgecinden önce de vardı; deneme yazılırken ortaya çıktı.
 
 ---
 
+### K-24 · Kategori adresi bir kez üretilir, sonra değişmez
+**20 Eylül 2026**
+
+Kategoriler artık panelden yönetiliyor: yeni kategori açma, adını ve
+açıklamasını değiştirme, vitrinde gösterme ya da kapatma, sıralama ve silme.
+Önceden kategori eklemek tohum dosyasını düzenleyip yeniden dağıtım
+gerektiriyordu; sezonluk bir kategori ("Hediye Seti", "Yazlık") açmak
+programcı işi olmamalı.
+
+**Adres addan bir kez üretilir ve bir daha değişmez.** Ad değiştirmek serbest,
+`/zibin-body` sabit kalıyor. Adres ada bağlı kalsaydı her ad düzeltmesi
+verilmiş bağlantıları, paylaşılmış linkleri ve arama motorundaki sırayı
+kırardı; alternatif, eski adresten yenisine yönlendirme tablosu tutmak olurdu
+ki bu mağazanın boyutunda taşınacak yük değil. Formda adres alanı kapalı
+görünüyor ve neden değişmediği orada yazıyor — kullanıcı "değiştiremiyorum"
+diye düşünmesin diye.
+
+Aynı adla ikinci kategori açılırsa adresin sonuna `-2`, `-3` ekleniyor;
+kayıt hiçbir zaman sessizce başka bir kategorinin üstüne yazmıyor.
+
+**İçinde ürün olan kategori silinemiyor.** Ürün-kategori bağı zorunlu; silmeye
+izin verilse ürünler birlikte giderdi. Düğme kapalı görünüyor ama asıl kontrol
+sunucuda: kapalı düğme tarayıcıda açılıp gönderilse bile kayıt duruyor.
+Ekranda ne yapılacağı yazıyor — ürünleri taşı ya da kategoriyi **kapat.**
+Kapalı kategori vitrinde ve menüde görünmüyor, ürünleri kendi sayfalarından
+erişilebilir kalıyor; sezon sonu için silmek değil kapatmak doğru olan.
+
+**Sıralama ok düğmeleriyle.** Sürükle bırak JavaScript'siz çalışmaz; panelin
+geri kalanı gibi burası da düz formla çalışıyor. Her taşımadan sonra sıra
+numaraları baştan yazılıyor, elle girilmiş boşluklu numaralar da böylece
+düzeliyor. Düzenleme de ayrı sayfa değil, `?duzenle=<id>` ile dolu açılan
+aynı form.
+
+Yirmi maddelik tarayıcı denemesi yazıldı (adres üretimi ve çakışma, ad
+değişince adresin sabit kalması, açma-kapatma ve vitrin menüsü, sıralamanın
+vitrine yansıması, silme kuralları — kapalı düğme zorlanarak, ürün formundaki
+kategori listesi, JavaScript kapalı tarayıcıda kategori ekleme). Deneme
+önbellek etiketlerinin yayılmasını bekliyor: yazma bittikten sonra vitrinin
+yeni hâli birkaç yüz milisaniye sonra görünüyor (K-22).
+
+**Nerede:** [`../app/yonetim/kategoriler/page.tsx`](../app/yonetim/kategoriler/page.tsx),
+[`../server/yonetim.ts`](../server/yonetim.ts),
+[`../server/katalog.ts`](../server/katalog.ts)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

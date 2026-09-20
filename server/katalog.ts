@@ -129,6 +129,34 @@ export const kategorileriGetir = paylasilanOnbellek(
   [ETIKETLER.katalog],
 );
 
+export type PanelKategorisi = {
+  id: string;
+  slug: string;
+  ad: string;
+  aciklama: string;
+  sira: number;
+  aktif: boolean;
+  urunAdedi: number;
+};
+
+/** Panel listesi: kapalı kategoriler de, ürün sayılarıyla birlikte. */
+export async function tumKategoriler(): Promise<PanelKategorisi[]> {
+  const satirlar = await db.category.findMany({
+    orderBy: { sira: "asc" },
+    include: { _count: { select: { products: true } } },
+  });
+
+  return satirlar.map((k) => ({
+    id: k.id,
+    slug: k.slug,
+    ad: k.ad,
+    aciklama: k.aciklama ?? "",
+    sira: k.sira,
+    aktif: k.aktif,
+    urunAdedi: k._count.products,
+  }));
+}
+
 export async function kategoriGetir(slug: string): Promise<Kategori | undefined> {
   const k = await db.category.findUnique({ where: { slug } });
   if (!k) return undefined;
