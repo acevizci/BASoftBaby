@@ -8,9 +8,10 @@
  * görmeye devam eder.
  */
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
+import { TUM_ETIKETLER } from "@/server/onbellek";
 import { DURUMLAR, ODEME_DURUMLARI } from "@/ui/siparis-bicim";
 import { BANNER_GORSELLERI, BANNER_PALETLERI } from "@/server/banner";
 import { GorselHatasi, gorselDosyalariniSil, gorselYukle } from "@/server/gorsel-depo";
@@ -18,7 +19,18 @@ import { TASIYICILAR, takipAdresi, tasiyiciAdi } from "@/server/kargo";
 import { faturaOlustur } from "@/server/fatura";
 import { kargoyaVerildiEpostasi } from "@/server/eposta";
 
+/**
+ * Panelde bir şey kaydedilince vitrini tazeler.
+ *
+ * Sayfa önbelleğinin yanında veri önbelleğinin etiketleri de düşürülüyor:
+ * kategoriler, ayarlar, duyurular ve yasal metinler istekler arasında
+ * saklandığı için (bkz. server/onbellek.ts) değişiklik ancak böyle anında
+ * görünür.
+ */
 function vitriniYenile() {
+  // `updateTag`, server action içinde kullanılan biçim: kaydeden kişi
+  // yönlendirildiği sayfada kendi değişikliğini hemen görüyor.
+  for (const etiket of TUM_ETIKETLER) updateTag(etiket);
   revalidatePath("/", "layout");
 }
 

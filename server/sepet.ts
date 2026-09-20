@@ -19,6 +19,7 @@ import {
   type UygulananKampanya,
 } from "@/server/kampanya";
 import { RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
+import { ETIKETLER, paylasilanOnbellek } from "@/server/onbellek";
 
 const CEREZ = "sepet";
 /** Sepet çerezi 30 gün yaşar. */
@@ -221,7 +222,7 @@ export type SatisAyari = {
   varsayilanTasiyici: string;
 };
 
-export async function ayarlariGetir(): Promise<SatisAyari> {
+export const ayarlariGetir = paylasilanOnbellek(async function ayarlariGetir(): Promise<SatisAyari> {
   const ayar = await db.storeSetting.findUnique({ where: { id: "tek" } });
   return {
     kargoKurus: ayar?.kargoKurus ?? 4990,
@@ -230,7 +231,7 @@ export async function ayarlariGetir(): Promise<SatisAyari> {
     kdvOrani: ayar?.kdvOrani ?? 10,
     varsayilanTasiyici: ayar?.varsayilanTasiyici ?? "yurtici",
   };
-}
+}, ["satis-ayari"], [ETIKETLER.ayarlar]);
 
 /**
  * Kargo ücreti. Eşiğe indirimden SONRAKİ tutara bakılır.

@@ -6,6 +6,7 @@
  */
 
 import { db } from "@/server/veritabani";
+import { ETIKETLER, paylasilanOnbellek } from "@/server/onbellek";
 
 export type Duyuru = {
   id: string;
@@ -38,7 +39,7 @@ export const VARSAYILAN_AYAR: SeritAyari = {
   mobildeGoster: true,
 };
 
-export async function seritAyariGetir(): Promise<SeritAyari> {
+export const seritAyariGetir = paylasilanOnbellek(async function seritAyariGetir(): Promise<SeritAyari> {
   const s = await db.storeSetting.findUnique({ where: { id: "tek" } });
   if (!s) return VARSAYILAN_AYAR;
   return {
@@ -48,7 +49,7 @@ export async function seritAyariGetir(): Promise<SeritAyari> {
     durdurHover: s.seritDurdurHover,
     mobildeGoster: s.seritMobilde,
   };
-}
+}, ["serit-ayari"], [ETIKETLER.duyuru]);
 
 function satirCevir(d: {
   id: string;
@@ -77,7 +78,19 @@ export async function tumDuyurular(): Promise<Duyuru[]> {
 }
 
 /** Sitede görünen liste: tarihi gelmemiş ya da geçmiş mesajlar kendiliğinden düşer. */
-export async function yayindakiDuyurular(simdi: Date = new Date()): Promise<Duyuru[]> {
+export async function yayindakiDuyurular(simdi?: Date): Promise<Duyuru[]> {
+  if (!simdi) return duyurulariOku();
+  return duyuruSorgusu(simdi);
+}
+
+const duyurulariOku = paylasilanOnbellek(
+  () => duyuruSorgusu(new Date()),
+  ["yayindaki-duyurular"],
+  [ETIKETLER.duyuru],
+  60,
+);
+
+async function duyuruSorgusu(simdi: Date): Promise<Duyuru[]> {
   const satirlar = await db.announcement.findMany({
     where: {
       aktif: true,

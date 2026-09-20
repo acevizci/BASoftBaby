@@ -12,6 +12,7 @@
  */
 
 import { db } from "@/server/veritabani";
+import { ETIKETLER, paylasilanOnbellek } from "@/server/onbellek";
 
 export type KampanyaKaydi = {
   id: string;
@@ -142,15 +143,32 @@ export async function gecerliKampanyalar(
  * buraya girer: "500 TL üzerine %10" gibi bir kampanyayı tek ürünün fiyatında
  * göstermek müşteriyi yanıltır, o indirim sepette çıkar.
  */
-export async function urunIndirimleri(
-  simdi: Date = new Date(),
-): Promise<KampanyaKaydi[]> {
+export async function urunIndirimleri(simdi?: Date): Promise<KampanyaKaydi[]> {
+  // Tarih verilmeden çağrılan hâli (vitrinin tamamı böyle çağırıyor)
+  // önbellekten geliyor; ürün kartlarının her biri için ayrı sorgu gitmiyor.
+  if (!simdi) return indirimleriOku();
+  return indirimSorgusu(simdi);
+}
+
+function indirimSorgusu(simdi: Date): Promise<KampanyaKaydi[]> {
   return db.campaign.findMany({
     where: { ...tarihSuzgeci(simdi), kuponKodu: null, enAzSepetKurus: 0 },
     select: SECIM,
     orderBy: { olusturuldu: "asc" },
   });
 }
+
+/**
+ * Kampanya listesi tarihe bağlı olduğu için önbellek bir dakikayla
+ * sınırlanıyor: panelden yapılan değişiklik zaten etiketle anında düşüyor,
+ * bu süre yalnızca "saat 14:00'te başlayan kampanya" gibi durumlar için.
+ */
+const indirimleriOku = paylasilanOnbellek(
+  () => indirimSorgusu(new Date()),
+  ["urun-indirimleri"],
+  [ETIKETLER.kampanya],
+  60,
+);
 
 /** Bir ürünün kartında görünecek indirimli fiyat; indirim yoksa undefined. */
 export function urunKampanyasi(

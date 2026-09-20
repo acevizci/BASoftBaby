@@ -203,6 +203,21 @@ ziyaretçiyi tanımlamıyor. Bu yüzden çerez onay bandı yok — sitedeki çer
 tamamı (sepet, oturum, kupon, son sipariş) zorunlu çerez. Ölçümün çalışması
 için Vercel panelinde Analytics'in açılması gerekiyor.
 
+## Hız ve önbellek
+
+Kategoriler, duyuru şeridi, yasal metinler, künye, satış ayarları ve kampanya
+listesi **önbellekte** durur; bunlar her sayfada gereken ama seyrek değişen
+veriler. Panelden bir şey kaydedilince önbellek düşer, değişiklik ziyaretçiye
+saniyesinde yansır.
+
+**Sepet, oturum, hesap ve siparişler hiçbir zaman önbelleğe girmez** — kişiye
+özeldirler. Ürün listeleri 30 saniyelik önbellektedir, yani listedeki stok o
+kadar bayatlayabilir; ürün sayfası ve sipariş anı stoğu her zaman doğrudan
+veritabanından okur.
+
+Bu düzenleme sayfa başına veritabanı sorgusunu ana sayfada 21'den 1'e, ürün
+sayfasında 21'den 6'ya indirdi (ayrıntı: `docs/04-kararlar.md`, K-22).
+
 ## Bekleme göstergeleri
 
 Yeni sayfa hazırlanırken en üstte marka renklerinde ince bir şerit akar; form

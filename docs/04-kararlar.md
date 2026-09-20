@@ -629,6 +629,59 @@ kalmıyor.
 
 ---
 
+### K-22 · Yavaş değişen veriler önbellekte, kişiye özel veriler asla
+**20 Eylül 2026**
+
+Site yavaştı. Ölçüm yapıldı: sorun kodun hızında değil, **sayfa başına
+veritabanına kaç kez gidildiğinde**. Tek bir ürün sayfası 21 ayrı sorgu
+atıyordu. Yerelde her sorgu 0,3 ms olduğu için bu hiç görünmüyor; veritabanı
+uzaktayken (Neon) her gidiş-geliş 30-60 ms, yani 21 sorgu tek başına bir
+saniye demek.
+
+Sorguların çoğu **her sayfada tekrarlanan, haftada bir değişen** verilerdi:
+kategoriler (üst çubuk), duyuru şeridi, yasal metinler ve künye (alt bilgi),
+satış ayarları, kampanya listesi.
+
+**İki katmanlı önbellek kuruldu** (bkz. server/onbellek.ts):
+
+- **İstek önbelleği** — aynı istek içinde aynı sorgu iki kez çağrılırsa
+  veritabanına bir kez gidiliyor. Bayatlama riski sıfır.
+- **Paylaşılan önbellek** — istekler arasında da saklanıyor. Panelde bir şey
+  kaydedilince `vitriniYenile()` bütün etiketleri düşürüyor, yani değişiklik
+  bekletmiyor. Ölçüldü: panelden yapılan değişiklik ziyaretçiye ortalama
+  **0,2 saniyede** yansıyor.
+
+**Kişiye özel hiçbir veri önbelleğe girmiyor:** sepet, oturum, hesap ve
+siparişler her istekte veritabanından okunuyor. İki ayrı tarayıcının birbirinin
+sepetini ya da oturumunu görmediği ayrıca denendi — bu, önbellekte en sık
+yapılan hata.
+
+**Ürün listeleri 30 saniyelik önbellekte.** Listedeki stok bu kadar
+bayatlayabilir. Bunu bilerek kabul ettik: satın alma yolundaki hiçbir adım
+listeye güvenmiyor — ürün sayfası stoğu doğrudan okuyor, sipariş anında ise
+stok tek bir veritabanı işlemi içinde yeniden kontrol edilip düşülüyor (03.
+adımdan beri böyle). Yani en kötü ihtimalle müşteri listede yarım dakika önce
+tükenmiş bir ürünü görür; yanlış bir satış olmaz.
+
+**Sonuç (tek istekteki sorgu sayısı):**
+
+| Sayfa | Önce | Sonra |
+| --- | --- | --- |
+| Ana sayfa | 21 | 1 |
+| Kategori listesi | 11 | 2 |
+| Ürün sayfası | 21 | 6 |
+| Sepet | 5 | 1 |
+
+Ürün sayfasındaki 6 sorgunun kalması Prisma'nın her ilişkiyi (varyantlar,
+fotoğraflar, kategori) ayrı sorguyla getirmesinden. Tek sorguya birleştiren
+`relationLoadStrategy` bu Prisma sürümünde yok; zorlanmadı.
+
+**Nerede:** [`../server/onbellek.ts`](../server/onbellek.ts),
+[`../server/katalog.ts`](../server/katalog.ts),
+[`../server/yonetim.ts`](../server/yonetim.ts)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "@/server/veritabani";
+import { ETIKETLER, paylasilanOnbellek } from "@/server/onbellek";
 
 /**
  * Yasal metinler ve satıcı künyesi.
@@ -41,12 +42,16 @@ export type Kunye = {
   bosMu: boolean;
 };
 
-export async function yasalSayfalariGetir(): Promise<YasalBaslik[]> {
-  return db.legalPage.findMany({
-    orderBy: { sira: "asc" },
-    select: { slug: true, baslik: true, taslakMi: true },
-  });
-}
+export const yasalSayfalariGetir = paylasilanOnbellek(
+  async function yasalSayfalariGetir(): Promise<YasalBaslik[]> {
+    return db.legalPage.findMany({
+      orderBy: { sira: "asc" },
+      select: { slug: true, baslik: true, taslakMi: true },
+    });
+  },
+  ["yasal-sayfalar"],
+  [ETIKETLER.yasal],
+);
 
 export async function yasalSayfaGetir(slug: string): Promise<YasalSayfa | undefined> {
   const kayit = await db.legalPage.findUnique({
@@ -63,7 +68,7 @@ export async function yasalSayfaGetir(slug: string): Promise<YasalSayfa | undefi
   return kayit ?? undefined;
 }
 
-export async function kunyeGetir(): Promise<Kunye> {
+export const kunyeGetir = paylasilanOnbellek(async function kunyeGetir(): Promise<Kunye> {
   const ayar = await db.storeSetting.findUnique({
     where: { id: "tek" },
     select: {
@@ -90,4 +95,4 @@ export async function kunyeGetir(): Promise<Kunye> {
   };
 
   return { ...kunye, bosMu: Object.values(kunye).every((d) => d === "") };
-}
+}, ["kunye"], [ETIKETLER.ayarlar]);

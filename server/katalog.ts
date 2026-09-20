@@ -8,6 +8,7 @@
 import { db } from "@/server/veritabani";
 import { urunIndirimleri, urunKampanyasi, type KampanyaKaydi } from "@/server/kampanya";
 import { BEDENLER, type RenkAdi, type RozetTonu, type GorselTipi, type Urun, type Kategori } from "@/ui/katalog-bicim";
+import { ETIKETLER, paylasilanOnbellek, paylasilanOnbellekli } from "@/server/onbellek";
 
 export * from "@/ui/katalog-bicim";
 
@@ -107,18 +108,26 @@ function urunYap(satir: SatirTipi, kampanyalar: KampanyaKaydi[] = []): Urun {
 
 
 
-export async function kategorileriGetir(): Promise<Kategori[]> {
-  const satirlar = await db.category.findMany({
-    where: { aktif: true },
-    orderBy: { sira: "asc" },
-  });
-  return satirlar.map((k) => ({
-    slug: k.slug,
-    ad: k.ad,
-    aciklama: k.aciklama ?? "",
-    sira: k.sira,
-  }));
-}
+/**
+ * Kategoriler her sayfanın üst çubuğunda gerekiyor ama ayda bir değişiyor:
+ * paylaşılan önbellekte duruyor, panelden değişince düşüyor.
+ */
+export const kategorileriGetir = paylasilanOnbellek(
+  async function kategorileriGetir(): Promise<Kategori[]> {
+    const satirlar = await db.category.findMany({
+      where: { aktif: true },
+      orderBy: { sira: "asc" },
+    });
+    return satirlar.map((k) => ({
+      slug: k.slug,
+      ad: k.ad,
+      aciklama: k.aciklama ?? "",
+      sira: k.sira,
+    }));
+  },
+  ["kategoriler"],
+  [ETIKETLER.katalog],
+);
 
 export async function kategoriGetir(slug: string): Promise<Kategori | undefined> {
   const k = await db.category.findUnique({ where: { slug } });
@@ -143,7 +152,19 @@ export type UrunSuzgeci = {
   enFazlaKurus?: number;
 };
 
-export async function urunleriGetir(suzgec: UrunSuzgeci = {}): Promise<Urun[]> {
+/**
+ * Listedeki stok en fazla yarım dakika bayatlayabilir; gerekçesi
+ * server/onbellek.ts içinde. Panelden bir değişiklik yapılınca zaten anında
+ * düşüyor.
+ */
+export const urunleriGetir = paylasilanOnbellekli(
+  urunleriSorgula,
+  ["urunler"],
+  [ETIKETLER.katalog],
+  30,
+);
+
+async function urunleriSorgula(suzgec: UrunSuzgeci = {}): Promise<Urun[]> {
   const [satirlar, kampanyalar] = await Promise.all([
     db.product.findMany({
     where: {
@@ -164,7 +185,14 @@ export async function urunleriGetir(suzgec: UrunSuzgeci = {}): Promise<Urun[]> {
 }
 
 /** Ana sayfadaki "Bu haftanın favorileri" şeridi. */
-export async function oneCikanUrunler(adet = 8): Promise<Urun[]> {
+export const oneCikanUrunler = paylasilanOnbellekli(
+  oneCikanlariSorgula,
+  ["one-cikanlar"],
+  [ETIKETLER.katalog],
+  30,
+);
+
+async function oneCikanlariSorgula(adet = 8): Promise<Urun[]> {
   const [satirlar, kampanyalar] = await Promise.all([
     db.product.findMany({
       where: { aktif: true },
@@ -177,8 +205,19 @@ export async function oneCikanUrunler(adet = 8): Promise<Urun[]> {
   return satirlar.map((s) => urunYap(s as SatirTipi, kampanyalar));
 }
 
-export async function benzerUrunler(urun: Urun, adet = 4): Promise<Urun[]> {
-  const [ayni, kampanyalar] = await Promise.all([
+/**
+ * Benzer ürünler şeridi. Önbellek anahtarına ürünün kendisi değil yalnızca
+ * slug'ı ve kategorisi giriyor: anahtar küçük kalsın, stok bilgisi anahtara
+ * karışmasın.
+ */
+export function benzerUrunler(urun: Urun, adet = 4): Promise<Urun[]> {
+  return benzerleriSorgula(urun.slug, urun.kategori, adet);
+}
+
+const benzerleriSorgula = paylasilanOnbellekli(
+  async function benzerleriSorgula(slug: string, kategori: string, adet: number): Promise<Urun[]> {
+    const urun = { slug, kategori };
+    const [ayni, kampanyalar] = await Promise.all([
     db.product.findMany({
       where: { aktif: true, slug: { not: urun.slug }, category: { slug: urun.kategori } },
       include: URUN_ICEREN,
@@ -197,5 +236,9 @@ export async function benzerUrunler(urun: Urun, adet = 4): Promise<Urun[]> {
     include: URUN_ICEREN,
     take: adet - ayni.length,
   });
-  return [...ayni, ...digerleri].map((s) => urunYap(s as SatirTipi, kampanyalar));
-}
+    return [...ayni, ...digerleri].map((s) => urunYap(s as SatirTipi, kampanyalar));
+  },
+  ["benzer-urunler"],
+  [ETIKETLER.katalog],
+  30,
+);
