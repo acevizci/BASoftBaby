@@ -61,7 +61,7 @@ app/
   siparis/[numara]/       sipariş onayı (yalnız siparişi verene açık)
   siparis-takip/          numara + e-posta ile sipariş sorgulama
   yonetim/                şifreyle korunuyor
-    siparisler/ urunler/ stok/ kampanyalar/ duyuru/ ayarlar/
+    siparisler/ urunler/ stok/ kampanyalar/ banner/ duyuru/ ayarlar/
 
   — henüz yok, sırası gelince —
   (hesap)/                üyelik: siparislerim, adreslerim, iade
@@ -78,6 +78,7 @@ server/                   iş kuralları — tek kaynak
   siparis.ts              sipariş oluşturma ve sorgulama
   siparis-islem.ts        ödeme formunun server action'ı
   kampanya.ts             indirim motoru — en çok indiren kazanır
+  banner.ts               ana sayfa banner'ları
   yonetim.ts              panelin yazma işlemleri
   — henüz yok: odeme.ts kargo.ts fatura.ts eposta.ts
 
@@ -92,6 +93,8 @@ ui/                       ortak arayüz parçaları
   katalog-bicim.ts        Prisma'ya bulaşmayan saf görünüm sabitleri
   siparis-bicim.ts        sipariş durumlarının adları ve renkleri
   siparis-karti.tsx       sipariş özeti (onay, takip ve panelde aynı)
+  duyuru-seridi.tsx       üstteki kayan yazı
+  hero-banner.tsx         ana sayfadaki dönen banner
 public/marka/             logo dosyaları
 ```
 

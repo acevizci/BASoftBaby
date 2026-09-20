@@ -250,3 +250,89 @@ a.serit-mesaj:hover {
     content: none;
   }
 }
+
+/* ==========================================================================
+   Ana sayfadaki dönen banner.
+
+   Şerit, slayt sayısı kadar geniş; her slayt tam bir ekran genişliğinde. Kare
+   listesi slayt sayısına göre bileşende üretiliyor (ui/hero-banner.tsx), çünkü
+   duraklar slayt sayısına bağlı. Burada yalnızca duran kısımlar var.
+   ========================================================================== */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-iz {
+  display: flex;
+  width: calc(var(--hero-adet) * 100%);
+  animation: hero-gec var(--hero-sure) infinite;
+}
+
+.hero[data-tek="1"] .hero-iz {
+  width: 100%;
+  animation: none;
+}
+
+.hero-slayt {
+  flex: none;
+  width: calc(100% / var(--hero-adet));
+  background: linear-gradient(to bottom, var(--sari-soluk), var(--zemin));
+}
+
+.hero[data-tek="1"] .hero-slayt {
+  width: 100%;
+}
+
+.hero-slayt[data-palet="mint"] {
+  background: linear-gradient(to bottom, var(--nane-soluk), var(--zemin));
+}
+.hero-slayt[data-palet="mercan"] {
+  background: linear-gradient(to bottom, var(--mercan-soluk), var(--zemin));
+}
+.hero-slayt[data-palet="mavi"] {
+  background: linear-gradient(to bottom, var(--mavi-soluk), var(--zemin));
+}
+.hero-slayt[data-palet="krem"] {
+  background: linear-gradient(to bottom, var(--yuzey-sicak), var(--zemin));
+}
+
+.hero-noktalar {
+  position: absolute;
+  bottom: 14px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+}
+
+.hero-nokta {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--metin-3);
+  opacity: 0.35;
+  animation: hero-nokta var(--hero-sure) infinite;
+}
+
+/* hero-nokta karesi de bileşende üretiliyor: noktanın yanık kaldığı süre
+   slayt sayısına bağlı. Her nokta aynı kareyi kendi payına düşen gecikmeyle
+   oynatıyor, böylece sırayla yanıyorlar. */
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-iz {
+    width: 100%;
+    animation: none;
+  }
+  .hero-slayt {
+    width: 100%;
+  }
+  .hero-slayt ~ .hero-slayt {
+    display: none;
+  }
+  .hero-noktalar {
+    display: none;
+  }
+}

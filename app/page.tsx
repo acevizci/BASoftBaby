@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import HeroBanner from "@/ui/hero-banner";
 import UrunKarti from "@/ui/urun-karti";
 import { kategorileriGetir, oneCikanUrunler } from "@/server/katalog";
 
@@ -22,37 +22,7 @@ export default async function AnaSayfa() {
 
   return (
     <>
-      <section className="bg-gradient-to-b from-sari-soluk to-zemin">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-4 py-14 text-center sm:py-20">
-          <Image
-            src="/marka/basoftbaby-amblem.svg"
-            alt=""
-            width={116}
-            height={116}
-            priority
-            unoptimized
-          />
-          <h1 className="max-w-xl text-3xl sm:text-5xl">Minik bedenlere, yumuşacık kumaşlar</h1>
-          <p className="max-w-lg text-base text-metin-2 sm:text-lg">
-            %100 organik pamuk, dikişsiz bantlar, kolay çıtçıtlı kalıplar. Bebeğin hassas cildi
-            için seçilmiş ürünler.
-          </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Link
-              href="/urunler"
-              className="rounded-full bg-mercan px-6 py-3 font-bold text-white transition hover:brightness-95"
-            >
-              Tüm ürünler
-            </Link>
-            <Link
-              href="/yenidogan"
-              className="rounded-full border-2 border-cizgi bg-yuzey px-6 py-3 font-bold transition hover:border-metin-3"
-            >
-              Yenidoğan
-            </Link>
-          </div>
-        </div>
-      </section>
+      <HeroBanner />
 
       <section className="mx-auto max-w-6xl px-4 py-12">
         <h2 className="text-xl">Yaşa göre</h2>

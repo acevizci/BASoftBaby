@@ -49,8 +49,8 @@ gönderimlerde yazılmıyor, yani sildiğin örnek ürünler geri gelmiyor.
 ## Yönetim paneli
 
 `/yonetim` adresinde. Siparişler, ürün ekleme ve düzenleme, beden-renk stokları,
-duyuru şeridi, kampanyalar ve satış ayarları (kargo ücreti, bedava kargo eşiği,
-havale bilgisi). Açılabilmesi için `YONETIM_SIFRE` tanımlı olmalı; tanımlı değilse panel
+duyuru şeridi, ana sayfa banner'ı, kampanyalar ve satış ayarları (kargo ücreti,
+bedava kargo eşiği, havale bilgisi). Açılabilmesi için `YONETIM_SIFRE` tanımlı olmalı; tanımlı değilse panel
 kendini tamamen kapatır (404 verir), yani ayar unutulursa açıkta kalmaz.
 
 ## Sipariş akışı
@@ -61,6 +61,15 @@ havale/EFT. Stok sipariş anında tek bir veritabanı işlemi içinde düşer, a
 anda gelen iki sipariş son adedi birlikte alamaz. Müşteri siparişini numarası
 ve e-postasıyla `/siparis-takip` adresinden görür. Bütün ekranlar düz HTML
 formuyla çalışır, JavaScript kapalı tarayıcıda da sipariş verilebilir.
+
+## Hareketli alanlar
+
+Sitede kendiliğinden hareket eden iki yer var ve ikisi de panelden yönetiliyor:
+en üstteki **duyuru şeridi** (kayan yazı) ve ana sayfadaki **banner** (sırayla
+geçen tanıtım alanı). İkisinin geçişi de tamamen CSS ile yapılıyor, JavaScript
+kullanmıyor. Cihazında "hareketi azalt" ayarı açık olan ziyaretçide ikisi de
+durur; şeritte mesajlar sabit görünür, banner'da ilk banner kalır. Bu
+erişilebilirlik gereği, kapatılabilir bir ayar değil.
 
 ## Kampanyalar
 
@@ -106,6 +115,7 @@ fatura e-arşiv, yayın Vercel üzerinde.
 - [x] Veritabanı (Neon Postgres) ve yönetim paneli
 - [x] Sepet, sipariş ve sipariş takibi (havale/EFT ile)
 - [x] Kampanya ve kupon motoru
+- [x] Panelden yönetilen, dönen ana sayfa banner'ı
 - [ ] Gerçek ürünlerin girilmesi
 - [ ] Havale hesabının panele girilmesi
 - [ ] Üyelik (alan adı ve e-posta servisi gelince)

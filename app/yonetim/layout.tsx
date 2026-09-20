@@ -12,6 +12,7 @@ const MENU = [
   { yol: "/yonetim/urunler", ad: "Ürünler" },
   { yol: "/yonetim/stok", ad: "Stok" },
   { yol: "/yonetim/kampanyalar", ad: "Kampanyalar" },
+  { yol: "/yonetim/banner", ad: "Ana sayfa banner" },
   { yol: "/yonetim/duyuru", ad: "Duyuru şeridi" },
   { yol: "/yonetim/ayarlar", ad: "Satış ayarları" },
 ];

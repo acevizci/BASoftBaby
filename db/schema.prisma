@@ -136,6 +136,9 @@ model StoreSetting {
   /// Havale/EFT yapacak müşteriye gösterilen banka bilgisi. Boşsa bu ödeme
   /// yöntemi müşteriye hiç sunulmaz.
   havaleBilgisi String @default("")
+
+  /// Ana sayfadaki banner kaç saniyede bir değişsin
+  bannerSaniye Int @default(6)
 }
 
 /// Ziyaretçinin sepeti. Tarayıcıdaki `sepet` çerezi bu kaydın id'sini tutar;
@@ -265,4 +268,29 @@ model Campaign {
   @@index([aktif, baslangic, bitis])
   @@index([categoryId])
   @@index([productId])
+}
+
+/// Ana sayfanın üstündeki dönen banner. Birden çok kayıt varsa sırayla
+/// kendiliğinden geçer; tek kayıt varsa sabit durur.
+model HeroBanner {
+  id      String @id @default(cuid())
+  baslik  String
+  altYazi String @default("")
+
+  dugmeYazi String @default("")
+  dugmeLink String @default("")
+
+  /// Arka plan paleti ve yanında duran çizim
+  palet  String @default("sari")
+  gorsel String @default("amblem")
+
+  sira      Int       @default(0)
+  aktif     Boolean   @default(true)
+  baslangic DateTime?
+  bitis     DateTime?
+
+  olusturuldu DateTime @default(now())
+  guncellendi DateTime @updatedAt
+
+  @@index([aktif, sira])
 }

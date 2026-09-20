@@ -12,6 +12,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
 import { DURUMLAR, ODEME_DURUMLARI } from "@/ui/siparis-bicim";
+import { BANNER_GORSELLERI, BANNER_PALETLERI } from "@/server/banner";
 
 function vitriniYenile() {
   revalidatePath("/", "layout");
@@ -317,4 +318,74 @@ export async function kampanyaSil(veri: FormData): Promise<void> {
 
   await db.campaign.delete({ where: { id } });
   vitriniYenile();
+}
+
+/* ── Ana sayfa banner'ı ─────────────────────────────────────────────────── */
+
+export async function bannerKaydet(veri: FormData): Promise<void> {
+  const id = String(veri.get("id") ?? "").trim();
+  const baslik = String(veri.get("baslik") ?? "").trim().slice(0, 120);
+  if (!baslik) return;
+
+  const palet = String(veri.get("palet") ?? "sari");
+  const gorsel = String(veri.get("gorsel") ?? "amblem");
+  if (!(BANNER_PALETLERI as readonly string[]).includes(palet)) return;
+  if (!(BANNER_GORSELLERI as readonly string[]).includes(gorsel)) return;
+
+  const siraHam = Number(String(veri.get("sira") ?? "0").trim());
+
+  const veriler = {
+    baslik,
+    altYazi: String(veri.get("altYazi") ?? "").trim().slice(0, 300),
+    dugmeYazi: String(veri.get("dugmeYazi") ?? "").trim().slice(0, 40),
+    dugmeLink: String(veri.get("dugmeLink") ?? "").trim().slice(0, 200),
+    palet,
+    gorsel,
+    sira: Number.isFinite(siraHam) ? Math.trunc(siraHam) : 0,
+    aktif: veri.get("aktif") === "on",
+    baslangic: tariheCevir(veri.get("baslangic")),
+    bitis: tariheCevir(veri.get("bitis")),
+  };
+
+  if (id) {
+    await db.heroBanner.update({ where: { id }, data: veriler });
+  } else {
+    await db.heroBanner.create({ data: veriler });
+  }
+
+  vitriniYenile();
+  redirect("/yonetim/banner?kayit=1");
+}
+
+export async function bannerCevir(veri: FormData): Promise<void> {
+  const id = String(veri.get("id") ?? "");
+  if (!id) return;
+
+  const b = await db.heroBanner.findUnique({ where: { id }, select: { aktif: true } });
+  if (!b) return;
+
+  await db.heroBanner.update({ where: { id }, data: { aktif: !b.aktif } });
+  vitriniYenile();
+}
+
+export async function bannerSil(veri: FormData): Promise<void> {
+  const id = String(veri.get("id") ?? "");
+  if (!id) return;
+
+  await db.heroBanner.delete({ where: { id } });
+  vitriniYenile();
+}
+
+export async function bannerSuresiKaydet(veri: FormData): Promise<void> {
+  const ham = Number(String(veri.get("saniye") ?? "").trim());
+  const saniye = Number.isFinite(ham) ? Math.max(2, Math.min(30, Math.round(ham))) : 6;
+
+  await db.storeSetting.upsert({
+    where: { id: "tek" },
+    update: { bannerSaniye: saniye },
+    create: { id: "tek", bannerSaniye: saniye },
+  });
+
+  vitriniYenile();
+  redirect("/yonetim/banner?kayit=1");
 }

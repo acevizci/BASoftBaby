@@ -222,6 +222,36 @@ bağımsız `toUpperCase()` / `toLowerCase()` ile düzeltildi.
 
 ---
 
+### K-11 · Ana sayfa banner'ı döner, geçiş JavaScript'siz
+**20 Eylül 2026**
+
+Ana sayfanın üstündeki büyük alan artık panelden yönetilen, birden çok
+banner arasında kendiliğinden geçen bir alan. Tek banner varsa sabit durur,
+hiç banner yoksa varsayılan tanıtım yazısı görünür — ana sayfa hiçbir
+durumda başlıksız kalmaz.
+
+**Geçiş tamamen CSS.** Slaytlar yan yana dizilen bir şeritte duruyor ve şerit
+duraklı bir animasyonla kayıyor. Sayfada bunun için JavaScript yok; sitenin
+geri kalanındaki "JavaScript kapalıyken de çalışır" kuralı banner'da da
+geçerli. Kare listesi slayt sayısına bağlı olduğu için bileşende üretilip
+sayfaya gömülüyor.
+
+**Başa dönüş görünmüyor:** İlk slaytın bir kopyası sona ekleniyor ve şerit tam
+o kopyanın üstündeyken başa sıçrıyor. Kullanıcı geriye sarma görmüyor.
+
+**Noktalar tek kareyle çalışıyor:** Her nokta aynı animasyonu kendi payına
+düşen negatif gecikmeyle oynatıyor, böylece sırayla yanıyorlar. Slayt sayısı
+kadar ayrı kare yazmaya gerek kalmıyor.
+
+**Hareketi azalt:** Cihazında bu ayar açık olan müşteride banner geçmiyor, ilk
+banner sabit duruyor ve noktalar gizleniyor. Duyuru şeridindeki kuralın aynısı;
+seçenek değil, erişilebilirlik gereği.
+
+**Nerede:** [`../ui/hero-banner.tsx`](../ui/hero-banner.tsx),
+[`../app/yonetim/banner`](../app/yonetim/banner)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı
