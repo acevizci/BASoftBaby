@@ -8,8 +8,9 @@ import { NextResponse, type NextRequest } from "next/server";
  * ayar unutulursa panel açıkta kalmaz; yanlış tarafa düşen hata güvenli
  * tarafa düşer.
  *
- * Tarayıcının kendi şifre kutusunu kullanıyoruz (HTTP Basic). Üyelik sistemi
- * 03. adımda gelince yerini ona bırakacak.
+ * Tarayıcının kendi şifre kutusunu kullanıyoruz (HTTP Basic). Müşteri üyeliği
+ * (server/uyelik.ts) buraya karışmıyor: o mağaza tarafının kimliği, burası
+ * mağaza sahibinin. Panel, yönetici rolleri gelene kadar şifreyle duruyor.
  */
 
 export const config = { matcher: "/yonetim/:path*" };

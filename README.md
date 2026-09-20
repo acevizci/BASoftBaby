@@ -2,10 +2,11 @@
 
 Online bebek kıyafetleri ve aksesuarları mağazası.
 
-> Yol haritasının **01. ve 02. adımları** tamam: proje iskeleti, marka sistemi,
-> duyuru şeridi, katalog vitrini ve yönetim paneli. Veriler Neon Postgres'te,
-> panelden girilen her değişiklik anında mağazaya yansıyor. Sepet şimdilik
-> yalnızca tarayıcıda; 03. adımda sunucuya taşınacak.
+> Yol haritasında **01, 02, 03, 03b ve 06. adımlar** tamam: proje iskeleti ve
+> marka sistemi, katalog vitrini, yönetim paneli, sepet ve sipariş, üyelik,
+> kampanya motoru. Veriler Neon Postgres'te, panelden girilen her değişiklik
+> anında mağazaya yansıyor. Sırada ödeme (iyzico) ve kargo var; ikisi de şirket
+> evrakına bağlı.
 
 ## Çalıştırmak
 
@@ -42,6 +43,7 @@ gönderimlerde yazılmıyor, yani sildiğin örnek ürünler geri gelmiyor.
 | `db/` | Veritabanı şeması, göç dosyaları ve başlangıç verisi |
 | `ui/` | Ortak arayüz parçaları: duyuru şeridi, üst çubuk, alt bilgi |
 | `server/` | İş kuralları. Sayfalar veriyi hep buradan okur |
+| `app/(hesap)/` | Giriş, kayıt ve hesap sayfaları |
 | `public/marka/` | Logo dosyaları (SVG ve PNG) |
 | `docs/` | Plan, mimari, tasarım sistemi, kararlar |
 | `tasarim/` | Gezilebilir tasarım mokapı |
@@ -56,11 +58,30 @@ kendini tamamen kapatır (404 verir), yani ayar unutulursa açıkta kalmaz.
 ## Sipariş akışı
 
 Sepet veritabanında durur, tarayıcıda yalnızca sepetin kimliğini taşıyan
-httpOnly bir çerez vardır. Müşteri üye olmadan sipariş verir; ödeme şimdilik
-havale/EFT. Stok sipariş anında tek bir veritabanı işlemi içinde düşer, aynı
+httpOnly bir çerez vardır. Müşteri üye olarak da üye olmadan da sipariş verir;
+ödeme şimdilik havale/EFT. Stok sipariş anında tek bir veritabanı işlemi içinde düşer, aynı
 anda gelen iki sipariş son adedi birlikte alamaz. Müşteri siparişini numarası
 ve e-postasıyla `/siparis-takip` adresinden görür. Bütün ekranlar düz HTML
 formuyla çalışır, JavaScript kapalı tarayıcıda da sipariş verilebilir.
+
+## Üyelik
+
+Üyelik **zorunlu değil**: üye olmadan sipariş vermek olduğu gibi duruyor. Hesap
+açan müşteri `/hesabim` altında siparişlerini görüyor, adres defteri tutuyor,
+ad-telefon ve şifresini değiştiriyor. Sipariş formunda şifre belirlerse hesabı
+sipariş verirken açılıyor; giriş yapmışsa adresi forma kendiliğinden geliyor.
+
+Şifre saklanmıyor, scrypt özeti saklanıyor. Oturum çerezi httpOnly ve içindeki
+jetonun kendisi veritabanında durmuyor, özeti duruyor. Şifre değiştirilince o
+hesabın diğer cihazlardaki oturumları kapanıyor.
+
+Henüz olmayan iki şey e-posta servisine bağlı (04. adım): **şifre sıfırlama** ve
+**e-posta doğrulaması**. Doğrulama olmadığı için üyelikten önce verilmiş
+siparişler hesaba kendiliğinden bağlanmıyor — onlar `/siparis-takip` sayfasından
+numara ve e-postayla görülüyor. Gerekçesi: doğrulanmamış bir e-posta o kutunun
+sahibi olduğunun kanıtı değil.
+
+Yönetim paneli bu üyelikten ayrı; o `YONETIM_SIFRE` ile korunmaya devam ediyor.
 
 ## Hareketli alanlar
 

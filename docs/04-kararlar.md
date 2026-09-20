@@ -293,6 +293,61 @@ da JavaScript kapalı tarayıcıda çalışıyor. İlk sıradaki fotoğraf kapak
 
 ---
 
+### K-13 · Üyelik kendi oturumumuzla, hazır kütüphaneyle değil
+**20 Eylül 2026**
+
+Üyelik yapıldı: kayıt, giriş, çıkış, siparişlerim, adres defteri ve sipariş
+verirken hesap açma. Üyelik zorunlu değil — üyeliksiz sipariş olduğu gibi duruyor
+ve numara + e-postayla sorgulanmaya devam ediyor.
+
+**Auth.js kullanılmadı.** İlk planda Auth.js yazıyordu. Auth.js'in asıl değeri
+Google/Apple ile giriş ve e-postayla sihirli bağlantı; ikisi de şu an
+kurulamıyor, çünkü alan adı ve e-posta servisi yok. Geriye kalan parça —
+e-posta ve şifreyle giriş — kendi kodumuzda yaklaşık iki yüz satır ve projenin
+geri kalanıyla aynı biçimde çalışıyor: düz form, server action, httpOnly çerez.
+Sağlayıcılı giriş gerektiğinde Auth.js'e geçmek bu yüzeyi değiştirmiyor.
+
+**Şifre scrypt ile özetleniyor**, argon2 ile değil: scrypt Node'un içinde geliyor,
+derlenen bir bağımlılık eklemiyor. Parametreler (N=16384, r=8, p=1) özetin
+içinde saklanıyor, ileride artırılabilsin.
+
+**Oturum çerezi httpOnly**, tıpkı sepet çerezi gibi. Çerezdeki jetonun kendisi
+veritabanında durmuyor, SHA-256 özeti duruyor: veritabanını görebilen biri
+oturumları ele geçiremesin. Oturum 30 gün yaşıyor, kullanıldıkça uzuyor. Şifre
+değişince o hesabın bütün oturumları kapanıyor ve yalnızca şifreyi değiştiren
+tarayıcıya yenisi açılıyor.
+
+**Yönetim paneli buna bağlanmadı.** Panel `YONETIM_SIFRE` ile korunmaya devam
+ediyor. Müşteri hesabı ile mağaza sahibinin girişi ayrı şeyler; ikisini
+birleştirmek panelin kapısını müşteri tarafına açmak olurdu. Yönetici rolü
+ileride gerekirse eklenecek.
+
+**Nerede:** [`../server/uyelik.ts`](../server/uyelik.ts),
+[`../server/uyelik-islem.ts`](../server/uyelik-islem.ts),
+[`../app/(hesap)`](../app/(hesap))
+
+---
+
+### K-14 · Doğrulanmamış e-posta hesabın kanıtı sayılmaz
+**20 Eylül 2026**
+
+Hesap açarken e-posta doğrulanmıyor, çünkü doğrulama e-postası gönderecek bir
+servis yok. Bundan iki kural çıktı:
+
+**Üyelikten önce verilmiş siparişler hesaba kendiliğinden bağlanmıyor.** Bağlasaydık,
+başkasının e-posta adresiyle hesap açan biri onun siparişlerini, adresini ve
+telefonunu görebilirdi. Eski siparişler eskisi gibi numara + e-postayla
+görülüyor — numarayı bilmek gerekiyor, yani tek başına e-posta yetmiyor.
+Doğrulama geldiğinde bağlama tek seferde yapılabilir.
+
+**Sipariş sırasında hesap açarken e-posta kayıtlıysa işlem durduruluyor.**
+Yoksa biri kayıtlı bir adrese sipariş verip o hesabın şifresini belirleyebilirdi.
+Ekranda "bu e-posta ile hesap var, giriş yap" deniyor.
+
+Aynı sebeple hesap ekranından e-posta değiştirilemiyor.
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı
@@ -350,3 +405,14 @@ Uyarı metni de ayrıntılandı: depoya benzeyen bir değişken varsa adı ekran
 yazılıyor (değeri asla yazılmıyor), hiç yoksa yeniden dağıtım ve ortam
 işaretleri hatırlatılıyor. Depo bağlıyken yazma başarısız olursa kütüphanenin
 hatası da panelde görünüyor, günlüklerde kalmıyor.
+
+### A-09 · E-posta servisi
+Şifre sıfırlama, e-posta doğrulaması, sipariş onay e-postası ve eski
+siparişlerin hesaba bağlanması buna bağlı. Planda Resend var; alan adı (A-02)
+alınınca 04. adımda kurulacak. O zamana kadar şifresini unutan müşterinin
+yazması gerekiyor.
+
+### A-10 · Giriş denemesi sınırı
+Şu an yanlış şifre denemesi sayılmıyor. scrypt her denemeyi kendiliğinden
+yavaşlatıyor, ama sürekli deneyen birine karşı hesap ya da IP başına bir sınır
+gerekiyor. Ödeme adımıyla birlikte ele alınacak.

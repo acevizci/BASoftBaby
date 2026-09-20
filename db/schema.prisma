@@ -213,12 +213,19 @@ model Order {
   /// Kargo firması takip numarası; 05. adımda kargo entegrasyonu dolduracak.
   kargoTakipNo String?
 
+  /// Sipariş üye olarak verildiyse hesabı. Üyeliksiz siparişlerde boş kalır;
+  /// hesap silinse bile sipariş kaydı ayakta kalsın diye ilişki SetNull.
+  /// Eski siparişler e-postası tuttuğu için kendiliğinden bağlanmaz (K-14).
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
   olusturuldu DateTime    @default(now())
   guncellendi DateTime    @updatedAt
   satirlar    OrderItem[]
 
   @@index([durum, olusturuldu])
   @@index([eposta])
+  @@index([customerId, olusturuldu])
 }
 
 model OrderItem {
@@ -306,4 +313,62 @@ model HeroBanner {
   guncellendi DateTime @updatedAt
 
   @@index([aktif, sira])
+}
+
+/// Müşteri hesabı.
+///
+/// Şifrenin kendisi hiçbir yerde durmaz; `sifreOzeti` scrypt ile üretilmiş
+/// özeti tutar (bkz. server/uyelik.ts). E-posta henüz doğrulanmıyor: doğrulama
+/// için e-posta servisi gerekiyor, o 04. adımda gelecek (K-14).
+model Customer {
+  id          String   @id @default(cuid())
+  eposta      String   @unique
+  adSoyad     String
+  telefon     String   @default("")
+  sifreOzeti  String
+  olusturuldu DateTime @default(now())
+  guncellendi DateTime @updatedAt
+
+  oturumlar CustomerSession[]
+  adresler  Address[]
+  siparisler Order[]
+}
+
+/// Açık oturum.
+///
+/// Çerezdeki jetonun kendisi değil, SHA-256 özeti saklanır: veritabanını
+/// görebilen biri oturumları ele geçiremesin. Süresi geçen kayıtlar okuma
+/// sırasında siliniyor.
+model CustomerSession {
+  id          String   @id
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  olusturuldu DateTime @default(now())
+  sonGorulme  DateTime @default(now())
+  biter       DateTime
+
+  @@index([customerId])
+  @@index([biter])
+}
+
+/// Adres defteri. Sipariş bu kaydı işaret etmez, içeriğini kopyalar: adres
+/// sonradan değişse bile eski siparişin teslimat bilgisi olduğu gibi kalır.
+model Address {
+  id         String  @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  baslik     String  @default("Adresim")
+  adSoyad    String
+  telefon    String
+  adres      String
+  ilce       String
+  il         String
+  postaKodu  String  @default("")
+  varsayilan Boolean @default(false)
+
+  olusturuldu DateTime @default(now())
+  guncellendi DateTime @updatedAt
+
+  @@index([customerId, varsayilan])
 }

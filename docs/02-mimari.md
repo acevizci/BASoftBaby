@@ -65,11 +65,16 @@ app/
   odeme/                  adres ve sipariş özeti
   siparis/[numara]/       sipariş onayı (yalnız siparişi verene açık)
   siparis-takip/          numara + e-posta ile sipariş sorgulama
+  (hesap)/                üyelik — adres satırına segment eklemez
+    giris/ kayit/         giriş ve hesap açma
+    hesabim/              siparişlerim (ana ekran)
+      adresler/           adres defteri
+      bilgiler/           ad-telefon ve şifre değiştirme
   yonetim/                şifreyle korunuyor
     siparisler/ urunler/ stok/ kampanyalar/ banner/ duyuru/ ayarlar/
 
   — henüz yok, sırası gelince —
-  (hesap)/                üyelik: siparislerim, adreslerim, iade
+  (hesap)/iade/           iade talebi açma
   api/odeme/iyzico/       ödeme dönüş ve bildirim ucu
   api/kargo/durum/        taşıyıcı durum bildirimi
   api/cron/               zamanlı işler
@@ -83,6 +88,8 @@ server/                   iş kuralları — tek kaynak
   sepet-islem.ts          sepete ekle / adet değiştir / sil
   siparis.ts              sipariş oluşturma ve sorgulama
   siparis-islem.ts        ödeme formunun server action'ı
+  uyelik.ts               şifre özeti, oturum, hesap okuma
+  uyelik-islem.ts         kayıt, giriş, adres defteri işlemleri
   kampanya.ts             indirim motoru — en çok indiren kazanır
   banner.ts               ana sayfa banner'ları
   yonetim.ts              panelin yazma işlemleri
@@ -130,18 +137,24 @@ arşiv), `kdvOrani`, `etiketler`
 
 ### Müşteri ve sipariş
 
-**Customer** — `eposta`, `ad`, `telefon`, `parolaHash` (argon2),
-`kvkkOnayTarihi`, `pazarlamaOnayi`, `rol`
+**Customer** *(kuruldu)* — `eposta` (tekil), `adSoyad`, `telefon`,
+`sifreOzeti`. Özet scrypt ile üretiliyor, argon2 değil (K-13). KVKK onayı ve
+rol alanları yasal metinlerle birlikte 07. adımda gelecek.
+
+**CustomerSession** *(kuruldu)* — çerezdeki jetonun SHA-256 özeti `id`,
+`customerId`, `biter`. Jetonun kendisi veritabanında durmuyor.
 
 **BabyProfile** — `customerId`, `ad`, `dogumTarihi` veya `beklenenTarih`
 (bedene göre öneri ve yaş e-postaları için)
 
-**Address** — `customerId`, `baslik`, `il`, `ilce`, `acikAdres`, `postaKodu`,
-`telefon`
+**Address** *(kuruldu)* — `customerId`, `baslik`, `adSoyad`, `telefon`,
+`adres`, `ilce`, `il`, `postaKodu`, `varsayilan`. Sipariş bu kaydı işaret
+etmiyor, içeriğini kopyalıyor.
 
-**Cart / CartItem** — anonim sepet için `token`, `customerId` opsiyonel
+**Cart / CartItem** — anonim sepet için httpOnly `sepet` çerezi
 
-**Order** — `siparisNo`, `durum` (ödemeBekliyor / ödendi / hazırlanıyor /
+**Order** — `customerId` (üye olarak verildiyse; üyeliksizde boş),
+`siparisNo`, `durum` (ödemeBekliyor / ödendi / hazırlanıyor /
 kargoda / teslim / iptal), `araToplam`, `indirim`, `kargoUcreti`, `kdv`,
 `genelToplam` (hepsi kuruş), `teslimatAdresi`, `faturaAdresi` (kopya, bağlantı
 değil)

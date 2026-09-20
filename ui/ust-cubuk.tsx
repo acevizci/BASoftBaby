@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import SepetSayaci from "@/ui/sepet-sayaci";
+import HesapBaglantisi from "@/ui/hesap-baglantisi";
 import { kategorileriGetir } from "@/server/katalog";
 
 export default async function UstCubuk() {
@@ -28,7 +29,10 @@ export default async function UstCubuk() {
           ))}
         </nav>
 
-        <SepetSayaci />
+        <div className="flex flex-none items-center gap-2">
+          <HesapBaglantisi />
+          <SepetSayaci />
+        </div>
       </div>
     </header>
   );

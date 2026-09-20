@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { sepetGetir } from "@/server/sepet";
 import { siparisiTamamla } from "@/server/siparis-islem";
+import { adresleriGetir, EN_KISA_SIFRE, girisYapan } from "@/server/uyelik";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 
 export const dynamic = "force-dynamic";
@@ -17,15 +18,26 @@ const HATALAR: Record<string, string> = {
   eksik: "Formda eksik ya da hatalı alan var. Ad soyad, e-posta, telefon ve adresi kontrol et.",
   bos: "Sepetin boş göründüğü için sipariş oluşturulamadı.",
   stok: "Sepetindeki ürünlerden biri sen formu doldururken tükendi. Sepetini kontrol edip tekrar dene.",
+  "sifre-kisa": `Hesap şifresi en az ${EN_KISA_SIFRE} karakter olmalı. Hesap istemiyorsan şifre alanını boş bırakabilirsin.`,
+  "eposta-kayitli":
+    "Bu e-posta ile bir hesap zaten var. Giriş yapıp devam edebilir ya da şifre alanını boş bırakıp üyeliksiz sipariş verebilirsin.",
 };
 
 export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">) {
-  const { hata } = await searchParams;
-  const sepet = await sepetGetir();
+  const { hata, adres: adresSecimi } = await searchParams;
+  const [sepet, musteri] = await Promise.all([sepetGetir(), girisYapan()]);
 
   if (sepet.satirlar.length === 0) redirect("/sepet");
 
   const hataMetni = typeof hata === "string" ? HATALAR[hata] : undefined;
+
+  // Giriş yapan müşterinin adres defteri: seçilen adres, yoksa varsayılanı
+  // forma yazılıyor. Seçim JavaScript'siz çalışsın diye bağlantıyla yapılıyor.
+  const adresler = musteri ? await adresleriGetir(musteri.id) : [];
+  const secili =
+    (typeof adresSecimi === "string" ? adresler.find((a) => a.id === adresSecimi) : undefined) ??
+    adresler.find((a) => a.varsayilan) ??
+    adresler[0];
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
@@ -46,12 +58,57 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
         <form action={siparisiTamamla} className="flex flex-col gap-5">
+          {!musteri && (
+            <p className="rounded-marka border border-cizgi bg-yuzey-sicak px-4 py-3 text-sm text-metin-2">
+              Hesabın var mı?{" "}
+              <Link href="/giris?nereye=%2Fodeme" className="font-bold text-mavi-koyu hover:underline">
+                Giriş yap
+              </Link>{" "}
+              — adresin forma kendiliğinden gelsin. Üye olmadan da devam edebilirsin.
+            </p>
+          )}
+
+          {adresler.length > 0 && (
+            <section className="rounded-marka border border-cizgi bg-yuzey p-5">
+              <h2 className="text-lg">Kayıtlı adreslerim</h2>
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {adresler.map((a) => (
+                  <li key={a.id}>
+                    <Link
+                      href={`/odeme?adres=${a.id}`}
+                      className={`block rounded-[10px] border-[1.5px] px-3 py-2 text-xs font-bold transition ${
+                        a.id === secili?.id
+                          ? "border-mercan bg-mercan-soluk text-mercan-koyu"
+                          : "border-cizgi bg-yuzey text-metin-2 hover:border-mercan"
+                      }`}
+                    >
+                      {a.baslik}
+                      <span className="mt-0.5 block font-semibold text-metin-3">
+                        {a.ilce} / {a.il}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-xs text-metin-3">
+                Seçtiğin adres aşağıdaki forma yazılır; formda değiştirirsen sipariş değiştirdiğin
+                hâliyle gider.
+              </p>
+            </section>
+          )}
+
           <section className="rounded-marka border border-cizgi bg-yuzey p-5">
             <h2 className="text-lg">Teslimat adresi</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <label className="flex flex-col gap-1.5 sm:col-span-2">
                 <span className={ETIKET}>Ad soyad</span>
-                <input name="adSoyad" required autoComplete="name" className={GIRDI} />
+                <input
+                  name="adSoyad"
+                  required
+                  defaultValue={secili?.adSoyad ?? musteri?.adSoyad ?? ""}
+                  autoComplete="name"
+                  className={GIRDI}
+                />
               </label>
 
               <label className="flex flex-col gap-1.5">
@@ -60,9 +117,11 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
                   name="eposta"
                   type="email"
                   required
+                  defaultValue={musteri?.eposta ?? ""}
+                  readOnly={Boolean(musteri)}
                   autoComplete="email"
                   placeholder="ornek@eposta.com"
-                  className={GIRDI}
+                  className={`${GIRDI}${musteri ? " opacity-70" : ""}`}
                 />
               </label>
 
@@ -72,6 +131,7 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
                   name="telefon"
                   type="tel"
                   required
+                  defaultValue={secili?.telefon ?? musteri?.telefon ?? ""}
                   autoComplete="tel"
                   placeholder="0555 000 00 00"
                   className={`${GIRDI} rakam`}
@@ -84,6 +144,7 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
                   name="adres"
                   required
                   rows={3}
+                  defaultValue={secili?.adres ?? ""}
                   autoComplete="street-address"
                   placeholder="Mahalle, sokak, bina ve daire no"
                   className={GIRDI}
@@ -92,18 +153,31 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
 
               <label className="flex flex-col gap-1.5">
                 <span className={ETIKET}>İlçe</span>
-                <input name="ilce" required autoComplete="address-level2" className={GIRDI} />
+                <input
+                  name="ilce"
+                  required
+                  defaultValue={secili?.ilce ?? ""}
+                  autoComplete="address-level2"
+                  className={GIRDI}
+                />
               </label>
 
               <label className="flex flex-col gap-1.5">
                 <span className={ETIKET}>İl</span>
-                <input name="il" required autoComplete="address-level1" className={GIRDI} />
+                <input
+                  name="il"
+                  required
+                  defaultValue={secili?.il ?? ""}
+                  autoComplete="address-level1"
+                  className={GIRDI}
+                />
               </label>
 
               <label className="flex flex-col gap-1.5">
                 <span className={ETIKET}>Posta kodu</span>
                 <input
                   name="postaKodu"
+                  defaultValue={secili?.postaKodu ?? ""}
                   autoComplete="postal-code"
                   placeholder="isteğe bağlı"
                   className={`${GIRDI} rakam`}
@@ -143,6 +217,50 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
             <p className="mt-3 text-xs text-metin-3">
               Kredi kartıyla ödeme çok yakında eklenecek.
             </p>
+          </section>
+
+          <section className="rounded-marka border border-cizgi bg-yuzey p-5">
+            <h2 className="text-lg">Hesap</h2>
+            {musteri ? (
+              <label className="mt-3 flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  name="adresiKaydet"
+                  defaultChecked={adresler.length === 0}
+                  className="mt-1 h-4 w-4 accent-[var(--mercan)]"
+                />
+                <span className="text-sm text-metin-2">
+                  Bu adresi adres defterime kaydet
+                  <input
+                    name="adresBasligi"
+                    maxLength={40}
+                    placeholder="Adres başlığı: Ev, İş…"
+                    className={`${GIRDI} mt-2 block w-full sm:w-64`}
+                  />
+                </span>
+              </label>
+            ) : (
+              <>
+                <p className="mt-2 text-sm text-metin-2">
+                  İstersen bu siparişle birlikte hesabın açılsın: siparişlerini tek yerden takip
+                  eder, adresini bir daha yazmazsın.
+                </p>
+                <label className="mt-3 flex flex-col gap-1.5 sm:max-w-xs">
+                  <span className={ETIKET}>Şifre belirle</span>
+                  <input
+                    name="yeniSifre"
+                    type="password"
+                    minLength={EN_KISA_SIFRE}
+                    autoComplete="new-password"
+                    placeholder="isteğe bağlı"
+                    className={GIRDI}
+                  />
+                  <span className="text-xs text-metin-3">
+                    En az {EN_KISA_SIFRE} karakter. Boş bırakırsan üyeliksiz devam edersin.
+                  </span>
+                </label>
+              </>
+            )}
           </section>
 
           <button

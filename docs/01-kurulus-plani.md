@@ -46,7 +46,7 @@ bir beden tükendi olarak işaretlendiğinde vitrinde anında kapanıyor.
 | Site ve panel | Next.js + TypeScript + Tailwind CSS |
 | Veritabanı | PostgreSQL (Neon), Prisma ile |
 | Görseller | Vercel Blob, yüklerken otomatik boyutlandırma ve WebP (K-12) |
-| Üyelik | Auth.js — müşteri ve admin girişi |
+| Üyelik | Kendi oturumumuz: httpOnly çerez + scrypt şifre özeti (K-13). Panel ayrı, şifreyle |
 | Ödeme | iyzico — 3D Secure, taksit, iade |
 | Kargo | Geliver veya Navlungo — Yurtiçi, Aras, MNG, PTT tek API |
 | E-posta | Resend — sipariş, kargo ve iade bildirimleri |
@@ -150,6 +150,7 @@ sipariş için sepet, sepet için ürün gerekiyor.
 | 01 | Marka ve iskelet ✅ | Renk ve yazı tipi sistemi, proje kurulumu, boş sitenin canlıya alınması |
 | 02 | Katalog ve yönetim paneli ✅ | Ürün, kategori, beden-renk varyantları, stok |
 | 03 | Sepet ve sipariş ✅ | Sepet, adres formu, sipariş oluşturma, havale ile ödeme, sipariş takibi |
+| 03b | Üyelik ✅ | Kayıt, giriş, siparişlerim, adres defteri, siparişte hesap açma. Şifre sıfırlama ve e-posta doğrulaması 04 ile gelecek |
 | 04 | Ödeme | iyzico entegrasyonu, 3D Secure, taksit, sipariş onay e-postaları |
 | 05 | Kargo ve fatura | Kargo entegrasyonu, barkodlu etiket, takip bildirimi, e-arşiv fatura |
 | 06 | Kampanya ve indirim motoru ✅ | Kupon, kategori indirimi, ücretsiz kargo barajı, tarihli kampanyalar |
@@ -157,11 +158,19 @@ sipariş için sepet, sepet için ürün gerekiyor.
 
 02. adımın sonunda ürünler girilmeye başlanabilir.
 
-03. adımda üyelik yapılmadı: şifre sıfırlama ve e-posta doğrulama için alan adı
-ve e-posta servisi gerekiyor, ikisi de henüz yok. Yerine üyeliksiz sipariş
-konuldu; müşteri siparişini numarası ve e-postasıyla görüyor. Üyelik, alan adı
-alınınca 04. adımla birlikte gelecek. Görsel yükleme (Vercel Blob) yapıldı; geri kalanı gerçek
-ürün fotoğrafları çekildiğinde yapılacak.
+03. adımda üyelik yapılmamıştı, yerine üyeliksiz sipariş konulmuştu. Üyeliğin
+e-posta gerektirmeyen bütün parçası 20 Eylül 2026'da yapıldı (03b): kayıt,
+giriş, siparişlerim, adres defteri ve sipariş verirken hesap açma. Üyelik hiçbir
+zaman zorunlu değil — üyeliksiz sipariş olduğu gibi duruyor ve numara +
+e-postayla sorgulanmaya devam ediyor.
+
+E-posta servisi isteyen üç parça 04. adıma kaldı: şifre sıfırlama, e-posta
+doğrulaması ve üyelik öncesinde verilmiş siparişlerin hesaba bağlanması.
+Sonuncusu doğrulama olmadan yapılamaz, çünkü başkasının e-postasıyla hesap açan
+biri onun siparişlerini görürdü (bkz. 04-kararlar K-14).
+
+Görsel yükleme (Vercel Blob) yapıldı; geri kalanı gerçek ürün fotoğrafları
+çekildiğinde yapılacak.
 
 04 ve 05. adımlar (ödeme ve kargo) şirket evrakına bağlı olduğu için sıradan
 çıkıp 06. adıma geçildi: kampanya ve indirim motoru 19 Eylül 2026'da bitti.

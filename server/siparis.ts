@@ -8,6 +8,9 @@
  *
  * Ödeme henüz yok (iyzico 04. adımda). Sipariş "havale/EFT bekliyor" durumunda
  * açılır; parayı gördüğünde ödeme durumunu panelden sen işaretlersin.
+ *
+ * Sipariş üye olarak verildiyse hesaba bağlanır ve "Siparişlerim"de görünür.
+ * Üyeliksiz sipariş eskisi gibi numara ve e-postayla sorgulanır.
  */
 
 import { db } from "@/server/veritabani";
@@ -44,6 +47,8 @@ function numaraYaz(sayac: number, tarih: Date): string {
 export async function siparisOlustur(
   girdi: SiparisGirdisi,
   ayar: SatisAyari,
+  /** Sipariş üye olarak veriliyorsa hesabın id'si; üyeliksizse boş. */
+  customerId?: string,
 ): Promise<SiparisSonucu> {
   const cartId = await sepetIdOku();
   if (!cartId) return { tamam: false, hata: "Sepetin boş görünüyor." };
@@ -115,6 +120,7 @@ export async function siparisOlustur(
       const siparis = await islem.order.create({
         data: {
           numara: numaraYaz(ayarSatiri.sonSiparisNo, simdi),
+          customerId: customerId ?? null,
           adSoyad: girdi.adSoyad,
           eposta: girdi.eposta,
           telefon: girdi.telefon,
