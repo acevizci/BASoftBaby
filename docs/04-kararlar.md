@@ -338,7 +338,15 @@ yüklenmeye çalışılırsa "Fotoğraf deposu bağlı değil" uyarısı çıkı
    çağrılara açıkça veriliyor.
 3. **Jeton yalnızca bir ortamda işaretli.** Production'da tanımlı olup Preview
    dağıtımı denenirse (ya da tersi) yine bulunamıyor.
+4. **Depo OIDC ile bağlanmış.** Asıl sebep buydu. Vercel yeni bağlantılarda
+   okuma-yazma jetonu üretmiyor; projeye `BLOB_STORE_ID` koyup yetkiyi her
+   isteğe verdiği kısa ömürlü OIDC jetonundan alıyor. O jeton ortam değişkeni
+   olarak durmadığı için "jeton var mı" ölçütü yanlış cevap veriyordu: depo
+   bağlıyken bile "bağlı değil" deniyordu. Artık ölçüt jeton değil, deponun
+   bağlı olması (`BLOB_STORE_ID` ya da bir okuma-yazma jetonu); yetkilenmeyi
+   `@vercel/blob` kendisi yapıyor, jeton bulunduğunda ise açıkça veriliyor.
 
-Uyarı metni de ayrıntılandı: jetona benzeyen bir değişken varsa adı ekrana
+Uyarı metni de ayrıntılandı: depoya benzeyen bir değişken varsa adı ekrana
 yazılıyor (değeri asla yazılmıyor), hiç yoksa yeniden dağıtım ve ortam
-işaretleri hatırlatılıyor.
+işaretleri hatırlatılıyor. Depo bağlıyken yazma başarısız olursa kütüphanenin
+hatası da panelde görünüyor, günlüklerde kalmıyor.

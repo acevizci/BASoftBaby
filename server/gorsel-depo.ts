@@ -6,7 +6,7 @@ import sharp from "sharp";
 /**
  * Yüklenen ürün fotoğraflarının saklandığı yer.
  *
- * Yayında Vercel Blob kullanılıyor; deponun jetonu tanımlıysa oraya gidiyor.
+ * Yayında Vercel Blob kullanılıyor; depo bağlıysa oraya gidiyor.
  * Yerelde geliştirirken jeton olmadığı için dosyalar proje kökündeki
  * `.yuklenen/` klasörüne yazılıyor ve `/yuklenen/...` adresinden bir route
  * handler ile sunuluyor. `public/` kullanılmıyor: oranın içeriği derleme
@@ -45,15 +45,21 @@ export const YEREL_KLASOR = path.join(process.cwd(), ".yuklenen");
 export const YEREL_AD_KALIBI = /^[a-z0-9]+-[a-z0-9]+-[bk]\.webp$/;
 
 /**
- * Blob deposunun jetonu.
+ * Depo bağlantısının iki biçimi var, ikisi de destekleniyor.
  *
- * Vercel depoyu projeye bağlarken değişkene bir ön ek verilmesine izin
- * veriyor; o durumda jeton `BLOB_READ_WRITE_TOKEN` değil, örneğin
- * `FOTOGRAF_READ_WRITE_TOKEN` adıyla geliyor. Bu yüzden önce standart ada,
- * sonra `_READ_WRITE_TOKEN` ile biten ve değeri blob jetonuna benzeyen
- * değişkenlere bakılıyor. Bulunan jeton çağrılara açıkça veriliyor: kütüphane
- * kendi başına yalnızca standart ada bakıyor, ön ekli adı görmüyor.
+ * **Okuma-yazma jetonu.** Depoyu bağlarken üretilen `BLOB_READ_WRITE_TOKEN`.
+ * Bağlarken bir ön ek verildiyse adı `FOTOGRAF_READ_WRITE_TOKEN` gibi oluyor
+ * ve kütüphane kendi başına ona bakmıyor; bu yüzden ön ekli ad da aranıp
+ * bulunan jeton çağrılara açıkça veriliyor.
+ *
+ * **OIDC.** Vercel yeni bağlantılarda jeton üretmek yerine `BLOB_STORE_ID`
+ * koyuyor, yetkiyi de her isteğe kendi verdiği kısa ömürlü OIDC jetonundan
+ * alıyor. O jeton ortam değişkeni olarak durmuyor, istek bağlamından geliyor;
+ * bu yüzden burada okunmaya çalışılmıyor, kütüphanenin kendisi buluyor.
+ * Bizim için ölçüt `BLOB_STORE_ID`nin varlığı.
  */
+type BlobKimligi = { jeton?: string };
+
 function blobJetonu(): string | undefined {
   const dogrudan = process.env.BLOB_READ_WRITE_TOKEN?.trim();
   if (dogrudan) return dogrudan;
@@ -66,23 +72,38 @@ function blobJetonu(): string | undefined {
   return undefined;
 }
 
+/** Depo bağlıysa kimlik, bağlı değilse undefined. */
+function blobKimligi(): BlobKimligi | undefined {
+  const jeton = blobJetonu();
+  if (jeton) return { jeton };
+  if (process.env.BLOB_STORE_ID?.trim()) return {};
+  return undefined;
+}
+
 /** Aynı fotoğraf iki kez yüklenirse birbirini ezmesin diye rastgele bir ön ek. */
 function ad(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 async function yaz(dosyaAdi: string, veri: Buffer): Promise<string> {
-  const jeton = blobJetonu();
-  if (jeton) {
+  const kimlik = blobKimligi();
+  if (kimlik) {
     const { put } = await import("@vercel/blob");
-    const sonuc = await put(`urun/${dosyaAdi}`, veri, {
-      access: "public",
-      token: jeton,
-      contentType: "image/webp",
-      addRandomSuffix: false,
-      cacheControlMaxAge: 60 * 60 * 24 * 365,
-    });
-    return sonuc.url;
+    try {
+      const sonuc = await put(`urun/${dosyaAdi}`, veri, {
+        access: "public",
+        // Jeton yoksa seçenek hiç verilmiyor: kütüphane OIDC ile yetkileniyor.
+        ...(kimlik.jeton ? { token: kimlik.jeton } : {}),
+        contentType: "image/webp",
+        addRandomSuffix: false,
+        cacheControlMaxAge: 60 * 60 * 24 * 365,
+      });
+      return sonuc.url;
+    } catch (hata) {
+      // Kütüphanenin hatası paneldeki kişiye görünsün; yoksa ekranda yalnızca
+      // "Fotoğraf yüklenemedi" yazıp sebep günlüklerde kalıyor.
+      throw new GorselHatasi(`Fotoğraf depoya yazılamadı: ${(hata as Error).message}`);
+    }
   }
 
   // Vercel'de jeton yoksa yerel diske yazmak sessiz bir veri kaybı olurdu:
@@ -98,8 +119,8 @@ async function yaz(dosyaAdi: string, veri: Buffer): Promise<string> {
     );
     throw new GorselHatasi(
       benzer.length > 0
-        ? `Fotoğraf deposunun jetonu okunamadı. Bu dağıtımda şu değişkenler var: ${benzer.join(", ")}. Beklenen ad BLOB_READ_WRITE_TOKEN ve değerin "vercel_blob_rw_" ile başlaması.`
-        : "Fotoğraf deposu bu dağıtımda bağlı değil. Vercel'de Storage bölümünden Blob deposunu projeye bağladıktan sonra Deployments'tan yeniden dağıtım (Redeploy) gerekiyor: ortam değişkenleri yalnızca yeni dağıtımlara geçiyor. Depo bağlıysa jetonun Production ve Preview ortamlarının ikisinde de işaretli olduğuna bak.",
+        ? `Fotoğraf deposunun kimliği okunamadı. Bu dağıtımda şu değişkenler var: ${benzer.join(", ")}. Beklenen ya BLOB_STORE_ID ya da BLOB_READ_WRITE_TOKEN.`
+        : "Fotoğraf deposu bu dağıtımda bağlı değil. Vercel'de Storage bölümünden Blob deposunu projeye bağladıktan sonra Deployments'tan yeniden dağıtım (Redeploy) gerekiyor: ortam değişkenleri yalnızca yeni dağıtımlara geçiyor. Depo bağlıysa değişkenlerin Production ve Preview ortamlarının ikisinde de işaretli olduğuna bak.",
     );
   }
 
@@ -179,10 +200,10 @@ export async function gorselDosyalariniSil(yollar: string[]): Promise<void> {
   if (temiz.length === 0) return;
 
   try {
-    const jeton = blobJetonu();
-    if (jeton) {
+    const kimlik = blobKimligi();
+    if (kimlik) {
       const { del } = await import("@vercel/blob");
-      await del(temiz, { token: jeton });
+      await del(temiz, kimlik.jeton ? { token: kimlik.jeton } : undefined);
       return;
     }
     await Promise.all(
