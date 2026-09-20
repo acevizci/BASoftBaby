@@ -448,9 +448,12 @@ tekrarlaması stoğu ikinci kez düşürmüyor.
 
 **Stok ödeme boyunca rezerve.** Sipariş açılırken stok düşüyor; ödeme tutmazsa
 aynı işlem içinde geri veriliyor ve sipariş iptal oluyor (mimarideki 04.
-karar). Müşteri ödeme ekranını kapatıp giderse dönüş hiç gelmiyor, o yüzden 15
-dakikada bir çalışan zamanlı iş 30 dakikayı geçmiş girişimleri iptal edip
-stoğu serbest bırakıyor.
+karar). Müşteri ödeme ekranını kapatıp giderse dönüş hiç gelmiyor; 30 dakikayı
+geçmiş girişimler iki yerde temizleniyor: yeni bir sipariş açılmadan hemen
+önce ve günde bir çalışan zamanlı işte. Zamanlı iş tek başına bırakılmadı,
+çünkü Vercel'in Hobby planında zamanlı işler günde bir çalışabiliyor — son
+adet bedenler bir günü bekleyemez. Sipariş anındaki temizlik zaten tam da
+stoğun sorulduğu anda çalışıyor.
 
 **Ödeme tutmazsa sepet geri dolduruluyor.** Sipariş açılırken sepet boşalıyor;
 kart reddedilirse ya da ödeme hiç başlatılamazsa müşteri elinde boş sepetle

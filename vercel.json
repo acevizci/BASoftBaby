@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/odeme-temizlik",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 3 * * *"
     }
   ]
 }

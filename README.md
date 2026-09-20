@@ -104,9 +104,11 @@ sayılmaz. Aynı dönüş iki kez gelirse ikincisi hiçbir şeyi değiştirmez.
 
 Sipariş açılırken stok düşer, yani ödeme boyunca rezervedir. Ödeme tutmazsa
 sipariş iptal olur, stok geri verilir ve **sepet geri doldurulur** — müşteri
-ürünleri baştan seçmek zorunda kalmaz. Ödeme ekranını kapatıp gidenler için 15
-dakikada bir çalışan zamanlı iş (`vercel.json`) 30 dakikayı geçen girişimleri
-temizler.
+ürünleri baştan seçmek zorunda kalmaz. Ödeme ekranını kapatıp gidenlerin
+tuttuğu stok iki yerde serbest bırakılır: yeni bir sipariş açılmadan hemen önce
+ve günde bir çalışan zamanlı işte (`vercel.json`). Zamanlı iş günlüktür çünkü
+Vercel'in Hobby planı daha sık çalıştırmaya izin vermez; asıl temizlik zaten
+sipariş anında yapılır.
 
 ## E-postalar
 

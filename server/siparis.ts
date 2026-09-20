@@ -18,6 +18,7 @@ import { kargoHesapla, kuponOku, sepetIdOku, type SatisAyari } from "@/server/se
 import { enIyiKampanya, gecerliKampanyalar } from "@/server/kampanya";
 import { RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
 import { takipAdresi, tasiyiciAdi } from "@/server/kargo";
+import { suresiGecenOdemeleriTemizle } from "@/server/odeme-akis";
 
 /**
  * Onay sayfasını açan çerezin adı. Burada duruyor çünkü "use server" işaretli
@@ -59,6 +60,16 @@ export async function siparisOlustur(
   /** havale · kart. Kartta sipariş açılıyor, ödeme ekranı sonra geliyor. */
   odemeYontemi: "havale" | "kart" = "havale",
 ): Promise<SiparisSonucu> {
+  // Yarıda kalmış kart ödemelerinin tuttuğu stok, yeni sipariş açılmadan
+  // hemen önce serbest bırakılıyor. Zamanlı iş de aynı işi yapıyor ama günde
+  // bir çalışıyor; son adet bedenler bunu bekleyemez. Temizlik başarısız
+  // olursa sipariş yine de alınıyor.
+  try {
+    await suresiGecenOdemeleriTemizle();
+  } catch (hata) {
+    console.error("Süresi geçen ödemeler temizlenemedi:", hata);
+  }
+
   const cartId = await sepetIdOku();
   if (!cartId) return { tamam: false, hata: "Sepetin boş görünüyor." };
 
