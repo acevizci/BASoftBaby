@@ -1,8 +1,10 @@
+import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
 import { Baloo_2, Nunito_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { siteAdresi } from "@/server/site";
 import DuyuruSeridi from "@/ui/duyuru-seridi";
+import YuklemeCizgisi from "@/ui/yukleme";
 import UstCubuk from "@/ui/ust-cubuk";
 import AltBilgi from "@/ui/alt-bilgi";
 import "./globals.css";
@@ -56,6 +58,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="tr" className={`${baslikYazisi.variable} ${govdeYazisi.variable} h-full`}>
       <body className="flex min-h-full flex-col">
+        {/* Suspense yalnızca `useSearchParams` gereği; bileşen sunucuda hiçbir
+            şey çizmiyor, yani JavaScript kapalı tarayıcıda hiçbir şeyi
+            bekletmiyor. */}
+        <Suspense fallback={null}>
+          <YuklemeCizgisi />
+        </Suspense>
         <DuyuruSeridi />
         <UstCubuk />
         <main className="flex-1">{children}</main>

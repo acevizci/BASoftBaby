@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { girisYap } from "@/server/uyelik-islem";
 import { girisYapan } from "@/server/uyelik";
+import GonderDugmesi from "@/ui/gonder-dugmesi";
 import { ANA_DUGME, ETIKET, GIRDI, HATALAR, HATA_KUTUSU, KART } from "../hesap-bicim";
 
 export const dynamic = "force-dynamic";
@@ -47,9 +48,9 @@ export default async function GirisSayfasi({ searchParams }: PageProps<"/giris">
           />
         </label>
 
-        <button type="submit" className={`${ANA_DUGME} mt-1 self-start`}>
+        <GonderDugmesi bekleyen="Giriş yapılıyor…" className={`${ANA_DUGME} mt-1 self-start`}>
           Giriş yap
-        </button>
+        </GonderDugmesi>
       </form>
 
       <p className="mt-5 text-sm text-metin-2">

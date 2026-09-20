@@ -135,6 +135,27 @@ h3 {
   line-height: 1.18;
 }
 
+/* Tailwind'in kendi sıfırlaması düğmelere `cursor: default` veriyor, yani
+   tıklanabilir şeylerin üstünde imleç ok olarak kalıyordu. Tıklanan her şeyde
+   el işareti çıksın; kapalı düğmede ise "yasak" işareti, çünkü orası
+   tıklanmıyor. */
+button,
+summary,
+[role="button"],
+label:has(input[type="checkbox"]),
+label:has(input[type="radio"]),
+input[type="checkbox"],
+input[type="radio"],
+input[type="file"],
+select {
+  cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 /* Fiyatlar ve tablo sütunları alt alta hizalı dursun */
 .rakam {
   font-variant-numeric: tabular-nums;
@@ -365,5 +386,44 @@ a.serit-mesaj:hover {
 
   @page {
     margin: 10mm;
+  }
+}
+
+/* Gezinti çizgisi: yeni sayfa hazırlanırken en üstte soldan sağa akan ince
+   şerit (bkz. ui/yukleme.tsx). Animasyon tamamen CSS; şerit marka
+   renklerinden geçiyor. JavaScript kapalı tarayıcıda gezinme tam sayfa
+   yüklemesiyle olduğu için çizgi hiç çizilmiyor, tarayıcının kendi
+   göstergesi iş görüyor. */
+@keyframes yukleme-akis {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+.yukleme-cizgisi {
+  position: relative;
+  height: 3px;
+  overflow: hidden;
+  background: var(--cizgi-soluk);
+}
+
+.yukleme-cizgisi::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  width: 25%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--nane), var(--mercan), var(--sari));
+  animation: yukleme-akis 1.1s ease-in-out infinite;
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .yukleme-cizgisi::before {
+    animation: none;
+    width: 100%;
   }
 }

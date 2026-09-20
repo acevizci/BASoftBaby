@@ -6,6 +6,7 @@ import { siparisiTamamla } from "@/server/siparis-islem";
 import { adresleriGetir, EN_KISA_SIFRE, girisYapan } from "@/server/uyelik";
 import { odemeAcikMi } from "@/server/odeme";
 import { fiyatYaz } from "@/ui/katalog-bicim";
+import GonderDugmesi from "@/ui/gonder-dugmesi";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Sipariş bilgileri", robots: { index: false } };
@@ -337,12 +338,12 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
             </p>
           </section>
 
-          <button
-            type="submit"
+          <GonderDugmesi
+            bekleyen="Siparişin alınıyor…"
             className="self-start rounded-full bg-mercan px-8 py-3.5 font-bold text-white transition hover:brightness-95"
           >
             Siparişi ver
-          </button>
+          </GonderDugmesi>
         </form>
 
         <aside className="h-fit rounded-marka border border-cizgi bg-yuzey p-5 lg:sticky lg:top-4">

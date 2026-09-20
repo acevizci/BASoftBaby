@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { kayitOl } from "@/server/uyelik-islem";
 import { EN_KISA_SIFRE, girisYapan } from "@/server/uyelik";
+import GonderDugmesi from "@/ui/gonder-dugmesi";
 import { ANA_DUGME, ETIKET, GIRDI, HATALAR, HATA_KUTUSU, KART } from "../hesap-bicim";
 
 export const dynamic = "force-dynamic";
@@ -61,9 +62,9 @@ export default async function KayitSayfasi({ searchParams }: PageProps<"/kayit">
           <span className="text-xs text-metin-3">En az {EN_KISA_SIFRE} karakter.</span>
         </label>
 
-        <button type="submit" className={`${ANA_DUGME} mt-1 self-start`}>
+        <GonderDugmesi bekleyen="Hesabın açılıyor…" className={`${ANA_DUGME} mt-1 self-start`}>
           Hesabımı oluştur
-        </button>
+        </GonderDugmesi>
       </form>
 
       <p className="mt-5 text-sm text-metin-2">

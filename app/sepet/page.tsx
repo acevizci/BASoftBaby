@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import UrunFoto from "@/ui/urun-foto";
 import { sepetGetir } from "@/server/sepet";
 import { adetDegistir, kuponKaldir, kuponUygula, satirSil } from "@/server/sepet-islem";
+import GonderDugmesi from "@/ui/gonder-dugmesi";
 import { fiyatYaz, type GorselTipi, type RenkAdi } from "@/ui/katalog-bicim";
 
 export const dynamic = "force-dynamic";
@@ -88,22 +89,22 @@ export default async function SepetSayfasi() {
                       defaultValue={s.adet}
                       className="rakam w-16 rounded-[10px] border-[1.5px] border-cizgi bg-yuzey px-2 py-1.5 text-sm outline-none focus:border-mercan"
                     />
-                    <button
-                      type="submit"
+                    <GonderDugmesi
+                      bekleyen="Güncelleniyor…"
                       className="rounded-full border border-cizgi px-3 py-1.5 text-xs font-bold text-metin-2 hover:border-metin-3"
                     >
                       Güncelle
-                    </button>
+                    </GonderDugmesi>
                   </form>
 
                   <form action={satirSil}>
                     <input type="hidden" name="variantId" value={s.variantId} />
-                    <button
-                      type="submit"
+                    <GonderDugmesi
+                      bekleyen="Kaldırılıyor…"
                       className="rounded-full border border-cizgi px-3 py-1.5 text-xs font-bold text-metin-2 hover:border-mercan hover:text-mercan-koyu"
                     >
                       Kaldır
-                    </button>
+                    </GonderDugmesi>
                   </form>
                 </div>
               </div>
@@ -154,12 +155,12 @@ export default async function SepetSayfasi() {
                 <span className="text-sm">
                   Kupon: <span className="rakam font-bold">{sepet.kuponKodu}</span>
                 </span>
-                <button
-                  type="submit"
+                <GonderDugmesi
+                  bekleyen="Kaldırılıyor…"
                   className="rounded-full border border-cizgi px-3 py-1.5 text-xs font-bold text-metin-2 hover:border-mercan hover:text-mercan-koyu"
                 >
-                  Kaldır
-                </button>
+                    Kaldır
+                </GonderDugmesi>
               </form>
             ) : (
               <form action={kuponUygula} className="flex items-end gap-2">
@@ -171,12 +172,12 @@ export default async function SepetSayfasi() {
                     className="rakam w-full rounded-[10px] border-[1.5px] border-cizgi bg-yuzey px-3 py-2 text-sm uppercase outline-none focus:border-mercan"
                   />
                 </label>
-                <button
-                  type="submit"
+                <GonderDugmesi
+                  bekleyen="Uygulanıyor…"
                   className="rounded-full border border-cizgi px-4 py-2 text-xs font-bold text-metin-2 hover:border-metin-3"
                 >
-                  Uygula
-                </button>
+                    Uygula
+                </GonderDugmesi>
               </form>
             )}
 

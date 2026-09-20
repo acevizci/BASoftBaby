@@ -203,6 +203,18 @@ ziyaretçiyi tanımlamıyor. Bu yüzden çerez onay bandı yok — sitedeki çer
 tamamı (sepet, oturum, kupon, son sipariş) zorunlu çerez. Ölçümün çalışması
 için Vercel panelinde Analytics'in açılması gerekiyor.
 
+## Bekleme göstergeleri
+
+Yeni sayfa hazırlanırken en üstte marka renklerinde ince bir şerit akar; form
+gönderilirken düğme kapanıp "Ekleniyor…", "Siparişin alınıyor…" gibi yazar,
+böylece iki kez basılmaz.
+
+Next'in `loading.tsx` bekleme ekranı **bilerek kullanılmadı**: o yöntem sayfayı
+Suspense sınırına alıp içeriği gizli bir kutuda gönderiyor ve bir betikle
+açıyor — JavaScript kapalı tarayıcıda içerik hiç görünmüyor. Çizgi bunun
+yerine yalnızca tarayıcıda çalışan küçük bir bileşen; sunucudan giden HTML'e
+karışmıyor.
+
 ## Hareketli alanlar
 
 Sitede kendiliğinden hareket eden iki yer var ve ikisi de panelden yönetiliyor:

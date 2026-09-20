@@ -1,4 +1,5 @@
 import { sepeteEkle } from "@/server/sepet-islem";
+import GonderDugmesi from "@/ui/gonder-dugmesi";
 
 /**
  * "Sepete ekle" düğmesi. Düz bir HTML formu: JavaScript kapalıyken de
@@ -22,9 +23,9 @@ export default function SepeteEkle({
     <form action={sepeteEkle} className={tamGenislik ? "w-full" : ""}>
       <input type="hidden" name="variantId" value={variantId ?? ""} />
       <input type="hidden" name="nereye" value="sepet" />
-      <button
-        type="submit"
-        disabled={kapali}
+      <GonderDugmesi
+        devreDisi={kapali}
+        bekleyen="Ekleniyor…"
         className={[
           "rounded-full font-bold transition",
           kucuk ? "px-4 py-2 text-sm" : "px-6 py-3 text-base",
@@ -35,7 +36,7 @@ export default function SepeteEkle({
         ].join(" ")}
       >
         {kapali ? "Tükendi" : "Sepete ekle"}
-      </button>
+      </GonderDugmesi>
     </form>
   );
 }

@@ -594,6 +594,41 @@ açılmıyor.
 
 ---
 
+### K-21 · Bekleme göstergesi JavaScript'e bağlı, sayfa değil
+**20 Eylül 2026**
+
+İki küçük ama görünür eksik kapandı.
+
+**İmleç.** Tailwind'in kendi sıfırlaması düğmelere `cursor: default` veriyor;
+"Sepete ekle" dahil bütün düğmelerin üstünde imleç ok olarak kalıyordu. Artık
+düğme, seçim kutusu, radyo ve dosya alanlarında el işareti, kapalı düğmede
+"yasak" işareti çıkıyor. Tek bir kuralla çözüldüğü için panel dahil her yerde
+geçerli.
+
+**Gezinti çizgisi.** Yeni sayfa hazırlanırken en üstte marka renklerinde ince
+bir şerit akıyor; form gönderirken de düğme kapanıp "Ekleniyor…" yazıyor,
+böylece çift basılmıyor.
+
+**Next'in `loading.tsx`'i kullanılmadı.** Önce o denendi, sonra geri alındı:
+`loading.tsx` sayfayı bir Suspense sınırına alıyor, sunucu önce iskeleti
+gönderip asıl içeriği gizli bir kutuda yolluyor ve küçük bir betikle açıyor.
+JavaScript kapalı tarayıcıda o betik çalışmadığı için **içerik hiç
+görünmüyordu** — denemede ürün sayfasındaki "Sepete ekle" düğmesi 0×0 boyutta,
+gizli bir kutunun içinde kaldı. Yani bekleme göstergesi uğruna sayfanın
+kendisi kaybolacaktı.
+
+Onun yerine çizgi tamamen tarayıcı tarafında çalışan küçük bir bileşen:
+sunucudan giden HTML'e hiç karışmıyor, yalnızca bağlantıya tıklanınca beliriyor
+ve adres değişince kayboluyor. JavaScript kapalıyken gezinme zaten tam sayfa
+yüklemesiyle olduğu için tarayıcının kendi göstergesi iş görüyor; bir eksik
+kalmıyor.
+
+**Nerede:** [`../ui/yukleme.tsx`](../ui/yukleme.tsx),
+[`../ui/gonder-dugmesi.tsx`](../ui/gonder-dugmesi.tsx),
+[`../app/globals.css`](../app/globals.css)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı
