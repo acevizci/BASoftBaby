@@ -10,15 +10,25 @@
  * Sipariş üç şekilde verilebiliyor: giriş yapmış olarak, üyeliksiz, ya da
  * formdaki şifre alanı doldurularak — sonuncusunda sipariş verilirken hesap
  * da açılıyor ve sipariş o hesaba bağlanıyor.
+ *
+ * Ödeme iki türlü: havale/EFT'de sipariş "ödeme bekliyor" açılıp iş bitiyor;
+ * kartta sipariş yine açılıyor (stok o anda rezerve oluyor) ve müşteri
+ * iyzico'nun ödeme ekranına yönlendiriliyor. Kart bilgisi bize hiç gelmiyor.
  */
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
-import { ayarlariGetir } from "@/server/sepet";
+import { ayarlariGetir, sepetIdOku } from "@/server/sepet";
 import { KUPON_CEREZI } from "@/server/kampanya";
-import { SON_SIPARIS_CEREZI, siparisOlustur } from "@/server/siparis";
+import { SON_SIPARIS_CEREZI, siparisGetirPanel, siparisOlustur } from "@/server/siparis";
+import { odemeAcikMi, odemeBaslat } from "@/server/odeme";
+import {
+  odemeGirisimiKaydet,
+  sepetiSiparistenDoldur,
+  siparisiIptalEtVeStoguIadeEt,
+} from "@/server/odeme-akis";
 import { girisYapan, oturumAc, sifreKisaMi, sifreOzetle } from "@/server/uyelik";
 
 function temiz(veri: FormData, alan: string): string {
@@ -91,8 +101,12 @@ export async function siparisiTamamla(veri: FormData): Promise<void> {
     customerId = yeni.id;
   }
 
+  // Kart yalnızca anahtarlar tanımlıyken seçilebiliyor; form kurcalansa bile
+  // kapalı bir yöntemle sipariş açılmıyor.
+  const kartMi = temiz(veri, "odemeYontemi") === "kart" && odemeAcikMi();
+
   const ayar = await ayarlariGetir();
-  const sonuc = await siparisOlustur(girdi, ayar, customerId);
+  const sonuc = await siparisOlustur(girdi, ayar, customerId, kartMi ? "kart" : "havale");
 
   if (!sonuc.tamam) {
     redirect(sonuc.hata.includes("boş") ? "/odeme?hata=bos" : "/odeme?hata=stok");
@@ -122,6 +136,8 @@ export async function siparisiTamamla(veri: FormData): Promise<void> {
   }
 
   // Onay sayfası bu çerezle açılır; olmayanlar e-postayla takip sayfasından bakar.
+  // Karta gidilecekse de şimdi kuruluyor: müşteri iyzico'dan dönünce onay
+  // sayfasını açabilsin.
   const kavanoz = await cookies();
   // Kupon bir siparişlik: kalırsa müşteri farkında olmadan tekrar kullanır.
   kavanoz.delete(KUPON_CEREZI);
@@ -134,5 +150,38 @@ export async function siparisiTamamla(veri: FormData): Promise<void> {
   });
 
   revalidatePath("/", "layout");
+
+  if (kartMi) redirect(await odemeyeYonlendir(sonuc.numara));
   redirect(`/siparis/${sonuc.numara}`);
+}
+
+/**
+ * Kartla ödemede iyzico'nun ödeme ekranına giden adresi hazırlar.
+ *
+ * Başlatma tutmazsa sipariş açıkta kalmıyor: iptal edilip rezerve stok aynı
+ * anda geri veriliyor, müşteri de ödeme sayfasına hatayla dönüyor. Yoksa
+ * stok, hiç ödenmeyecek bir siparişin altında kilitli kalırdı.
+ */
+async function odemeyeYonlendir(numara: string): Promise<string> {
+  const siparis = await siparisGetirPanel(numara);
+  if (!siparis) return `/siparis/${numara}`;
+
+  const baslik = await headers();
+  const ip = (baslik.get("x-forwarded-for") ?? "").split(",")[0].trim() || "127.0.0.1";
+
+  const baslatma = await odemeBaslat(siparis, { ip });
+
+  if (!baslatma.tamam) {
+    const kayit = await db.order.findUnique({ where: { numara }, select: { id: true } });
+    if (kayit) await siparisiIptalEtVeStoguIadeEt(kayit.id);
+    // Sipariş açılırken sepet boşalmıştı; müşteri ürünleri baştan seçmesin.
+    await sepetiSiparistenDoldur(await sepetIdOku(), numara);
+    revalidatePath("/", "layout");
+    return "/odeme?hata=odeme-baslatilamadi";
+  }
+
+  const kayit = await db.order.findUnique({ where: { numara }, select: { id: true } });
+  if (kayit) await odemeGirisimiKaydet(kayit.id, baslatma.jeton, siparis.toplamKurus);
+
+  return baslatma.adres;
 }

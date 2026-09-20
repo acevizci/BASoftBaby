@@ -61,7 +61,7 @@ kendini tamamen kapatır (404 verir), yani ayar unutulursa açıkta kalmaz.
 
 Sepet veritabanında durur, tarayıcıda yalnızca sepetin kimliğini taşıyan
 httpOnly bir çerez vardır. Müşteri üye olarak da üye olmadan da sipariş verir;
-ödeme şimdilik havale/EFT. Stok sipariş anında tek bir veritabanı işlemi içinde düşer, aynı
+ödeme kartla ya da havale/EFT ile yapılır. Stok sipariş anında tek bir veritabanı işlemi içinde düşer, aynı
 anda gelen iki sipariş son adedi birlikte alamaz. Müşteri siparişini numarası
 ve e-postasıyla `/siparis-takip` adresinden görür. Bütün ekranlar düz HTML
 formuyla çalışır, JavaScript kapalı tarayıcıda da sipariş verilebilir.
@@ -84,6 +84,27 @@ numara ve e-postayla görülüyor. Gerekçesi: doğrulanmamış bir e-posta o ku
 sahibi olduğunun kanıtı değil.
 
 Yönetim paneli bu üyelikten ayrı; o `YONETIM_SIFRE` ile korunmaya devam ediyor.
+
+## Kartla ödeme
+
+Kart ödemesi **iyzico** ile. Müşteri kartını iyzico'nun kendi ekranında girer,
+bankasının 3D Secure doğrulamasını orada geçer, taksit seçeneklerini de orada
+görür; **kart bilgisi bize hiç ulaşmaz.**
+
+Kart seçeneği yalnızca `IYZICO_API_ANAHTARI` ve `IYZICO_GIZLI_ANAHTAR` tanımlı
+olduğunda görünür. Anahtarlar sanal POS başvurusu sonuçlanınca Vercel'in proje
+ayarlarına girilir; o zamana kadar havale/EFT tek başına çalışır. Sandbox
+anahtarları `sandbox-` ile başlar ve kendiliğinden sandbox adresine gider.
+
+Ödemenin alındığı iyzico'ya ayrıca sorulur ve cevabın imzası doğrulanır; dönüş
+çağrısındaki hiçbir bilgiye güvenilmez. Tutar siparişle tutmazsa ödeme başarılı
+sayılmaz. Aynı dönüş iki kez gelirse ikincisi hiçbir şeyi değiştirmez.
+
+Sipariş açılırken stok düşer, yani ödeme boyunca rezervedir. Ödeme tutmazsa
+sipariş iptal olur, stok geri verilir ve **sepet geri doldurulur** — müşteri
+ürünleri baştan seçmek zorunda kalmaz. Ödeme ekranını kapatıp gidenler için 15
+dakikada bir çalışan zamanlı iş (`vercel.json`) 30 dakikayı geçen girişimleri
+temizler.
 
 ## Yasal metinler ve künye
 

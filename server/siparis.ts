@@ -55,6 +55,8 @@ export async function siparisOlustur(
   ayar: SatisAyari,
   /** Sipariş üye olarak veriliyorsa hesabın id'si; üyeliksizse boş. */
   customerId?: string,
+  /** havale · kart. Kartta sipariş açılıyor, ödeme ekranı sonra geliyor. */
+  odemeYontemi: "havale" | "kart" = "havale",
 ): Promise<SiparisSonucu> {
   const cartId = await sepetIdOku();
   if (!cartId) return { tamam: false, hata: "Sepetin boş görünüyor." };
@@ -127,6 +129,7 @@ export async function siparisOlustur(
         data: {
           numara: numaraYaz(ayarSatiri.sonSiparisNo, simdi),
           customerId: customerId ?? null,
+          odemeYontemi,
           sozlesmeOnayi: girdi.sozlesmeOnayi,
           adSoyad: girdi.adSoyad,
           eposta: girdi.eposta,
@@ -200,9 +203,32 @@ export type Siparis = {
   toplamKurus: number;
   kargoTakipNo: string | null;
   sozlesmeOnayi: Date | null;
+  /** Kartla ödemede son denemenin hatası; müşteriye sebebi gösterebilmek için. */
+  sonOdemeHatasi?: string;
+  /** Başarılı kart ödemesinin iyzico kimliği ve taksidi; panelde görünüyor. */
+  odemeRef?: string;
+  taksit?: number;
   olusturuldu: Date;
   satirlar: SiparisSatiri[];
 };
+
+type OdemeKaydi = {
+  durum: string;
+  hata: string | null;
+  saglayiciRef: string | null;
+  taksit: number;
+};
+
+/** Sipariş kaydındaki ödeme girişimlerini ekranda görünen alanlara çevirir. */
+function odemeOzeti(odemeler: OdemeKaydi[]): Pick<Siparis, "sonOdemeHatasi" | "odemeRef" | "taksit"> {
+  const basarili = odemeler.find((o) => o.durum === "basarili");
+  if (basarili) {
+    return { odemeRef: basarili.saglayiciRef ?? undefined, taksit: basarili.taksit };
+  }
+  // En son deneme neden tutmadı: müşteriye de panele de aynı sebep gösteriliyor.
+  const sonHata = odemeler.filter((o) => o.durum === "basarisiz").at(-1);
+  return { sonOdemeHatasi: sonHata?.hata ?? undefined };
+}
 
 type SiparisSatiriKaydi = {
   urunAd: string;
@@ -214,10 +240,15 @@ type SiparisSatiriKaydi = {
 };
 
 function siparisYap(
-  s: Omit<Siparis, "satirlar"> & { satirlar: SiparisSatiriKaydi[] },
+  s: Omit<Siparis, "satirlar" | "sonOdemeHatasi" | "odemeRef" | "taksit"> & {
+    satirlar: SiparisSatiriKaydi[];
+    odemeler: OdemeKaydi[];
+  },
 ): Siparis {
+  const { odemeler, ...kalan } = s;
   return {
-    ...s,
+    ...kalan,
+    ...odemeOzeti(odemeler),
     satirlar: s.satirlar.map((k) => ({
       ...k,
       renkAdi: RENK_ADLARI[k.renk as RenkAdi] ?? k.renk,
@@ -233,7 +264,10 @@ function siparisYap(
 export async function siparisGetir(numara: string, eposta: string): Promise<Siparis | undefined> {
   const kayit = await db.order.findUnique({
     where: { numara: numara.trim().toUpperCase() },
-    include: { satirlar: { orderBy: { id: "asc" } } },
+    include: {
+      satirlar: { orderBy: { id: "asc" } },
+      odemeler: { orderBy: { olusturuldu: "asc" } },
+    },
   });
   if (!kayit) return undefined;
   // E-posta da kimlik: Türkçe yerelde küçültmek "I" harfini "ı" yapıp
@@ -248,7 +282,10 @@ export async function siparisGetir(numara: string, eposta: string): Promise<Sipa
 export async function siparisGetirPanel(numara: string): Promise<Siparis | undefined> {
   const kayit = await db.order.findUnique({
     where: { numara: numara.trim().toUpperCase() },
-    include: { satirlar: { orderBy: { id: "asc" } } },
+    include: {
+      satirlar: { orderBy: { id: "asc" } },
+      odemeler: { orderBy: { olusturuldu: "asc" } },
+    },
   });
   return kayit ? siparisYap(kayit) : undefined;
 }

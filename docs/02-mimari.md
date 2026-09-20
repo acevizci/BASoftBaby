@@ -66,6 +66,8 @@ app/
   siparis/[numara]/       sipariş onayı (yalnız siparişi verene açık)
   siparis-takip/          numara + e-posta ile sipariş sorgulama
   yasal/[slug]/           sözleşmeler, KVKK, çerez politikası
+  api/odeme/iyzico/donus/ iyzico dönüş ucu
+  api/cron/odeme-temizlik/ yarıda kalan ödemelerin temizliği
   sitemap.ts robots.ts    site haritası ve arama motoru kuralları
   (hesap)/                üyelik — adres satırına segment eklemez
     giris/ kayit/         giriş ve hesap açma
@@ -77,9 +79,7 @@ app/
 
   — henüz yok, sırası gelince —
   (hesap)/iade/           iade talebi açma
-  api/odeme/iyzico/       ödeme dönüş ve bildirim ucu
   api/kargo/durum/        taşıyıcı durum bildirimi
-  api/cron/               zamanlı işler
 
 server/                   iş kuralları — tek kaynak
   veritabani.ts           Prisma bağlantısı
@@ -97,7 +97,9 @@ server/                   iş kuralları — tek kaynak
   kampanya.ts             indirim motoru — en çok indiren kazanır
   banner.ts               ana sayfa banner'ları
   yonetim.ts              panelin yazma işlemleri
-  — henüz yok: odeme.ts kargo.ts fatura.ts eposta.ts
+  odeme.ts                iyzico: ödeme formu ve sonuç doğrulama
+  odeme-akis.ts           girişim kaydı, dönüşün işlenmesi, stok iadesi
+  — henüz yok: kargo.ts fatura.ts eposta.ts
 
 db/
   schema.prisma           veri modeli
@@ -171,8 +173,10 @@ değil)
 **LegalPage** *(kuruldu)* — `slug`, `baslik`, `ozet`, `icerik`, `taslakMi`.
 Metin panelden düzenleniyor; taslakken sayfa arama motorlarına kapalı.
 
-**Payment** — `orderId`, `saglayici`, `saglayiciRef` (iyzico ödeme kimliği),
-`durum`, `tutarKurus`, `hamYanit`. Kart numarası hiçbir zaman burada değil.
+**Payment** *(kuruldu)* — `orderId`, `saglayici`, `jeton` (tekil, aynı dönüş
+iki kez işlenmesin diye), `saglayiciRef` (iyzico ödeme kimliği), `durum`,
+`tutarKurus`, `taksit`, `hata`, `hamYanit`. Kart numarası hiçbir zaman burada
+değil.
 
 **Shipment** — `orderId`, `tasiyici`, `takipNo`, `etiketUrl`, `durum`,
 `gonderimTarihi`

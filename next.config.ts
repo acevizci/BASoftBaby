@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  /**
+   * iyzico'nun paketi kendi dosyalarını çalışma anında `require` ile
+   * tarayarak yüklüyor; paketleyici bunu göremediği için dosyaları bulamıyor.
+   * Bu liste "bunu paketleme, Node'un kendi require'ıyla yükle" demek.
+   */
+  serverExternalPackages: ["iyzipay"],
+
   experimental: {
     serverActions: {
       /**

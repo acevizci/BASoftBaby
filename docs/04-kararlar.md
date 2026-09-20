@@ -421,6 +421,63 @@ politikası sayfasında. Google Analytics seçilseydi banner zorunlu olurdu.
 
 ---
 
+### K-17 · Kartla ödeme iyzico'nun kendi ekranında
+**20 Eylül 2026**
+
+Kredi/banka kartıyla ödeme eklendi. Müşteri ödeme yöntemini seçiyor; kart
+seçerse sipariş "ödeme bekliyor" durumunda açılıp iyzico'nun ödeme ekranına
+yönlendiriliyor, dönüşte sonucu görüyor.
+
+**Kart formu bizde değil, iyzico'da.** iyzico'nun barındırdığı ödeme formu
+(Checkout Form) kullanılıyor. Kart numarası, CVC ve 3D Secure şifresi hiçbir
+aşamada sunucumuzdan geçmiyor (K-07). Taksit seçeneklerini de o ekran
+gösteriyor, çünkü hangi kartın kaç taksit yapabildiğini kartın BIN'i
+belirliyor; kendi ekranımızda göstermek BIN sorgusu ve JavaScript isterdi,
+üstelik kart numarasının bizden geçmesi gerekirdi.
+
+**Dönen veriye güvenilmiyor.** iyzico dönüş çağrısında yalnızca bir jeton
+taşıyor; ödemenin gerçekten alınıp alınmadığını ve tutarını iyzico'ya ayrıca
+sorup cevabın imzasını kendi gizli anahtarımızla doğruluyoruz. İmza tutmazsa
+ödeme başarılı sayılmıyor. Tutar siparişle bire bir tutmuyorsa da sayılmıyor:
+eksik çekilmiş bir ödemeyle sipariş hazırlanmaya başlamamalı.
+
+**Aynı dönüş iki kez işlenmiyor** (K-06). Girişim kaydı iyzico jetonuyla
+tekil; işlenmiş bir kayıt ikinci çağrıda değiştirilmiyor, aynı cevap
+dönüyor. Müşterinin "geri" tuşuna basması ya da iyzico'nun çağrıyı
+tekrarlaması stoğu ikinci kez düşürmüyor.
+
+**Stok ödeme boyunca rezerve.** Sipariş açılırken stok düşüyor; ödeme tutmazsa
+aynı işlem içinde geri veriliyor ve sipariş iptal oluyor (mimarideki 04.
+karar). Müşteri ödeme ekranını kapatıp giderse dönüş hiç gelmiyor, o yüzden 15
+dakikada bir çalışan zamanlı iş 30 dakikayı geçmiş girişimleri iptal edip
+stoğu serbest bırakıyor.
+
+**Ödeme tutmazsa sepet geri dolduruluyor.** Sipariş açılırken sepet boşalıyor;
+kart reddedilirse ya da ödeme hiç başlatılamazsa müşteri elinde boş sepetle
+kalmasın diye ürünler sepete geri konuyor.
+
+**Dönüş göreli adrese yapılıyor.** Mutlak adres kurulsaydı, istek hangi ana
+makine adıyla geldiyse ona değil yapılandırmadaki adrese gidilirdi; çerezler
+ana makineye bağlı olduğu için müşteri kendi sipariş onayını göremezdi. Bu
+gerçekten yaşandı: denemede dönüş `127.0.0.1` yerine `localhost`'a gidince
+sipariş çerezi gönderilmedi ve onay sayfası 404 verdi.
+
+**Anahtar yoksa kart kapalı.** `IYZICO_API_ANAHTARI` ve `IYZICO_GIZLI_ANAHTAR`
+tanımlı değilse kart seçeneği müşteriye hiç gösterilmiyor ve form kurcalansa
+bile kartla sipariş açılmıyor; havale/EFT tek başına çalışmaya devam ediyor.
+Böylece iyzico başvurusu (A-03) sonuçlanmadan da mağaza satış yapabiliyor.
+
+**TC kimlik numarası toplanmıyor.** iyzico alıcı kaydında bu alan zorunlu; biz
+toplamıyoruz, çünkü bebek kıyafeti satışı için gerekmiyor ve toplanmayan veri
+sızdırılamıyor. Alan iyzico'nun kendi dokümanındaki yer tutucuyla gönderiliyor.
+
+**Nerede:** [`../server/odeme.ts`](../server/odeme.ts),
+[`../server/odeme-akis.ts`](../server/odeme-akis.ts),
+[`../app/api/odeme/iyzico/donus`](../app/api/odeme/iyzico/donus),
+[`../app/api/cron/odeme-temizlik`](../app/api/cron/odeme-temizlik)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı
@@ -429,8 +486,9 @@ ortam değişkeni tanımlanacak: sitemap, canonical adresler ve yapısal veri
 tek değişkenle birlikte düzeliyor (K-16).
 
 ### A-03 · Şirket ve vergi levhası
-Hazırlıklara başlandı. 04. adımda (ödeme) iyzico sanal POS başvurusu için
-gerekli olacak.
+Hazırlıklara başlandı. iyzico sanal POS başvurusu bununla yapılıyor. Ödeme
+kodu hazır ve denendi; başvuru sonuçlanıp anahtarlar Vercel'e girilene kadar
+kart seçeneği müşteriye gösterilmiyor (K-17). Künye de buna bağlı (K-15).
 
 ### A-04 · Logonun orijinal dosyası
 Mevcut değil. Vektör yeniden çizim şimdilik resmî kaynak.

@@ -114,6 +114,15 @@ export default function SiparisKarti({
             <p className="mt-1 text-metin-2">{siparis.not}</p>
           </div>
         )}
+        {siparis.odemeRef && (
+          <div className="sm:col-span-2">
+            <p className="text-xs font-bold text-metin-2">Kart ödemesi</p>
+            <p className="mt-1 text-metin-3">
+              iyzico · {siparis.taksit && siparis.taksit > 1 ? `${siparis.taksit} taksit · ` : ""}
+              <span className="rakam">{siparis.odemeRef}</span>
+            </p>
+          </div>
+        )}
         {siparis.sozlesmeOnayi && (
           <div className="sm:col-span-2">
             <p className="text-xs font-bold text-metin-2">Sözleşmeler</p>

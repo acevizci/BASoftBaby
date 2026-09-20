@@ -15,8 +15,12 @@ export const metadata: Metadata = { title: "Siparişin alındı", robots: { inde
  * Başkası numarayı tahmin etse bile adresi göremez; onlar için e-posta soran
  * takip sayfası var.
  */
-export default async function SiparisOnayi({ params }: PageProps<"/siparis/[numara]">) {
+export default async function SiparisOnayi({
+  params,
+  searchParams,
+}: PageProps<"/siparis/[numara]">) {
   const { numara } = await params;
+  const { odeme } = await searchParams;
   const kavanoz = await cookies();
 
   if (kavanoz.get(SON_SIPARIS_CEREZI)?.value !== numara) notFound();
@@ -24,10 +28,23 @@ export default async function SiparisOnayi({ params }: PageProps<"/siparis/[numa
   const [siparis, ayar] = await Promise.all([siparisGetirPanel(numara), ayarlariGetir()]);
   if (!siparis) notFound();
 
+  // Kartla ödemede müşteri buraya iyzico'dan dönüyor. Sonucu adres satırından
+  // değil siparişin kendi durumundan okuyoruz: adres satırı kurcalanabilir.
+  const kartla = siparis.odemeYontemi === "kart";
+  const odendi = siparis.odemeDurumu === "odendi";
+  const odemeBasarisiz = kartla && !odendi;
+  const sonHata = siparis.sonOdemeHatasi;
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <div className="rounded-marka bg-nane-soluk px-5 py-6 text-center">
-        <h1 className="text-2xl sm:text-3xl">Siparişin alındı</h1>
+      <div
+        className={`rounded-marka px-5 py-6 text-center ${
+          odemeBasarisiz ? "bg-mercan-soluk" : "bg-nane-soluk"
+        }`}
+      >
+        <h1 className="text-2xl sm:text-3xl">
+          {odemeBasarisiz ? "Ödeme tamamlanamadı" : odendi ? "Ödemen alındı" : "Siparişin alındı"}
+        </h1>
         <p className="mt-2 text-metin-2">
           Sipariş numaran <span className="rakam font-bold text-metin">{siparis.numara}</span>
         </p>
@@ -35,7 +52,28 @@ export default async function SiparisOnayi({ params }: PageProps<"/siparis/[numa
 
       <section className="mt-6 rounded-marka border border-cizgi bg-yuzey p-5">
         <h2 className="text-lg">Ödeme</h2>
-        {ayar.havaleBilgisi ? (
+        {kartla ? (
+          odendi ? (
+            <p className="mt-2 text-sm text-metin-2">
+              Kartından ödeme alındı, siparişin hazırlanmaya başlıyor. Ödeme sağlayıcımız
+              iyzico; kart bilgilerin bize hiç ulaşmadı.
+            </p>
+          ) : (
+            <>
+              <p className="mt-2 text-sm text-metin-2">
+                Ödeme tamamlanmadığı için sipariş iptal edildi ve ürünler stoğa geri
+                döndü. <span className="font-semibold">Kartından bir tahsilat yapılmadı.</span>
+                {odeme === "basarisiz" && sonHata ? ` Sebep: ${sonHata}` : ""}
+              </p>
+              <Link
+                href="/sepet"
+                className="mt-4 inline-block rounded-full bg-mercan px-6 py-2.5 font-bold text-white transition hover:brightness-95"
+              >
+                Sepete dön, tekrar dene
+              </Link>
+            </>
+          )
+        ) : ayar.havaleBilgisi ? (
           <>
             <p className="mt-2 text-sm text-metin-2">
               Aşağıdaki hesaba havale/EFT yaparken açıklama kısmına sipariş numaranı yaz.

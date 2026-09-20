@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { sepetGetir } from "@/server/sepet";
 import { siparisiTamamla } from "@/server/siparis-islem";
 import { adresleriGetir, EN_KISA_SIFRE, girisYapan } from "@/server/uyelik";
+import { odemeAcikMi } from "@/server/odeme";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 
 export const dynamic = "force-dynamic";
@@ -23,11 +24,16 @@ const HATALAR: Record<string, string> = {
     "Bu e-posta ile bir hesap zaten var. Giriş yapıp devam edebilir ya da şifre alanını boş bırakıp üyeliksiz sipariş verebilirsin.",
   sozlesme:
     "Siparişi tamamlamak için ön bilgilendirme formunu ve mesafeli satış sözleşmesini onaylaman gerekiyor.",
+  "odeme-baslatilamadi":
+    "Ödeme sayfası açılamadı ve siparişin oluşturulmadı; kartından bir tahsilat yapılmadı. Tekrar deneyebilir ya da havale/EFT ile ödeyebilirsin.",
 };
 
 export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">) {
   const { hata, adres: adresSecimi } = await searchParams;
   const [sepet, musteri] = await Promise.all([sepetGetir(), girisYapan()]);
+  // Anahtarlar tanımlı değilse kart seçeneği hiç gösterilmiyor; havale tek
+  // başına çalışmaya devam ediyor.
+  const kartAcik = odemeAcikMi();
 
   if (sepet.satirlar.length === 0) redirect("/sepet");
 
@@ -200,12 +206,38 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
 
           <section className="rounded-marka border border-cizgi bg-yuzey p-5">
             <h2 className="text-lg">Ödeme</h2>
-            <label className="mt-3 flex items-start gap-3 rounded-[10px] border-[1.5px] border-mercan bg-mercan-soluk p-4">
+
+            {kartAcik && (
+              <label className="mt-3 flex items-start gap-3 rounded-[10px] border-[1.5px] border-mercan bg-mercan-soluk p-4">
+                <input
+                  type="radio"
+                  name="odemeYontemi"
+                  value="kart"
+                  defaultChecked
+                  className="mt-1 h-4 w-4 accent-[var(--mercan)]"
+                />
+                <span>
+                  <span className="block font-bold">Kredi / banka kartı</span>
+                  <span className="mt-1 block text-sm text-metin-2">
+                    Siparişi verdikten sonra iyzico&apos;nun güvenli ödeme ekranına
+                    gidiyorsun; kartını orada giriyor, bankanın 3D Secure doğrulamasını
+                    orada geçiyorsun. Taksit seçenekleri kartına göre o ekranda çıkıyor.
+                    Kart bilgilerin bize hiç ulaşmıyor.
+                  </span>
+                </span>
+              </label>
+            )}
+
+            <label
+              className={`mt-3 flex items-start gap-3 rounded-[10px] border-[1.5px] p-4 ${
+                kartAcik ? "border-cizgi" : "border-mercan bg-mercan-soluk"
+              }`}
+            >
               <input
                 type="radio"
                 name="odemeYontemi"
                 value="havale"
-                defaultChecked
+                defaultChecked={!kartAcik}
                 className="mt-1 h-4 w-4 accent-[var(--mercan)]"
               />
               <span>
@@ -216,9 +248,12 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
                 </span>
               </span>
             </label>
-            <p className="mt-3 text-xs text-metin-3">
-              Kredi kartıyla ödeme çok yakında eklenecek.
-            </p>
+
+            {!kartAcik && (
+              <p className="mt-3 text-xs text-metin-3">
+                Kredi kartıyla ödeme çok yakında eklenecek.
+              </p>
+            )}
           </section>
 
           <section className="rounded-marka border border-cizgi bg-yuzey p-5">

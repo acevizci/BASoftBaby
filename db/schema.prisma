@@ -201,7 +201,7 @@ model Order {
 
   /// bekliyor · hazirlaniyor · kargoda · teslim · iptal
   durum        String @default("bekliyor")
-  /// havale (şimdilik tek seçenek; iyzico 04. adımda gelecek)
+  /// havale · kart (iyzico)
   odemeYontemi String @default("havale")
   /// bekliyor · odendi · iade
   odemeDurumu  String @default("bekliyor")
@@ -240,6 +240,7 @@ model Order {
   olusturuldu DateTime    @default(now())
   guncellendi DateTime    @updatedAt
   satirlar    OrderItem[]
+  odemeler    Payment[]
 
   @@index([durum, olusturuldu])
   @@index([eposta])
@@ -410,4 +411,41 @@ model LegalPage {
   guncellendi DateTime @updatedAt
 
   @@index([sira])
+}
+
+/// Kartla ödeme girişimi.
+///
+/// Bir siparişin birden çok girişimi olabilir: kart reddedilir, müşteri tekrar
+/// dener. Her girişim ayrı satır; siparişin ödendi sayılması için birinin
+/// başarılı olması yeterli.
+///
+/// Kart numarası, CVC ve 3D Secure şifresi hiçbir aşamada bize gelmez: müşteri
+/// bunları iyzico'nun kendi ekranına girer (K-07, K-17). Burada yalnızca
+/// iyzico'nun verdiği kimlikler ve tutar durur.
+model Payment {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  saglayici String @default("iyzico")
+  /// Ödeme formunun jetonu. Dönüş çağrısı bunu getiriyor, kaydı bununla
+  /// buluyoruz; tekil olduğu için aynı dönüş iki kez işlenmiyor (K-06).
+  jeton        String  @unique
+  /// iyzico ödeme kimliği — iade ve sorgulama için gerekiyor.
+  saglayiciRef String?
+
+  /// baslatildi · basarili · basarisiz
+  durum      String @default("baslatildi")
+  tutarKurus Int
+  taksit     Int    @default(1)
+  /// Başarısızsa iyzico'nun verdiği sebep; müşteriye gösterilen kısa hâli.
+  hata       String?
+  /// Sorun çıkarsa bakılabilsin diye iyzico'nun ham cevabı (JSON).
+  hamYanit   String?
+
+  olusturuldu DateTime @default(now())
+  guncellendi DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([durum, olusturuldu])
 }
