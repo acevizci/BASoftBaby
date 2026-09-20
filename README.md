@@ -272,6 +272,20 @@ Kurumsal sütunundaki yasal metinler (mesafeli satış sözleşmesi, ön
 bilgilendirme formu, KVKK, çerez politikası) avukat işi ve şirket kaydına bağlı;
 bu yüzden bağlantı verilmedi, düz yazı duruyor.
 
+## Yaş ve beden
+
+Kategori sayfalarında **yaş** ve **beden** ayrı iki süzgeç. Yaş grubu birden
+çok bedeni kapsar: "6-12 ay" hem 6-9 hem 9-12 bedenindeki ürünleri getirir.
+Ana sayfadaki yaş kutuları da bu gruplara gider.
+
+Her bedenin **boy karşılığı** süzgecin içinde yazar; ürün sayfasında seçili
+bedenin boy ve kilo aralığı görünür ve iki yerde de beden rehberine bağlantı
+vardır. Ölçü tablosu tek yerde (`ui/katalog-bicim.ts`) durur; beden rehberi
+sayfası da oradan okur.
+
+Süzgeçler birleşince **aynı varyantı** ararlar: "6-9 ay" + "mint" seçen
+müşteri, o bedende ve o renkte stoğu olan ürünleri görür.
+
 ## Kampanyalar
 
 Yüzde ya da sabit tutar indirimi; tüm ürünlere, bir kategoriye ya da tek ürüne

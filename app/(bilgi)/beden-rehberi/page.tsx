@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BOLUM, KUTU, YAZI } from "../bilgi-bicim";
+import { BEDENLER, BEDEN_OLCULERI } from "@/ui/katalog-bicim";
 
 export const metadata: Metadata = {
   title: "Beden rehberi",
@@ -9,18 +10,11 @@ export const metadata: Metadata = {
 };
 
 /**
- * Bedenler mağazada "0-3 ay" gibi ay aralıklarıyla duruyor; tablo o adları
- * boy ve kiloya bağlıyor. Değerler ürün varyantlarındaki bedenlerle birebir
- * aynı sırada, yeni bir beden eklenirse buraya da bir satır gerekiyor.
+ * Tablo artık burada değil, ui/katalog-bicim.ts içinde: aynı boy-kilo bilgisi
+ * süzgeçte ve ürün sayfasında da gösteriliyor. Tek kaynak olmasa ikisi er geç
+ * ayrışırdı.
  */
-const TABLO: { beden: string; boy: string; kilo: string }[] = [
-  { beden: "0-3 ay", boy: "56 - 62 cm", kilo: "3 - 6 kg" },
-  { beden: "3-6 ay", boy: "62 - 68 cm", kilo: "6 - 8 kg" },
-  { beden: "6-9 ay", boy: "68 - 74 cm", kilo: "8 - 9 kg" },
-  { beden: "9-12 ay", boy: "74 - 80 cm", kilo: "9 - 10 kg" },
-  { beden: "12-18 ay", boy: "80 - 86 cm", kilo: "10 - 11 kg" },
-  { beden: "18-24 ay", boy: "86 - 92 cm", kilo: "11 - 12,5 kg" },
-];
+const TABLO = BEDENLER.map((beden) => ({ beden, ...BEDEN_OLCULERI[beden] }));
 
 export default function BedenRehberi() {
   return (

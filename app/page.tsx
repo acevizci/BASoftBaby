@@ -7,14 +7,14 @@ import { kunyeGetir } from "@/server/yasal";
 import { siteAdresi, tamAdres } from "@/server/site";
 import { kategorileriGetir, oneCikanUrunler } from "@/server/katalog";
 import { ayarlariGetir, type SatisAyari } from "@/server/sepet";
-import { fiyatYaz } from "@/ui/katalog-bicim";
+import { fiyatYaz, YAS_GRUPLARI } from "@/ui/katalog-bicim";
 
-const YAS_KUTULARI = [
-  { ad: "Yenidoğan", yas: "0-3 ay", beden: "0-3 ay" },
-  { ad: "Bebek", yas: "3-6 ay", beden: "3-6 ay" },
-  { ad: "Bebek", yas: "6-12 ay", beden: "6-9 ay" },
-  { ad: "Yürüyen", yas: "12-24 ay", beden: "12-18 ay" },
-];
+/**
+ * Ana sayfadaki yaş kutuları. Önceden tek bir bedene bağlıydı: "6-12 ay"
+ * kutusu yalnızca 6-9 beden ürünleri getiriyor, 9-12 bedendekiler
+ * görünmüyordu. Artık yaş grubuna gidiyor, grup birden çok bedeni kapsıyor.
+ */
+const YAS_KUTULARI = YAS_GRUPLARI;
 
 /**
  * Kargo sınırı panelden değişebildiği için sabit yazılmıyor: ayarla sepetin
@@ -76,12 +76,12 @@ export default async function AnaSayfa() {
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {YAS_KUTULARI.map((y) => (
             <Link
-              key={y.yas}
-              href={`/urunler?beden=${encodeURIComponent(y.beden)}`}
+              key={y.kod}
+              href={`/urunler?yas=${encodeURIComponent(y.kod)}`}
               className="rounded-marka border border-cizgi bg-yuzey px-4 py-5 text-center shadow-sm transition hover:border-mercan"
             >
               <p className="font-baslik font-bold">{y.ad}</p>
-              <p className="rakam mt-1 text-sm text-metin-3">{y.yas}</p>
+              <p className="rakam mt-1 text-sm text-metin-3">{y.aciklama}</p>
             </Link>
           ))}
         </div>

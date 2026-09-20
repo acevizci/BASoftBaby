@@ -1,8 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import SepeteEkle from "@/ui/sepete-ekle";
-import { RENK_ADLARI, PALET, type RenkAdi, type Varyant } from "@/ui/katalog-bicim";
+import {
+  BEDEN_OLCULERI,
+  RENK_ADLARI,
+  PALET,
+  type Beden,
+  type RenkAdi,
+  type Varyant,
+} from "@/ui/katalog-bicim";
 
 /** Bir beden ve renk için stok; olmayan birleşim undefined döner. */
 function bul(varyantlar: Varyant[], beden: string, renk: RenkAdi): Varyant | undefined {
@@ -24,11 +32,17 @@ export default function VaryantSecici({
 
   const secili = bul(varyantlar, beden, renk);
   const stok = secili?.stok ?? 0;
+  const olculer = BEDEN_OLCULERI[beden as Beden];
 
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <p className="text-sm font-bold">Beden</p>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <p className="text-sm font-bold">Beden</p>
+          <Link href="/beden-rehberi" className="text-xs font-bold text-mavi-koyu hover:underline">
+            Beden rehberi
+          </Link>
+        </div>
         <div className="mt-2 flex flex-wrap gap-2">
           {bedenler.map((b) => {
             const bedendeStok = varyantlar.some((v) => v.beden === b && v.stok > 0);
@@ -51,6 +65,13 @@ export default function VaryantSecici({
             );
           })}
         </div>
+        {/* Seçili bedenin boy-kilo karşılığı: bebek bedenlerinde ay aralığı
+            yalnızca bir işaret, asıl ölçü boy. İadelerin çoğu buradan. */}
+        {olculer && (
+          <p className="mt-2 text-xs text-metin-3">
+            {beden} ≈ boy {olculer.boy} · kilo {olculer.kilo}
+          </p>
+        )}
       </div>
 
       <div>

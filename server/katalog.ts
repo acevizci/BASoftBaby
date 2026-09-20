@@ -7,7 +7,7 @@
 
 import { db } from "@/server/veritabani";
 import { urunIndirimleri, urunKampanyasi, type KampanyaKaydi } from "@/server/kampanya";
-import { BEDENLER, type RenkAdi, type RozetTonu, type GorselTipi, type Urun, type Kategori } from "@/ui/katalog-bicim";
+import { BEDENLER, type RenkAdi, type RozetTonu, type GorselTipi, type Urun, type Kategori, yasGrubununBedenleri } from "@/ui/katalog-bicim";
 import { ETIKETLER, paylasilanOnbellek, paylasilanOnbellekli } from "@/server/onbellek";
 
 export * from "@/ui/katalog-bicim";
@@ -147,6 +147,8 @@ export async function urunGetir(slug: string): Promise<Urun | undefined> {
 export type UrunSuzgeci = {
   kategori?: string;
   beden?: string;
+  /** Yaş grubu kodu: bir gruba birden çok beden giriyor (bkz. YAS_GRUPLARI). */
+  yas?: string;
   renk?: string;
   /** Kuruş cinsinden üst sınır */
   enFazlaKurus?: number;
@@ -164,20 +166,52 @@ export const urunleriGetir = paylasilanOnbellekli(
   30,
 );
 
+/**
+ * Beden, yaş ve renk süzgeçleri **tek bir varyant koşuluna** birleşiyor.
+ *
+ * Ayrı ayrı yazıldığında iki sorun vardı: aynı nesneye iki kez `variants`
+ * anahtarı konduğu için sonraki öncekini siliyordu (renk seçilince beden
+ * süzgeci sessizce düşüyordu), ve düşmeseydi bile "6-9 bedeni var" ile
+ * "mint rengi var" ayrı varyantlardan karşılanabilirdi. Müşterinin sorduğu
+ * şey ise "bu bedende, bu renkte var mı" — yani aynı varyant.
+ *
+ * Beden ve yaş birlikte verilirse beden kazanıyor: daha dar olan seçim.
+ * Renk tek başına verildiğinde stok aranmıyor; ürün o renkte üretiliyorsa
+ * listede kalıyor.
+ */
+function varyantKosulu(suzgec: UrunSuzgeci, yasBedenleri: readonly string[]) {
+  const kosul: {
+    beden?: string | { in: string[] };
+    renk?: string;
+    stok?: { gt: number };
+  } = {};
+
+  if (suzgec.beden) {
+    kosul.beden = suzgec.beden;
+    kosul.stok = { gt: 0 };
+  } else if (yasBedenleri.length > 0) {
+    kosul.beden = { in: [...yasBedenleri] };
+    kosul.stok = { gt: 0 };
+  }
+
+  if (suzgec.renk) kosul.renk = suzgec.renk;
+
+  return Object.keys(kosul).length > 0 ? { variants: { some: kosul } } : {};
+}
+
 async function urunleriSorgula(suzgec: UrunSuzgeci = {}): Promise<Urun[]> {
+  const yasBedenleri = suzgec.yas ? yasGrubununBedenleri(suzgec.yas) : [];
+
   const [satirlar, kampanyalar] = await Promise.all([
     db.product.findMany({
-    where: {
-      aktif: true,
-      ...(suzgec.kategori ? { category: { slug: suzgec.kategori } } : {}),
-      ...(suzgec.enFazlaKurus ? { fiyatKurus: { lte: suzgec.enFazlaKurus } } : {}),
-      // Beden süzgeci yalnızca o bedende stoğu olan ürünleri getirir; renk
-      // süzgecinde stok aranmaz, ürün o renkte üretiliyorsa listede kalır.
-      ...(suzgec.beden ? { variants: { some: { beden: suzgec.beden, stok: { gt: 0 } } } } : {}),
-      ...(suzgec.renk ? { variants: { some: { renk: suzgec.renk } } } : {}),
-    },
-    include: URUN_ICEREN,
-    orderBy: { olusturuldu: "asc" },
+      where: {
+        aktif: true,
+        ...(suzgec.kategori ? { category: { slug: suzgec.kategori } } : {}),
+        ...(suzgec.enFazlaKurus ? { fiyatKurus: { lte: suzgec.enFazlaKurus } } : {}),
+        ...varyantKosulu(suzgec, yasBedenleri),
+      },
+      include: URUN_ICEREN,
+      orderBy: { olusturuldu: "asc" },
     }),
     urunIndirimleri(),
   ]);

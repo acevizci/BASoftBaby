@@ -682,6 +682,43 @@ fotoğraflar, kategori) ayrı sorguyla getirmesinden. Tek sorguya birleştiren
 
 ---
 
+### K-23 · Yaş süzgeci bedenden ayrı; boy-kilo bedenin yanında
+**20 Eylül 2026**
+
+Plandaki "yaş ve beden filtresi" maddesi yapıldı.
+
+**Yaş ve beden ayrı iki süzgeç.** Hediye alan müşteri bedeni değil bebeğin kaç
+aylık olduğunu biliyor; kendi bebeğine alan anne bedeni biliyor. Yaş grubu
+birden çok bedeni kapsıyor: "6-12 ay" hem 6-9 hem 9-12 bedenini getiriyor.
+Ana sayfadaki yaş kutuları da artık gruba gidiyor — önceden tek bir bedene
+bağlıydılar ve "6-12 ay" kutusu 9-12 bedenindeki ürünleri **gizliyordu.**
+
+**Boy-kilo karşılığı bedenin yanında.** Bebek bedenlerinde ay aralığı yalnızca
+bir işaret; aynı yaştaki iki bebeğin boyu arasında beş santim fark olabiliyor.
+Bu yüzden ölçüler yalnızca beden rehberi sayfasında kalmadı: süzgeçte her
+bedenin yanında boy aralığı yazıyor, ürün sayfasında seçili bedenin boy ve
+kilo karşılığı görünüyor, iki yerde de rehbere bağlantı var. Bebek
+kıyafetinde iadelerin çoğu yanlış bedenden; ölçüyü seçim anına taşımak bunun
+en ucuz önlemi.
+
+Ölçü tablosu tek kaynakta ([`../ui/katalog-bicim.ts`](../ui/katalog-bicim.ts)):
+beden rehberi sayfası da oradan okuyor. İki kopya olsaydı er geç ayrışırdı.
+
+**Süzgeç sorgusunda bir hata bulundu ve düzeltildi.** Beden, yaş ve renk ayrı
+ayrı yazıldığında aynı nesneye iki kez `variants` anahtarı konuyordu; sonraki
+öncekini siliyor, yani **renk seçilince beden süzgeci sessizce düşüyordu.**
+Düşmeseydi bile "6-9 bedeni var" ile "mint rengi var" ayrı varyantlardan
+karşılanabilirdi. Artık hepsi tek bir varyant koşuluna birleşiyor: müşterinin
+sorduğu şey "bu bedende, bu renkte var mı", yani aynı varyant. Bu hata
+yaş süzgecinden önce de vardı; deneme yazılırken ortaya çıktı.
+
+**Nerede:** [`../ui/katalog-bicim.ts`](../ui/katalog-bicim.ts),
+[`../server/katalog.ts`](../server/katalog.ts),
+[`../app/(vitrin)/[kategori]`](../app/(vitrin)),
+[`../ui/varyant-secici.tsx`](../ui/varyant-secici.tsx)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

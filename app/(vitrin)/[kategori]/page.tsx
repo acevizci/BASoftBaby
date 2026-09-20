@@ -4,10 +4,13 @@ import type { Metadata } from "next";
 import UrunKarti from "@/ui/urun-karti";
 import {
   BEDENLER,
+  BEDEN_OLCULERI,
   RENK_ADLARI,
   PALET,
+  YAS_GRUPLARI,
   kategoriGetir,
   urunleriGetir,
+  type Beden,
   type RenkAdi,
 } from "@/server/katalog";
 
@@ -20,7 +23,7 @@ const FIYAT_ARALIKLARI = [
   { etiket: "700 ₺ altı", kurus: 70000 },
 ];
 
-type Aranan = { beden?: string; renk?: string; fiyat?: string };
+type Aranan = { yas?: string; beden?: string; renk?: string; fiyat?: string };
 
 export async function generateMetadata({
   params,
@@ -87,12 +90,13 @@ export default async function KategoriSayfasi({
   const enFazlaKurus = aranan.fiyat ? Number(aranan.fiyat) : undefined;
   const urunler = await urunleriGetir({
     kategori: tumu ? undefined : kategori,
+    yas: aranan.yas,
     beden: aranan.beden,
     renk: aranan.renk,
     enFazlaKurus: Number.isFinite(enFazlaKurus) ? enFazlaKurus : undefined,
   });
 
-  const suzgecVar = Boolean(aranan.beden || aranan.renk || aranan.fiyat);
+  const suzgecVar = Boolean(aranan.yas || aranan.beden || aranan.renk || aranan.fiyat);
   const renkler = Object.keys(RENK_ADLARI) as RenkAdi[];
 
   return (
@@ -112,8 +116,34 @@ export default async function KategoriSayfasi({
       <div className="mt-6 grid gap-8 lg:grid-cols-[210px_1fr]">
         <aside className="flex flex-col gap-6">
           <div>
-            <p className="text-sm font-bold">Beden</p>
+            <p className="text-sm font-bold">Yaş</p>
+            <p className="mt-1 text-xs text-metin-3">
+              Bebeğin kaç aylık olduğunu biliyorsan buradan seç.
+            </p>
             <div className="mt-2 flex flex-wrap gap-2">
+              {YAS_GRUPLARI.map((y) => (
+                <SuzgecDugmesi
+                  key={y.kod}
+                  secili={aranan.yas === y.kod}
+                  href={baglanti(kategori, aranan, "yas", y.kod)}
+                >
+                  {y.aciklama}
+                </SuzgecDugmesi>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <p className="text-sm font-bold">Beden</p>
+              <Link
+                href="/beden-rehberi"
+                className="text-xs font-bold text-mavi-koyu hover:underline"
+              >
+                Beden rehberi
+              </Link>
+            </div>
+            <div className="mt-2 flex flex-col gap-2">
               {BEDENLER.map((b) => (
                 <SuzgecDugmesi
                   key={b}
@@ -121,6 +151,11 @@ export default async function KategoriSayfasi({
                   href={baglanti(kategori, aranan, "beden", b)}
                 >
                   {b}
+                  {/* Boy-kilo karşılığı burada duruyor: beden rehberine gitmeden
+                      doğru bedeni seçebilmek iadelerin çoğunu önlüyor. */}
+                  <span className="ml-2 font-semibold text-metin-3">
+                    {BEDEN_OLCULERI[b as Beden].boy}
+                  </span>
                 </SuzgecDugmesi>
               ))}
             </div>
