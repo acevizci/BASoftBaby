@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BedenTablosu from "@/ui/beden-tablosu";
 import UrunGorseli from "@/ui/urun-gorseli";
 import { urunKaydet, varyantEkle, varyantSil } from "@/server/yonetim";
 import {
@@ -249,6 +250,22 @@ export default function UrunFormu({
           <p className="mt-1 text-xs text-metin-3">
             Her beden-renk birleşimi ayrı stok tutar. Stoğu sıfır olan beden mağazada seçilemez.
           </p>
+
+          {/* Beden hangi boya denk geliyor: müşteri telefonda soruyor,
+              cevap için mağazanın rehber sayfasını ayrı sekmede açmak
+              gerekiyordu. Katlı duruyor — her gün değil, sorulunca
+              bakılıyor (K-55). */}
+          <details className="group mt-3">
+            <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 text-xs font-bold text-metin-2 hover:text-metin [&::-webkit-details-marker]:hidden">
+              Beden - boy - kilo tablosu
+              <span aria-hidden="true" className="transition group-open:rotate-180">
+                ▾
+              </span>
+            </summary>
+            <div className="mt-2">
+              <BedenTablosu not="Mağazadaki beden rehberiyle aynı ölçüler." />
+            </div>
+          </details>
 
           {urun.variants.length > 0 && (
             <div className="mt-4 overflow-x-auto">

@@ -305,7 +305,8 @@ export default async function SiparisListesi({ searchParams }: PageProps<"/yonet
             </table>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 rounded-marka border border-cizgi bg-yuzey p-4">
+          {/* Çubuk yalnızca bir kutu işaretliyken görünüyor (K-55). */}
+          <div className="toplu-cubuk flex flex-wrap items-center gap-2 rounded-marka border border-cizgi bg-yuzey p-4">
             <span className="text-sm font-bold text-metin-2">Seçilenleri:</span>
             {TOPLU_DURUMLAR.map((d) => (
               <button

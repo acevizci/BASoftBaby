@@ -2412,6 +2412,110 @@ korunması; JavaScript kapalı tarayıcıda toplu işlemin çalışması.
 
 ---
 
+### K-54 · Ödemesi tamamlanmamış siparişe belge basılmıyor
+
+Panelde her siparişin yanında "Etiketi yazdır", "Fatura oluştur" ve
+"Faturayı yazdır" duruyordu — ödemesinin gelip gelmediğine bakılmaksızın.
+İkisi de farklı sebeple ciddi:
+
+- **Kargo etiketi basmak "bunu gönderiyorum" demek.** Havalesi gelmemiş bir
+  siparişi kargoya vermek, parayı hiç almamak demek. Mağazanın yapabileceği
+  en pahalı hata ve yapması tek tıklama kadar kolaydı.
+- **Fatura satışın belgesi.** Ödenmemiş siparişe kesilen fatura, olmamış bir
+  satışı belgeliyor; muhasebede düzeltmesi zahmetli.
+
+İptal edilmiş siparişte de ikisi geçerli: orada zaten satış yok.
+
+**Kural tek yerde:** [`../server/siparis-belge.ts`](../server/siparis-belge.ts)
+içindeki `belgeBasilabilirMi()`. Dört yer de buraya soruyor — sipariş
+ayrıntısı (bağlantılar ve "Fatura oluştur" düğmesi), tek etiket sayfası,
+fatura sayfası, toplu etiket sayfası — ve `faturaHazirla` server action'ı.
+Kuralı sayfa başına kopyalamak, sonradan eklenen beşinci bir yerin onu
+atlaması demekti.
+
+**Görünmeyen bağlantı koruma değildir.** Düğmenin çıkmaması kullanıcı
+arayüzü; adres çubuğuna elle yazılabiliyor, yer imine alınabiliyor, eski bir
+sekmede açık kalabiliyor. Üç belge sayfası da kendisi kontrol ediyor ve
+reddederken sebebini yazıyor
+([`../ui/belge-engeli.tsx`](../ui/belge-engeli.tsx)). Aynı sebeple
+`faturaHazirla` formu dışarıdan gönderilse de fatura kesilmiyor.
+
+**Toplu etikette sessizce düşürmek yok.** Elli sipariş işaretleyip
+yazdırırken ödemesi gelmemiş bir tanesinin araya karışması en olası yer.
+O etiketler basılmıyor, ama kaç tanesinin ve hangi numaraların atlandığı
+sayfanın başında yazıyor — sessizce eksik basmak, kişinin elinde eksik bir
+deste olduğunu fark etmemesi demekti.
+
+Reddetme metni ne yapılacağını da söylüyor: "Havale geldiyse sipariş
+ekranından ödeme durumunu Ödendi yap."
+
+**Denenen:** ödenmemiş siparişte bağlantıların çıkmaması; etiket, fatura ve
+toplu etiket sayfalarının adres elle yazıldığında reddetmesi; iptal
+siparişin reddedilmesi; ödenmiş siparişte hepsinin çalışması; karışık toplu
+seçimde yalnızca ödenmişlerin basılıp atlananların numarasının yazılması;
+JavaScript kapalı tarayıcıda da reddedilmesi.
+
+**Nerede:** [`../server/siparis-belge.ts`](../server/siparis-belge.ts),
+[`../ui/belge-engeli.tsx`](../ui/belge-engeli.tsx),
+[`../app/yonetim/(panel)/siparisler`](../app/yonetim/(panel)/siparisler),
+[`../server/yonetim.ts`](../server/yonetim.ts)
+
+---
+
+### K-55 · Toplu işlem çubuğu, beden tablosu, fotoğraf dönüşü
+
+Üç küçük düzeltme; üçü de "işin yapıldığı yerde kal" ile ilgili.
+
+**1. Toplu işlem çubuğu yalnızca seçim varken.** "Seçilenleri: pasife al /
+sil / etiketleri yazdır" çubuğu hiçbir şey seçili değilken de duruyordu.
+Basıldığında "önce listeden ürün seç" diyen bir düğme dizisi, sürekli
+görünen bir hata mesajı gibiydi; üstelik "sil" düğmesi hep gözün önündeydi.
+Çubuk artık formda işaretli bir kutu varken çıkıyor.
+
+Kural CSS'te, `:has()` ile — JavaScript yok:
+
+```css
+@supports selector(form:has(input:checked)) {
+  form:has(input[name="secili"]) .toplu-cubuk { display: none; }
+  form:has(input[name="secili"]:checked) .toplu-cubuk { display: flex; }
+}
+```
+
+`@supports` sarmalı şart. Gizlemeyi varsayılan yapıp göstermeyi `:has()`e
+bırakmak, `:has()` desteklemeyen eski bir tarayıcıda çubuğu tamamen
+erişilemez kılardı. Böyle yazılınca o tarayıcılarda hiçbir kural uygulanmıyor
+ve çubuk eskisi gibi hep görünüyor: kötüleşen tek şey görünüm.
+
+**2. Beden tablosu panelde.** "18-24 ay kaç kilo?" telefonla gelen soru; cevap
+için mağazanın beden rehberi sayfasını ayrı bir sekmede açmak gerekiyordu.
+Tablo artık ürün düzenlemedeki "Bedenler ve stok" bölümünde ve stok
+ekranında da var, katlı `<details>` içinde — her gün değil, sorulunca
+bakılıyor. Rakamlar tek kaynaktan (`BEDEN_OLCULERI`) geliyor: panelde yazan
+ölçüyle müşterinin gördüğü ölçü ayrışamıyor. Mağazadaki rehber sayfası da
+aynı bileşeni kullanıyor artık
+([`../ui/beden-tablosu.tsx`](../ui/beden-tablosu.tsx)).
+
+**3. Fotoğraf işlemleri `#fotograflar`'a dönüyor.** Fotoğraf silme, taşıma ve
+ad kaydetme düğmeleri ürün sayfasının en altındaki fotoğraf bölümünde; işlem
+bitince tarayıcı sayfanın en başına gidiyordu. Ürün sayfası uzun (bölüm
+sayfa başından ~2400 px aşağıda), yani üç fotoğrafı silmek üç kez aşağı
+kaydırmak demekti. Yönlendirmelere `#fotograflar` eklendi; bölümün `id`'si
+zaten vardı.
+
+**Denenen:** çubuğun seçim olmadan gizli, seçilince görünür olması (ürünler
+ve siparişler, JavaScript açık ve kapalı); beden tablosunun iki panel
+ekranında açılması ve ölçülerin görünmesi; fotoğraf işlemi sonrası adresin
+`#fotograflar` ile dönmesi ve sayfanın fotoğraf bölümünde kalması
+(scrollY 2342, bölüm başı 2448).
+
+**Nerede:** [`../app/globals.css`](../app/globals.css),
+[`../ui/beden-tablosu.tsx`](../ui/beden-tablosu.tsx),
+[`../ui/urun-formu.tsx`](../ui/urun-formu.tsx),
+[`../app/yonetim/(panel)/stok/page.tsx`](../app/yonetim/(panel)/stok/page.tsx),
+[`../server/yonetim.ts`](../server/yonetim.ts)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

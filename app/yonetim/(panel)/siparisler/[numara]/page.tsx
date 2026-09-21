@@ -10,6 +10,7 @@ import {
 } from "@/server/yonetim";
 import { GONDERI_DURUM_ADLARI, TASIYICILAR, gonderiGetir } from "@/server/kargo";
 import { faturaGetir } from "@/server/fatura";
+import { belgeBasilabilirMi } from "@/server/siparis-belge";
 import { ayarlariGetir } from "@/server/sepet";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import { DURUMLAR, ODEME_DURUMLARI, durumAdi, odemeAdi } from "@/ui/siparis-bicim";
@@ -30,7 +31,7 @@ export default async function SiparisDetayi({
   await yoneticiGerekli();
 
   const { numara } = await params;
-  const { kayit } = await searchParams;
+  const { kayit, hata } = await searchParams;
 
   const [siparis, gonderi, fatura, ayar] = await Promise.all([
     siparisGetirPanel(numara),
@@ -40,6 +41,8 @@ export default async function SiparisDetayi({
   ]);
   if (!siparis) notFound();
 
+  const belge = belgeBasilabilirMi(siparis);
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
@@ -48,6 +51,13 @@ export default async function SiparisDetayi({
           Listeye dön
         </Link>
       </div>
+
+      {hata === "odenmedi" && (
+        <p className="rounded-marka border border-sari bg-sari-soluk px-4 py-3 text-sm text-sari-koyu">
+          Ödemesi tamamlanmamış siparişe fatura kesilmiyor. Havale geldiyse aşağıdan
+          ödeme durumunu &quot;Ödendi&quot; yap.
+        </p>
+      )}
 
       {typeof kayit === "string" && (
         <p className="rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">
@@ -117,12 +127,18 @@ export default async function SiparisDetayi({
       <section className="rounded-marka border border-cizgi bg-yuzey p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-lg">Kargo</h2>
-          <Link
-            href={`/yonetim/siparisler/${siparis.numara}/etiket`}
-            className="text-sm font-bold text-mavi-koyu hover:underline"
-          >
-            Etiketi yazdır
-          </Link>
+          {/* Ödemesi tamamlanmamış siparişe etiket basmak "gönderiyorum"
+              demek; bağlantı hiç çıkmıyor ve sayfası da reddediyor (K-54). */}
+          {belge.basilabilir ? (
+            <Link
+              href={`/yonetim/siparisler/${siparis.numara}/etiket`}
+              className="text-sm font-bold text-mavi-koyu hover:underline"
+            >
+              Etiketi yazdır
+            </Link>
+          ) : (
+            <span className="text-xs text-metin-3">Etiket için ödeme bekleniyor</span>
+          )}
         </div>
         <p className="mt-1 text-xs text-metin-3">
           Takip numarasını girip kaydedince sipariş &quot;kargoda&quot; olur ve müşteriye
@@ -193,7 +209,7 @@ export default async function SiparisDetayi({
       <section className="rounded-marka border border-cizgi bg-yuzey p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-lg">Fatura</h2>
-          {fatura && (
+          {fatura && belge.basilabilir && (
             <Link
               href={`/yonetim/siparisler/${siparis.numara}/fatura`}
               className="text-sm font-bold text-mavi-koyu hover:underline"
@@ -262,15 +278,23 @@ export default async function SiparisDetayi({
               ayrıştırılır. Oran satış ayarlarından değiştirilebiliyor; şu an %
               {ayar.kdvOrani}.
             </p>
-            <form action={faturaHazirla} className="mt-4">
-              <input type="hidden" name="numara" value={siparis.numara} />
-              <button
-                type="submit"
-                className="rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white"
-              >
-                Fatura oluştur
-              </button>
-            </form>
+            {belge.basilabilir ? (
+              <form action={faturaHazirla} className="mt-4">
+                <input type="hidden" name="numara" value={siparis.numara} />
+                <button
+                  type="submit"
+                  className="rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white"
+                >
+                  Fatura oluştur
+                </button>
+              </form>
+            ) : (
+              /* Fatura satışın belgesi: ödeme gelmeden kesilmiyor. Kural
+                 sunucuda da var — görünmeyen düğme koruma değildir (K-54). */
+              <p className="mt-3 rounded-marka bg-yuzey-sicak px-3 py-2 text-xs text-metin-2">
+                {belge.sebep}
+              </p>
+            )}
           </>
         )}
       </section>

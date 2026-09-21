@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BOLUM, KUTU, YAZI } from "../bilgi-bicim";
-import { BEDENLER, BEDEN_OLCULERI } from "@/ui/katalog-bicim";
+import BedenTablosu from "@/ui/beden-tablosu";
 
 export const metadata: Metadata = {
   title: "Beden rehberi",
@@ -10,11 +10,10 @@ export const metadata: Metadata = {
 };
 
 /**
- * Tablo artık burada değil, ui/katalog-bicim.ts içinde: aynı boy-kilo bilgisi
- * süzgeçte ve ürün sayfasında da gösteriliyor. Tek kaynak olmasa ikisi er geç
- * ayrışırdı.
+ * Tablo artık burada değil, ui/beden-tablosu.tsx içinde: aynı boy-kilo
+ * bilgisi süzgeçte, ürün sayfasında ve yönetim panelinde de gösteriliyor.
+ * Tek kaynak olmasa er geç ayrışırlardı (K-55).
  */
-const TABLO = BEDENLER.map((beden) => ({ beden, ...BEDEN_OLCULERI[beden] }));
 
 export default function BedenRehberi() {
   return (
@@ -32,33 +31,8 @@ export default function BedenRehberi() {
       </div>
 
       <h2 className={BOLUM}>Boy ve kilo karşılıkları</h2>
-      <div className="mt-3 overflow-x-auto rounded-marka border border-cizgi bg-yuzey">
-        <table className="w-full text-sm">
-          <thead className="border-b border-cizgi bg-yuzey-sicak text-left">
-            <tr>
-              <th scope="col" className="px-4 py-3 font-bold">
-                Beden
-              </th>
-              <th scope="col" className="px-4 py-3 font-bold">
-                Boy
-              </th>
-              <th scope="col" className="px-4 py-3 font-bold">
-                Kilo
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {TABLO.map((s) => (
-              <tr key={s.beden} className="border-b border-cizgi-soluk last:border-0">
-                <th scope="row" className="px-4 py-3 text-left font-bold">
-                  {s.beden}
-                </th>
-                <td className="rakam px-4 py-3 text-metin-2">{s.boy}</td>
-                <td className="rakam px-4 py-3 text-metin-2">{s.kilo}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="mt-3">
+        <BedenTablosu />
       </div>
       <p className="mt-3 text-xs text-metin-3">
         Her bedende ürün bulunmayabilir. Ürün sayfasında yalnızca stokta olan bedenler

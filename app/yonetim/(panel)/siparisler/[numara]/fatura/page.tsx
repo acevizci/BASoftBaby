@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import BelgeEngeli from "@/ui/belge-engeli";
 import { faturaGetir } from "@/server/fatura";
+import { belgeBasilabilirMi } from "@/server/siparis-belge";
 import { siparisGetirPanel } from "@/server/siparis";
 import { kunyeGetir } from "@/server/yasal";
 import { fiyatYaz } from "@/ui/katalog-bicim";
@@ -34,6 +36,14 @@ export default async function FaturaSayfasi({
     kunyeGetir(),
   ]);
   if (!siparis) notFound();
+
+  // Fatura satışın belgesi: ödenmemiş siparişe kesilen fatura olmamış bir
+  // satışı belgeliyor. Bağlantı çıkmıyor, adres elle yazılsa da sayfa
+  // reddediyor (K-54).
+  const belge = belgeBasilabilirMi(siparis);
+  if (!belge.basilabilir) {
+    return <BelgeEngeli baslik="Fatura" sebep={belge.sebep} numara={siparis.numara} />;
+  }
 
   if (!fatura) {
     return (

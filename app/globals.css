@@ -186,6 +186,29 @@ button:disabled,
 }
 
 /* ==========================================================================
+   Toplu işlem çubuğu
+   Listelerde "Seçilenleri: pasife al / sil / etiket bas" çubuğu hiçbir şey
+   seçili değilken duruyordu; basılınca "önce ürün seç" diyen bir düğme
+   dizisi, sürekli görünen bir hata mesajı gibiydi. Çubuk artık formda
+   işaretli bir kutu varken çıkıyor (K-55).
+
+   JavaScript yok: `:has()` seçiciyi işaretli kutuya bakarak çözüyor, yani
+   kural tarayıcının kendi işi. `@supports selector()` sarmalı şart —
+   `:has()` desteklemeyen eski bir tarayıcıda hiçbir kural uygulanmıyor ve
+   çubuk her zamanki gibi görünür kalıyor. Gizlemeyi varsayılan yapıp
+   göstermeyi `:has()`e bırakmak, o tarayıcılarda çubuğu erişilemez hâle
+   getirirdi.
+   ========================================================================== */
+@supports selector(form:has(input:checked)) {
+  form:has(input[name="secili"]) .toplu-cubuk {
+    display: none;
+  }
+  form:has(input[name="secili"]:checked) .toplu-cubuk {
+    display: flex;
+  }
+}
+
+/* ==========================================================================
    Duyuru şeridi
    Mesaj dizisi iki kez arka arkaya basılır ve şerit tam bir dizi kadar
    (yani %50) kaydırılır. Dönüş anında ikinci dizi ilkinin durduğu yerde

@@ -85,11 +85,21 @@ kategoriler (açma, adını değiştirme, sıralama, kapatma, silme — dolu bir
 kategori silinirken ürünlerin nereye taşınacağı soruluyor, K-52),
 ürün silme (sipariş geçmişi etkilenmiyor; satılmış ürün için onay isteniyor),
 ürün listesinde toplu pasife alma / yayına alma / silme — toplu silmede
-siparişte geçmiş ürünler atlanıyor ve kaç tanesinin atlandığı yazılıyor (K-53),
+siparişte geçmiş ürünler atlanıyor ve kaç tanesinin atlandığı yazılıyor (K-53);
+toplu işlem çubuğu ancak bir kutu işaretlendiğinde çıkıyor (K-55),
 Excel/CSV'den toplu ürün yükleme, satış raporu (dönem seçimi, grafik, CSV),
 duyuru şeridi,
 ana sayfa banner'ı, kampanyalar ve satış ayarları (kargo ücreti,
 bedava kargo eşiği, havale bilgisi).
+
+Beden-boy-kilo tablosu mağazadaki beden rehberinde olduğu gibi ürün
+düzenleme ve stok ekranlarında da var; rakamlar tek kaynaktan geliyor (K-55).
+
+**Ödemesi tamamlanmamış ya da iptal edilmiş siparişe kargo etiketi ve fatura
+basılmıyor** — etiket basmak "gönderiyorum" demek, fatura ise satışın
+belgesi. Kural tek modülde (`server/siparis-belge.ts`); bağlantılar
+çıkmıyor, sayfalar adres elle yazılsa da reddediyor, toplu etikette
+atlananların numarası yazılıyor (K-54).
 
 ### Panele giriş ve kullanıcılar
 

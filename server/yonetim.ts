@@ -17,6 +17,7 @@ import { BANNER_GORSELLERI, BANNER_PALETLERI } from "@/server/banner";
 import { GorselHatasi, gorselDosyalariniSil, gorselYukle } from "@/server/gorsel-depo";
 import { TASIYICILAR, takipAdresi, tasiyiciAdi } from "@/server/kargo";
 import { faturaOlustur } from "@/server/fatura";
+import { belgeBasilabilirMi } from "@/server/siparis-belge";
 import { slugYap } from "@/server/slug";
 import { RENK_ADLARI } from "@/ui/katalog-bicim";
 
@@ -702,6 +703,17 @@ export async function faturaHazirla(veri: FormData): Promise<void> {
   const numara = String(veri.get("numara") ?? "").trim().toUpperCase();
   if (!numara) return;
 
+  // Fatura olmamış bir satışı belgelememeli: ödeme gelmeden kesilmiyor.
+  // Düğme zaten çıkmıyor ama form dışarıdan da gönderilebiliyor (K-54).
+  const siparis = await db.order.findUnique({
+    where: { numara },
+    select: { odemeDurumu: true, durum: true },
+  });
+  if (!siparis) return;
+  if (!belgeBasilabilirMi(siparis).basilabilir) {
+    redirect(`/yonetim/siparisler/${numara}?hata=odenmedi`);
+  }
+
   await faturaOlustur(numara);
   vitriniYenile();
   redirect(`/yonetim/siparisler/${numara}/fatura`);
@@ -1015,6 +1027,14 @@ export async function bannerSuresiKaydet(veri: FormData): Promise<void> {
  * diğerleri yine de yükleniyor ve kaç tanesinin başarısız olduğu ekrana
  * dönüyor. Yükleme sırası seçim sırası.
  */
+/**
+ * Fotoğraf işlemleri hep `#fotograflar` bölümüne dönüyor.
+ *
+ * Silme, taşıma ve ad kaydetme düğmeleri sayfanın altındaki fotoğraf
+ * bölümünde; dönüşte tarayıcı sayfanın en başına gidiyordu. Uzun bir ürün
+ * sayfasında üç fotoğraf silmek üç kez aşağı kaydırmak demekti — işin
+ * yapıldığı yerde kalmalı (K-55).
+ */
 export async function fotografEkle(veri: FormData): Promise<void> {
   await yoneticiGerekli();
 
@@ -1026,7 +1046,7 @@ export async function fotografEkle(veri: FormData): Promise<void> {
   if (!urun) redirect("/yonetim/urunler");
 
   const dosyalar = veri.getAll("fotograf").filter((d): d is File => d instanceof File && d.size > 0);
-  if (dosyalar.length === 0) redirect(`/yonetim/urunler/${slug}?fhata=bos`);
+  if (dosyalar.length === 0) redirect(`/yonetim/urunler/${slug}?fhata=bos#fotograflar`);
 
   const altMetin = String(veri.get("altMetin") ?? "").trim() || urun.ad;
   let sira = urun.images.reduce((e, g) => Math.max(e, g.sira), 0);
@@ -1056,9 +1076,9 @@ export async function fotografEkle(veri: FormData): Promise<void> {
 
   vitriniYenile();
   if (hatalar.length > 0) {
-    redirect(`/yonetim/urunler/${slug}?fhata=${encodeURIComponent(hatalar[0])}`);
+    redirect(`/yonetim/urunler/${slug}?fhata=${encodeURIComponent(hatalar[0])}#fotograflar`);
   }
-  redirect(`/yonetim/urunler/${slug}?fkayit=${dosyalar.length - hatalar.length}`);
+  redirect(`/yonetim/urunler/${slug}?fkayit=${dosyalar.length - hatalar.length}#fotograflar`);
 }
 
 export async function fotografSil(veri: FormData): Promise<void> {
@@ -1076,7 +1096,7 @@ export async function fotografSil(veri: FormData): Promise<void> {
   if (kayit) await gorselDosyalariniSil([kayit.yol, kayit.kucukYol]);
 
   vitriniYenile();
-  redirect(`/yonetim/urunler/${slug}?fsil=1`);
+  redirect(`/yonetim/urunler/${slug}?fsil=1#fotograflar`);
 }
 
 /**
@@ -1107,7 +1127,7 @@ export async function fotografTasi(veri: FormData): Promise<void> {
   const yer = hepsi.findIndex((g) => g.id === id);
   const hedef = yer + yon;
   if (yer === -1 || hedef < 0 || hedef >= hepsi.length) {
-    redirect(`/yonetim/urunler/${slug}`);
+    redirect(`/yonetim/urunler/${slug}#fotograflar`);
   }
 
   [hepsi[yer], hepsi[hedef]] = [hepsi[hedef], hepsi[yer]];
@@ -1119,7 +1139,7 @@ export async function fotografTasi(veri: FormData): Promise<void> {
   );
 
   vitriniYenile();
-  redirect(`/yonetim/urunler/${slug}`);
+  redirect(`/yonetim/urunler/${slug}#fotograflar`);
 }
 
 export async function fotografAdiKaydet(veri: FormData): Promise<void> {
@@ -1138,5 +1158,5 @@ export async function fotografAdiKaydet(veri: FormData): Promise<void> {
 
   await db.productImage.update({ where: { id }, data: { altMetin, renk } });
   vitriniYenile();
-  redirect(`/yonetim/urunler/${slug}?fkayit=0`);
+  redirect(`/yonetim/urunler/${slug}?fkayit=0#fotograflar`);
 }

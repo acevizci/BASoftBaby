@@ -204,8 +204,10 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
         </table>
       </div>
 
+        {/* Çubuk yalnızca bir kutu işaretliyken görünüyor; kural
+            globals.css'te `:has()` ile, JavaScript'siz (K-55). */}
         {urunler.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 rounded-marka border border-cizgi bg-yuzey p-4">
+          <div className="toplu-cubuk flex flex-wrap items-center gap-2 rounded-marka border border-cizgi bg-yuzey p-4">
             <span className="text-sm font-bold text-metin-2">Seçilenleri:</span>
             <button type="submit" name="islem" value="pasif" className={ISLEM_DUGMESI}>
               Pasife al

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import BelgeEngeli from "@/ui/belge-engeli";
 import KargoEtiketi from "@/ui/kargo-etiketi";
 import { gonderiGetir } from "@/server/kargo";
+import { belgeBasilabilirMi } from "@/server/siparis-belge";
 import { siparisGetirPanel } from "@/server/siparis";
 import { kunyeGetir } from "@/server/yasal";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
@@ -29,6 +31,14 @@ export default async function EtiketSayfasi({
     kunyeGetir(),
   ]);
   if (!siparis) notFound();
+
+  // Etiket basmak “bunu kargoya veriyorum” demek: ödemesi gelmemiş bir
+  // siparişte bağlantı zaten çıkmıyor, adres elle yazılırsa da burada
+  // duruyor (K-54).
+  const belge = belgeBasilabilirMi(siparis);
+  if (!belge.basilabilir) {
+    return <BelgeEngeli baslik="Kargo etiketi" sebep={belge.sebep} numara={siparis.numara} />;
+  }
 
   return (
     <div className="flex flex-col gap-4">

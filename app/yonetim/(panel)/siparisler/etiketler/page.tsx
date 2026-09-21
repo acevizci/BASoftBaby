@@ -1,6 +1,7 @@
 import Link from "next/link";
 import KargoEtiketi from "@/ui/kargo-etiketi";
 import { gonderiGetir } from "@/server/kargo";
+import { belgeBasilabilirMi } from "@/server/siparis-belge";
 import { siparisGetirPanel } from "@/server/siparis";
 import { kunyeGetir } from "@/server/yasal";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
@@ -43,13 +44,21 @@ export default async function TopluEtiket({
   );
   const bulunanlar = kayitlar.filter((k) => k.siparis !== undefined);
 
+  // Toplu seçimde ödemesi gelmemiş bir sipariş araya karışması en kolay
+  // yer: elli satırı işaretleyip yazdırıyorsun. O etiketler basılmıyor,
+  // numaraları ayrıca yazıyor — sessizce düşürmek daha kötü olurdu (K-54).
+  const basilacaklar = bulunanlar.filter((k) => belgeBasilabilirMi(k.siparis!).basilabilir);
+  const atlananlar = bulunanlar
+    .filter((k) => !belgeBasilabilirMi(k.siparis!).basilabilir)
+    .map((k) => k.siparis!.numara);
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3 yazdirma-gizle">
         <h1 className="text-2xl">
           Kargo etiketleri{" "}
           <span className="rakam text-base font-semibold text-metin-3">
-            {bulunanlar.length} adet
+            {basilacaklar.length} adet
           </span>
         </h1>
         <Link
@@ -60,9 +69,24 @@ export default async function TopluEtiket({
         </Link>
       </div>
 
-      {bulunanlar.length === 0 ? (
+      {atlananlar.length > 0 && (
+        <div className="rounded-marka border border-sari bg-sari-soluk px-4 py-3 text-sm text-sari-koyu yazdirma-gizle">
+          <p className="font-bold">
+            {atlananlar.length} siparişin etiketi basılmadı.
+          </p>
+          <p className="mt-1">
+            Ödemesi tamamlanmamış ya da iptal edilmiş siparişe kargo etiketi basılmıyor:{" "}
+            <span className="rakam">{atlananlar.join(", ")}</span>. Havale geldiyse ödeme
+            durumunu siparişten &quot;Ödendi&quot; yap.
+          </p>
+        </div>
+      )}
+
+      {basilacaklar.length === 0 ? (
         <p className="rounded-marka border border-cizgi bg-yuzey p-8 text-center text-sm text-metin-2 yazdirma-gizle">
-          Hiç sipariş seçilmemiş. Listeden seçip &quot;Etiketleri yazdır&quot; düğmesine bas.
+          {atlananlar.length > 0
+            ? "Seçilen siparişlerin hiçbirinin etiketi basılamıyor: ödemesi tamamlanmamış ya da iptal edilmiş."
+            : "Hiç sipariş seçilmemiş. Listeden seçip “Etiketleri yazdır” düğmesine bas."}
         </p>
       ) : (
         <>
@@ -72,7 +96,7 @@ export default async function TopluEtiket({
           </p>
 
           <div className="flex flex-col gap-6">
-            {bulunanlar.map(({ siparis, gonderi }) => (
+            {basilacaklar.map(({ siparis, gonderi }) => (
               <div key={siparis!.numara} className="etiket-sayfa">
                 <KargoEtiketi
                   siparis={{
