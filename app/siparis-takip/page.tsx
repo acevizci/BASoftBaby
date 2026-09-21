@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import SiparisKarti from "@/ui/siparis-karti";
+import TalepFormu from "@/ui/talep-formu";
 import { siparisGetir } from "@/server/siparis";
+import { talepDurumu } from "@/server/talep";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Sipariş takibi", robots: { index: false } };
@@ -20,6 +22,11 @@ export default async function SiparisTakip({ searchParams }: PageProps<"/siparis
   const arandi = Boolean(numara && eposta);
 
   const siparis = arandi ? await siparisGetir(numara, eposta) : undefined;
+  // Talep kuralları siparişin durumuna bağlı; hesabı sunucu yapıyor.
+  const talepBilgisi = siparis ? await talepDurumu(siparis.numara) : undefined;
+
+  const talepSonucu = typeof aranan.talep === "string" ? aranan.talep : undefined;
+  const talepMesaji = typeof aranan.mesaj === "string" ? aranan.mesaj : undefined;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
@@ -64,6 +71,16 @@ export default async function SiparisTakip({ searchParams }: PageProps<"/siparis
       )}
 
       {siparis && <SiparisKarti siparis={siparis} className="mt-6" />}
+
+      {siparis && talepBilgisi && (
+        <TalepFormu
+          numara={siparis.numara}
+          eposta={eposta}
+          bilgi={talepBilgisi}
+          sonuc={talepSonucu}
+          mesaj={talepMesaji}
+        />
+      )}
     </div>
   );
 }

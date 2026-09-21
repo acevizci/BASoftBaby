@@ -73,6 +73,14 @@ ana sayfa banner'ı, kampanyalar ve satış ayarları (kargo ücreti,
 bedava kargo eşiği, havale bilgisi). Açılabilmesi için `YONETIM_SIFRE` tanımlı olmalı; tanımlı değilse panel
 kendini tamamen kapatır (404 verir), yani ayar unutulursa açıkta kalmaz.
 
+## İptal ve iade
+
+Müşteri sipariş takip sayfasından kendi iptal, iade ya da beden değişimi
+talebini açıyor; siparişin tamamını değil tek bir ürünü de iade edebiliyor.
+Hangi siparişe ne açılabileceğine sunucu karar veriyor: kargoya verilmemişse
+iptal, verilmişse iade, teslimden sonra 14 gün içinde iade ve değişim (K-33).
+Onaylanan iptal siparişi iptal edip stoğu geri veriyor.
+
 ## E-posta
 
 Sipariş onayı, ödeme onayı, kargo bildirimi, şifre sıfırlama ve e-posta

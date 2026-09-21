@@ -16,6 +16,7 @@ import { db } from "@/server/veritabani";
 import { epostaAcikMi } from "@/server/eposta";
 import { ayarlariGetir } from "@/server/sepet";
 import { kunyeGetir } from "@/server/yasal";
+import { bekleyenTalepSayisi } from "@/server/talep";
 
 /** Bu adedin altına düşen beden "azalan" sayılıyor. */
 export const KRITIK_STOK = 3;
@@ -92,6 +93,7 @@ export async function panelOzetiGetir(): Promise<PanelOzeti> {
     ayar,
     kunye,
     taslakYasal,
+    bekleyenTalep,
   ] = await Promise.all([
     db.order.aggregate({
       where: { ...satilan, olusturuldu: { gte: bugun } },
@@ -131,6 +133,7 @@ export async function panelOzetiGetir(): Promise<PanelOzeti> {
     ayarlariGetir(),
     kunyeGetir(),
     db.legalPage.count({ where: { taslakMi: true } }),
+    bekleyenTalepSayisi(),
   ]);
 
   const bekleyenVaryantlar =
@@ -161,6 +164,13 @@ export async function panelOzetiGetir(): Promise<PanelOzeti> {
     .filter((b): b is Bekleyen => b !== null);
 
   const isler: Is[] = [
+    {
+      ad: "Cevap bekleyen talep",
+      adet: bekleyenTalep,
+      adres: "/yonetim/talepler",
+      acil: bekleyenTalep > 0,
+      aciklama: "Müşterinin iptal, iade ya da değişim isteği; cevap bekliyor.",
+    },
     {
       ad: "Havale onayı bekliyor",
       adet: havaleBekleyen,

@@ -9,9 +9,9 @@ export const metadata: Metadata = {
 
 const ADIMLAR = [
   {
-    baslik: "Bize yaz",
+    baslik: "Sipariş takibinden talep aç",
     metin:
-      "Sipariş numaranı, iade etmek ya da değiştirmek istediğin ürünü ve sebebini yaz. Sebep zorunlu değil, sadece kalıpları düzeltmemize yardımcı oluyor.",
+      "Sipariş numaran ve e-postanla sipariş takip sayfasını aç, iade ya da değişim etmek istediğin ürünü seç. Siparişin tamamını değil tek bir ürünü de iade edebilirsin. Sebep zorunlu değil, sadece kalıpları düzeltmemize yardımcı oluyor.",
   },
   {
     baslik: "Ürünü paketle",
@@ -26,7 +26,7 @@ const ADIMLAR = [
   {
     baslik: "Sonuç",
     metin:
-      "Ürün elimize ulaştıktan sonra 3 iş günü içinde kontrol edip sonucu e-postayla bildiriyoruz. Değişimde yeni ürün aynı gün kargoya çıkıyor.",
+      "Talebinin durumunu sipariş takip sayfasından izleyebilirsin. Ürün elimize ulaştıktan sonra 3 iş günü içinde kontrol edip sonucu e-postayla bildiriyoruz. Değişimde yeni ürün aynı gün kargoya çıkıyor.",
   },
 ];
 
@@ -94,11 +94,12 @@ export default function IadeDegisim() {
       <h2 className={BOLUM}>Siparişimi iptal etmek istiyorum</h2>
       <p className={YAZI}>
         Sipariş henüz kargoya verilmediyse tamamen iptal edilebiliyor ve ödeme yaptıysan
-        tamamı iade ediliyor. Durumu{" "}
+        tamamı iade ediliyor. İptal talebini{" "}
         <Link href="/siparis-takip" className="font-bold text-mavi-koyu hover:underline">
           sipariş takibi
         </Link>{" "}
-        sayfasından görebilirsin.
+        sayfasından kendin açabilirsin; kargoya verilmişse aynı sayfadan iade talebi
+        açabilirsin.
       </p>
 
       <p className="mt-6 text-xs text-metin-3">

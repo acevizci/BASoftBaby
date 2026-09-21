@@ -246,6 +246,10 @@ model Order {
   /// Kargo firması takip numarası; 05. adımda kargo entegrasyonu dolduracak.
   kargoTakipNo String?
 
+  /// Teslim edildiği an. Cayma hakkının 14 günü buradan sayılıyor (K-33);
+  /// `guncellendi` kullanılamaz, o her panel dokunuşunda değişiyor.
+  teslimTarihi DateTime?
+
   /// Müşterinin ön bilgilendirme formu ile mesafeli satış sözleşmesini
   /// onayladığı an. Onay kutusu işaretlenmeden sipariş oluşmuyor; kaydı
   /// burada duruyor ki sonradan "onaylamadım" denemesin.
@@ -263,6 +267,7 @@ model Order {
   odemeler    Payment[]
   gonderiler  Shipment[]
   fatura      Invoice?
+  talepler    OrderRequest[]
 
   @@index([durum, olusturuldu])
   @@index([eposta])
@@ -285,6 +290,8 @@ model OrderItem {
   adet       Int
   /// Sipariş anındaki birim fiyat. Sonradan fiyat değişse bile bu değişmez.
   fiyatKurus Int
+
+  talepSatirlari OrderRequestItem[]
 
   @@index([orderId])
 }
@@ -608,4 +615,58 @@ model StockAlert {
   @@unique([variantId, eposta])
   @@index([variantId])
   @@index([olusturuldu])
+}
+
+/// Müşterinin iptal, iade ya da değişim talebi.
+///
+/// Mesafeli satışta cayma hakkı yasal: teslimden itibaren 14 gün, gerekçe
+/// göstermeden. Talep bu kayıtla açılıyor ve panelden cevaplanıyor — telefon
+/// ya da e-posta trafiği yerine izi kalan tek bir akış (K-33).
+///
+/// Talep siparişi kendiliğinden değiştirmiyor. Tek istisna: onaylanan iptal,
+/// siparişi iptal edip stoğu geri veriyor. İade ve değişimde ürünün geri
+/// gelmesi gerekiyor, o yüzden kararı mağaza sahibi veriyor.
+model OrderRequest {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  /// iptal · iade · degisim
+  tur String
+  /// Sebep kodu (bkz. ui/talep-bicim.ts). Yasal olarak gerekçe zorunlu değil;
+  /// "belirtmek istemiyorum" da bir seçenek.
+  sebep    String
+  aciklama String @default("")
+
+  /// yeni · onaylandi · reddedildi · tamamlandi
+  durum String @default("yeni")
+  /// Mağaza sahibinin yanıtı; müşteriye olduğu gibi gösteriliyor.
+  cevap String @default("")
+
+  olusturuldu DateTime @default(now())
+  guncellendi DateTime @updatedAt
+
+  satirlar OrderRequestItem[]
+
+  @@index([durum, olusturuldu])
+  @@index([orderId])
+}
+
+/// Talebin kapsadığı sipariş satırı ve adedi.
+///
+/// Üç ürünün birini iade etmek bebek kıyafetinde sık: beden biri tutmaz,
+/// ötekiler tutar. Talebin tamamı ya da hiçbiri olması müşteriyi telefona
+/// mecbur bırakırdı.
+model OrderRequestItem {
+  id        String       @id @default(cuid())
+  requestId String
+  request   OrderRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  orderItemId String
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  adet Int
+
+  @@unique([requestId, orderItemId])
+  @@index([requestId])
 }

@@ -307,3 +307,73 @@ Bu e-postayı, bu ürün için haber verilmesini istediğin için aldın. Tek
 seferlik; isteğin kaydı bu e-postayla birlikte silindi.${await altBilgi()}`,
   );
 }
+
+export type TalepEpostasi = {
+  numara: string;
+  adSoyad: string;
+  turAdi: string;
+  satirlar: string[];
+};
+
+/** Talep alındı bildirimi — müşteriye. */
+export async function talepAlindiEpostasi(
+  kime: string,
+  bilgi: TalepEpostasi,
+): Promise<EpostaSonucu> {
+  return gonder(
+    kime,
+    `${bilgi.turAdi} talebin alındı — ${bilgi.numara}`,
+    `Merhaba ${bilgi.adSoyad},
+
+${bilgi.numara} numaralı siparişin için ${bilgi.turAdi.toLocaleLowerCase("tr")} talebini aldık.
+
+${bilgi.satirlar.map((s) => `• ${s}`).join("\n")}
+
+En kısa sürede bakıp sonucu bildireceğiz. Talebinin durumunu sipariş takip
+sayfasından da izleyebilirsin:
+
+${siteAdresi()}/siparis-takip${await altBilgi()}`,
+  );
+}
+
+/** Talep sonuçlandı bildirimi — müşteriye. */
+export async function talepCevabiEpostasi(
+  kime: string,
+  bilgi: TalepEpostasi & { durumAdi: string; cevap: string },
+): Promise<EpostaSonucu> {
+  return gonder(
+    kime,
+    `${bilgi.turAdi} talebin: ${bilgi.durumAdi} — ${bilgi.numara}`,
+    `Merhaba ${bilgi.adSoyad},
+
+${bilgi.numara} numaralı siparişin için açtığın ${bilgi.turAdi.toLocaleLowerCase("tr")} talebi
+"${bilgi.durumAdi}" olarak sonuçlandı.
+
+${bilgi.cevap || "Ayrıntı için bize yazabilirsin."}
+
+${siteAdresi()}/siparis-takip${await altBilgi()}`,
+  );
+}
+
+/**
+ * Yeni talep bildirimi — mağaza sahibine.
+ *
+ * Müşteri talebini açtığında panele kimse bakmıyor olabilir. Künyedeki destek
+ * adresi tanımlıysa oraya haber gidiyor; tanımlı değilse atlanıyor.
+ */
+export async function talepBildirimiEpostasi(bilgi: TalepEpostasi): Promise<EpostaSonucu> {
+  const kunye = await kunyeGetir();
+  const kime = kunye.destekEposta.trim();
+  if (!kime) return { gonderildi: false, sebep: "destek-adresi-yok" };
+
+  return gonder(
+    kime,
+    `Yeni ${bilgi.turAdi.toLocaleLowerCase("tr")} talebi — ${bilgi.numara}`,
+    `${bilgi.adSoyad} (${bilgi.numara}) bir ${bilgi.turAdi.toLocaleLowerCase("tr")} talebi açtı.
+
+${bilgi.satirlar.map((s) => `• ${s}`).join("\n")}
+
+Panelden cevaplayabilirsin:
+${siteAdresi()}/yonetim/talepler`,
+  );
+}

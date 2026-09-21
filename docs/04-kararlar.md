@@ -1195,6 +1195,77 @@ etiketin yayılması birkaç yüz milisaniye sürüyor (K-22).
 
 ---
 
+### K-33 · İptal ve iade talebi: kurallar koda gömülü
+**21 Eylül 2026**
+
+Yasal metinler cayma hakkını zaten söz veriyordu — teslimden itibaren 14 gün,
+gerekçe göstermeden — ama tek yolu telefon ya da e-postaydı. Artık müşteri
+sipariş takip sayfasından kendisi talep açıyor, durumunu aynı yerden izliyor;
+mağaza sahibi panelden cevaplıyor.
+
+**Kurallar mağaza sahibinin insafına bırakılmadı.** Hangi siparişe ne
+açılabileceğine sunucu karar veriyor:
+
+| Sipariş durumu | Açılabilen |
+| --- | --- |
+| Ödeme bekliyor, hazırlanıyor | Sipariş iptali |
+| Kargoda | İade |
+| Teslim (14 gün içinde) | İade, beden değişimi |
+| Teslim (14 gün geçmiş), iptal | Yok, sebebi yazılı |
+
+Kargodaki siparişe de iade açılıyor: cayma hakkı sözleşme kurulduğu anda
+başlıyor, teslimatı beklemek gerekmiyor. Süre **teslim tarihinden** sayılıyor,
+sipariş tarihinden değil — bunun için `Order.teslimTarihi` eklendi.
+`guncellendi` kullanılamazdı, o her panel dokunuşunda değişiyor ve müşterinin
+süresini sessizce uzatır ya da kısaltırdı.
+
+Süre dolduğunda ekran kapanmıyor, **sebebini yazıyor** ve ayıplı mal
+haklarının bu süreden bağımsız olduğunu hatırlatıyor. "Hakkın yok" demek
+yanlış olurdu; olan şey cayma hakkının süresinin dolması.
+
+**Gerekçe zorunlu değil.** Kanun bunu açıkça söylüyor. Sebep listesi yine de
+var çünkü "beden tutmadı" mı "üründe hata vardı" mı bilmek kalıpları
+düzeltmeye yarıyor — ama listede "belirtmek istemiyorum" da bir seçenek ve
+seçilmesi hiçbir şeyi değiştirmiyor.
+
+**Kısmi iade var.** Üç ürünün birini iade etmek bebek kıyafetinde sık: beden
+biri tutmaz, ötekiler tutar. Tamamı ya da hiçbiri olsaydı müşteri yine telefona
+mecbur kalırdı. Reddedilen bir talebin satırları yeniden talep edilebiliyor:
+eksik bilgiyle reddedilen müşterinin ikinci kez deneme hakkı var.
+
+**Onaylanan iptal siparişi gerçekten iptal ediyor** ve stoğu geri veriyor
+(mevcut `siparisiIptalEtVeStoguIadeEt`). Bu adımı elle bırakmak, "onaylandı"
+yazan ama iptal edilmemiş siparişler demekti. İade ve değişimde ürünün
+fiziksel olarak geri gelmesi gerektiği için sipariş kendiliğinden değişmiyor;
+mağaza sahibi ürün eline geçince tamamlıyor.
+
+**Kimlik:** talep açmak siparişi görmekle aynı yetki — numara **ve** e-posta
+eşleşmesi. Numara tek başına yetmiyor, yoksa numara deneyerek başkasının
+siparişine dokunulabilirdi. Bulunamadı ile eşleşmedi aynı cevabı veriyor.
+
+Her aşamada e-posta: talep alındığında müşteriye ve (künyede destek adresi
+tanımlıysa) mağaza sahibine, sonuçlandığında müşteriye. Gönderim akışı
+bozmuyor; anahtar yoksa talep yine açılıyor.
+
+**Denendi** (33 madde, sahte Resend sunucusuyla, beş ayrı durumdaki siparişle):
+her durumda hangi seçeneklerin çıktığı, cayma son gününün yazılması, süresi
+dolanın sebebi, yanlış e-postayla siparişin görünmemesi, kısmi iadenin doğru
+adetle kaydı, açık talep varken ikincisinin engellenmesi, panelden cevabın
+müşteriye e-postayla gitmesi ve sayfasında görünmesi, onaylanan iptalin
+siparişi iptal edip stoğu geri vermesi, JavaScript kapalı tarayıcı, özet
+ekranındaki sayı.
+
+Deneme iki metin kusuru buldu: kargodaki siparişte iptal seçeneği yokken
+"sipariş iptalinde…" diye bir not yazılıyordu, ve o notun koşullu hâli hiçbir
+zaman görünemeyecek ölü bir daldı (iptal hiçbir zaman başka bir türle birlikte
+sunulmuyor). İkisi de temizlendi.
+
+**Nerede:** [`../server/talep.ts`](../server/talep.ts),
+[`../ui/talep-formu.tsx`](../ui/talep-formu.tsx),
+[`../app/yonetim/talepler/page.tsx`](../app/yonetim/talepler/page.tsx)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

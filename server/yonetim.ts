@@ -215,9 +215,22 @@ export async function siparisDurumuKaydet(veri: FormData): Promise<void> {
   if (!(DURUMLAR as readonly string[]).includes(durum)) return;
   if (!(ODEME_DURUMLARI as readonly string[]).includes(odemeDurumu)) return;
 
+  // Teslim anı ayrıca tutuluyor: cayma hakkının 14 günü buradan sayılıyor
+  // (K-33). Zaten doluysa dokunulmuyor — durum ileri geri değiştirilse bile
+  // müşterinin süresi baştan başlamamalı.
+  const oncesi = await db.order.findUnique({
+    where: { numara },
+    select: { teslimTarihi: true },
+  });
+
   await db.order.update({
     where: { numara },
-    data: { durum, odemeDurumu, kargoTakipNo: kargoTakipNo || null },
+    data: {
+      durum,
+      odemeDurumu,
+      kargoTakipNo: kargoTakipNo || null,
+      ...(durum === "teslim" && !oncesi?.teslimTarihi ? { teslimTarihi: new Date() } : {}),
+    },
   });
 
   vitriniYenile();

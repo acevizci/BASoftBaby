@@ -9,6 +9,7 @@ export const metadata: Metadata = {
 const MENU = [
   { yol: "/yonetim", ad: "Özet" },
   { yol: "/yonetim/siparisler", ad: "Siparişler" },
+  { yol: "/yonetim/talepler", ad: "Talepler" },
   { yol: "/yonetim/urunler", ad: "Ürünler" },
   { yol: "/yonetim/kategoriler", ad: "Kategoriler" },
   { yol: "/yonetim/stok", ad: "Stok" },

@@ -70,7 +70,11 @@ export async function gonderiDurumunuIsle(
   if (siparisDurumu && gonderi.order.durum !== siparisDurumu) {
     await db.order.update({
       where: { id: gonderi.order.id },
-      data: { durum: siparisDurumu },
+      data: {
+        durum: siparisDurumu,
+        // Teslim anı: cayma hakkının 14 günü buradan sayılıyor (K-33).
+        ...(siparisDurumu === "teslim" ? { teslimTarihi: new Date() } : {}),
+      },
     });
   }
 
