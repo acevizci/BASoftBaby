@@ -39,9 +39,9 @@ Vercel'in proje ayarlarında durur.
 Yayına ilk gönderimde bu veri kendiliğinden bir kez yazılıyor; sonraki
 gönderimlerde yazılmıyor, yani sildiğin örnek ürünler geri gelmiyor.
 
-Göçler de yapı sırasında uygulanıyor. İki dağıtım aynı anda başlarsa
-(önizleme + yayın) ikisi de aynı veritabanına baktığı için göç kilidi meşgul
-çıkabiliyor; yapı bu durumda düşmüyor, bekleyip yeniden deniyor (K-25).
+Göçler de yapı sırasında uygulanıyor. Göç kilidi meşgulse yapı düşmüyor:
+kilidi tutan oturum çalışıyorsa bekliyor, yarıda kesilmiş bir dağıtımdan
+kalmışsa temizleyip geçiyor (K-25).
 
 ## Klasörler
 
