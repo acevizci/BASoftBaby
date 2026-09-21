@@ -70,9 +70,14 @@ export default async function YonetimDuzeni({ children }: LayoutProps<"/yonetim"
 
           <Madde madde={ozet} yol={yol} />
 
+          {/* Grup başlığı hem koyulaştı hem ayırıcı çizgi aldı. Eskisi
+              `metin-3` idi: zemine karşı 2,9:1, yani WCAG'nin 4,5 eşiğinin
+              altında — küçük ve büyük harfli bir metin için özellikle zor
+              okunuyordu. Çizgi de gerekli, çünkü renk farkı tek başına
+              "buradan yeni bir grup başlıyor" demiyor (K-50). */}
           {gruplar.map((g) => (
-            <div key={g.baslik} className="mt-3 flex flex-col gap-1">
-              <p className="px-3 text-xs font-bold uppercase tracking-wide text-metin-3">
+            <div key={g.baslik} className="mt-4 flex flex-col gap-1 border-t border-cizgi pt-3">
+              <p className="px-3 pb-0.5 text-[0.7rem] font-bold uppercase tracking-[0.09em] text-metin-2">
                 {g.baslik}
               </p>
               {g.maddeler.map((m) => (
@@ -81,12 +86,17 @@ export default async function YonetimDuzeni({ children }: LayoutProps<"/yonetim"
             </div>
           ))}
 
-          <Link
-            href="/"
-            className="mt-4 rounded-full px-3 py-2 text-sm font-semibold text-mavi-koyu hover:underline"
-          >
-            Mağazayı gör
-          </Link>
+          {/* Grupların dışında: mağazaya çıkış bir ayar maddesi değil.
+              Ayırıcı çizgi olmadan "Ayarlar"ın son maddesi gibi
+              duruyordu. */}
+          <div className="mt-4 border-t border-cizgi pt-3">
+            <Link
+              href="/"
+              className="block rounded-full px-3 py-2 text-sm font-semibold text-mavi-koyu hover:underline"
+            >
+              Mağazayı gör
+            </Link>
+          </div>
 
           {/* Kimin girdiği yazıyor: ortak bir şifre yerine kişiye ait
               hesaplar olmasının görünen yanı bu (K-45). */}
@@ -125,10 +135,16 @@ function Madde({ madde, yol }: { madde: MenuMaddesi; yol: string }) {
     <Link
       href={madde.yol}
       aria-current={acik ? "page" : undefined}
-      className={`flex items-center justify-between gap-2 rounded-full px-3 py-2 text-sm font-semibold transition ${
+      // Açık sayfa: soluk mercan dolgu tek başına siliktı. Sol kenarı düz
+      // ve kalın mercan çubuklu bir sekme oldu — yuvarlak kenarda çubuk
+      // hilale dönüyor ve çubuk olduğu anlaşılmıyordu. Yazı kalın ve koyu:
+      // mercan yazı soluk mercan dolgunun üstünde 4,39:1 veriyordu, eşik
+      // 4,5. Kimliği zaten çubuk taşıyor, yazının okunur olması daha
+      // önemli — koyu yazı 11,5:1 (K-50).
+      className={`flex items-center justify-between gap-2 py-2 pr-3 text-sm transition ${
         acik
-          ? "bg-mercan-soluk text-mercan-koyu"
-          : "text-metin-2 hover:bg-yuzey-sicak hover:text-metin"
+          ? "rounded-r-full border-l-[3px] border-mercan bg-mercan-soluk pl-[9px] font-bold text-metin"
+          : "rounded-full pl-3 font-semibold text-metin-2 hover:bg-yuzey-sicak hover:text-metin"
       }`}
     >
       <span>{madde.ad}</span>

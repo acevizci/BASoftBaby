@@ -2204,6 +2204,46 @@ söylemesi, çizginin gerçekten çizilmesi (hesaplanmış stille), kartta
 
 ---
 
+### K-50 · Panel menüsünde grup başlıkları ve açık sayfa işareti
+**21 Eylül 2026**
+
+Menü gruplandırılmıştı (K-43) ama başlıklar görevlerini yapmıyordu: maddelerin
+arasında kaybolan soluk bir satırdılar ve gruplar birbirinden ayrılmıyordu.
+Açık sayfanın soluk mercan dolgusu da silikti.
+
+**Başlık rengi WCAG eşiğinin altındaydı.** `metin-3` (`#9b9289`) açık temada
+zemine karşı **2,99:1** veriyordu; eşik 4,5. Küçük punto ve büyük harf bunu
+daha da zorlaştırıyordu. `metin-2`'ye çıkarıldı: **5,62:1** (koyu temada
+4,71 → 8,38).
+
+**Renk farkı tek başına "yeni grup başlıyor" demiyor.** Her grubun üstüne
+ayırıcı çizgi kondu ve araları açıldı. Ölçüldüğünde görülen şey şuydu: göz
+listeyi tararken başlığı bir madde sanıyordu, çünkü aralarındaki tek fark
+bir ton farkıydı.
+
+**Açık sayfa artık sol kenarı düz, kalın mercan çubuklu bir sekme.** İlk
+denemede çubuk yuvarlak kenarlı hapın soluna kondu ve **hilale dönüştü** —
+çubuk olduğu anlaşılmıyordu; sol kenar düzleştirildi.
+
+**Açık sayfanın yazısı koyu, mercan değil.** Mercan yazı (`#c2433a`) soluk
+mercan dolgunun üstünde **4,39:1** veriyordu — eşiğin binde birkaç altında.
+Kimliği zaten çubuk ve dolgu taşıyor; yazının okunur olması daha önemli.
+Koyu yazı **11,54:1** (koyu temada 12,98).
+
+"Mağazayı gör" de kendi ayırıcı çizgisini aldı: mağazaya çıkmak bir ayar
+maddesi değil, ama çizgisiz hâlde "Ayarlar"ın son maddesi gibi duruyordu.
+
+**Denendi** (20 madde, iki temada da): dört grup başlığının çıkması,
+başlık kontrastının 4,5'i geçmesi (hesaplanmış renklerden ölçülerek),
+grupların ayırıcı çizgisinin gerçekten çizilmesi, açık sayfanın tek olması,
+sol çubuğun 3 piksel ve mercan olması, yazının kalın olması ve
+kontrastının eşiği geçmesi, pasif maddede çubuk olmaması. Telefonda
+açılır menüde de başlıklar ve işaret duruyor.
+
+**Nerede:** [`../app/yonetim/(panel)/layout.tsx`](../app/yonetim/(panel)/layout.tsx)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı
