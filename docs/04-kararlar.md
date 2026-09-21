@@ -2066,6 +2066,94 @@ geçirildi.
 
 ---
 
+### K-48 · Dört eksik: 404, galeri, renk fotoğrafı, toplu sipariş işlemi
+**21 Eylül 2026**
+
+Kodda gezilip bulunan eksikler. İkisi hata, ikisi geliştirme.
+
+**404 ve hata sayfaları yoktu.** `/olmayan-sayfa` açınca markanın üst
+çubuğunun altında Next.js'in varsayılan ekranı çıkıyordu: "404 — This page
+could not be found." Türkçe değil, çıkış yolu yok. Yanlış yazılmış bir
+adres, kaldırılmış bir ürün ve süresi dolmuş bir kampanya bağlantısı hep
+buraya düşüyor. Artık Türkçe, arama kutusu ve kategori bağlantıları var.
+`error.tsx` de eklendi: beklenmedik hatada "siparişin kaybolmadı" yazıyor ve
+sipariş takibine bağlanıyor — hatanın kendi metni yazılmıyor, teknik ayrıntı
+içerebilir; yalnızca destek konuşmasında işe yarayan hata kimliği var.
+
+Panelin kendi 404'ü ayrı ve menüsünün içinde: silinmiş bir kaydın adresine
+tıklayan mağaza sahibi çerçeveden çıkmıyor.
+
+**İki kopya, tek gövde.** `app/not-found.tsx` mağaza çerçevesini elle
+çiziyor (grubun dışında), `app/(magaza)/not-found.tsx` çizmiyor (grubun
+düzeni zaten çiziyor). Tek kopyayla başlanmıştı ve tarayıcı denemesi **üst
+çubuğun iki kez basıldığını** gösterdi: `/olmayan-sayfa` aslında
+`[kategori]` yoluna uyuyor, oradan çağrılan `notFound()` kök kopyayı grubun
+düzeninin **içinde** çiziyordu.
+
+**Panel oturumları birikiyordu.** Günlük temizlik ödemeleri, yükleme
+kayıtlarını ve giriş sayaçlarını süpürüyordu ama süresi geçmiş
+`AdminSession` ve harcanmış `AdminToken` satırlarına kimse dokunmuyordu
+(K-45 ve K-47'de eklenmişlerdi). Aynı işe bağlandı.
+
+**Ürün fotoğrafı büyümüyordu**, üstelik küçük görsellere basılamıyordu bile:
+büyük kare hep ilk fotoğraf kalıyordu. Kıyafet alırken kumaşın dokusuna
+yakından bakmak satın alma kararının kendisi. İkisi de `:target` ile
+çözüldü — küçük görsel bir `#kare-...` bağlantısı, büyüteç `#buyuk-...`.
+**JavaScript yok**: tarayıcının kendi işi, geri tuşu çalışıyor, bağlantı
+paylaşılabiliyor. Hangi karenin görüneceğine CSS `:has()` karar veriyor:
+hiçbiri hedef değilse ilk kare.
+
+Denemede bulunan ayrıntı: **büyütülmüş resme basınca kapanmıyordu.**
+Yalnızca kenardaki zemin kapatıyordu; telefonda kare ekranı kaplayınca
+basacak yer kalmıyordu. Resim de kapatma bağlantısının içine alındı.
+
+**Renk seçilince fotoğraf değişmiyordu.** `ProductImage` ürüne bağlıydı,
+varyanta değil: müşteri "Mavi" seçiyor, ekranda krem fotoğraf duruyordu.
+Fotoğrafa `renk` alanı eklendi; boş bırakılan kareler (kumaş yakın çekimi,
+etiket, ölçü kartı) her renkte görünmeye devam ediyor — onlar ürünün
+kendisini anlatıyor, rengini değil. Seçilen renge ait hiç fotoğraf yoksa
+hepsi gösteriliyor: boş bir galeri hiç fotoğraf olmamasından kötü.
+
+**Renk artık adres satırında.** Eskiden istemci durumundaydı; galeri sunucuda
+çizildiği için oradan haberi olamazdı. Şimdi `?renk=mavi`: seçim
+JavaScript kapalıyken de çalışıyor (önceden çalışmıyordu) ve "mavisi" diye
+bağlantı paylaşılabiliyor. Beden istemci durumunda kaldı — fotoğrafı
+değiştirmiyor. Adresten gelen değer ürünün kendi renkleriyle doğrulanıyor.
+
+**Sipariş listesinde toplu işlem yoktu.** Yirmi siparişi kargoya verirken her
+birine tek tek girmek gerekiyordu. Onay kutuları ve tek düğme geldi:
+"Hazırlanıyor / Kargoda / Teslim edildi yap" ve "Etiketleri yazdır". Hepsi
+düz HTML — yazdırma düğmesi `formMethod="get"` ile ayrı sayfaya gidiyor ve
+seçilenleri adres satırında taşıyor, yani JavaScript gerekmiyor.
+
+**Ödeme durumu ve iptal toplu yapılmıyor.** Havale onayı siparişe bakmayı
+gerektiren bir karar; iptal ayrıca stoğu geri veriyor. Toplu işlemde
+"yanlışlıkla hepsini seçtim" hatası bunlarda pahalı.
+
+Kargo etiketi ortak bir parçaya çıkarıldı (`ui/kargo-etiketi.tsx`): tek
+etiket sayfası da toplu yazdırma da aynı düzeni kullanıyor, iki yerde iki
+ayrı etiket bakımı imkânsız hale getirirdi. Toplu sayfada her etiket kendi
+kâğıdına basılıyor, tek seferde en fazla elli tane.
+
+**Denendi** (44 madde): 404'ün Türkçe olması, tek çerçeve basması ve
+arama kutusunun gerçekten arama yapması; panel 404'ünün menü içinde
+çıkması; galeride küçük görselin büyük kareyi değiştirmesi, büyütecin
+açılıp kapanması ve büyük resmin gerçekten büyük olması; renk seçiminin
+adrese yazılması ve uydurma rengin sayfayı bozmaması; panelde renk
+atandıktan sonra vitrinde doğru karelerin süzülmesi ve fotoğrafsız renkte
+hepsinin gösterilmesi; toplu işlemin seçimsizken uyarması, siparişlerin
+durumunu gerçekten değiştirmesi ve süzgeci koruması; toplu etiketin seçilen
+kadar etiket ve barkod basması. Galeri ve renk seçimi JavaScript kapalı
+tarayıcıda ayrıca denendi.
+
+**Nerede:** [`../app/not-found.tsx`](../app/not-found.tsx),
+[`../app/error.tsx`](../app/error.tsx),
+[`../ui/urun-galerisi.tsx`](../ui/urun-galerisi.tsx),
+[`../ui/kargo-etiketi.tsx`](../ui/kargo-etiketi.tsx),
+[`../app/yonetim/(panel)/siparisler/etiketler`](../app/yonetim/(panel)/siparisler/etiketler)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

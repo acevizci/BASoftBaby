@@ -55,9 +55,12 @@ yani `app/(magaza)/sepet` yine `/sepet` (K-43).
 ```
 app/
   layout.tsx              <html>, yazı tipleri, yükleme çizgisi, ölçümleme
-  globals.css             marka renkleri ve yazı tipleri
+  globals.css             marka renkleri, yazı tipleri, galeri ve yazdırma
+  not-found.tsx           404 (çerçeveyi kendi çiziyor; grup dışı adresler)
+  error.tsx               beklenmedik hata ekranı
   (magaza)/               mağaza — duyuru şeridi + üst çubuk + alt bilgi
     layout.tsx            mağaza çerçevesi
+    not-found.tsx         404 (çerçeve grubun düzeninden geliyor)
     page.tsx              ana sayfa
     (vitrin)/             herkese açık sayfalar
       [kategori]/         kategori listesi, filtreler
@@ -97,6 +100,7 @@ app/
       hesabim/            kendi şifresi ve oturumları
       kullanicilar/       panel kullanıcıları (yalnızca sahip)
       siparisler/ talepler/ yorumlar/ rapor/  Satış
+        siparisler/etiketler/  seçilenlerin toplu kargo etiketi
       urunler/ kategoriler/ stok/             Katalog
       kampanyalar/ banner/ duyuru/            Vitrin
       ayarlar/ yasal/ tani/                   Ayarlar
@@ -162,6 +166,8 @@ ui/                       ortak arayüz parçaları
   duyuru-seridi.tsx       üstteki kayan yazı
   hero-banner.tsx         ana sayfadaki dönen banner
   katlanir.tsx            panelde katlanan bölüm (<details>, JavaScript'siz)
+  urun-galerisi.tsx       fotoğraf galerisi ve büyüteç (:target, JavaScript'siz)
+  kargo-etiketi.tsx       tek ve toplu yazdırmanın ortak etiket düzeni
 public/marka/             logo dosyaları
 ```
 

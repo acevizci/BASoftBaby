@@ -451,3 +451,83 @@ a.serit-mesaj:hover {
     width: 100%;
   }
 }
+
+/* ── Ürün galerisi ────────────────────────────────────────────────────────
+   Küçük görsele basınca büyük kare değişiyor, büyük kareye basınca
+   büyüteç açılıyor — ikisi de `:target` ile, JavaScript olmadan (K-48).
+
+   Kurgu: bütün kareler üst üste, yalnızca hedef olan görünüyor. Hiçbiri
+   hedef değilse ilk kare görünüyor; `:has()` bunu soruyor. */
+.galeri > .kare {
+  display: none;
+}
+.galeri > .kare:target {
+  display: block;
+}
+.galeri:not(:has(> .kare:target)) > .kare.ilk {
+  display: block;
+}
+
+/* Seçili küçük görselin çerçevesi. `:has()` ile: hangi büyük kare hedefse
+   ona giden küçük görsel işaretleniyor. Tarayıcı `:has()` bilmiyorsa
+   yalnızca bu işaret eksik kalıyor, galeri çalışmaya devam ediyor. */
+.kucuk:focus-visible {
+  outline: 2px solid var(--mercan);
+  outline-offset: 2px;
+}
+
+/* Büyüteç: kapalıyken belgede hiç yer kaplamıyor. */
+.buyutec {
+  display: none;
+}
+.buyutec:target {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+/* Zemin resmi de kapsıyor: ekranın her yerine basınca kapanıyor. */
+.buyutec-zemin {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: color-mix(in oklab, var(--metin) 82%, transparent);
+  cursor: zoom-out;
+}
+.buyutec-kapat {
+  position: absolute;
+  top: 0.75rem;
+  right: 1rem;
+  font-size: 2rem;
+  line-height: 1;
+  color: #fff;
+}
+.buyutec-resim {
+  max-width: min(100%, 1100px);
+  max-height: 92vh;
+  width: auto;
+  height: auto;
+  border-radius: var(--radius-marka, 14px);
+  object-fit: contain;
+}
+
+/* Büyüteç açıkken arkadaki sayfa kaymasın. */
+body:has(.buyutec:target) {
+  overflow: hidden;
+}
+
+/* Toplu etiket yazdırmada her etiket kendi sayfasına (K-48). */
+@media print {
+  .etiket-sayfa {
+    break-after: page;
+  }
+  .etiket-sayfa:last-child {
+    break-after: auto;
+  }
+}

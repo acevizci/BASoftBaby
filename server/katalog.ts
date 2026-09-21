@@ -45,6 +45,7 @@ type SatirTipi = {
     altMetin: string;
     genislik: number;
     yukseklik: number;
+    renk: string | null;
   }[];
 };
 
@@ -88,6 +89,7 @@ function urunYap(satir: SatirTipi, kampanyalar: KampanyaKaydi[] = []): Urun {
       altMetin: g.altMetin || satir.ad,
       genislik: g.genislik,
       yukseklik: g.yukseklik,
+      renk: (g.renk as RenkAdi | null) ?? undefined,
     })),
     fiyatKurus: satir.fiyatKurus,
     eskiFiyatKurus: satir.eskiFiyatKurus ?? undefined,

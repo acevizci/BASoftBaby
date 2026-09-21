@@ -21,19 +21,26 @@ function bul(varyantlar: Varyant[], beden: string, renk: RenkAdi): Varyant | und
 export default function VaryantSecici({
   bedenler,
   renkler,
+  seciliRenk,
   varyantlar,
   slug,
   bildirimDurumu,
 }: {
   bedenler: string[];
   renkler: RenkAdi[];
+  /** Adres satırından gelen renk; galeri de buna göre süzülüyor (K-48). */
+  seciliRenk: RenkAdi;
   varyantlar: Varyant[];
   slug: string;
   bildirimDurumu?: string;
 }) {
   const ilk = varyantlar.find((v) => v.stok > 0) ?? varyantlar[0];
   const [beden, setBeden] = useState<string>(ilk.beden);
-  const [renk, setRenk] = useState<RenkAdi>(ilk.renk);
+
+  // Renk istemci durumunda değil adreste: seçim JavaScript kapalıyken de
+  // çalışıyor, galeri sunucuda süzülüyor ve "mavisi" diye bağlantı
+  // paylaşılabiliyor. Beden fotoğrafı değiştirmediği için yerinde kaldı.
+  const renk = seciliRenk;
 
   const secili = bul(varyantlar, beden, renk);
   const stok = secili?.stok ?? 0;
@@ -86,14 +93,13 @@ export default function VaryantSecici({
             const v = bul(varyantlar, beden, r);
             const yok = !v || v.stok === 0;
             return (
-              <button
+              <Link
                 key={r}
-                type="button"
-                onClick={() => setRenk(r)}
-                aria-pressed={renk === r}
+                href={`/urun/${slug}?renk=${r}#galeri`}
+                aria-current={renk === r ? "true" : undefined}
                 aria-label={RENK_ADLARI[r]}
                 title={yok ? `${RENK_ADLARI[r]} · bu bedende yok` : RENK_ADLARI[r]}
-                className={`h-9 w-9 rounded-full ring-2 transition ${
+                className={`block h-9 w-9 rounded-full ring-2 transition ${
                   renk === r ? "ring-mercan" : "ring-cizgi hover:ring-metin-3"
                 } ${yok ? "opacity-40" : ""}`}
                 style={{ background: PALET[r].c1 }}

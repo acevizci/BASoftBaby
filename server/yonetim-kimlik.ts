@@ -349,6 +349,27 @@ export async function sifreyiYaz(adminId: string, ozet: string): Promise<void> {
   ]);
 }
 
+/**
+ * Süresi geçmiş panel oturumlarını ve sıfırlama jetonlarını siler.
+ *
+ * Oturum okunurken zaten kendi kaydı siliniyor, ama bir daha hiç
+ * uğranmayan kayıtlar birikiyor. Günlük temizlikte süpürülüyor (K-48).
+ */
+export async function eskiPanelKayitlariniTemizle(): Promise<{
+  oturum: number;
+  jeton: number;
+}> {
+  const simdi = new Date();
+  const [oturum, jeton] = await db.$transaction([
+    db.adminSession.deleteMany({ where: { biter: { lt: simdi } } }),
+    // Kullanılmış jetonun da saklanmasının anlamı yok: bir kez çalışıyor.
+    db.adminToken.deleteMany({
+      where: { OR: [{ biter: { lt: simdi } }, { kullanildi: { not: null } }] },
+    }),
+  ]);
+  return { oturum: oturum.count, jeton: jeton.count };
+}
+
 // ─── Kullanıcı listesi ───────────────────────────────────────────────────
 
 export type KullaniciSatiri = Yonetici & {

@@ -117,7 +117,12 @@ model ProductImage {
   boyutBayt Int @default(0)
 
   altMetin String
-  sira     Int    @default(0)
+
+  /// Fotoğrafın gösterdiği renk. Boşsa her renkte gösteriliyor: kumaş
+  /// yakın çekimi, etiket, ölçü kartı gibi renkten bağımsız kareler için.
+  /// Müşteri "Mavi" seçince krem fotoğrafa bakıyordu (K-48).
+  renk String?
+  sira Int     @default(0)
 
   olusturuldu DateTime @default(now())
 

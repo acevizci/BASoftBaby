@@ -18,9 +18,16 @@ import { GorselHatasi, gorselDosyalariniSil, gorselYukle } from "@/server/gorsel
 import { TASIYICILAR, takipAdresi, tasiyiciAdi } from "@/server/kargo";
 import { faturaOlustur } from "@/server/fatura";
 import { slugYap } from "@/server/slug";
+import { RENK_ADLARI } from "@/ui/katalog-bicim";
+
+const RENK_ADLARI_ANAHTARLARI = Object.keys(RENK_ADLARI);
 import { aramaMetniniTazele } from "@/server/arama";
 import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
 import { stokAdresi, suzgeciCoz as stokSuzgeciniCoz } from "@/server/stok-ekrani";
+import {
+  suzgecAdresi as siparisSuzgecAdresi,
+  suzgeciCoz as siparisSuzgeciniCoz,
+} from "@/server/siparis-arama";
 import { kargoyaVerildiEpostasi } from "@/server/eposta";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
@@ -285,6 +292,82 @@ export async function siparisDurumuKaydet(veri: FormData): Promise<void> {
 
   vitriniYenile();
   redirect(`/yonetim/siparisler/${numara}?kayit=1`);
+}
+
+/**
+ * Seçili siparişlerin durumunu tek seferde değiştirir.
+ *
+ * Yirmi siparişi kargoya verirken her birine tek tek girmek günün yarım
+ * saatini alıyordu. Liste ekranında onay kutusu + tek düğme (K-48).
+ *
+ * Ödeme durumuna dokunulmuyor: havale onayı siparişe tek tek bakmayı
+ * gerektiren bir karar, toplu yapılacak iş değil.
+ */
+export async function topluDurumDegistir(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
+  const durum = String(veri.get("durum") ?? "");
+  if (!(DURUMLAR as readonly string[]).includes(durum)) redirect("/yonetim/siparisler");
+
+  const numaralar = veri
+    .getAll("secili")
+    .map((d) => String(d).trim().toUpperCase())
+    .filter(Boolean)
+    .slice(0, 200);
+
+  if (numaralar.length === 0) {
+    redirect(`${suzgecAdresiniCoz(veri)}${suzgecAdresiniCoz(veri).includes("?") ? "&" : "?"}hata=secim-yok`);
+  }
+
+  // Teslim anı yalnızca ilk kez yazılıyor: cayma hakkının 14 günü buradan
+  // sayılıyor (K-33) ve durum ileri geri alınsa bile baştan başlamamalı.
+  const teslimEdilecekler =
+    durum === "teslim"
+      ? (
+          await db.order.findMany({
+            where: { numara: { in: numaralar }, teslimTarihi: null },
+            select: { numara: true },
+          })
+        ).map((s) => s.numara)
+      : [];
+
+  const sonuc = await db.order.updateMany({
+    where: { numara: { in: numaralar } },
+    data: { durum },
+  });
+
+  if (teslimEdilecekler.length > 0) {
+    await db.order.updateMany({
+      where: { numara: { in: teslimEdilecekler } },
+      data: { teslimTarihi: new Date() },
+    });
+  }
+
+  vitriniYenile();
+  const adres = suzgecAdresiniCoz(veri);
+  redirect(`${adres}${adres.includes("?") ? "&" : "?"}toplu=${sonuc.count}`);
+}
+
+/**
+ * Toplu işlemden sonra listenin kaldığı yere dönmek için adres.
+ *
+ * Süzgeç değerleri forma gizli alan olarak konuyor ama yine de
+ * çözümleyiciden geçiyor: adres elle kuruluyor, forma ne gelirse gelsin
+ * yalnızca bilinen değerler adrese yazılıyor (K-44'teki stok ekranıyla aynı
+ * yol).
+ */
+function suzgecAdresiniCoz(veri: FormData): string {
+  return siparisSuzgecAdresi(
+    siparisSuzgeciniCoz({
+      ara: String(veri.get("ara") ?? ""),
+      durum: String(veri.get("suzgecDurum") ?? ""),
+      odeme: String(veri.get("odeme") ?? ""),
+      yontem: String(veri.get("yontem") ?? ""),
+      baslangic: String(veri.get("baslangic") ?? ""),
+      bitis: String(veri.get("bitis") ?? ""),
+      sayfa: String(veri.get("sayfa") ?? ""),
+    }),
+  );
 }
 
 /* ── Kategoriler ────────────────────────────────────────────────────────── */
@@ -920,7 +1003,13 @@ export async function fotografAdiKaydet(veri: FormData): Promise<void> {
   const altMetin = String(veri.get("altMetin") ?? "").trim().slice(0, 200);
   if (!id) return;
 
-  await db.productImage.update({ where: { id }, data: { altMetin } });
+  // Fotoğrafın gösterdiği renk; boş bırakılırsa her renkte görünüyor (K-48).
+  const renkGirdisi = String(veri.get("renk") ?? "").trim();
+  const renk = (RENK_ADLARI_ANAHTARLARI as readonly string[]).includes(renkGirdisi)
+    ? renkGirdisi
+    : null;
+
+  await db.productImage.update({ where: { id }, data: { altMetin, renk } });
   vitriniYenile();
   redirect(`/yonetim/urunler/${slug}?fkayit=0`);
 }

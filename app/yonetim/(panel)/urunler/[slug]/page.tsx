@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import FotografYonetimi from "@/ui/fotograf-yonetimi";
+import type { RenkAdi } from "@/ui/katalog-bicim";
 import UrunFormu from "@/ui/urun-formu";
 import { db } from "@/server/veritabani";
 import { BEDENLER } from "@/ui/katalog-bicim";
@@ -92,7 +93,10 @@ export default async function UrunDuzenle({
           genislik: g.genislik,
           yukseklik: g.yukseklik,
           boyutBayt: g.boyutBayt,
+          renk: g.renk,
         }))}
+        // Fotoğrafa yalnızca ürünün kendi renkleri atanabiliyor.
+        renkler={[...new Set(sirali.map((v) => v.renk))] as RenkAdi[]}
       />
     </div>
   );

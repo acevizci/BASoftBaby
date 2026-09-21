@@ -34,7 +34,23 @@ export type Fotograf = {
   altMetin: string;
   genislik: number;
   yukseklik: number;
+  /** Gösterdiği renk; boşsa her renkte görünüyor (K-48). */
+  renk?: RenkAdi;
 };
+
+/**
+ * Bir rengin fotoğrafları.
+ *
+ * Renksiz kareler (kumaş yakın çekimi, etiket) hep listede: onlar ürünün
+ * kendisini anlatıyor, rengini değil. Seçilen renge ait hiç fotoğraf yoksa
+ * hepsi gösteriliyor — boş bir galeri hiç fotoğraf olmamasından kötü.
+ */
+export function renginFotograflari(fotograflar: Fotograf[], renk?: RenkAdi): Fotograf[] {
+  if (!renk) return fotograflar;
+  const ozel = fotograflar.filter((f) => f.renk === renk);
+  if (ozel.length === 0) return fotograflar;
+  return [...ozel, ...fotograflar.filter((f) => !f.renk)];
+}
 
 export type Urun = {
   /** Kampanya hesabı için; ekranda görünmez */

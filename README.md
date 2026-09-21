@@ -77,7 +77,8 @@ bekleyen ve hazırlanacak siparişler, geciken kargolar, tükenen bedenler,
 listesine bağlanıyor (K-32).
 
 Siparişler (numara, ad, e-posta, telefon ve kargo takip
-numarasıyla arama; durum, ödeme ve tarih süzgeçleri), ürün ekleme ve düzenleme,
+numarasıyla arama; durum, ödeme ve tarih süzgeçleri; listeden seçip toplu
+durum değiştirme ve toplu kargo etiketi yazdırma, K-48), ürün ekleme ve düzenleme,
 beden-renk stokları (arama, "sorunlular / bitenler / hepsi" süzgeci ve
 sayfalama; süzgeçli görünümde stoğu yerinde bedenler katlanmış durur, K-44),
 kategoriler (açma, adını değiştirme, sıralama, kapatma, silme),
@@ -120,6 +121,17 @@ Oturum 12 saat (müşterininki 30 gün): panelde stok, sipariş ve müşteri
 bilgisi var. Kapatılan ya da şifresi değiştirilen bir kullanıcının açık
 oturumları anında düşüyor. Giriş denemesi sınırı müşteri tarafıyla ortak
 (K-38).
+
+## Ürün sayfası
+
+Fotoğraf galerisi: küçük görsele basınca büyük kare değişiyor, büyük kareye
+basınca fotoğraf tam ekran büyüyor. İkisi de `:target` ile, JavaScript
+olmadan — geri tuşu çalışıyor, bağlantı paylaşılabiliyor (K-48).
+
+Renk adres satırında (`?renk=mavi`): seçim JavaScript kapalıyken de çalışıyor
+ve galeri o renge ait fotoğrafları gösteriyor. Panelden her fotoğrafa bir
+renk atanıyor; boş bırakılanlar (kumaş yakın çekimi, etiket) her renkte
+görünüyor.
 
 ## İptal ve iade
 

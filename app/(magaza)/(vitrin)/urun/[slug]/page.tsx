@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import UrunFoto from "@/ui/urun-foto";
-import UrunGorseli from "@/ui/urun-gorseli";
+import UrunGalerisi from "@/ui/urun-galerisi";
 import UrunKarti from "@/ui/urun-karti";
 import VaryantSecici from "@/ui/varyant-secici";
 import YorumListesi from "@/ui/yorum-listesi";
@@ -17,6 +16,7 @@ import {
   urunGetir,
   urununBedenleri,
 } from "@/server/katalog";
+import { renginFotograflari, type RenkAdi } from "@/ui/katalog-bicim";
 
 export async function generateMetadata({ params }: PageProps<"/urun/[slug]">): Promise<Metadata> {
   const { slug } = await params;
@@ -43,7 +43,7 @@ export default async function UrunSayfasi({
 }: PageProps<"/urun/[slug]">) {
   const { slug } = await params;
   // "Stoka girince haber ver" formunun sonucu adres satırında dönüyor.
-  const { bildirim } = await searchParams;
+  const { bildirim, renk } = await searchParams;
   const urun = await urunGetir(slug);
   if (!urun) notFound();
 
@@ -53,6 +53,16 @@ export default async function UrunSayfasi({
     urunYorumlari(urun.id),
   ]);
   const bedenler = urununBedenleri(urun);
+
+  // Renk adres satırında taşınıyor: seçim JavaScript'siz çalışıyor, galeri
+  // sunucuda süzülüyor ve "mavisi" diye bağlantı paylaşılabiliyor (K-48).
+  // Adresten gelen değer ürünün kendi renkleriyle doğrulanıyor.
+  const seciliRenk: RenkAdi =
+    typeof renk === "string" && (urun.renkler as string[]).includes(renk)
+      ? (renk as RenkAdi)
+      : (urun.varyantlar.find((v) => v.stok > 0) ?? urun.varyantlar[0]).renk;
+
+  const galeriFotograflari = renginFotograflari(urun.fotograflar, seciliRenk);
 
   // Kampanya varsa asıl fiyat kampanyalı fiyattır, üstü çizilen de liste
   // fiyatı olur. Kampanya yoksa ürüne elle girilmiş eski fiyat kullanılır.
@@ -106,36 +116,13 @@ export default async function UrunSayfasi({
       </nav>
 
       <div className="mt-4 grid gap-8 lg:grid-cols-2">
-        <div className="flex flex-col gap-3">
-          <UrunFoto
-            fotograf={urun.fotograflar[0]}
-            gorsel={urun.gorsel}
-            palet={urun.palet}
-            className="aspect-square w-full rounded-marka"
-            sizes="(min-width: 1024px) 560px, 100vw"
-            oncelikli
-          />
-          {/* Fotoğraf varsa küçük görseller diğer fotoğraflar, yoksa ürünün
-              renk seçenekleri gösteriliyor. */}
-          <div className="grid grid-cols-4 gap-3">
-            {urun.fotograflar.length > 1
-              ? urun.fotograflar.slice(1, 5).map((f) => (
-                  <UrunFoto
-                    key={f.id}
-                    fotograf={f}
-                    gorsel={urun.gorsel}
-                    palet={urun.palet}
-                    className="aspect-square w-full rounded-marka"
-                    sizes="140px"
-                  />
-                ))
-              : urun.renkler
-                  .slice(0, 4)
-                  .map((r) => (
-                    <UrunGorseli key={r} tip={urun.gorsel} palet={r} className="aspect-square" />
-                  ))}
-          </div>
-        </div>
+        <UrunGalerisi
+          fotograflar={galeriFotograflari}
+          gorsel={urun.gorsel}
+          palet={seciliRenk}
+          renkler={urun.renkler}
+          ad={urun.ad}
+        />
 
         <div className="flex flex-col gap-5">
           <div>
@@ -178,6 +165,7 @@ export default async function UrunSayfasi({
           <VaryantSecici
             bedenler={bedenler}
             renkler={urun.renkler}
+            seciliRenk={seciliRenk}
             varyantlar={urun.varyantlar}
             slug={urun.slug}
             bildirimDurumu={typeof bildirim === "string" ? bildirim : undefined}

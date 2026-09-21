@@ -4,6 +4,7 @@ import { eskiYuklemeleriTemizle } from "@/server/toplu-urun";
 import { birakilanSepetleriHatirlat } from "@/server/sepet-hatirlatma";
 import { eskiBildirimIsteklerimiTemizle } from "@/server/stok-bildirimi";
 import { eskiGirisSayaclariniTemizle } from "@/server/giris-sinir";
+import { eskiPanelKayitlariniTemizle } from "@/server/yonetim-kimlik";
 
 /**
  * Günlük iş: yarıda kalan kart ödemeleri, eski toplu yükleme kayıtları ve
@@ -36,5 +37,7 @@ export async function GET(istek: NextRequest) {
   // Giriş sayaçları: sayaç için gereken şey adresin kendisi değil, aynı
   // yerden gelip gelmediği — bir gün sonra tutmanın anlamı yok (K-38).
   const girisSayaci = await eskiGirisSayaclariniTemizle();
-  return NextResponse.json({ temizlenen, yukleme, hatirlatma, bildirim, girisSayaci });
+  // Süresi geçmiş panel oturumları ve harcanmış sıfırlama jetonları (K-48).
+  const panel = await eskiPanelKayitlariniTemizle();
+  return NextResponse.json({ temizlenen, yukleme, hatirlatma, bildirim, girisSayaci, panel });
 }

@@ -7,6 +7,7 @@ import {
   fotografSil,
   fotografTasi,
 } from "@/server/yonetim";
+import { RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
 
 /**
  * Ürün fotoğraflarının panel bölümü.
@@ -24,6 +25,8 @@ export type PanelFotografi = {
   genislik: number;
   yukseklik: number;
   boyutBayt: number;
+  /** Gösterdiği renk; boşsa her renkte görünüyor (K-48). */
+  renk: string | null;
 };
 
 const GIRDI =
@@ -40,12 +43,15 @@ function boyutYaz(bayt: number): string {
 export default function FotografYonetimi({
   slug,
   fotograflar,
+  renkler,
   hata,
   eklenen,
   sonraki,
 }: {
   slug: string;
   fotograflar: PanelFotografi[];
+  /** Ürünün kendi renkleri; fotoğrafa yalnızca bunlardan biri atanabiliyor. */
+  renkler: RenkAdi[];
   hata?: string;
   eklenen?: number;
   /** Fotoğrafı olmayan bir sonraki ürün; fotoğraf çekimi yarım kalmasın. */
@@ -140,6 +146,22 @@ export default function FotografYonetimi({
                     aria-label="Fotoğraf açıklaması"
                     className={`${GIRDI} min-w-[160px] flex-1`}
                   />
+                  {/* Renk atanınca bu fotoğraf yalnızca o renk seçiliyken
+                      görünüyor. Kumaş yakın çekimi gibi renkten bağımsız
+                      kareler "her renk" kalıyor (K-48). */}
+                  <select
+                    name="renk"
+                    defaultValue={f.renk ?? ""}
+                    aria-label="Fotoğrafın rengi"
+                    className={GIRDI}
+                  >
+                    <option value="">Her renk</option>
+                    {renkler.map((r) => (
+                      <option key={r} value={r}>
+                        {RENK_ADLARI[r]}
+                      </option>
+                    ))}
+                  </select>
                   <button type="submit" className={DUGME}>
                     Kaydet
                   </button>

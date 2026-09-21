@@ -8,6 +8,7 @@ import {
   type SiparisSuzgeci,
 } from "@/server/siparis-arama";
 import { fiyatYaz } from "@/ui/katalog-bicim";
+import { topluDurumDegistir } from "@/server/yonetim";
 import {
   DURUMLAR,
   ODEME_ADLARI,
@@ -27,6 +28,15 @@ const GIRDI =
 const ETIKET = "text-xs font-bold text-metin-2";
 const ROZET = "rounded-full border px-3 py-1.5 text-xs font-bold transition";
 
+/**
+ * Toplu değiştirilebilen durumlar.
+ *
+ * "Ödeme bekliyor"a geri almak ve "iptal" listeden yapılmıyor: ikisi de
+ * siparişe bakmayı gerektiren kararlar, iptal ayrıca stoğu geri veriyor
+ * (K-48).
+ */
+const TOPLU_DURUMLAR = ["hazirlaniyor", "kargoda", "teslim"] as const;
+
 function tarihYaz(t: Date): string {
   return t.toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" });
 }
@@ -37,7 +47,9 @@ function gunYaz(t: Date): string {
 }
 
 export default async function SiparisListesi({ searchParams }: PageProps<"/yonetim/siparisler">) {
-  const suzgec = suzgeciCoz(await searchParams);
+  const parametreler = await searchParams;
+  const suzgec = suzgeciCoz(parametreler);
+  const { toplu, hata: topluHata } = parametreler;
   const sonuc = await siparisleriAra(suzgec);
 
   // Süzgeçsiz toplam: "hiç sipariş yok" ile "bu süzgece uyan yok" farkı
@@ -63,6 +75,17 @@ export default async function SiparisListesi({ searchParams }: PageProps<"/yonet
   return (
     <div className="flex flex-col gap-5">
       <h1 className="text-2xl">Siparişler</h1>
+
+      {typeof toplu === "string" && Number(toplu) > 0 && (
+        <p className="rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">
+          <span className="rakam">{Number(toplu)}</span> siparişin durumu değiştirildi.
+        </p>
+      )}
+      {topluHata === "secim-yok" && (
+        <p className="rounded-marka bg-mercan-soluk px-4 py-3 text-sm font-semibold text-mercan-koyu">
+          Önce listeden sipariş seç.
+        </p>
+      )}
 
       {/* Düz GET formu: JavaScript kapalıyken de çalışıyor, sonuç adresi
           paylaşılabiliyor. */}
@@ -201,10 +224,27 @@ export default async function SiparisListesi({ searchParams }: PageProps<"/yonet
         </p>
       ) : (
         <>
+          {/* Toplu işlem formu. Onay kutuları, durum düğmeleri ve "etiketleri
+              yazdır" aynı formun içinde: düz HTML, JavaScript yok (K-48).
+              Yazdırma düğmesi `formMethod="get"` ile ayrı bir sayfaya
+              gidiyor ve seçilenleri adres satırında taşıyor. */}
+          <form action={topluDurumDegistir} className="flex flex-col gap-3">
+            {/* Süzgeç değerleri: işlemden sonra liste kaldığı yerden açılsın. */}
+            <input type="hidden" name="ara" value={suzgec.ara} />
+            <input type="hidden" name="suzgecDurum" value={suzgec.durum ?? ""} />
+            <input type="hidden" name="odeme" value={suzgec.odeme ?? ""} />
+            <input type="hidden" name="yontem" value={suzgec.yontem ?? ""} />
+            <input type="hidden" name="baslangic" value={suzgec.baslangic ?? ""} />
+            <input type="hidden" name="bitis" value={suzgec.bitis ?? ""} />
+            <input type="hidden" name="sayfa" value={String(sonuc.sayfa)} />
+
           <div className="overflow-x-auto rounded-marka border border-cizgi bg-yuzey">
-            <table className="w-full min-w-[820px] text-sm">
+            <table className="w-full min-w-[860px] text-sm">
               <thead className="border-b border-cizgi text-left text-xs uppercase tracking-wide text-metin-3">
                 <tr>
+                  <th className="w-10 px-4 py-3">
+                    <span className="sr-only">Seç</span>
+                  </th>
                   <th className="px-4 py-3">Numara</th>
                   <th className="px-4 py-3">Tarih</th>
                   <th className="px-4 py-3">Müşteri</th>
@@ -216,6 +256,15 @@ export default async function SiparisListesi({ searchParams }: PageProps<"/yonet
               <tbody className="divide-y divide-cizgi-soluk">
                 {sonuc.satirlar.map((s) => (
                   <tr key={s.id}>
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        name="secili"
+                        value={s.numara}
+                        aria-label={`${s.numara} numaralı siparişi seç`}
+                        className="h-4 w-4 accent-[var(--mercan)]"
+                      />
+                    </td>
                     <td className="px-4 py-3">
                       <Link
                         href={`/yonetim/siparisler/${s.numara}`}
@@ -250,6 +299,33 @@ export default async function SiparisListesi({ searchParams }: PageProps<"/yonet
               </tbody>
             </table>
           </div>
+
+          <div className="flex flex-wrap items-center gap-2 rounded-marka border border-cizgi bg-yuzey p-4">
+            <span className="text-sm font-bold text-metin-2">Seçilenleri:</span>
+            {TOPLU_DURUMLAR.map((d) => (
+              <button
+                key={d}
+                type="submit"
+                name="durum"
+                value={d}
+                className="rounded-full border border-cizgi bg-yuzey px-3 py-1.5 text-xs font-bold text-metin-2 transition hover:border-mercan hover:text-metin"
+              >
+                {durumAdi(d)} yap
+              </button>
+            ))}
+            <button
+              type="submit"
+              formAction="/yonetim/siparisler/etiketler"
+              formMethod="get"
+              className="rounded-full bg-mercan px-4 py-1.5 text-xs font-bold text-white transition hover:brightness-95"
+            >
+              Etiketleri yazdır
+            </button>
+            <span className="text-xs text-metin-3">
+              Ödeme durumu toplu değişmiyor — havale onayı siparişe bakmayı gerektiriyor.
+            </span>
+          </div>
+          </form>
 
           {sonuc.sonSayfa > 1 && (
             <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
