@@ -9,6 +9,7 @@ import { db } from "@/server/veritabani";
 import { urunIndirimleri, urunKampanyasi, type KampanyaKaydi } from "@/server/kampanya";
 import { BEDENLER, type RenkAdi, type RozetTonu, type GorselTipi, type Urun, type Kategori, yasGrubununBedenleri } from "@/ui/katalog-bicim";
 import { ETIKETLER, paylasilanOnbellek, paylasilanOnbellekli } from "@/server/onbellek";
+import { kelimeler } from "@/server/arama-metin";
 
 export * from "@/ui/katalog-bicim";
 
@@ -180,6 +181,8 @@ export type UrunSuzgeci = {
   renk?: string;
   /** Kuruş cinsinden üst sınır */
   enFazlaKurus?: number;
+  /** Serbest arama metni; kelimelere bölünüp hepsi aranıyor. */
+  ara?: string;
 };
 
 /**
@@ -229,6 +232,7 @@ function varyantKosulu(suzgec: UrunSuzgeci, yasBedenleri: readonly string[]) {
 
 async function urunleriSorgula(suzgec: UrunSuzgeci = {}): Promise<Urun[]> {
   const yasBedenleri = suzgec.yas ? yasGrubununBedenleri(suzgec.yas) : [];
+  const aranan = suzgec.ara ? kelimeler(suzgec.ara) : [];
 
   const [satirlar, kampanyalar] = await Promise.all([
     db.product.findMany({
@@ -237,6 +241,11 @@ async function urunleriSorgula(suzgec: UrunSuzgeci = {}): Promise<Urun[]> {
         ...(suzgec.kategori ? { category: { slug: suzgec.kategori } } : {}),
         ...(suzgec.enFazlaKurus ? { fiyatKurus: { lte: suzgec.enFazlaKurus } } : {}),
         ...varyantKosulu(suzgec, yasBedenleri),
+        // Her kelime ayrı aranıyor ve hepsi bulunmak zorunda: "mavi tulum"
+        // yazan kişi mavi VE tulum arıyor (K-35).
+        ...(aranan.length > 0
+          ? { AND: aranan.map((k) => ({ aramaMetni: { contains: k } })) }
+          : {}),
       },
       include: URUN_ICEREN,
       orderBy: { olusturuldu: "asc" },

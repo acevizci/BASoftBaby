@@ -17,6 +17,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { PrismaClient } from "./uretilen/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { aramaMetniYap } from "../server/arama-metin";
 
 // Yerelde .env dosyasindan okur; Vercel'de degisken zaten ortamda hazir.
 const yerelEnv = path.join(process.cwd(), ".env");
@@ -495,6 +496,7 @@ async function main() {
       fiyatKurus: u.fiyatKurus,
       eskiFiyatKurus: u.eskiFiyatKurus ?? null,
       kumasIcerigi: u.kumasIcerigi,
+      aramaMetni: aramaMetniYap([u.ad, u.ozet, ...u.ozellikler, u.kumasIcerigi]),
       yikamaTalimati: u.yikamaTalimati,
       ozellikler: u.ozellikler,
       rozetTon: u.rozetTon ?? null,

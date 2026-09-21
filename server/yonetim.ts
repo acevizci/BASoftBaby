@@ -18,6 +18,7 @@ import { GorselHatasi, gorselDosyalariniSil, gorselYukle } from "@/server/gorsel
 import { TASIYICILAR, takipAdresi, tasiyiciAdi } from "@/server/kargo";
 import { faturaOlustur } from "@/server/fatura";
 import { slugYap } from "@/server/slug";
+import { aramaMetniniTazele } from "@/server/arama";
 import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
 import { kargoyaVerildiEpostasi } from "@/server/eposta";
 
@@ -83,7 +84,12 @@ export async function urunKaydet(form: FormData): Promise<void> {
   };
 
   if (eskiSlug) {
-    await db.product.update({ where: { slug: eskiSlug }, data: alanlar });
+    const guncel = await db.product.update({
+      where: { slug: eskiSlug },
+      data: alanlar,
+      select: { id: true },
+    });
+    await aramaMetniniTazele(guncel.id);
     vitriniYenile();
     redirect(`/yonetim/urunler/${eskiSlug}?kayit=1`);
   }
@@ -92,7 +98,8 @@ export async function urunKaydet(form: FormData): Promise<void> {
   const varOlan = await db.product.findUnique({ where: { slug } });
   if (varOlan) throw new Error(`"${ad}" adında bir ürün zaten var.`);
 
-  await db.product.create({ data: { slug, ...alanlar } });
+  const yeni = await db.product.create({ data: { slug, ...alanlar }, select: { id: true } });
+  await aramaMetniniTazele(yeni.id);
   vitriniYenile();
   redirect(`/yonetim/urunler/${slug}?kayit=1`);
 }

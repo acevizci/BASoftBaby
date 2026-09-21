@@ -22,6 +22,8 @@ import ExcelJS from "exceljs";
 import { db } from "@/server/veritabani";
 import { slugYap } from "@/server/slug";
 import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
+import { aramaMetinleriniTazele } from "@/server/arama";
+import { normalle } from "@/server/arama-metin";
 import { BEDENLER, GORSEL_TIPLERI, RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
 
 /** Tablodaki bir satırın çözülmüş hâli. */
@@ -85,20 +87,12 @@ const SUTUNLAR = {
 
 type SutunAdi = keyof typeof SUTUNLAR;
 
-/** Başlıkları karşılaştırırken büyük-küçük harf, Türkçe harf ve boşluk fark etmesin. */
-function anahtar(metin: string): string {
-  const harfler: Record<string, string> = {
-    ç: "c", ğ: "g", ı: "i", ö: "o", ş: "s", ü: "u", İ: "i", I: "i",
-  };
-  return metin
-    .trim()
-    .toLocaleLowerCase("tr")
-    .split("")
-    .map((h) => harfler[h] ?? h)
-    .join("")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
+/**
+ * Başlıkları ve değerleri karşılaştırırken büyük-küçük harf, Türkçe harf ve
+ * noktalama fark etmesin. Aramanınkiyle aynı normalleştirme (K-35): iki ayrı
+ * kopya er geç ayrışırdı.
+ */
+const anahtar = normalle;
 
 /**
  * "249,90" → 24990. Virgül varsa nokta binlik ayracıdır ("1.249,90"),
@@ -503,6 +497,7 @@ export async function planiUygula(satirlar: Satir[]): Promise<{ urun: number; va
 
   let varyantSayisi = 0;
   const yazilanVaryantlar: string[] = [];
+  const yazilanUrunler = new Set<string>();
 
   await db.$transaction(
     async (islem) => {
@@ -577,6 +572,7 @@ export async function planiUygula(satirlar: Satir[]): Promise<{ urun: number; va
             create: { productId: urun.id, beden: s.beden, renk: s.renk, stok: s.stok, sku },
           });
           varyantSayisi += 1;
+          yazilanUrunler.add(urun.id);
           yazilanVaryantlar.push(
             `${urun.id}|${s.beden}|${s.renk}`,
           );
@@ -585,6 +581,10 @@ export async function planiUygula(satirlar: Satir[]): Promise<{ urun: number; va
     },
     { timeout: 120_000, maxWait: 20_000 },
   );
+
+  // Arama metinleri işlemin dışında tazeleniyor: uzun işlemi daha da
+  // uzatmanın anlamı yok, arama birkaç saniye sonra güncellense de olur.
+  await aramaMetinleriniTazele([...yazilanUrunler]);
 
   // Toplu yükleme tükenmiş bir bedene stok girmiş olabilir; bekleyenlere
   // haber veriliyor. İşlemin dışında: e-posta işlemi uzatmamalı.

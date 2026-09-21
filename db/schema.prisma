@@ -66,12 +66,18 @@ model Product {
   olusturuldu DateTime @default(now())
   guncellendi DateTime @updatedAt
 
+  /// Aranabilir alanların normalleştirilmiş hâli: Türkçe harfler ASCII'ye
+  /// çevrilmiş, küçük harf, noktalama boşluk. Müşteri "zibin" yazınca
+  /// "Zıbın" bulunsun diye (K-35). Her ürün yazmasından sonra tazeleniyor.
+  aramaMetni String @default("")
+
   variants  ProductVariant[]
   images    ProductImage[]
   campaigns Campaign[]
   yorumlar  Review[]
 
   @@index([categoryId, aktif])
+  @@index([aramaMetni])
 }
 
 model ProductVariant {

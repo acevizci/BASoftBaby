@@ -81,6 +81,15 @@ Hangi siparişe ne açılabileceğine sunucu karar veriyor: kargoya verilmemişs
 iptal, verilmişse iade, teslimden sonra 14 gün içinde iade ve değişim (K-33).
 Onaylanan iptal siparişi iptal edip stoğu geri veriyor.
 
+## Arama
+
+Üst çubuktaki kutudan. Türkçe harflere dikkat etmek gerekmiyor: "zibin" de
+"ZIBIN" da "Zıbın"ı buluyor. Ad, özet, açıklama, özellikler ve kumaş
+içeriğinde aranıyor; birden çok kelime yazılırsa hepsinin bulunması gerekiyor.
+
+Yazarken altta öneriler çıkıyor, ama bu bir kolaylık: JavaScript kapalıyken
+kutu düz bir forma dönüşüp sonuç sayfasına gidiyor (K-35).
+
 ## Değerlendirmeler
 
 Ürün değerlendirmesini yalnızca o ürünü satın alıp teslim alan müşteri

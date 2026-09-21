@@ -1329,6 +1329,68 @@ görünmesi, özet kartı, JavaScript kapalı tarayıcı.
 
 ---
 
+### K-35 · Arama: Türkçe klavyeye takılmıyor, JavaScript'e bağlı değil
+**21 Eylül 2026**
+
+Sitede ürün araması hiç yoktu; müşteri aradığını ancak kategorilerde
+gezinerek bulabiliyordu.
+
+**Asıl zorluk klavye.** Müşteri "zibin" yazıyor, ürünün adı "Zıbın".
+Postgres'in `ilike`'ı bunları eşleştiremiyor çünkü `ı` ile `i` ayrı harf.
+Çözüm iki tarafı da aynı biçime indirmek: Türkçe harfler ASCII karşılığına,
+küçük harfe, harf ve rakam dışı her şey boşluğa. Denemede beş yazım
+("zıbın", "zibin", "ZIBIN", "Zıbın", "ZİBİN") aynı sonucu veriyor.
+
+Normalleştirilmiş hâl ürünün üstünde `aramaMetni` alanında duruyor ve her
+ürün yazmasından sonra tazeleniyor. Sorgu anında hesaplamak da mümkündü ama
+o zaman dizin kullanılamıyor ve her arama bütün katalogu tarıyor. Var olan
+ürünler göçün içinde dolduruldu; SQL'deki normalleştirme koddakiyle birebir
+aynı.
+
+Aranan alanlar: ad, özet, açıklama, özellikler, kumaş içeriği. **Kategori adı
+kasten dışarıda** — kategori adı değişince bütün ürünlerinin metnini
+tazelemek gerekirdi ve bayatlarsa kimse fark etmezdi; kategoriye göre
+daraltma zaten sonuç sayfasında var.
+
+**Her kelime ayrı aranıyor ve hepsi bulunmak zorunda.** "mavi tulum" yazan
+kişi mavi **ve** tulum arıyor, mavi ya da tulum değil. Tek harflik parçalar
+atılıyor, neredeyse her ürüne uyuyorlar.
+
+**Öneriler kolaylık, akışın şartı değil.** Kutu temelde düz bir GET formu:
+JavaScript kapalıyken yazıp Enter'a basınca `/arama` sayfasına gidiyor.
+Açıkken altında öneriler beliriyor — yazmaya ara verilene kadar beklenip tek
+istek atılıyor, önceki istek iptal ediliyor. Ok tuşlarıyla geziliyor, Enter
+seçiyor, Esc kapatıyor.
+
+Öneriler **gerçek bağlantı** olarak duruyor, ARIA combobox olarak değil. Tam
+combobox deseninde seçenekler `role="option"` olmak zorunda ve o zaman yeni
+sekmede açılamıyorlar; bir mağazada ürünü yeni sekmede açmak sık yapılan bir
+şey. Onun yerine sonuç sayısı `aria-live` ile okunuyor — eksik olanı
+söylemeyi, olmayan bir deseni varmış gibi ilan etmeye tercih ettik.
+
+**Sonuç sayfası dizine girmiyor.** Her sorgu ayrı bir sayfa gibi görünüp
+sitenin kendi sayfalarının sırasını yemesin diye.
+
+Sonuç bulunamadığında ekran boş kalmıyor: daha kısa kelime önerisi ve
+kategori bağlantıları veriyor.
+
+Yan temizlik: toplu yükleme kendi `anahtar()` işlevini taşıyordu, aynı
+normalleştirmenin ikinci kopyasıydı. Ortak işleve bağlandı; iki kopya er geç
+ayrışırdı.
+
+**Denendi** (28 madde): beş ayrı yazımın aynı sonucu vermesi, kumaş ve özellik
+alanlarından bulunması, iki kelimenin daraltması, uymayan kelimenin sonucu
+sıfırlaması, bulunamadı ekranı, kategori daraltması, öneri ucunun yalnızca
+vitrin bilgisi döndürmesi ve tek harfte susması, üst çubuktaki kutunun
+önerileri açması, ok tuşu + Enter, JavaScript kapalı tarayıcıda aramanın
+çalışması, panelden kaydedince arama metninin yeniden üretilmesi.
+
+**Nerede:** [`../server/arama-metin.ts`](../server/arama-metin.ts),
+[`../ui/arama-kutusu.tsx`](../ui/arama-kutusu.tsx),
+[`../app/(vitrin)/arama/page.tsx`](../app/(vitrin)/arama)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı
