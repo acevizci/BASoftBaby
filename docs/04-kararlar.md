@@ -1035,6 +1035,56 @@ bilgide adresin ve şifrenin bulunmaması; sayfanın tarayıcıda açılması,
 
 ---
 
+### K-30 · Yavaşlığın kaynağı bölge değil, uyku
+**21 Eylül 2026**
+
+Tanı sayfası (K-29) soruyu kapattı: **işlev de veritabanı da Frankfurt'ta.**
+
+Önceki teşhis yanlıştı. Cevap başlığındaki `X-Vercel-Id: fra1::iad1::`
+satırını "kenar Frankfurt'ta, işlev Washington'da" diye okumuştum; `iad1`
+oradaki yapının çalıştığı yer, işlevin değil. Ölçmek yerine başlıktan çıkarım
+yapmanın bedeli buydu — bölge hizalaması diye bir iş hiç yokmuş.
+
+Ölçümler asıl kaynağı gösterdi:
+
+```
+Gidiş-dönüş : 40.4 · 9.6 · 3.2 · 27.5 · 11.8 ms
+```
+
+Aynı şehirde taban 3 ms. Sıçramalar ağ değil; ilk sorgular hâlâ ısınma
+maliyeti taşıyor. Tanıya iki ölçüm daha eklendi ve resim netleşti:
+
+- **Bağlantı kurma** ayrı ölçülüyor. Sorgu gecikmesiyle karışınca hangisinin
+  pahalı olduğu anlaşılmıyordu. Bu maliyet işlev örneği başına bir kez
+  ödeniyor.
+- **İşlev örneğinin yaşı.** Sıfıra yakınsa istek soğuk bir örneğe düşmüş
+  demek. Az ziyaretçili bir mağazada bu istisna değil, kural.
+
+Yerelde ölçülen fark çıplak: uyanık tutma ucuna ilk çağrı **84 ms**, hemen
+ardından ikincisi **1 ms**. Yayında Neon uykudan kalktığı için aradaki fark
+saniyelere çıkıyor; daha önce ölçülen 1,26 saniyelik ilk açılışın kaynağı bu.
+
+**Çözüm uyandırmak, taşımak değil.** İki şey uyuyor: Vercel'in sunucu işlevi
+ve Neon'un veritabanı. `/api/canli` ucu ikisine birden dokunuyor — `select 1`,
+başka hiçbir şey. Dışarıdan bir izleme servisiyle (UptimeRobot, cron-job.org)
+beş dakikada bir çağrıldığında soğuk açılış bedeli ortadan kalkıyor.
+
+Neden Vercel'in kendi zamanlı işi değil: Hobby paketinde günde bir çalışıyor,
+oysa gereken beş dakikada bir. Ucun herkese açık olması sorun değil, yaptığı iş
+bir satırlık; sır ya da veri döndürmüyor. Veritabanına ulaşamazsa da hata
+vermiyor — izleme servisi siteyi "çökmüş" saymasın diye durum cevabın içinde
+yazıyor.
+
+**Denendi** (10 madde): ucun cevabı ve başlıkları, veritabanına gerçekten
+dokunması, yalnızca durum döndürmesi, sıcak çağrının hızlı olması, tanı
+sayfasındaki iki yeni ölçümün görünmesi, bağlantı adresinin ne ekranda ne
+sayfa kaynağında bulunması.
+
+**Nerede:** [`../app/api/canli/route.ts`](../app/api/canli/route.ts),
+[`../server/tani.ts`](../server/tani.ts)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı
@@ -1106,11 +1156,12 @@ alan adının Resend'de doğrulanması gerektiği için alan adına (A-02) bağl
 Anahtar tanımlanana kadar e-postalar gönderilmiyor, akışlar çalışmaya devam
 ediyor.
 
-### A-12 · İşlev ve veritabanı bölgesi
-Yayında sunucu işlevi Washington'da (`iad1`) çalışıyor. Veritabanının bölgesi
-panelin **Tanı** sayfasında yazıyor (K-29). İkisi ayrıysa `vercel.json`a
-`"regions": ["<bölge>"]` eklenip yeniden dağıtılacak; sayfa hangi bölgeyi
-yazacağını da gösteriyor.
+### A-12 · Uyanık tutma servisi
+**Bölge sorusu kapandı:** işlev de veritabanı da Frankfurt'ta (K-30). Kalan iş
+soğuk açılış. `/api/canli` ucu hazır; dışarıdan bir izleme servisinde
+(UptimeRobot ya da cron-job.org, ikisi de ücretsiz) beş dakikalık bir kontrol
+tanımlanması gerekiyor. Bu yapılana kadar uzun süre ziyaretçi almayan sitede
+ilk açılış saniyeler sürmeye devam ediyor.
 
 ### A-10 · Giriş denemesi sınırı
 Şu an yanlış şifre denemesi sayılmıyor. scrypt her denemeyi kendiliğinden

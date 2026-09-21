@@ -52,6 +52,18 @@ export default async function TaniEkrani() {
             baslik="Veritabanı gidiş-dönüş"
             deger={t.gidisDonusMs !== null ? `${t.gidisDonusMs} ms (ortanca)` : "ölçülemedi"}
           />
+          <Satir
+            baslik="Bağlantı kurma"
+            deger={t.baglantiMs !== null ? `${t.baglantiMs} ms` : "ölçülemedi"}
+          />
+          <Satir
+            baslik="İşlev örneği"
+            deger={
+              t.ornekYasiSn < 5
+                ? "az önce başladı (soğuk)"
+                : `${t.ornekYasiSn} saniyedir ayakta`
+            }
+          />
         </dl>
 
         {t.olculenler.length > 0 && (
@@ -71,10 +83,29 @@ export default async function TaniEkrani() {
       <section className={KART}>
         <h2 className="text-lg">Yorum</h2>
         {t.aynidaMi === true && (
-          <p className="mt-2 text-sm text-nane-koyu">
-            <span className="font-bold">İşlev ve veritabanı aynı şehirde.</span> Yapılacak
-            bir şey yok; gecikmenin kaynağı başka yerde.
-          </p>
+          <div className="mt-2 flex flex-col gap-3 text-sm text-metin-2">
+            <p className="font-bold text-nane-koyu">
+              İşlev ve veritabanı aynı şehirde. Bölge tarafında yapılacak bir şey yok.
+            </p>
+
+            {t.baglantiMs !== null && t.gidisDonusMs !== null && (
+              <p>
+                Asıl maliyet bağlantı kurmakta: <span className="rakam">{t.baglantiMs} ms</span>{" "}
+                bağlanmak, sonra sorgu başına{" "}
+                <span className="rakam">{t.gidisDonusMs} ms</span>. Bağlantı, işlev örneği
+                başına bir kez kuruluyor — yani örnek uyanıksa ödenmiyor, uyuyorsa her
+                ziyaretçi ödüyor.
+              </p>
+            )}
+
+            <p>
+              Az ziyaretçili bir mağazada iki şey sürekli uyuyor: Vercel&apos;in sunucu
+              işlevi ve Neon&apos;un veritabanı. İkisini de uyanık tutmak için{" "}
+              <span className="rakam font-bold">/api/canli</span> ucu var; dışarıdan bir
+              izleme servisiyle (UptimeRobot, cron-job.org) beş dakikada bir çağrıldığında
+              soğuk açılış bedeli ortadan kalkıyor.
+            </p>
+          </div>
         )}
 
         {t.aynidaMi === false && (

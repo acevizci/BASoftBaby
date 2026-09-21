@@ -74,8 +74,21 @@ export type Tani = {
   aynidaMi: boolean | null;
   gidisDonusMs: number | null;
   olculenler: number[];
+  /** Bağlantı kurma süresi: TLS el sıkışması + Neon uykudaysa uyanması. */
+  baglantiMs: number | null;
+  /** Bu işlev örneği kaç saniyedir ayakta. Sıfıra yakınsa soğuk başlamış. */
+  ornekYasiSn: number;
   hata: string | null;
 };
+
+/**
+ * Bu işlev örneğinin doğum anı.
+ *
+ * Modül kapsamı örnek başına bir kez çalışıyor; sayfa açıldığında buradaki
+ * sayı küçükse istek soğuk bir örneğe düşmüş demektir. Az ziyaretçili bir
+ * sitede bu istisna değil, kural.
+ */
+const ORNEK_BASLANGICI = Date.now();
 
 /** Sunucu adından bölge kodunu ayıklar: ep-ad-123.eu-central-1.aws.neon.tech */
 function bolgeyiBul(sunucu: string): string | null {
@@ -124,15 +137,21 @@ export async function taniTopla(): Promise<Tani> {
   const adres = process.env.DATABASE_URL;
   const bolgeler = bolgeleriCoz(adres, process.env.VERCEL_REGION);
 
-  // Gidiş-dönüş: bağlantı kurulduktan sonra beş basit sorgu. Bağlantı kurma
-  // maliyeti dışarıda bırakılıyor, ölçülen şey saf ağ gecikmesi.
   const olculenler: number[] = [];
+  let baglantiMs: number | null = null;
   let hata: string | null = null;
 
   if (adres) {
     const istemci = new Client({ connectionString: adres, connectionTimeoutMillis: 10_000 });
     try {
+      // Bağlantı kurma ayrı ölçülüyor: sorgu gecikmesiyle karışırsa hangisinin
+      // pahalı olduğu anlaşılmıyor. Bu maliyet işlev örneği başına bir kez
+      // ödeniyor, ama az ziyaretçili sitede her örnek neredeyse her istek.
+      const baglaBasla = performance.now();
       await istemci.connect();
+      baglantiMs = Math.round((performance.now() - baglaBasla) * 10) / 10;
+
+      // Gidiş-dönüş: bağlantı kurulduktan sonra beş basit sorgu.
       for (let i = 0; i < 5; i += 1) {
         const basla = performance.now();
         await istemci.query("select 1");
@@ -151,7 +170,14 @@ export async function taniTopla(): Promise<Tani> {
   const sirali = [...olculenler].sort((a, b) => a - b);
   const gidisDonusMs = sirali.length > 0 ? sirali[Math.floor(sirali.length / 2)] : null;
 
-  return { ...bolgeler, gidisDonusMs, olculenler, hata };
+  return {
+    ...bolgeler,
+    gidisDonusMs,
+    olculenler,
+    baglantiMs,
+    ornekYasiSn: Math.round((Date.now() - ORNEK_BASLANGICI) / 1000),
+    hata,
+  };
 }
 
 /** Bölgeler ayrıysa `vercel.json`a yazılacak satır. */

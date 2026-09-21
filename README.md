@@ -87,8 +87,12 @@ adres siliniyor (K-28).
 ## Tanı
 
 Panelin **Tanı** sayfası sunucu işlevinin ve veritabanının hangi bölgede
-olduğunu, aralarındaki gidiş-dönüş süresini ve ikisi ayrıysa ne yapılacağını
+olduğunu, bağlantı kurma ve sorgu sürelerini, işlev örneğinin yaşını
 gösteriyor. Yavaşlık şüphesinde ilk bakılacak yer (K-29).
+
+`/api/canli` uyanık tutma ucu: `select 1` yapıp döner. Dışarıdan bir izleme
+servisiyle beş dakikada bir çağrıldığında hem Vercel işlevi hem Neon uyanık
+kalıyor; soğuk açılışın saniyeleri böyle gidiyor (K-30).
 
 ## Sipariş akışı
 
