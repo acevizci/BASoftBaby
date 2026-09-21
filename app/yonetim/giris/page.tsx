@@ -34,7 +34,7 @@ export const metadata: Metadata = {
  * yok: ayar unutulursa panel açıkta kalmasın — eski davranışın korunan yanı.
  */
 export default async function YonetimGirisi({ searchParams }: PageProps<"/yonetim/giris">) {
-  const { hata, nereye, dk, cikis } = await searchParams;
+  const { hata, nereye, dk, cikis, sifirlandi } = await searchParams;
 
   if (await yoneticiGetir()) redirect("/yonetim");
 
@@ -73,6 +73,11 @@ export default async function YonetimGirisi({ searchParams }: PageProps<"/yoneti
       </p>
 
       {cikis === "1" && <p className={`mt-5 ${IYI_KUTU}`}>Çıkış yapıldı.</p>}
+      {sifirlandi === "1" && (
+        <p className={`mt-5 ${IYI_KUTU}`}>
+          Şifren değiştirildi. Yeni şifrenle giriş yapabilirsin.
+        </p>
+      )}
       {hataMetni && <p className={`mt-5 ${HATA_KUTUSU}`}>{hataMetni}</p>}
 
       {kurulumVarMi ? (
@@ -106,10 +111,12 @@ export default async function YonetimGirisi({ searchParams }: PageProps<"/yoneti
             Giriş yap
           </GonderDugmesi>
 
-          <p className="text-xs text-metin-3">
-            Şifreni unuttuysan panel sahibinden yeni bir şifre atamasını iste. Panelde şifre
-            sıfırlama e-postası yok — e-posta servisi bağlanınca eklenecek.
-          </p>
+          <Link
+            href="/yonetim/sifremi-unuttum"
+            className="self-start text-sm font-bold text-mavi-koyu hover:underline"
+          >
+            Şifremi unuttum
+          </Link>
         </form>
       ) : (
         <form action={ilkKurulum} className={`mt-6 flex flex-col gap-4 ${KART}`}>

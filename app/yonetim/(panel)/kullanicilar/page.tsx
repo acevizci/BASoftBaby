@@ -79,9 +79,10 @@ export default async function KullanicilarSayfasi({
           <p className="font-bold">Açık tek sahip sensin.</p>
           <p className="mt-1">
             Bu hesap panele girmenin tek yolu; kapatılamıyor, silinemiyor ve rolü
-            düşürülemiyor. Ama şifresini unutursan panele girilemez —{" "}
-            <strong>ikinci bir sahip hesabı açmanı öneririm.</strong> İki sahip olunca
-            biri ötekinin şifresini yenileyebiliyor.
+            düşürülemiyor. Şifreni unutursan giriş ekranındaki &quot;Şifremi unuttum&quot;
+            ile sıfırlayabilirsin — ama o da e-posta servisine bağlı.{" "}
+            <strong>İkinci bir sahip hesabı açmanı öneririm:</strong> iki sahip olunca biri
+            ötekinin şifresini yenileyebiliyor, e-posta çalışmasa bile.
           </p>
         </div>
       )}
@@ -150,10 +151,11 @@ export default async function KullanicilarSayfasi({
       </Katlanir>
 
       <p className="text-xs text-metin-3">
-        Şifre sıfırlama e-postası henüz yok. Şifresini unutan bir kullanıcıya buradan yeni bir
-        şifre atayabilirsin; ataman o kişinin açık oturumlarını da düşürür. Açık sahip
-        kalmayacak hiçbir değişikliğe izin verilmiyor — panele girmenin tek yolu bir hesapla
-        giriş yapmak.
+        Şifresini unutan bir kullanıcı giriş ekranındaki &quot;Şifremi unuttum&quot; ile
+        kendisi sıfırlayabiliyor (e-posta servisi bağlıysa). Buradan da yeni bir şifre
+        atayabilirsin; ataman o kişinin açık oturumlarını düşürür. Açık sahip kalmayacak
+        hiçbir değişikliğe izin verilmiyor — panele girmenin tek yolu bir hesapla giriş
+        yapmak.
       </p>
     </div>
   );

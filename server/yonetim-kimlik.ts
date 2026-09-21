@@ -258,6 +258,97 @@ export async function kimlikDogrula(
   return { id: kayit.id, eposta: kayit.eposta, adSoyad: kayit.adSoyad, rol: rolCoz(kayit.rol) };
 }
 
+// ─── Şifre sıfırlama ─────────────────────────────────────────────────────
+
+/** Sıfırlama bağlantısı bir saat yaşıyor. */
+const SIFIRLAMA_SAAT = 1;
+
+/**
+ * Tek kullanımlık sıfırlama jetonu üretir; e-postaya konacak hâli dönüyor.
+ *
+ * Veritabanında jetonun kendisi değil SHA-256 özeti duruyor: veritabanını
+ * görebilen biri kimsenin şifresini sıfırlayamasın. Yeni bağlantı istenince
+ * eskisi siliniyor — yalnızca en son gönderilen çalışsın (K-47).
+ */
+export async function sifirlamaJetonuUret(adminId: string): Promise<string> {
+  const jeton = randomBytes(32).toString("base64url");
+
+  await db.$transaction([
+    db.adminToken.deleteMany({ where: { adminId } }),
+    db.adminToken.create({
+      data: {
+        id: jetonOzeti(jeton),
+        adminId,
+        biter: new Date(Date.now() + SIFIRLAMA_SAAT * 60 * 60 * 1000),
+      },
+    }),
+  ]);
+
+  return jeton;
+}
+
+export { SIFIRLAMA_SAAT };
+
+/**
+ * Jetonu harcar: geçerliyse kullanıcıyı döndürür ve jetonu kullanılmış
+ * işaretler. Aynı bağlantı ikinci kez çalışmıyor.
+ */
+export async function sifirlamaJetonuHarca(
+  jeton: string,
+): Promise<{ id: string; eposta: string; adSoyad: string } | undefined> {
+  if (!jeton) return undefined;
+
+  const kayit = await db.adminToken.findUnique({
+    where: { id: jetonOzeti(jeton) },
+    select: {
+      id: true,
+      biter: true,
+      kullanildi: true,
+      admin: { select: { id: true, eposta: true, adSoyad: true, aktif: true } },
+    },
+  });
+
+  if (!kayit || kayit.kullanildi || !kayit.admin.aktif) return undefined;
+  if (kayit.biter.getTime() < Date.now()) return undefined;
+
+  // Koşullu güncelleme: aynı bağlantıya iki kez tıklanırsa ikincisi boş
+  // dönüyor.
+  const harcandi = await db.adminToken.updateMany({
+    where: { id: kayit.id, kullanildi: null },
+    data: { kullanildi: new Date() },
+  });
+  if (harcandi.count === 0) return undefined;
+
+  const { id, eposta, adSoyad } = kayit.admin;
+  return { id, eposta, adSoyad };
+}
+
+/** Sıfırlama isteği için: adres kayıtlıysa açık kullanıcıyı döndürüyor. */
+export async function sifirlanabilirKullanici(
+  epostaGirdisi: string,
+): Promise<{ id: string; eposta: string; adSoyad: string } | undefined> {
+  const kayit = await db.adminUser.findUnique({
+    where: { eposta: epostaNormalle(epostaGirdisi) },
+    select: { id: true, eposta: true, adSoyad: true, aktif: true },
+  });
+  if (!kayit || !kayit.aktif) return undefined;
+  const { id, eposta, adSoyad } = kayit;
+  return { id, eposta, adSoyad };
+}
+
+/**
+ * Şifreyi yazar ve o kullanıcının bütün oturumlarını düşürür.
+ *
+ * Sıfırlamanın sebebi çoğu zaman "biri girmiş olabilir"; açık sekmelerin
+ * çalışmaya devam etmesi bunun anlamını yok ederdi.
+ */
+export async function sifreyiYaz(adminId: string, ozet: string): Promise<void> {
+  await db.$transaction([
+    db.adminUser.update({ where: { id: adminId }, data: { sifreOzeti: ozet } }),
+    db.adminSession.deleteMany({ where: { adminId } }),
+  ]);
+}
+
 // ─── Kullanıcı listesi ───────────────────────────────────────────────────
 
 export type KullaniciSatiri = Yonetici & {

@@ -2003,6 +2003,69 @@ derleme artık o değişkene ihtiyaç duymuyor (denendi).
 
 ---
 
+### K-47 · Panelde şifremi unuttum
+**21 Eylül 2026**
+
+K-45'te panele kişisel hesaplar geldi ama şifre sıfırlama yoktu: şifresini
+unutan biri başka bir sahibin ona yeni şifre atamasını bekliyordu, tek
+sahipse hiç yolu yoktu. K-46'da o boşluk "en az bir açık sahip kalsın"
+kuralıyla **kapatılmaya çalışıldı** — oysa asıl eksik olan sıfırlamaydı.
+Bu karar onu ekliyor.
+
+**Müşteri sıfırlamasıyla aynı mekanizma** (K-13, K-18): jetonun kendisi
+değil SHA-256 özeti saklanıyor, bir saat yaşıyor, bir kez kullanılabiliyor
+ve yeni bağlantı istenince eskisi siliniyor — eski bir e-postadaki bağlantı
+aylarca açık kalmasın. Ayrı tablo (`AdminToken`) çünkü panel kimliği
+müşteriden tamamen ayrı.
+
+**Adresin kayıtlı olup olmadığı söylenmiyor.** Kayıtlı da olsa olmasa da
+aynı ekran çıkıyor: "bu adrese ait bir panel hesabı varsa bağlantı
+gönderildi". Yoksa bu form, panelde kimlerin hesabı olduğunu öğrenmenin
+yolu olurdu. Deneme sayacı da aynı sebeple adresin özetine bakıyor (K-38),
+ve sayaç anahtarı girişinkinden ayrı: sıfırlama denemeleri kimsenin
+girişini kilitlemiyor.
+
+**Jeton sayfa açılınca değil, form gönderilince harcanıyor.** E-posta
+istemcilerinin bağlantıları önizlemek için açması jetonu tüketirdi ve
+kullanıcı kendi bağlantısını hiç kullanamazdı.
+
+**Sıfırlama bütün oturumları düşürüyor.** Sıfırlamanın sebebi çoğu zaman
+"biri girmiş olabilir"; açık sekmelerin çalışmaya devam etmesi bunun
+anlamını yok ederdi. Sonunda panele doğrudan alınmıyor, giriş ekranına
+dönülüyor: yeni şifreyi bir kez yazmak hem gerçekten hatırlandığını
+gösteriyor hem tarayıcının şifreyi kaydetmesine fırsat veriyor.
+
+**E-posta servisi bağlı değilken sayfa yalan söylemiyor.** `RESEND_ANAHTARI`
+tanımlı değilse (bugünkü durum, A-09) "gönderdik" denmiyor: sarı bir kutuda
+servisin bağlı olmadığı, bu arada başka bir sahipten şifre atamasının
+istenebileceği ve anahtar tanımlanınca sayfanın çalışmaya başlayacağı
+yazıyor. Düğme de kapalı. Gitmeyecek bir bağlantıyı beklettirmek, hiç
+sıfırlama olmamasından kötü.
+
+**Middleware'de bulunan hata.** Tarayıcı denemesi `/yonetim/sifremi-unuttum`
+adresinin giriş sayfasına yönlendirildiğini gösterdi: middleware yalnızca
+`/yonetim/giris`'i korumanın dışında tutuyordu. Şifre sıfırlama tanımı
+gereği giriş yapamayan biri için; üç sayfa da artık açık yollar listesinde.
+Bu sayfalar zaten oturum açmış birini panele geri yolluyor.
+
+**Denendi** (26 madde, sahte bir Resend sunucusu ile gerçek uçtan uca):
+kayıtsız adres için de aynı ekranın çıkması ve posta gitmemesi, kayıtlı
+adrese (büyük harfle yazılsa da) bağlantının gitmesi, bağlantı sayfasının
+açılmasının jetonu harcamaması, kısa şifrenin reddedilip jetonun yanmaması,
+eski şifrenin geçmeyip yenisinin çalışması, kullanılmış bağlantının
+reddedilmesi, yeni istek gelince eski bağlantının geçersizleşmesi,
+sıfırlamanın açık oturumu düşürmesi, uydurma ve eksik jetonun reddedilmesi,
+giriş yapmışken sayfaların panele yollaması, JavaScript kapalı tarayıcıda
+akışın tamamının çalışması. E-posta kapalıyken çıkan ekran ayrıca gözden
+geçirildi.
+
+**Nerede:** [`../server/yonetim-kimlik.ts`](../server/yonetim-kimlik.ts),
+[`../app/yonetim/sifremi-unuttum`](../app/yonetim/sifremi-unuttum),
+[`../app/yonetim/sifre-sifirla`](../app/yonetim/sifre-sifirla),
+[`../middleware.ts`](../middleware.ts)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

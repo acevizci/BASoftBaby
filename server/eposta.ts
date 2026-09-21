@@ -210,6 +210,34 @@ Bu isteği sen yapmadıysan bu e-postayı yok sayabilirsin; şifren değişmez.$
   );
 }
 
+/**
+ * Panel kullanıcısının şifre sıfırlaması.
+ *
+ * Müşteri sıfırlamasından ayrı: adresi panelin içine gidiyor ve metni
+ * mağazanın değil yönetimin dilinde (K-47).
+ */
+export async function panelSifreSifirlamaEpostasi(
+  kime: string,
+  adSoyad: string,
+  jeton: string,
+): Promise<EpostaSonucu> {
+  const adres = `${siteAdresi()}/yonetim/sifre-sifirla?jeton=${encodeURIComponent(jeton)}`;
+
+  return gonder(
+    kime,
+    "Yönetim paneli şifreni sıfırla",
+    `Merhaba ${adSoyad},
+
+Yönetim paneli şifreni sıfırlamak için aşağıdaki bağlantıya tıkla. Bağlantı 1 saat geçerli ve bir kez kullanılabiliyor:
+
+${adres}
+
+Sıfırladığında bütün cihazlardaki panel oturumların kapanıyor.
+
+Bu isteği sen yapmadıysan bu e-postayı yok sayabilirsin; şifren değişmez. Ama panelin e-posta adresini bilen biri deniyor demektir, haberin olsun.${await altBilgi()}`,
+  );
+}
+
 export async function dogrulamaEpostasi(
   kime: string,
   adSoyad: string,

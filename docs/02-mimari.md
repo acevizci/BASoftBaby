@@ -90,6 +90,8 @@ app/
   yonetim/                panel — kendi giriş ekranı, çerçevesi ve menüsü
     layout.tsx            yalnızca başlık ve noindex
     giris/                temalı giriş ekranı; kullanıcı yokken ilk kurulum
+    sifremi-unuttum/      sıfırlama bağlantısı isteme
+    sifre-sifirla/        bağlantıdan gelinen yeni şifre ekranı
     (panel)/              oturum gerektiren her şey (grup adı adrese girmez)
       layout.tsx          oturum kontrolü + menü, rozetler, açık sayfa işareti
       hesabim/            kendi şifresi ve oturumları

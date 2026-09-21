@@ -11,6 +11,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
 import { sifreKisaMi, sifreOzetle, sifreTutuyorMu } from "@/server/uyelik";
 import { basariliGiris, basarisizDeneme, girisDenenebilirMi } from "@/server/giris-sinir";
+import { epostaAcikMi, panelSifreSifirlamaEpostasi } from "@/server/eposta";
 import {
   ROLLER,
   epostaNormalle,
@@ -21,6 +22,10 @@ import {
   oturumlariDusur,
   sahipGerekli,
   sahipKalsinDiye,
+  sifirlamaJetonuHarca,
+  sifirlamaJetonuUret,
+  sifirlanabilirKullanici,
+  sifreyiYaz,
   sonSahipMi,
   yonetimOturumuAc,
   yonetimOturumuKapat,
@@ -74,6 +79,66 @@ export async function yonetimGirisi(form: FormData): Promise<void> {
 export async function yonetimCikisi(): Promise<void> {
   await yonetimOturumuKapat();
   redirect("/yonetim/giris?cikis=1");
+}
+
+// ─── Şifremi unuttum ─────────────────────────────────────────────────────
+
+/**
+ * Sıfırlama bağlantısı ister.
+ *
+ * **Adresin kayıtlı olup olmadığı söylenmiyor.** Kayıtlıysa da değilse de
+ * aynı ekran çıkıyor; yoksa bu form panelde kimlerin hesabı olduğunu
+ * öğrenmenin yolu olurdu. Sayaç da aynı sebeple adresin özetine bakıyor,
+ * hesabın kimliğine değil (K-38).
+ *
+ * E-posta servisi bağlı değilse durum açıkça yazılıyor: "gönderdik" deyip
+ * hiç gitmeyen bir bağlantıyı beklettirmek, hiç sıfırlama olmamasından
+ * kötü (K-47).
+ */
+export async function sifirlamaIste(form: FormData): Promise<void> {
+  const eposta = epostaNormalle(metin(form, "eposta"));
+  const geri = (ek: Record<string, string>) =>
+    redirect(`/yonetim/sifremi-unuttum?${new URLSearchParams(ek).toString()}`);
+
+  if (!eposta.includes("@")) geri({ hata: "gecersiz-eposta" });
+
+  if (!epostaAcikMi()) geri({ hata: "eposta-kapali" });
+
+  const sinir = await girisDenenebilirMi(`sifirlama:${eposta}`);
+  if (sinir.kilitli) geri({ hata: "kilit", dk: String(sinir.kalanDk) });
+  await basarisizDeneme(`sifirlama:${eposta}`);
+
+  const kullanici = await sifirlanabilirKullanici(eposta);
+  if (kullanici) {
+    const jeton = await sifirlamaJetonuUret(kullanici.id);
+    await panelSifreSifirlamaEpostasi(kullanici.eposta, kullanici.adSoyad, jeton);
+  }
+
+  geri({ gonderildi: "1" });
+}
+
+/** Bağlantıdaki jetonu harcayıp yeni şifreyi yazar. */
+export async function sifreyiSifirla(form: FormData): Promise<void> {
+  const jeton = metin(form, "jeton");
+  const sifre = String(form.get("sifre") ?? "");
+  const geri = (ek: Record<string, string>) =>
+    redirect(
+      `/yonetim/sifre-sifirla?${new URLSearchParams({ jeton, ...ek }).toString()}`,
+    );
+
+  if (sifreKisaMi(sifre)) geri({ hata: "kisa-sifre" });
+
+  const kullanici = await sifirlamaJetonuHarca(jeton);
+  if (!kullanici) redirect("/yonetim/sifre-sifirla?hata=gecersiz-jeton");
+
+  await sifreyiYaz(kullanici.id, await sifreOzetle(sifre));
+  await basariliGiris(`sifirlama:${kullanici.eposta}`);
+  await basariliGiris(kullanici.eposta);
+
+  // Doğrudan içeri alınmıyor: yeni şifreyi bir kez yazmak, gerçekten
+  // hatırlandığını gösteriyor ve tarayıcının şifreyi kaydetmesine fırsat
+  // veriyor.
+  redirect("/yonetim/giris?sifirlandi=1");
 }
 
 // ─── İlk kurulum ─────────────────────────────────────────────────────────

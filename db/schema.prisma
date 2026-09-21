@@ -774,8 +774,27 @@ model AdminUser {
   sonGiris    DateTime?
 
   oturumlar AdminSession[]
+  jetonlar  AdminToken[]
 
   @@index([aktif])
+}
+
+/// Panel şifre sıfırlama jetonu.
+///
+/// Müşteri tarafındaki `CustomerToken` ile aynı mantık: jetonun kendisi değil
+/// SHA-256 özeti saklanıyor, bir saat yaşıyor ve bir kez kullanılabiliyor.
+/// Yeni bağlantı istenince eskisi siliniyor — eski bir e-postadaki bağlantı
+/// aylarca açık kalmasın (K-47).
+model AdminToken {
+  id          String    @id
+  adminId     String
+  admin       AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  biter       DateTime
+  kullanildi  DateTime?
+  olusturuldu DateTime  @default(now())
+
+  @@index([adminId])
+  @@index([biter])
 }
 
 /// Panel oturumu. Çerezdeki jetonun kendisi değil SHA-256 özeti saklanıyor;

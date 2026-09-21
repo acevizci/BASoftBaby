@@ -103,7 +103,12 @@ hâline geçiyor ve `YONETIM_SIFRE` ile korunuyor. Hesap açıldıktan sonra o
 tanımlı değilse ve kullanıcı da yoksa sayfa 404 veriyor — ayar unutulursa
 panel açıkta kalmıyor.
 
-**Kurtarma yolu tek:** panele girmenin başka yolu olmadığı için **her zaman
+**Şifremi unuttum** giriş ekranında: e-postaya bir saat geçerli, tek
+kullanımlık bir bağlantı gidiyor, sıfırlayınca bütün cihazlardaki oturumlar
+kapanıyor (K-47). E-posta servisi bağlı değilken sayfa bunu açıkça söylüyor
+ve gitmeyecek bir bağlantı için "gönderdik" demiyor.
+
+**Ayrıca:** panele girmenin başka yolu olmadığı için **her zaman
 en az bir açık sahip kalıyor.** Silme, kapatma ve rol düşürme bunu bozacaksa
 hiç uygulanmıyor; kontrol değişiklikle aynı veritabanı işleminde ve
 `Serializable` yalıtımla yapılıyor, yani iki kişi aynı anda birbirini silse

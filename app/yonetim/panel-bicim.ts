@@ -25,6 +25,7 @@ export const IYI_KUTU =
  */
 export const GIRIS_HATALARI: Record<string, string> = {
   yanlis: "E-posta ya da şifre tutmuyor.",
+  "sifre-degisti": "Şifren değiştirildi. Yeni şifrenle giriş yapabilirsin.",
   eksik: "E-posta ve şifre gerekli.",
   "gecersiz-eposta": "Geçerli bir e-posta adresi yaz.",
   "kisa-sifre": "Şifre en az 8 karakter olmalı.",
@@ -33,6 +34,15 @@ export const GIRIS_HATALARI: Record<string, string> = {
   // Kilitteki dakika adres satırından sayı olarak geliyor; metin değil sayı
   // taşındığı için cümle sayfada tamamlanıyor.
   kilit: "Çok fazla hatalı deneme yapıldı.",
+};
+
+export const SIFIRLAMA_HATALARI: Record<string, string> = {
+  "gecersiz-eposta": "Geçerli bir e-posta adresi yaz.",
+  "kisa-sifre": "Şifre en az 8 karakter olmalı.",
+  "eposta-kapali": "E-posta servisi bağlı olmadığı için bağlantı gönderilemiyor.",
+  "gecersiz-jeton":
+    "Bağlantı geçersiz, süresi dolmuş ya da zaten kullanılmış. Yeni bir bağlantı iste.",
+  kilit: "Çok fazla deneme yapıldı.",
 };
 
 export const KULLANICI_HATALARI: Record<string, string> = {
