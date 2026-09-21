@@ -59,7 +59,12 @@ kalmışsa temizleyip geçiyor (K-25).
 
 ## Yönetim paneli
 
-`/yonetim` adresinde. Siparişler (numara, ad, e-posta, telefon ve kargo takip
+`/yonetim` adresinde. Özet ekranı günlük yapılacakları gösteriyor: havale onayı
+bekleyen ve hazırlanacak siparişler, geciken kargolar, tükenen bedenler,
+"gelince haber ver" diyenler ve tamamlanmamış ayarlar — her biri kendi
+listesine bağlanıyor (K-32).
+
+Siparişler (numara, ad, e-posta, telefon ve kargo takip
 numarasıyla arama; durum, ödeme ve tarih süzgeçleri), ürün ekleme ve düzenleme,
 beden-renk stokları,
 kategoriler (açma, adını değiştirme, sıralama, kapatma, silme),

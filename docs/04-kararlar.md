@@ -1135,6 +1135,66 @@ düşürmemesi; tutar toplamının doğruluğu; JavaScript kapalı tarayıcı.
 
 ---
 
+### K-32 · Özet ekranı sayı değil, yapılacak iş gösteriyor
+**21 Eylül 2026**
+
+Panelin özet ekranı beş kutuda beş sayı gösteriyordu: yayında ürün, kapalı
+ürün, yayında duyuru… Bunlar doğru sayılardı ama **hiçbiri bir işe
+dönüşmüyordu.** Mağaza sahibinin sabah sorduğu soru "kaç ürünüm var" değil,
+"bugün ne yapmam gerekiyor".
+
+Ekran o soruya göre yeniden yazıldı.
+
+**Yapılacaklar.** Dört satır, her biri bir işe karşılık geliyor ve **kendi
+süzülmüş listesine** gidiyor:
+
+| İş | Nereye gidiyor |
+| --- | --- |
+| Havale onayı bekliyor | Bekleyen + havale siparişleri |
+| Hazırlanacak | Ödemesi alınmış, kargoya verilmemiş |
+| Kargoda 7 günden uzun | Teslim görünmeyenler |
+| Tükenen beden | Stok ekranı |
+
+Sayının yanında ne yapılacağı da yazıyor ("Hesaba geçti mi diye bakılıp ödendi
+işaretlenecek"). Sıfır olan iş soluk duruyor, bekleyen iş renkleniyor: göz
+önce yapılacak olana gidiyor. Bu, K-31'deki süzgeçlerin karşılığını almak
+demek — özet ile liste aynı sayıyı veriyor, biri ötekine götürüyor.
+
+**Bugün.** Sipariş adedi ve tutarı, dünle karşılaştırmalı; bu ayın toplamı.
+**İptal edilen sipariş ciroya girmiyor** — girseydi iptallerle dolu bir gün
+iyi geçmiş görünürdü.
+
+**Stoka girmesi beklenenler.** "Gelince haber ver" diyen müşteriler (K-28),
+bedene göre gruplanıp çok bekleyenden aza sıralanıyor. Neyin önce sipariş
+edileceği sorusunun en doğrudan cevabı bu: tahmin değil, isim isim talep.
+Bekleyen yoksa bölüm hiç çıkmıyor.
+
+**Tamamlanmamış ayarlar.** En üstte, sarı bir kutuda: havale bilgisi boşsa
+(o zaman havale müşteriye hiç sunulmuyor), künye eksikse, yasal metinler
+taslaksa, e-posta anahtarı yoksa. Bunlar mağazanın çalışmasını engelleyen ya
+da yasal olarak gereken şeylerdi ama panelin hiçbir yerinde görünmüyordu —
+bilen biri hatırlatmadıkça fark edilmiyordu. Hepsi tamamsa kutu hiç çıkmıyor.
+
+Veri toplama ayrı bir modülde ([`../server/panel-ozet.ts`](../server/panel-ozet.ts)),
+ekran yalnızca gösteriyor. Sorgu sayısı yüksek ama hepsi tek bir `Promise.all`
+turunda: birbirlerini beklemiyorlar ve ekranı yalnızca mağaza sahibi açıyor.
+
+**Denendi** (23 madde): bugünün sayı ve tutarının doğruluğu ve iptallerin
+dışarıda kalması, dört iş sayısının veritabanıyla birebir tutması, kartların
+doğru süzgece gitmesi ve süzülmüş listenin aynı sayıyı vermesi, bekleyen
+listesinin sıralaması ve boşken hiç çıkmaması, ayar uyarılarının panelden
+ayar değişince düşmesi ve geri gelmesi, JavaScript kapalı tarayıcı.
+
+Deneme iki kez tökezledi, ikisi de denemenin kendi kusuruydu ve ikisi de
+öğreticiydi: ayarı SQL'le değiştirmek önbelleği düşürmüyor (gerçek kullanımda
+kimse veritabanına elle yazmıyor, panelden yazıyor), ve yazma bittikten sonra
+etiketin yayılması birkaç yüz milisaniye sürüyor (K-22).
+
+**Nerede:** [`../server/panel-ozet.ts`](../server/panel-ozet.ts),
+[`../app/yonetim/page.tsx`](../app/yonetim/page.tsx)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı
