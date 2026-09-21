@@ -167,6 +167,66 @@ export async function urunSil(form: FormData): Promise<void> {
   redirect("/yonetim/urunler?kayit=silindi");
 }
 
+/**
+ * Seçili ürünleri yayına alır, pasif yapar ya da siler.
+ *
+ * **Toplu silme yalnızca hiç satılmamış ürünleri siliyor.** Satılmış bir
+ * ürünü silmek geri alınamıyor ve değerlendirmelerini götürüyor (K-52); tek
+ * tek silerken kutuya SİL yazmak gerekiyor. Toplu işlemde böyle bir onay
+ * yok, o yüzden satılmışlar sessizce değil **sayılarak** atlanıyor: "3 ürün
+ * silindi, 2'si siparişte geçtiği için atlandı" (K-53).
+ */
+export async function topluUrunIslemi(form: FormData): Promise<void> {
+  await yoneticiGerekli();
+
+  const islem = metin(form, "islem");
+  const eksik = metin(form, "eksik");
+  const liste = eksik === "fotograf" ? "/yonetim/urunler?eksik=fotograf" : "/yonetim/urunler";
+  const donus = (ek: string) => `${liste}${liste.includes("?") ? "&" : "?"}${ek}`;
+
+  const sluglar = form
+    .getAll("secili")
+    .map((d) => String(d).trim())
+    .filter(Boolean)
+    .slice(0, 200);
+  if (sluglar.length === 0) redirect(donus("hata=secim-yok"));
+
+  if (islem === "yayin" || islem === "pasif") {
+    const sonuc = await db.product.updateMany({
+      where: { slug: { in: sluglar } },
+      data: { aktif: islem === "yayin" },
+    });
+    vitriniYenile();
+    redirect(donus(`toplu=${islem}&adet=${sonuc.count}`));
+  }
+
+  if (islem !== "sil") redirect(liste);
+
+  // Satılmışlar ayrılıyor: silinecekler ile atlananlar ayrı sayılıyor.
+  const urunler = await db.product.findMany({
+    where: { slug: { in: sluglar } },
+    select: {
+      id: true,
+      slug: true,
+      images: { select: { yol: true, kucukYol: true } },
+      _count: { select: { variants: { where: { orderItems: { some: {} } } } } },
+    },
+  });
+
+  const silinecekler = urunler.filter((u) => u._count.variants === 0);
+  const atlananlar = urunler.length - silinecekler.length;
+
+  if (silinecekler.length > 0) {
+    await gorselDosyalariniSil(
+      silinecekler.flatMap((u) => u.images.flatMap((g) => [g.yol, g.kucukYol])).filter(Boolean),
+    );
+    await db.product.deleteMany({ where: { id: { in: silinecekler.map((u) => u.id) } } });
+    vitriniYenile();
+  }
+
+  redirect(donus(`toplu=sil&adet=${silinecekler.length}&atlanan=${atlananlar}`));
+}
+
 export async function varyantEkle(form: FormData): Promise<void> {
   await yoneticiGerekli();
 

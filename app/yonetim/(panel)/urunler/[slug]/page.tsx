@@ -88,15 +88,6 @@ export default async function UrunDuzenle({
         }}
       />
 
-      <UrunSilme
-        slug={urun.slug}
-        ad={urun.ad}
-        siparisAdedi={siparisAdedi}
-        yorumSayisi={urun.yorumSayisi}
-        fotografAdedi={urun.images.length}
-        onayHatasi={hata === "onay"}
-      />
-
       <FotografYonetimi
         slug={urun.slug}
         hata={typeof fhata === "string" ? fhata : undefined}
@@ -118,6 +109,15 @@ export default async function UrunDuzenle({
         }))}
         // Fotoğrafa yalnızca ürünün kendi renkleri atanabiliyor.
         renkler={[...new Set(sirali.map((v) => v.renk))] as RenkAdi[]}
+      />
+
+      <UrunSilme
+        slug={urun.slug}
+        ad={urun.ad}
+        siparisAdedi={siparisAdedi}
+        yorumSayisi={urun.yorumSayisi}
+        fotografAdedi={urun.images.length}
+        onayHatasi={hata === "onay"}
       />
     </div>
   );

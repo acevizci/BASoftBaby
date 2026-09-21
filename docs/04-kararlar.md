@@ -2372,6 +2372,46 @@ uyuyor (tam eşleşme kullanılıyor).
 
 ---
 
+### K-53 · Ürün listesinde toplu işlem, silme bölümü en altta
+**21 Eylül 2026**
+
+**"Ürünü sil" fotoğrafların üstündeydi.** Sayfada yukarıdan aşağı doğru
+sıra şuydu: ürün bilgileri → bedenler ve stok → **silme** → fotoğraflar.
+Geri alınamayan bir işlem, günlük olarak kullanılan bir bölümün üstünde
+duruyordu. En alta alındı; sayfayı aşağı kaydırırken silme düğmesine
+rastlamak yerine, oraya gitmek için kasten inmek gerekiyor.
+
+**Listede toplu işlem yoktu.** Sekiz ürünü pasife almak sekiz sayfa
+açmaktı. Onay kutuları ve tek satırlık bir çubuk geldi: **Pasife al**,
+**Yayına al**, **Sil**. Sipariş listesindekiyle aynı kalıp (K-48), düz
+HTML, JavaScript gerekmiyor. Süzgeç korunuyor: "Fotoğrafsız" listesinden
+yapılan işlem aynı süzgece dönüyor.
+
+**Toplu silme satılmış ürünü silmiyor, atlıyor.** Tek tek silerken kutuya
+SİL yazmak gerekiyor (K-52) — toplu işlemde böyle bir onay yok ve on ürün
+seçip yanlışlıkla basmak kolay. O yüzden siparişte geçmiş ürünler
+silinmiyor. Ama **sessizce değil sayılarak**: "2 ürün silindi. 1 ürün
+siparişte geçtiği için atlandı — onları ürün sayfasından tek tek
+silebilirsin." Kaç tanesinin atlandığını söylemeyen bir işlem, kullanıcıyı
+"acaba oldu mu" diye listede aramaya bırakırdı.
+
+Aynı sebeple **ödeme ve iptal gibi kararlar toplu işlemde yok** (K-48'deki
+sipariş listesiyle aynı çizgi): toplu işlem, tek tek yapıldığında zaten
+onay gerektirmeyen şeyler için.
+
+**Denendi** (22 madde): silme bölümünün sayfadaki son öğe olması ve
+fotoğraflardan sonra gelmesi; seçimsiz işlemin uyarması; toplu pasife alma
+ve yayına almanın veritabanına gerçekten yazması; iki satılmamış ve bir
+satılmış ürün seçildiğinde ikisinin silinip birinin atlanması, atlananın
+bildirimde yazması ve satılmış ürünün yerinde durması; süzgecin
+korunması; JavaScript kapalı tarayıcıda toplu işlemin çalışması.
+
+**Nerede:** [`../server/yonetim.ts`](../server/yonetim.ts),
+[`../app/yonetim/(panel)/urunler/page.tsx`](../app/yonetim/(panel)/urunler/page.tsx),
+[`../app/yonetim/(panel)/urunler/[slug]/page.tsx`](../app/yonetim/(panel)/urunler)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

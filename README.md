@@ -84,6 +84,8 @@ sayfalama; süzgeçli görünümde stoğu yerinde bedenler katlanmış durur, K-
 kategoriler (açma, adını değiştirme, sıralama, kapatma, silme — dolu bir
 kategori silinirken ürünlerin nereye taşınacağı soruluyor, K-52),
 ürün silme (sipariş geçmişi etkilenmiyor; satılmış ürün için onay isteniyor),
+ürün listesinde toplu pasife alma / yayına alma / silme — toplu silmede
+siparişte geçmiş ürünler atlanıyor ve kaç tanesinin atlandığı yazılıyor (K-53),
 Excel/CSV'den toplu ürün yükleme, satış raporu (dönem seçimi, grafik, CSV),
 duyuru şeridi,
 ana sayfa banner'ı, kampanyalar ve satış ayarları (kargo ücreti,
