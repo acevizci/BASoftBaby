@@ -13,8 +13,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
 import { puaniTazele } from "@/server/yorum";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export async function yorumuGizle(form: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const id = String(form.get("id") ?? "").trim();
   const sebep = String(form.get("sebep") ?? "").trim();
 
@@ -33,6 +36,8 @@ export async function yorumuGizle(form: FormData): Promise<void> {
 }
 
 export async function yorumuAc(form: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const id = String(form.get("id") ?? "").trim();
   if (!id) redirect("/yonetim/yorumlar");
 
@@ -48,6 +53,8 @@ export async function yorumuAc(form: FormData): Promise<void> {
 }
 
 export async function yorumuYanitla(form: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const id = String(form.get("id") ?? "").trim();
   const yanit = String(form.get("yanit") ?? "").trim();
   if (!id) redirect("/yonetim/yorumlar");

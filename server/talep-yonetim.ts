@@ -14,11 +14,14 @@ import { TUM_ETIKETLER } from "@/server/onbellek";
 import { talebiSonuclandir } from "@/server/talep";
 import { talepCevabiEpostasi } from "@/server/eposta";
 import { talepDurumAdi, turAdi } from "@/ui/talep-bicim";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 const SONUCLAR = ["onaylandi", "reddedildi", "tamamlandi"] as const;
 type Sonuc = (typeof SONUCLAR)[number];
 
 export async function talebiCevapla(form: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const id = String(form.get("id") ?? "").trim();
   const sonuc = String(form.get("sonuc") ?? "");
   const cevap = String(form.get("cevap") ?? "").trim();

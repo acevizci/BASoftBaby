@@ -17,6 +17,7 @@ import "server-only";
 import { db } from "@/server/veritabani";
 import { OLUMSUZ_PUAN } from "@/server/yorum";
 import { AZALAN_ESIK } from "@/server/stok-ekrani";
+import type { Rol } from "@/server/yonetim-kimlik";
 
 export type MenuMaddesi = {
   yol: string;
@@ -64,7 +65,10 @@ export async function menuSayaclari(): Promise<Sayaclar> {
  * Özet grupların dışında ve en üstte: panelin ana sayfası, bir kategoriye
  * ait değil.
  */
-export function menuyuKur(s: Sayaclar): { ozet: MenuMaddesi; gruplar: MenuGrubu[] } {
+export function menuyuKur(
+  s: Sayaclar,
+  rol: Rol = "yonetici",
+): { ozet: MenuMaddesi; gruplar: MenuGrubu[] } {
   return {
     ozet: { yol: "/yonetim", ad: "Özet" },
     gruplar: [
@@ -103,6 +107,11 @@ export function menuyuKur(s: Sayaclar): { ozet: MenuMaddesi; gruplar: MenuGrubu[
         maddeler: [
           { yol: "/yonetim/ayarlar", ad: "Satış ayarları" },
           { yol: "/yonetim/yasal", ad: "Yasal metinler" },
+          // Kullanıcı yönetimi yalnızca sahipte; yöneticinin menüsünde
+          // açamayacağı bir madde durmuyor (K-45).
+          ...(rol === "sahip"
+            ? [{ yol: "/yonetim/kullanicilar", ad: "Kullanıcılar" }]
+            : []),
           { yol: "/yonetim/tani", ad: "Tanı" },
         ],
       },

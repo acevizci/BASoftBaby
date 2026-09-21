@@ -93,8 +93,8 @@ model ProductVariant {
   /// Varyant bazlı fiyat farkı; boşsa ürünün fiyatı geçerli
   fiyatKurus Int?
 
-  cartItems  CartItem[]
-  orderItems OrderItem[]
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
   bildirimler StockAlert[]
 
   @@unique([productId, beden, renk])
@@ -107,12 +107,12 @@ model ProductImage {
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   /// Büyük görselin adresi (yayında Vercel Blob URL'i, yerelde /yuklenen/...)
-  yol String
+  yol      String
   /// Kartlarda kullanılan küçük kopya
   kucukYol String @default("")
 
   /// Büyük görselin ölçüleri: img etiketine yazılıyor, sayfa zıplamasın diye
-  genislik Int @default(0)
+  genislik  Int @default(0)
   yukseklik Int @default(0)
   boyutBayt Int @default(0)
 
@@ -180,9 +180,9 @@ model StoreSetting {
 
   /// Faturada kullanılan KDV oranı (yüzde). Bebek tekstilinde 10; ürün
   /// grubuna göre değişirse panelden güncelleniyor.
-  kdvOrani Int @default(10)
+  kdvOrani           Int    @default(10)
   /// Fatura numarası sayacı. Fatura oluşturulurken aynı işlem içinde artıyor.
-  sonFaturaNo Int @default(0)
+  sonFaturaNo        Int    @default(0)
   /// Panelde kargo alanına önceden seçili gelen taşıyıcı.
   varsayilanTasiyici String @default("yurtici")
 }
@@ -272,8 +272,8 @@ model Order {
   customerId String?
   customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
-  olusturuldu DateTime    @default(now())
-  guncellendi DateTime    @updatedAt
+  olusturuldu DateTime       @default(now())
+  guncellendi DateTime       @updatedAt
   satirlar    OrderItem[]
   odemeler    Payment[]
   gonderiler  Shipment[]
@@ -381,16 +381,16 @@ model HeroBanner {
 /// özeti tutar (bkz. server/uyelik.ts). E-posta henüz doğrulanmıyor: doğrulama
 /// için e-posta servisi gerekiyor, o 04. adımda gelecek (K-14).
 model Customer {
-  id          String   @id @default(cuid())
-  eposta      String   @unique
-  adSoyad     String
-  telefon     String   @default("")
-  sifreOzeti  String
+  id               String    @id @default(cuid())
+  eposta           String    @unique
+  adSoyad          String
+  telefon          String    @default("")
+  sifreOzeti       String
   /// E-postanın sahibi olduğu kanıtlandığı an. Doğrulanana kadar o adresle
   /// üyeliksiz verilmiş siparişler hesaba bağlanmıyor (K-14).
   epostaDogrulandi DateTime?
-  olusturuldu DateTime @default(now())
-  guncellendi DateTime @updatedAt
+  olusturuldu      DateTime  @default(now())
+  guncellendi      DateTime  @updatedAt
 
   /// Kampanya ve hatırlatma e-postası izni.
   ///
@@ -421,7 +421,7 @@ model CustomerToken {
   tur         String
   biter       DateTime
   kullanildi  DateTime?
-  olusturuldu DateTime @default(now())
+  olusturuldu DateTime  @default(now())
 
   @@index([customerId, tur])
   @@index([biter])
@@ -447,7 +447,7 @@ model CustomerSession {
 /// Adres defteri. Sipariş bu kaydı işaret etmez, içeriğini kopyalar: adres
 /// sonradan değişse bile eski siparişin teslimat bilgisi olduğu gibi kalır.
 model Address {
-  id         String  @id @default(cuid())
+  id         String   @id @default(cuid())
   customerId String
   customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
@@ -501,7 +501,7 @@ model Payment {
   orderId String
   order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  saglayici String @default("iyzico")
+  saglayici    String  @default("iyzico")
   /// Ödeme formunun jetonu. Dönüş çağrısı bunu getiriyor, kaydı bununla
   /// buluyoruz; tekil olduğu için aynı dönüş iki kez işlenmiyor (K-06).
   jeton        String  @unique
@@ -509,9 +509,9 @@ model Payment {
   saglayiciRef String?
 
   /// baslatildi · basarili · basarisiz
-  durum      String @default("baslatildi")
+  durum      String  @default("baslatildi")
   tutarKurus Int
-  taksit     Int    @default(1)
+  taksit     Int     @default(1)
   /// Başarısızsa iyzico'nun verdiği sebep; müşteriye gösterilen kısa hâli.
   hata       String?
   /// Sorun çıkarsa bakılabilsin diye iyzico'nun ham cevabı (JSON).
@@ -644,7 +644,7 @@ model OrderRequest {
   order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   /// iptal · iade · degisim
-  tur String
+  tur      String
   /// Sebep kodu (bkz. ui/talep-bicim.ts). Yasal olarak gerekçe zorunlu değil;
   /// "belirtmek istemiyorum" da bir seçenek.
   sebep    String
@@ -711,7 +711,7 @@ model Review {
   yorum   String
 
   /// yayinda · gizli
-  durum String @default("yayinda")
+  durum         String @default("yayinda")
   /// Gizlenme sebebi. Olumsuz olması sebep değildir.
   gizlemeSebebi String @default("")
 
@@ -747,4 +747,47 @@ model LoginThrottle {
   guncellendi DateTime  @updatedAt
 
   @@index([guncellendi])
+}
+
+/// Panel kullanıcısı.
+///
+/// Mağaza müşterisinden (Customer) tamamen ayrı: farklı tablo, farklı çerez,
+/// farklı oturum. Müşteri oturumu hiçbir koşulda panele geçiş vermiyor
+/// (K-45).
+///
+/// İki rol var. `sahip` kullanıcı ekleyip çıkarabiliyor, `yonetici`
+/// çıkaramıyor. Üçüncü bir rol yok: bir kişilik bir mağazada rol ağacı
+/// kurmanın kimseye faydası olmaz, "kullanıcıyı silebilen kim" sorusunun
+/// cevapsız kalmasının ise zararı var.
+model AdminUser {
+  id          String    @id @default(cuid())
+  eposta      String    @unique
+  adSoyad     String
+  /// scrypt özeti; müşteri şifreleriyle aynı biçim (server/uyelik.ts).
+  sifreOzeti  String
+  /// "sahip" ya da "yonetici"
+  rol         String    @default("yonetici")
+  /// Kapatılan kullanıcı giremiyor ama kaydı duruyor: kimin ne zaman ne
+  /// yaptığı sorusu silinmiş bir satırla cevaplanamıyor.
+  aktif       Boolean   @default(true)
+  olusturuldu DateTime  @default(now())
+  sonGiris    DateTime?
+
+  oturumlar AdminSession[]
+
+  @@index([aktif])
+}
+
+/// Panel oturumu. Çerezdeki jetonun kendisi değil SHA-256 özeti saklanıyor;
+/// veritabanını görebilen biri kimsenin oturumunu ele geçiremesin.
+model AdminSession {
+  id          String    @id
+  adminId     String
+  admin       AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  olusturuldu DateTime  @default(now())
+  sonGorulme  DateTime  @default(now())
+  biter       DateTime
+
+  @@index([adminId])
+  @@index([biter])
 }

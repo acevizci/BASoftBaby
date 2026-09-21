@@ -22,6 +22,7 @@ import { aramaMetniniTazele } from "@/server/arama";
 import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
 import { stokAdresi, suzgeciCoz as stokSuzgeciniCoz } from "@/server/stok-ekrani";
 import { kargoyaVerildiEpostasi } from "@/server/eposta";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 /**
  * Kaydedildikten sonra dönülecek adres; katlanır bölüm açık kalsın diye.
@@ -65,6 +66,8 @@ function metin(form: FormData, ad: string): string {
 }
 
 export async function urunKaydet(form: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const eskiSlug = metin(form, "eskiSlug");
   const ad = metin(form, "ad");
   const fiyatKurus = kurusaCevir(form.get("fiyat"));
@@ -118,6 +121,8 @@ export async function urunKaydet(form: FormData): Promise<void> {
 }
 
 export async function varyantEkle(form: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const slug = metin(form, "slug");
   const beden = metin(form, "beden");
   const renk = metin(form, "renk");
@@ -142,6 +147,8 @@ export async function varyantEkle(form: FormData): Promise<void> {
 }
 
 export async function varyantSil(form: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const id = metin(form, "id");
   const slug = metin(form, "slug");
   await db.productVariant.delete({ where: { id } });
@@ -151,6 +158,8 @@ export async function varyantSil(form: FormData): Promise<void> {
 
 /** Stok ekranı: tek seferde birçok varyantın adedini günceller. */
 export async function stoklariKaydet(form: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const islemler = [];
   const idler: string[] = [];
   for (const [ad, deger] of form.entries()) {
@@ -180,6 +189,8 @@ export async function stoklariKaydet(form: FormData): Promise<void> {
 }
 
 export async function duyuruEkle(form: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const metinAlani = metin(form, "metin");
   if (!metinAlani) throw new Error("Duyuru metni boş olamaz.");
 
@@ -201,6 +212,8 @@ export async function duyuruEkle(form: FormData): Promise<void> {
 }
 
 export async function duyuruCevir(form: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const id = metin(form, "id");
   const mevcut = await db.announcement.findUniqueOrThrow({ where: { id } });
   await db.announcement.update({ where: { id }, data: { aktif: !mevcut.aktif } });
@@ -209,12 +222,16 @@ export async function duyuruCevir(form: FormData): Promise<void> {
 }
 
 export async function duyuruSil(form: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   await db.announcement.delete({ where: { id: metin(form, "id") } });
   vitriniYenile();
   redirect("/yonetim/duyuru");
 }
 
 export async function seritAyariKaydet(form: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   await db.storeSetting.upsert({
     where: { id: "tek" },
     update: {
@@ -237,6 +254,8 @@ export async function seritAyariKaydet(form: FormData): Promise<void> {
  * form kurcalanıp durum alanına rastgele metin yazılamaz.
  */
 export async function siparisDurumuKaydet(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const numara = String(veri.get("numara") ?? "").trim().toUpperCase();
   const durum = String(veri.get("durum") ?? "");
   const odemeDurumu = String(veri.get("odemeDurumu") ?? "");
@@ -279,6 +298,8 @@ export async function siparisDurumuKaydet(veri: FormData): Promise<void> {
  * kalıyor (K-24).
  */
 export async function kategoriKaydet(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const id = String(veri.get("id") ?? "").trim();
   const ad = String(veri.get("ad") ?? "").trim().slice(0, 60);
   const aciklama = String(veri.get("aciklama") ?? "").trim().slice(0, 200);
@@ -316,6 +337,8 @@ export async function kategoriKaydet(veri: FormData): Promise<void> {
  * vitrinde görünmüyor, ürünleri kendi sayfalarından erişilebilir kalıyor.
  */
 export async function kategoriSil(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const id = String(veri.get("id") ?? "").trim();
   if (!id) redirect("/yonetim/kategoriler");
 
@@ -329,6 +352,8 @@ export async function kategoriSil(veri: FormData): Promise<void> {
 
 /** Kategoriyi açar/kapatır; kapalı kategori vitrinde görünmüyor. */
 export async function kategoriCevir(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const id = String(veri.get("id") ?? "").trim();
   if (!id) redirect("/yonetim/kategoriler");
 
@@ -344,6 +369,8 @@ export async function kategoriCevir(veri: FormData): Promise<void> {
 
 /** Sıralama ok düğmeleriyle: panelin geri kalanı gibi JavaScript'siz çalışıyor. */
 export async function kategoriTasi(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const id = String(veri.get("id") ?? "").trim();
   const yon = String(veri.get("yon") ?? "") === "yukari" ? -1 : 1;
   if (!id) redirect("/yonetim/kategoriler");
@@ -380,6 +407,8 @@ export async function kategoriTasi(veri: FormData): Promise<void> {
  * düzeltmek müşteriye ikinci bildirim göndermemeli.
  */
 export async function kargoKaydet(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const numara = String(veri.get("numara") ?? "").trim().toUpperCase();
   const tasiyici = String(veri.get("tasiyici") ?? "").trim();
   const takipNo = String(veri.get("takipNo") ?? "").trim().slice(0, 60);
@@ -458,6 +487,8 @@ export async function kargoKaydet(veri: FormData): Promise<void> {
 
 /** Faturayı oluşturur; zaten varsa yazdırma sayfasına gider. */
 export async function faturaHazirla(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const numara = String(veri.get("numara") ?? "").trim().toUpperCase();
   if (!numara) return;
 
@@ -468,6 +499,8 @@ export async function faturaHazirla(veri: FormData): Promise<void> {
 
 /** Resmî fatura dışarıda kesildiyse numarası ve belgesi buraya yazılıyor. */
 export async function faturaKaydiGuncelle(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const numara = String(veri.get("numara") ?? "").trim().toUpperCase();
   const saglayiciRef = String(veri.get("saglayiciRef") ?? "").trim().slice(0, 60);
   const pdfAdresi = String(veri.get("pdfAdresi") ?? "").trim().slice(0, 500);
@@ -495,6 +528,8 @@ export async function faturaKaydiGuncelle(veri: FormData): Promise<void> {
 /* ── Satış ayarları ─────────────────────────────────────────────────────── */
 
 export async function satisAyariKaydet(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const kargo = kurusaCevir(veri.get("kargo")) ?? 0;
   const esik = kurusaCevir(veri.get("esik")) ?? 0;
   const havaleBilgisi = String(veri.get("havaleBilgisi") ?? "").trim().slice(0, 1000);
@@ -541,6 +576,8 @@ export async function satisAyariKaydet(veri: FormData): Promise<void> {
  * metin olduğu gibi yapıştırılabiliyor.
  */
 export async function yasalKaydet(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const slug = String(veri.get("slug") ?? "").trim();
   if (!slug) redirect("/yonetim/yasal");
 
@@ -564,6 +601,8 @@ export async function yasalKaydet(veri: FormData): Promise<void> {
 
 /** Satıcı künyesi: mesafeli satışta sitede görünmesi zorunlu bilgiler. */
 export async function kunyeKaydet(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const al = (ad: string, sinir = 200) =>
     String(veri.get(ad) ?? "").trim().slice(0, sinir);
 
@@ -601,6 +640,8 @@ function tariheCevir(deger: FormDataEntryValue | null): Date | null {
 }
 
 export async function kampanyaKaydet(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const id = String(veri.get("id") ?? "").trim();
   const ad = String(veri.get("ad") ?? "").trim().slice(0, 80);
   const tip = String(veri.get("tip") ?? "yuzde");
@@ -657,6 +698,8 @@ export async function kampanyaKaydet(veri: FormData): Promise<void> {
 }
 
 export async function kampanyaCevir(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const id = String(veri.get("id") ?? "");
   if (!id) return;
 
@@ -668,6 +711,8 @@ export async function kampanyaCevir(veri: FormData): Promise<void> {
 }
 
 export async function kampanyaSil(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const id = String(veri.get("id") ?? "");
   if (!id) return;
 
@@ -678,6 +723,8 @@ export async function kampanyaSil(veri: FormData): Promise<void> {
 /* ── Ana sayfa banner'ı ─────────────────────────────────────────────────── */
 
 export async function bannerKaydet(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const id = String(veri.get("id") ?? "").trim();
   const baslik = String(veri.get("baslik") ?? "").trim().slice(0, 120);
   if (!baslik) return;
@@ -713,6 +760,8 @@ export async function bannerKaydet(veri: FormData): Promise<void> {
 }
 
 export async function bannerCevir(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const id = String(veri.get("id") ?? "");
   if (!id) return;
 
@@ -724,6 +773,8 @@ export async function bannerCevir(veri: FormData): Promise<void> {
 }
 
 export async function bannerSil(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const id = String(veri.get("id") ?? "");
   if (!id) return;
 
@@ -732,6 +783,8 @@ export async function bannerSil(veri: FormData): Promise<void> {
 }
 
 export async function bannerSuresiKaydet(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const ham = Number(String(veri.get("saniye") ?? "").trim());
   const saniye = Number.isFinite(ham) ? Math.max(2, Math.min(30, Math.round(ham))) : 6;
 
@@ -753,6 +806,8 @@ export async function bannerSuresiKaydet(veri: FormData): Promise<void> {
  * dönüyor. Yükleme sırası seçim sırası.
  */
 export async function fotografEkle(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const slug = String(veri.get("slug") ?? "");
   const urun = await db.product.findUnique({
     where: { slug },
@@ -797,6 +852,8 @@ export async function fotografEkle(veri: FormData): Promise<void> {
 }
 
 export async function fotografSil(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const id = String(veri.get("id") ?? "");
   const slug = String(veri.get("slug") ?? "");
   if (!id) return;
@@ -818,6 +875,8 @@ export async function fotografSil(veri: FormData): Promise<void> {
  * kapak fotoğrafı.
  */
 export async function fotografTasi(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const id = String(veri.get("id") ?? "");
   const slug = String(veri.get("slug") ?? "");
   const yon = String(veri.get("yon") ?? "") === "yukari" ? -1 : 1;
@@ -854,6 +913,8 @@ export async function fotografTasi(veri: FormData): Promise<void> {
 }
 
 export async function fotografAdiKaydet(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const id = String(veri.get("id") ?? "");
   const slug = String(veri.get("slug") ?? "");
   const altMetin = String(veri.get("altMetin") ?? "").trim().slice(0, 200);

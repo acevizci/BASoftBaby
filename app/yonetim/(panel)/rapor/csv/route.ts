@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { donemCoz, gunYaz, raporCsv } from "@/server/rapor";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 /**
  * Raporun satır satır dökümü.
@@ -8,11 +9,15 @@ import { donemCoz, gunYaz, raporCsv } from "@/server/rapor";
  * çalışırken toplamlar değil kalemler gerekiyor. Noktalı virgül ve BOM,
  * Türkçe Excel'in dosyayı çift tıklayınca doğru açması için.
  *
- * Panelin altında olduğu için şifreyle korunuyor.
+ * **Oturum kontrolünü kendi yapıyor.** Route handler'lar düzenden geçmiyor,
+ * yani `(panel)/layout.tsx`'teki kontrol buraya uğramıyor; olmasaydı rapor
+ * dökümü panele girmeden indirilebilirdi (K-45).
  */
 export const dynamic = "force-dynamic";
 
 export async function GET(istek: NextRequest): Promise<NextResponse> {
+  await yoneticiGerekli();
+
   const p = istek.nextUrl.searchParams;
   const donem = donemCoz(Object.fromEntries(p.entries()));
   const csv = await raporCsv(donem);

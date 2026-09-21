@@ -5,9 +5,11 @@
  * başlıklar zaten doğru oluyor. İki örnek satır var: aynı ürünün iki bedeni,
  * yani "aynı ad = tek ürün" kuralı örnekten anlaşılıyor.
  *
- * Panelin altında olduğu için middleware'in şifresiyle korunuyor.
+ * **Oturum kontrolünü kendi yapıyor.** Route handler'lar düzenden geçmiyor,
+ * yani `(panel)/layout.tsx`'teki kontrol buraya uğramıyor (K-45).
  */
 import ExcelJS from "exceljs";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { BEDENLER, RENK_ADLARI } from "@/ui/katalog-bicim";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +34,8 @@ const ORNEKLER = [
 ];
 
 export async function GET(): Promise<Response> {
+  await yoneticiGerekli();
+
   const kitap = new ExcelJS.Workbook();
   const sayfa = kitap.addWorksheet("Ürünler");
 

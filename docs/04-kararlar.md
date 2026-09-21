@@ -131,7 +131,7 @@ Yayın adımı bu dosyayı `--bir-kez` bayrağıyla çağırıyor: mağaza ayar�
 mağaza ilk yayında boş görünmüyor, ama silinen örnek ürünler sonraki yayında
 geri gelmiyor. Elle çalıştırmak gerekirse `npm run tohum` işareti dinlemiyor.
 
-**Panelin korunması:** `/yonetim` altındaki her sayfa `YONETIM_SIFRE` ortam
+**Panelin korunması (o günkü hâli; K-45'te değişti):** `/yonetim` altındaki her sayfa `YONETIM_SIFRE` ortam
 değişkenindeki şifreyi soruyor (tarayıcının kendi şifre kutusu). Değişken
 tanımlı değilse panel 404 veriyor — yani ayar unutulursa panel açıkta kalmıyor.
 Üyelik sistemi (Auth.js) 03. adımda gelince yerini ona bırakacak.
@@ -317,7 +317,7 @@ oturumları ele geçiremesin. Oturum 30 gün yaşıyor, kullanıldıkça uzuyor.
 değişince o hesabın bütün oturumları kapanıyor ve yalnızca şifreyi değiştiren
 tarayıcıya yenisi açılıyor.
 
-**Yönetim paneli buna bağlanmadı.** Panel `YONETIM_SIFRE` ile korunmaya devam
+**Yönetim paneli buna bağlanmadı.** (O gün) panel `YONETIM_SIFRE` ile korunmaya devam
 ediyor. Müşteri hesabı ile mağaza sahibinin girişi ayrı şeyler; ikisini
 birleştirmek panelin kapısını müşteri tarafına açmak olurdu. Yönetici rolü
 ileride gerekirse eklenecek.
@@ -1842,6 +1842,108 @@ geçmemesi ve JavaScript kapalı tarayıcıda hem süzgecin hem katlamanın
 [`../app/yonetim/stok`](../app/yonetim/stok),
 [`../ui/katlanir.tsx`](../ui/katlanir.tsx),
 [`../server/panel-ozet.ts`](../server/panel-ozet.ts)
+
+---
+
+### K-45 · Panelin kendi giriş ekranı ve kullanıcıları
+**21 Eylül 2026**
+
+Panel bugüne kadar HTTP Basic ile korunuyordu: tek bir şifre, `YONETIM_SIFRE`
+ortam değişkeninde. Üç sorunu vardı.
+
+**Ekran biçimlendirilemiyordu.** Tarayıcının kendi şifre kutusu işletim
+sisteminin kutusu; markadan, yazı tipinden, renkten hiçbir iz taşımıyor,
+Türkçe bile değil. Mağazanın geri kalanına harf harf emek verilmişken paneli
+açan ilk ekranın bu olması tuhaftı.
+
+**Çıkış yapmanın yolu yoktu.** Basic kimlik tarayıcı kapanana kadar
+gönderiliyor; ortak kullanılan bir bilgisayarda panel açık kalıyordu ve
+kapatmanın yolu "bütün tarayıcıyı kapat"tı.
+
+**Tek şifre vardı.** Kimin ne yaptığı bilinmiyordu, bir kişi ayrılınca şifreyi
+herkes için değiştirmek gerekiyordu, ve o şifre ortam değişkeninde ortak
+duruyordu.
+
+**Çözüm ikisi birden.** Giriş ekranı sitenin teması ve kişiye ait hesaplar
+aynı değişikliğin iki yüzü: tek bir ortak şifreyle temalı bir giriş ekranı
+yapmak, üç ay sonra hepsini yeniden yazmak demekti.
+
+**Müşteriden tamamen ayrı.** Ayrı tablo (`AdminUser`), ayrı çerez
+(`yonetim_oturum`), ayrı oturum tablosu. Müşteri oturumu hiçbir koşulda panele
+geçiş vermiyor; iki sistemin tek ortak yanı şifre özetleme işlevleri
+(`server/uyelik.ts`) ve giriş denemesi sayacı (K-38) — ikisi de kendi başına
+duran, kimlikten bağımsız parçalar. Çerezin yolu `/yonetim`: mağaza
+sayfalarına giden her isteğin üstünde panel jetonu taşınmasının gereği yok.
+
+**Oturum 12 saat**, müşterininki gibi 30 gün değil. Panelde stok, sipariş ve
+müşteri bilgisi var; ortak bir bilgisayarda açık kalmış bir panel, açık kalmış
+bir müşteri hesabından pahalı.
+
+**İki rol, üç değil.** `sahip` kullanıcı ekleyip çıkarabiliyor, `yonetici`
+paneldeki her şeyi yapabiliyor ama kullanıcılara dokunamıyor. Bir kişilik bir
+mağazada rol ağacı kurmanın kimseye faydası olmazdı; ama "kullanıcıyı
+silebilen kim" sorusunun cevapsız kalmasının zararı olurdu.
+
+**Kendini kilitleme koruması kodda, uyarı metninde değil.** Kendini
+kapatmak, kendini silmek, kendi rolünü düşürmek ve son aktif sahibi
+düşürmek engelli. Bunların tek çaresi veritabanına elle müdahale olurdu.
+Düğmeler de çıkmıyor ama asıl kural sunucuda: görünmeyen düğme koruma
+değildir.
+
+**Kapatmak silmekten önce geliyor.** Ayrılan biri için hesap kapatılıyor:
+açık oturumları anında düşüyor, kaydı ise duruyor — "kim ne zaman girmişti"
+sorusu silinmiş bir satırla cevaplanamıyor. Silme, yanlışlıkla açılmış bir
+hesap için var.
+
+**`YONETIM_SIFRE` kalıcı bir arka kapı değil.** Yalnızca **hiç kullanıcı
+yokken** ilk sahibi oluşturmanın anahtarı; hesap açıldıktan sonra o şifreyle
+kimse giriş yapamıyor. Ortam değişkeninde duran ortak bir şifrenin sonsuza
+kadar geçerli kalması, az önce çözülen sorunu geri getirirdi. Değişken hiç
+tanımlı değilse ve kullanıcı da yoksa giriş sayfası 404 veriyor — eski
+davranışın korunan yanı: ayar unutulursa panel açıkta kalmıyor.
+
+**Kimlik middleware'de doğrulanmıyor.** Middleware Edge çalışma ortamında
+çalışıyor; orada veritabanı yok, yani oturumun geçerliliği bilinemiyor.
+Middleware yalnızca çerez **hiç yoksa** giriş sayfasına yolluyor — bu bir
+güvenlik önlemi değil, boşuna sayfa yüklemeyi önleyen bir kestirme. Asıl
+kontrol üç yerde, hepsi veritabanına bakarak:
+
+1. `(panel)/layout.tsx` — `/yonetim` altındaki bütün **sayfaları** sarıyor.
+2. Her `route.ts` — route handler'lar düzenden geçmiyor. Olmasaydı rapor
+   CSV'si ve yükleme şablonu panele girmeden indirilebilirdi.
+3. Her server action — eylemler de düzenden geçmiyor ve kimliği bilinen bir
+   adresle çağrılabiliyor. `server/yonetim.ts`'teki otuz eylemin, talep,
+   yorum ve toplu yükleme eylemlerinin hepsi `yoneticiGerekli()` ile
+   başlıyor.
+
+Sahte bir çerez middleware'den geçiyor, üçünde de reddediliyor; tarayıcı
+denemesi bunu ayrıca doğruluyor.
+
+**Adres yapısı.** Giriş sayfası `/yonetim` altında ama kendini koruyan bir
+düzenin içinde olamaz — sonsuz yönlendirme olurdu. Panel sayfaları
+`app/yonetim/(panel)/` grubuna alındı; grup adı adrese girmediği için bütün
+adresler aynı kaldı (K-43'teki `(magaza)` ile aynı yol).
+
+**Denendi** (38 madde): çerezsiz isteğin giriş sayfasına gitmesi ve geldiği
+sayfaya geri dönmesi, kurulum ekranının yalnızca bir kez açılması, yanlış
+kurulum şifresinin reddi, yanlış şifrenin söylenmesi, çıkışın çalışması,
+kullanıcı ekleme ve aynı e-postanın reddi, yöneticinin kullanıcılar sayfasını
+açamaması ama panelin geri kalanını kullanabilmesi, kapatılan kullanıcının
+oturumunun anında düşmesi ve giriş yapamaması, kendi satırında kapat/sil
+düğmesinin hiç çıkmaması, şifre değişince eski şifrenin geçmemesi, müşteri
+çerezinin panele geçmemesi, JavaScript kapalı tarayıcıda giriş ve çıkışın
+çalışması. Sahte çerezle sayfa, route handler ve CSV ucu ayrıca denendi.
+Giriş ekranı açık ve koyu temada ekran görüntüsüyle gözden geçirildi.
+
+**Sırada:** şifre sıfırlama e-postası. Şu an şifresini unutan bir kullanıcıya
+sahip yeni bir şifre atıyor; e-posta servisi bağlanınca (A-09) kendi
+sıfırlaması eklenecek.
+
+**Nerede:** [`../server/yonetim-kimlik.ts`](../server/yonetim-kimlik.ts),
+[`../server/yonetim-kimlik-islem.ts`](../server/yonetim-kimlik-islem.ts),
+[`../app/yonetim/giris`](../app/yonetim/giris),
+[`../app/yonetim/(panel)/kullanicilar`](../app/yonetim/(panel)/kullanicilar),
+[`../middleware.ts`](../middleware.ts)
 
 ---
 

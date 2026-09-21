@@ -1,55 +1,43 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Yönetim panelini korur.
+ * Panel isteklerinin ön kapısı.
  *
- * Şifre `YONETIM_SIFRE` ortam değişkeninde durur, koda yazılmaz. Değişken
- * tanımlı değilse panel hiç açılmaz — sayfa yokmuş gibi davranır. Böylece
- * ayar unutulursa panel açıkta kalmaz; yanlış tarafa düşen hata güvenli
- * tarafa düşer.
+ * **Kimlik burada doğrulanmıyor.** Middleware Edge çalışma ortamında
+ * çalışıyor; orada veritabanı bağlantısı yok, yani oturumun gerçekten
+ * geçerli olup olmadığı burada bilinemiyor. Bu yüzden burada yalnızca iki iş
+ * yapılıyor:
  *
- * Tarayıcının kendi şifre kutusunu kullanıyoruz (HTTP Basic). Müşteri üyeliği
- * (server/uyelik.ts) buraya karışmıyor: o mağaza tarafının kimliği, burası
- * mağaza sahibinin. Panel, yönetici rolleri gelene kadar şifreyle duruyor.
+ * 1. Çerez **hiç yoksa** giriş sayfasına yollamak. Bu bir güvenlik önlemi
+ *    değil, kullanıcıyı boşuna sayfa yüklemekten kurtaran bir kestirme.
+ * 2. Açık sayfanın yolunu isteğe eklemek; panel menüsü hangi maddenin
+ *    işaretli olacağını buradan okuyor (K-43).
+ *
+ * Asıl kontrol `(panel)/layout.tsx`'te ve `/yonetim` altındaki her route
+ * handler'da, veritabanına bakarak yapılıyor. Sahte bir çerez buradan geçer,
+ * orada reddedilir (K-45).
  */
 
 export const config = { matcher: "/yonetim/:path*" };
 
+const CEREZ = "yonetim_oturum";
+
 export function middleware(istek: NextRequest) {
-  const sifre = process.env.YONETIM_SIFRE;
+  const yol = istek.nextUrl.pathname;
 
-  if (!sifre) {
-    return new NextResponse(null, { status: 404 });
+  // Giriş sayfası korumanın dışında: kendini koruyan bir sayfa sonsuz
+  // yönlendirme olurdu.
+  const girisSayfasi = yol === "/yonetim/giris";
+
+  if (!girisSayfasi && !istek.cookies.has(CEREZ)) {
+    const adres = istek.nextUrl.clone();
+    adres.pathname = "/yonetim/giris";
+    adres.search = "";
+    adres.searchParams.set("nereye", yol);
+    return NextResponse.redirect(adres);
   }
 
-  const baslik = istek.headers.get("authorization");
-  if (baslik?.startsWith("Basic ")) {
-    const cozulmus = atob(baslik.slice(6));
-    const verilen = cozulmus.slice(cozulmus.indexOf(":") + 1);
-    if (esitMi(verilen, sifre)) {
-      // Açık olan sayfanın yolu isteğe ekleniyor: panel menüsü hangi maddenin
-      // işaretli olacağını buradan okuyor. Sunucu bileşeninde adres satırını
-      // okumanın başka yolu yok ve bunun için menüyü istemci bileşenine
-      // çevirmek gereksiz bir JavaScript yükü olurdu (K-43).
-      const basliklar = new Headers(istek.headers);
-      basliklar.set("x-yonetim-yol", istek.nextUrl.pathname);
-      return NextResponse.next({ request: { headers: basliklar } });
-    }
-  }
-
-  return new NextResponse("Yönetim paneli", {
-    status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="BASoftBaby yonetim"' },
-  });
-}
-
-/**
- * Sabit süreli karşılaştırma: yanlış şifrenin kaçıncı harfte tutmadığı
- * cevabın gelme süresinden anlaşılmasın.
- */
-function esitMi(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let fark = 0;
-  for (let i = 0; i < a.length; i++) fark |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return fark === 0;
+  const basliklar = new Headers(istek.headers);
+  basliklar.set("x-yonetim-yol", yol);
+  return NextResponse.next({ request: { headers: basliklar } });
 }

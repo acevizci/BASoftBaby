@@ -19,6 +19,7 @@ import {
   type Hata,
   type Satir,
 } from "@/server/toplu-urun";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 /** Yükleme dosyası için üst sınır. Birkaç bin satırlık tablo bunun çok altında. */
 const EN_BUYUK_BAYT = 5 * 1024 * 1024;
@@ -29,6 +30,8 @@ function vitriniYenile() {
 }
 
 export async function topluOnizle(form: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const dosya = form.get("dosya");
   if (!(dosya instanceof File) || dosya.size === 0) {
     redirect("/yonetim/urunler/toplu?hata=dosya");
@@ -64,6 +67,8 @@ export async function topluOnizle(form: FormData): Promise<void> {
 }
 
 export async function topluUygula(form: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const id = String(form.get("id") ?? "").trim();
   const kayit = await db.productImport.findUnique({ where: { id } });
   if (!kayit) redirect("/yonetim/urunler/toplu?hata=yok");
@@ -87,6 +92,8 @@ export async function topluUygula(form: FormData): Promise<void> {
 }
 
 export async function topluVazgec(form: FormData): Promise<void> {
+  await yoneticiGerekli();
+
   const id = String(form.get("id") ?? "").trim();
   if (id) await db.productImport.deleteMany({ where: { id, uygulandi: null } });
   redirect("/yonetim/urunler/toplu");

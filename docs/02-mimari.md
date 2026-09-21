@@ -87,15 +87,20 @@ app/
   api/canli/              uyanık tutma ucu
   yuklenen/[dosya]/       yerel ortamda yüklenen fotoğraflar
   sitemap.ts robots.ts    site haritası ve arama motoru kuralları
-  yonetim/                şifreyle korunuyor — kendi çerçevesi, gruplu menü
-    layout.tsx            panel çerçevesi (menü, rozetler, açık sayfa işareti)
-    siparisler/ talepler/ yorumlar/ rapor/    Satış
-    urunler/ kategoriler/ stok/               Katalog
-    kampanyalar/ banner/ duyuru/              Vitrin
-    ayarlar/ yasal/ tani/                     Ayarlar
-      siparisler/[numara]/etiket/  yazdırılabilir barkodlu kargo etiketi
-      siparisler/[numara]/fatura/  yazdırılabilir e-arşiv faturası
-      urunler/toplu/               Excel/CSV'den toplu yükleme
+  yonetim/                panel — kendi giriş ekranı, çerçevesi ve menüsü
+    layout.tsx            yalnızca başlık ve noindex
+    giris/                temalı giriş ekranı; kullanıcı yokken ilk kurulum
+    (panel)/              oturum gerektiren her şey (grup adı adrese girmez)
+      layout.tsx          oturum kontrolü + menü, rozetler, açık sayfa işareti
+      hesabim/            kendi şifresi ve oturumları
+      kullanicilar/       panel kullanıcıları (yalnızca sahip)
+      siparisler/ talepler/ yorumlar/ rapor/  Satış
+      urunler/ kategoriler/ stok/             Katalog
+      kampanyalar/ banner/ duyuru/            Vitrin
+      ayarlar/ yasal/ tani/                   Ayarlar
+        siparisler/[numara]/etiket/  yazdırılabilir barkodlu kargo etiketi
+        siparisler/[numara]/fatura/  yazdırılabilir e-arşiv faturası
+        urunler/toplu/               Excel/CSV'den toplu yükleme
 
 server/                   iş kuralları — tek kaynak
   veritabani.ts           Prisma bağlantısı
@@ -124,6 +129,8 @@ server/                   iş kuralları — tek kaynak
   kisisel-veri.ts         KVKK: veri dökümü ve hesap silme
   onbellek.ts             önbellek etiketleri
   panel-menu.ts           panel menüsünün yapısı ve bekleyen iş sayıları
+  yonetim-kimlik.ts       panel kullanıcıları, oturum ve yetki
+  yonetim-kimlik-islem.ts panel girişi ve kullanıcı işlemleri
   panel-ozet.ts           panelin özet ekranı
   stok-ekrani.ts          stok ekranının araması, süzgeçleri ve sayfalaması
   rapor.ts                satış raporu, dönem karşılaştırması, CSV
@@ -141,8 +148,10 @@ db/
   migrations/             şema değişiklik geçmişi
   tohum.ts                başlangıç verisi
 
-middleware.ts             panelin şifre koruması; açık sayfanın yolunu
-                          `x-yonetim-yol` başlığıyla düzene geçirir
+middleware.ts             çerezsiz panel isteğini giriş sayfasına yollar ve
+                          açık sayfanın yolunu `x-yonetim-yol` başlığıyla
+                          düzene geçirir. Kimlik burada doğrulanmıyor: Edge
+                          ortamında veritabanı yok (K-45)
 
 ui/                       ortak arayüz parçaları
   katalog-bicim.ts        Prisma'ya bulaşmayan saf görünüm sabitleri

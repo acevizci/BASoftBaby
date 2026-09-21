@@ -25,8 +25,9 @@ npm run dev
 Sonra tarayıcıda `http://localhost:3000`.
 
 `.env` içinde iki değer var: `DATABASE_URL` (Postgres bağlantısı) ve
-`YONETIM_SIFRE` (yönetim panelinin şifresi). İkisi de depoya girmez; yayında
-Vercel'in proje ayarlarında durur.
+`YONETIM_SIFRE` (panelin **kurulum** şifresi — ilk kullanıcıyı oluşturmak
+için; sonrasında panele kişisel hesaplarla giriliyor). İkisi de depoya girmez;
+yayında Vercel'in proje ayarlarında durur.
 
 | Komut | Ne yapar |
 | --- | --- |
@@ -82,8 +83,28 @@ kategoriler (açma, adını değiştirme, sıralama, kapatma, silme),
 Excel/CSV'den toplu ürün yükleme, satış raporu (dönem seçimi, grafik, CSV),
 duyuru şeridi,
 ana sayfa banner'ı, kampanyalar ve satış ayarları (kargo ücreti,
-bedava kargo eşiği, havale bilgisi). Açılabilmesi için `YONETIM_SIFRE` tanımlı olmalı; tanımlı değilse panel
-kendini tamamen kapatır (404 verir), yani ayar unutulursa açıkta kalmaz.
+bedava kargo eşiği, havale bilgisi).
+
+### Panele giriş ve kullanıcılar
+
+Panel kendi giriş ekranında (`/yonetim/giris`), site temasıyla. Tarayıcının
+kendi şifre kutusu bırakıldı: biçimlendirilemiyordu, Türkçe değildi ve çıkış
+yapmanın yolu yoktu (K-45).
+
+Her kişinin kendi e-postası ve şifresi var. İki rol: **sahip** kullanıcı
+ekleyip çıkarabiliyor, **yönetici** paneldeki her şeyi yapabiliyor ama
+kullanıcılara dokunamıyor. Kendini kapatmak, silmek ya da son sahibi düşürmek
+engelli.
+
+İlk kurulum: hiç kullanıcı yokken giriş sayfası "ilk kullanıcıyı oluştur"
+hâline geçiyor ve `YONETIM_SIFRE` ile korunuyor. Hesap açıldıktan sonra o
+şifreyle kimse giriş yapamıyor. Ortam değişkeni hiç tanımlı değilse ve
+kullanıcı da yoksa sayfa 404 veriyor — ayar unutulursa panel açıkta kalmıyor.
+
+Oturum 12 saat (müşterininki 30 gün): panelde stok, sipariş ve müşteri
+bilgisi var. Kapatılan ya da şifresi değiştirilen bir kullanıcının açık
+oturumları anında düşüyor. Giriş denemesi sınırı müşteri tarafıyla ortak
+(K-38).
 
 ## İptal ve iade
 
@@ -181,7 +202,8 @@ siparişler hesaba kendiliğinden bağlanmıyor — onlar `/siparis-takip` sayfa
 numara ve e-postayla görülüyor. Gerekçesi: doğrulanmamış bir e-posta o kutunun
 sahibi olduğunun kanıtı değil.
 
-Yönetim paneli bu üyelikten ayrı; o `YONETIM_SIFRE` ile korunmaya devam ediyor.
+Yönetim paneli bu üyelikten tamamen ayrı: ayrı tablo, ayrı çerez, ayrı
+oturum. Müşteri oturumu hiçbir koşulda panele geçiş vermiyor.
 
 ## Kartla ödeme
 
