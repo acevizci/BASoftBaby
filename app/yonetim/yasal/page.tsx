@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Katlanir from "@/ui/katlanir";
 import { kunyeKaydet, yasalKaydet } from "@/server/yonetim";
 import { kunyeGetir, yasalSayfaGetir, yasalSayfalariGetir } from "@/server/yasal";
 
@@ -19,7 +20,7 @@ const DUGME =
  * motorlarına kapalı kalıyor.
  */
 export default async function YasalEkrani({ searchParams }: PageProps<"/yonetim/yasal">) {
-  const { duzenle, kayit, hata } = await searchParams;
+  const { duzenle, kayit, hata, ac } = await searchParams;
   const sayfalar = await yasalSayfalariGetir();
 
   const secilenSlug =
@@ -30,6 +31,15 @@ export default async function YasalEkrani({ searchParams }: PageProps<"/yonetim/
     secilenSlug ? yasalSayfaGetir(secilenSlug) : undefined,
     kunyeGetir(),
   ]);
+
+  // Mesafeli satışta satıcının unvanı, adresi, bir iletişim yolu ve ETBİS
+  // numarası sitede bulunmak zorunda. Eksikse künye kendini açıyor: kapalı
+  // bir bölümün içinde saklanan eksik, olmayan eksikle aynı şey.
+  const kunyeEksikMi =
+    !kunye.unvan ||
+    !kunye.sirketAdresi ||
+    !kunye.etbisNo ||
+    !(kunye.destekTelefon || kunye.destekEposta);
 
   return (
     <div className="flex flex-col gap-5">
@@ -138,11 +148,17 @@ export default async function YasalEkrani({ searchParams }: PageProps<"/yonetim/
         </form>
       )}
 
-      <form
-        action={kunyeKaydet}
-        className="flex flex-col gap-4 rounded-marka border border-cizgi bg-yuzey p-5"
+      {/* Künye bir kere doldurulup bir daha açılmayan bir form; metin
+          düzenlerken ekranın altında sürekli durmasının bir sebebi yok.
+          Kaydedince ve eksik varken kendini açıyor (K-44). */}
+      <Katlanir
+        id="kunye"
+        baslik="Künye ve ETBİS"
+        acik={ac === "kunye" || kayit === "kunye" || kunyeEksikMi}
+        ozet={kunyeEksikMi ? "eksik satır var" : "dolu"}
       >
-        <h2 className="text-lg">Künye ve ETBİS</h2>
+      <form action={kunyeKaydet} className="flex flex-col gap-4">
+        <input type="hidden" name="ac" value="kunye" />
         <p className="text-sm text-metin-2">
           Bu bilgiler alt bilgide ve yasal metinlerin altında görünür. Mesafeli satışta
           satıcının unvanı, adresi ve iletişim bilgisi ile ETBİS kayıt numarasının sitede
@@ -222,6 +238,7 @@ export default async function YasalEkrani({ searchParams }: PageProps<"/yonetim/
           Künyeyi kaydet
         </button>
       </form>
+      </Katlanir>
     </div>
   );
 }

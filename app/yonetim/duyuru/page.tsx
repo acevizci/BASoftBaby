@@ -1,4 +1,5 @@
 import DuyuruSeridi from "@/ui/duyuru-seridi";
+import Katlanir from "@/ui/katlanir";
 import { seritAyariGetir, tumDuyurular } from "@/server/duyuru";
 import { duyuruCevir, duyuruEkle, duyuruSil, seritAyariKaydet } from "@/server/yonetim";
 
@@ -13,8 +14,10 @@ function tarihYaz(t?: Date): string {
 }
 
 export default async function DuyuruEkrani({ searchParams }: PageProps<"/yonetim/duyuru"> ) {
-  const { kayit } = await searchParams;
+  const { kayit, ac } = await searchParams;
   const [duyurular, ayar] = await Promise.all([tumDuyurular(), seritAyariGetir()]);
+
+  const yayinda = duyurular.filter((d) => d.aktif).length;
 
   return (
     <div className="flex flex-col gap-6">
@@ -38,7 +41,14 @@ export default async function DuyuruEkrani({ searchParams }: PageProps<"/yonetim
       </section>
 
       <section className="rounded-marka border border-cizgi bg-yuzey p-5">
-        <h2 className="text-lg">Mesajlar</h2>
+        {/* Liste katlanmıyor: aradığın mesajı tarayıcının kendi sayfa içi
+            araması bulabilsin. */}
+        <h2 className="flex flex-wrap items-baseline gap-x-3 text-lg">
+          Mesajlar
+          <span className="rakam text-xs font-semibold text-metin-3">
+            {duyurular.length} mesaj · {yayinda} yayında
+          </span>
+        </h2>
         {duyurular.length === 0 ? (
           <p className="mt-2 text-sm text-metin-3">Henüz mesaj yok.</p>
         ) : (
@@ -80,9 +90,13 @@ export default async function DuyuruEkrani({ searchParams }: PageProps<"/yonetim
             ))}
           </ul>
         )}
+      </section>
 
-        <form action={duyuruEkle} className="mt-5 flex flex-col gap-3 border-t border-cizgi pt-5">
-          <h3 className="font-baslik text-sm font-bold">Yeni mesaj</h3>
+      <Katlanir id="yeni-mesaj" baslik="Yeni mesaj" acik={ac === "yeni-mesaj"}>
+        <form action={duyuruEkle} className="flex flex-col gap-3">
+          {/* Arka arkaya birkaç mesaj eklenebilsin: kaydettikten sonra bölüm
+              açık dönüyor. */}
+          <input type="hidden" name="ac" value="yeni-mesaj" />
           <label className="flex flex-col gap-1.5">
             <span className={ETIKET}>Mesaj</span>
             <input
@@ -113,11 +127,16 @@ export default async function DuyuruEkrani({ searchParams }: PageProps<"/yonetim
             Şeride ekle
           </button>
         </form>
-      </section>
+      </Katlanir>
 
-      <section className="rounded-marka border border-cizgi bg-yuzey p-5">
-        <h2 className="text-lg">Şerit ayarları</h2>
-        <form action={seritAyariKaydet} className="mt-4 flex flex-col gap-4">
+      <Katlanir
+        id="serit-ayarlari"
+        baslik="Şerit ayarları"
+        acik={ac === "serit-ayarlari"}
+        ozet={`${ayar.acik ? "açık" : "kapalı"} · ${ayar.hiz} · ${ayar.renk}`}
+      >
+        <form action={seritAyariKaydet} className="flex flex-col gap-4">
+          <input type="hidden" name="ac" value="serit-ayarlari" />
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5">
               <span className={ETIKET}>Kayma hızı</span>
@@ -178,7 +197,7 @@ export default async function DuyuruEkrani({ searchParams }: PageProps<"/yonetim
             Ayarları kaydet
           </button>
         </form>
-      </section>
+      </Katlanir>
     </div>
   );
 }

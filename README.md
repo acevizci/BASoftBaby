@@ -53,7 +53,7 @@ kalmışsa temizleyip geçiyor (K-25).
 | `app/(magaza)/` | Mağaza sayfaları ve mağaza çerçevesi: duyuru şeridi, üst çubuk, alt bilgi |
 | `app/yonetim/` | Yönetim paneli; kendi çerçevesi, mağaza başlığı olmadan (K-43) |
 | `db/` | Veritabanı şeması, göç dosyaları ve başlangıç verisi |
-| `ui/` | Ortak arayüz parçaları: duyuru şeridi, üst çubuk, alt bilgi |
+| `ui/` | Ortak arayüz parçaları: duyuru şeridi, üst çubuk, alt bilgi, katlanır bölüm |
 | `server/` | İş kuralları. Sayfalar veriyi hep buradan okur |
 | `app/(magaza)/(hesap)/` | Giriş, kayıt ve hesap sayfaları |
 | `app/(magaza)/yasal/` | Sözleşmeler, KVKK ve çerez politikası sayfaları |
@@ -76,7 +76,8 @@ listesine bağlanıyor (K-32).
 
 Siparişler (numara, ad, e-posta, telefon ve kargo takip
 numarasıyla arama; durum, ödeme ve tarih süzgeçleri), ürün ekleme ve düzenleme,
-beden-renk stokları,
+beden-renk stokları (arama, "sorunlular / bitenler / hepsi" süzgeci ve
+sayfalama; süzgeçli görünümde stoğu yerinde bedenler katlanmış durur, K-44),
 kategoriler (açma, adını değiştirme, sıralama, kapatma, silme),
 Excel/CSV'den toplu ürün yükleme, satış raporu (dönem seçimi, grafik, CSV),
 duyuru şeridi,

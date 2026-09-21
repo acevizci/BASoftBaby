@@ -1748,6 +1748,103 @@ yazıyor; JavaScript kapalı tarayıcıda menü açılıyor.
 
 ---
 
+### K-44 · Uzun panel sayfaları: süzgeç, katlama ve kısa liste
+**21 Eylül 2026**
+
+Paneldeki sayfaların boyu ölçüldü (900 piksellik ekranda, sekiz ürünlük
+küçük veriyle): stok 2,6 / **6,0** ekran (masaüstü / telefon), banner
+2,1 / 3,0, yasal 1,9 / 2,4, özet 1,6 / 2,4, duyuru 1,4 / 2,2; kalan on
+sayfa tek ekran.
+
+**Akordiyon her uzun sayfanın ilacı değil.** Üç ayrı sorun çıktı, üçünün
+çözümü ayrı.
+
+**1. Stok ekranı — akordiyon bunu kurtarmazdı.** Sayfa bütün ürünlerin bütün
+bedenlerini tek forma basıyordu: sekiz üründe doksan beden girdisi, telefonda
+altı ekran. İki yüz ürünle ürün başına ~680 piksel, yani yüz elli ekran ve
+tek gönderimde iki binden fazla alan. Ürünleri açılır kapanır satırlara
+çevirmek iki yüz kapalı satır demekti — aradığını yine bulamazdın, üstelik
+tarayıcının kendi sayfa içi araması (Ctrl+F) kapalı `<details>` içindekini
+bulamıyor.
+
+Doğrusu kapsamı daraltmak: **ürün araması** (Türkçe harf katlamasıyla, K-35),
+**üç süzgeç** — Sorunlular (varsayılan: biten + üç adet ve altına düşen),
+Bitenler, Hepsi — ve **sayfalama** (yirmi ürün). Günlük iş biten bedeni
+düzeltmek; tam listeye ayda bir bakılıyor. Süzgeçli görünümde ürün kartı
+**yalnızca sorunlu bedenleri** açık gösteriyor, stoğu yerinde olanlar
+"Stoğu yerinde 8 beden" başlığı altında katlanmış duruyor — katlanmış da
+olsalar formun içindeler, yani kaydet hepsini gönderiyor.
+
+Sonuç: 2,6 → 1,9 ekran masaüstünde, **6,0 → 3,0** telefonda.
+
+**Kaydettikten sonra aynı süzgeç ve sayfa.** Eskiden `?kayit=1`'e dönülüyordu;
+bir bedeni düzeltip kaydedince listenin başına atılıyordun. Süzgeç değerleri
+forma gizli alan olarak konuyor ama yine de çözümleyiciden geçiyor: adres elle
+kuruluyor, forma ne gelirse gelsin yalnızca bilinen değerler adrese yazılıyor.
+
+**Rozet ve liste aynı sayıyı söylüyor.** Menüdeki stok rozeti tükenen
+**beden** sayısını gösteriyordu (13), tıklayınca açılan listede yedi satır
+vardı. Rozet de artık ürün sayıyor. Aynı eşik iki ekranda ayrı tanımlanmasın
+diye özet ekranının `KRITIK_STOK` sabiti stok ekranının `AZALAN_ESIK`'inden
+geliyor.
+
+**2. Banner, duyuru ve künye — akordiyon tam buraya uyuyor.** Bu sayfalar
+"önizleme + ayarlar + liste + yeni kayıt formu" kalıbında ve hepsi baştan sona
+açıktı. Ayda bir dokunulan ayarların ve uzun "yeni kayıt" formlarının sürekli
+açık durmasının bir sebebi yok. Ortak bir `<ui/katlanir.tsx>` parçası yapıldı;
+`<details>` ile, yani JavaScript kapalıyken çalışıyor, klavyeyle açılıp
+kapanıyor, ekran okuyucu "genişlet/daralt" diye okuyor (K-40, K-43'teki
+yolun aynısı).
+
+Üç kural, bir kere kararlaştırıldı:
+
+1. **Başlık açmadan karar verdirmeli.** Özet sağda duruyor: "Geçiş hızı ·
+   her banner 6 saniye", "Şerit ayarları · açık · orta · nane", "Künye ve
+   ETBİS · eksik satır var". "Şerit ayarları ▾" tek başına açmayı denemekten
+   başka seçenek bırakmıyor.
+2. **Kaydettikten sonra açık kalmalı.** İşlem `?kayit=1&ac=<kimlik>` ile
+   dönüyor, sayfa o bölümü açıyor. Yoksa bir ayarı değiştirip kaydediyorsun
+   ve bölüm kapanıyor; sonucu görmek için yeniden açman gerekiyor. `ac`
+   değeri de doğrudan adrese yazılmıyor, deseni doğrulanıyor.
+3. **Hata kapalı bölümün içinde saklanmaz.** Künye eksikse kendini açıyor —
+   mesafeli satışta satıcının unvanı, adresi, bir iletişim yolu ve ETBİS
+   numarası sitede bulunmak zorunda; kapalı bir bölümün içinde saklanan
+   eksik, olmayan eksikle aynı şey.
+
+**Katlanan şey liste değil form.** Ctrl+F kapalı `<details>` içindekini
+bulamadığı için aranacak içerik — mesaj listesi, banner listesi — açık
+kalıyor; başlığına kaç kayıt olduğu yazıldı.
+
+Sonuç: banner 2,1 → 1,4 ve 3,0 → 2,0; duyuru 1,4 → 1,0 ve 2,2 → 1,4;
+yasal 1,9 → 1,3 ve 2,4 → 1,6.
+
+**Not:** `<details name="...">` ile tarayıcının kendi "aynı anda tek açık"
+akordiyonu kurulabiliyor ve burada kullanılmadı. Bu sayfalardaki bölümler
+birbirinin alternatifi değil (ayarlar ile yeni kayıt formu ayrı işler);
+birini açınca ötekinin kapanması kazanç değil kayıp olurdu.
+
+**3. Özet ekranı — uzun ama doğru uzun.** Listeleri beş satıra indirildi.
+Asıl düzeltme boy değil: listeler zaten on ve sekizde **sessizce** kesiliyordu,
+kaç tane olduğunu söylemiyorlardı. Artık altında "40 bedenin en aza düşen
+5 tanesi" yazıyor ve tam listeye bağlantı veriyor. (Aynı hata sipariş
+listesinde de vardı, K-31'de düzeltilmişti.)
+
+**Denendi** (49 madde): süzgeç sayılarının listeyle ve menü rozetiyle
+tutması, sağlam bedenlerin katlanması ve "hepsi" görünümünde katlanmaması,
+Türkçe harf katlamalı arama, boş sonucun ne aradığını söylemesi, kaydettikten
+sonra süzgecin/aramanın/değerin korunması, katlanır bölümlerin kapalı
+başlaması ve adresle açılabilmesi, kaydettikten sonra açık kalıp özetinin
+tazelenmesi, eksik künyenin kendini açması, özet listelerinin beş satırı
+geçmemesi ve JavaScript kapalı tarayıcıda hem süzgecin hem katlamanın
+çalışması.
+
+**Nerede:** [`../server/stok-ekrani.ts`](../server/stok-ekrani.ts),
+[`../app/yonetim/stok`](../app/yonetim/stok),
+[`../ui/katlanir.tsx`](../ui/katlanir.tsx),
+[`../server/panel-ozet.ts`](../server/panel-ozet.ts)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

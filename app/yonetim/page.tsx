@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { KRITIK_STOK, panelOzetiGetir } from "@/server/panel-ozet";
+import { KISA_LISTE, KRITIK_STOK, panelOzetiGetir } from "@/server/panel-ozet";
 import { RENK_ADLARI, fiyatYaz, type RenkAdi } from "@/ui/katalog-bicim";
 
 export const dynamic = "force-dynamic";
@@ -145,6 +145,12 @@ export default async function YonetimOzeti() {
               </li>
             ))}
           </ul>
+          {o.bekleyenToplam > KISA_LISTE && (
+            <p className="mt-3 text-xs text-metin-3">
+              <span className="rakam font-bold">{o.bekleyenToplam}</span> bedenin en çok
+              beklenen {KISA_LISTE} tanesi.
+            </p>
+          )}
         </section>
       )}
 
@@ -171,6 +177,12 @@ export default async function YonetimOzeti() {
               </li>
             ))}
           </ul>
+        )}
+        {o.azalanToplam > KISA_LISTE && (
+          <p className="mt-3 text-xs text-metin-3">
+            <span className="rakam font-bold">{o.azalanToplam}</span> bedenin en aza düşen{" "}
+            {KISA_LISTE} tanesi.
+          </p>
         )}
         <Link
           href="/yonetim/stok"

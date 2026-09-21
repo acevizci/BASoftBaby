@@ -1,4 +1,5 @@
 import HeroBanner from "@/ui/hero-banner";
+import Katlanir from "@/ui/katlanir";
 import { BANNER_GORSELLERI, BANNER_PALETLERI, bannerSaniyeGetir, tumBannerlar } from "@/server/banner";
 import { bannerCevir, bannerKaydet, bannerSil, bannerSuresiKaydet } from "@/server/yonetim";
 
@@ -21,7 +22,7 @@ function tarihYaz(t: Date | null): string {
 }
 
 export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim/banner">) {
-  const { kayit } = await searchParams;
+  const { kayit, ac } = await searchParams;
   const [bannerlar, saniye] = await Promise.all([tumBannerlar(), bannerSaniyeGetir()]);
 
   const yayinda = bannerlar.filter((b) => b.aktif).length;
@@ -47,9 +48,14 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
         </div>
       </section>
 
-      <section className="rounded-marka border border-cizgi bg-yuzey p-5">
-        <h2 className="text-lg">Geçiş hızı</h2>
-        <form action={bannerSuresiKaydet} className="mt-3 flex flex-wrap items-end gap-3">
+      <Katlanir
+        id="gecis-hizi"
+        baslik="Geçiş hızı"
+        acik={ac === "gecis-hizi"}
+        ozet={`her banner ${saniye} saniye`}
+      >
+        <form action={bannerSuresiKaydet} className="flex flex-wrap items-end gap-3">
+          <input type="hidden" name="ac" value="gecis-hizi" />
           <label className="flex flex-col gap-1.5">
             <span className={ETIKET}>Her banner kaç saniye dursun</span>
             <input
@@ -72,10 +78,17 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
             {yayinda < 2 && " Geçiş için en az iki banner gerekiyor."}
           </p>
         </form>
-      </section>
+      </Katlanir>
 
       <section className="rounded-marka border border-cizgi bg-yuzey p-5">
-        <h2 className="text-lg">Bannerlar</h2>
+        {/* Liste katlanmıyor: aradığın banner'ı tarayıcının kendi sayfa içi
+            araması bulabilsin. */}
+        <h2 className="flex flex-wrap items-baseline gap-x-3 text-lg">
+          Bannerlar
+          <span className="rakam text-xs font-semibold text-metin-3">
+            {bannerlar.length} banner · {yayinda} yayında
+          </span>
+        </h2>
         {bannerlar.length === 0 ? (
           <p className="mt-2 text-sm text-metin-3">Henüz banner yok.</p>
         ) : (
@@ -123,8 +136,12 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
           </ul>
         )}
 
-        <form action={bannerKaydet} className="mt-5 flex flex-col gap-4 border-t border-cizgi pt-5">
-          <h3 className="font-baslik text-sm font-bold">Yeni banner</h3>
+      </section>
+
+      <Katlanir id="yeni-banner" baslik="Yeni banner" acik={ac === "yeni-banner"}>
+        <form action={bannerKaydet} className="flex flex-col gap-4">
+          {/* Arka arkaya birkaç banner eklenebilsin. */}
+          <input type="hidden" name="ac" value="yeni-banner" />
 
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5 sm:col-span-2">
@@ -223,7 +240,7 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
             Banner ekle
           </button>
         </form>
-      </section>
+      </Katlanir>
     </div>
   );
 }

@@ -16,6 +16,7 @@ import "server-only";
 
 import { db } from "@/server/veritabani";
 import { OLUMSUZ_PUAN } from "@/server/yorum";
+import { AZALAN_ESIK } from "@/server/stok-ekrani";
 
 export type MenuMaddesi = {
   yol: string;
@@ -39,18 +40,22 @@ export type Sayaclar = {
   talep: number;
   yorum: number;
   fotografsiz: number;
-  tukenen: number;
+  /** Biten ya da azalan bedeni olan yayındaki ürün adedi. */
+  sorunluStok: number;
 };
 
 export async function menuSayaclari(): Promise<Sayaclar> {
-  const [siparis, talep, yorum, fotografsiz, tukenen] = await Promise.all([
+  const [siparis, talep, yorum, fotografsiz, sorunluStok] = await Promise.all([
     db.order.count({ where: { durum: { in: ["bekliyor", "hazirlaniyor"] } } }),
     db.orderRequest.count({ where: { durum: "yeni" } }),
     db.review.count({ where: { durum: "yayinda", yanit: "", puan: { lte: OLUMSUZ_PUAN } } }),
     db.product.count({ where: { aktif: true, images: { none: {} } } }),
-    db.productVariant.count({ where: { stok: 0 } }),
+    // Beden değil **ürün** sayılıyor: rozete tıklayınca açılan listede o
+    // kadar satır çıksın. "13" yazıp yedi satır göstermek kafa karıştırıyordu
+    // (K-44).
+    db.product.count({ where: { aktif: true, variants: { some: { stok: { lte: AZALAN_ESIK } } } } }),
   ]);
-  return { siparis, talep, yorum, fotografsiz, tukenen };
+  return { siparis, talep, yorum, fotografsiz, sorunluStok };
 }
 
 /**
@@ -82,7 +87,7 @@ export function menuyuKur(s: Sayaclar): { ozet: MenuMaddesi; gruplar: MenuGrubu[
         maddeler: [
           { yol: "/yonetim/urunler", ad: "Ürünler", rozet: s.fotografsiz, ton: "hatirlatma" },
           { yol: "/yonetim/kategoriler", ad: "Kategoriler" },
-          { yol: "/yonetim/stok", ad: "Stok", rozet: s.tukenen, ton: "hatirlatma" },
+          { yol: "/yonetim/stok", ad: "Stok", rozet: s.sorunluStok, ton: "hatirlatma" },
         ],
       },
       {

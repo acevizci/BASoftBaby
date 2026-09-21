@@ -18,12 +18,28 @@ import { ayarlariGetir } from "@/server/sepet";
 import { kunyeGetir } from "@/server/yasal";
 import { bekleyenTalepSayisi } from "@/server/talep";
 import { OLUMSUZ_PUAN, yanitsizOlumsuzYorum } from "@/server/yorum";
+import { AZALAN_ESIK } from "@/server/stok-ekrani";
 
-/** Bu adedin altına düşen beden "azalan" sayılıyor. */
-export const KRITIK_STOK = 3;
+/**
+ * Bu adedin altına düşen beden "azalan" sayılıyor.
+ *
+ * Eşik stok ekranının kuralı; özet ekranı onu kullanıyor ki iki ekranda iki
+ * ayrı sayı çıkmasın.
+ */
+export { AZALAN_ESIK as KRITIK_STOK } from "@/server/stok-ekrani";
 
 /** Kargoya verileli bu kadar gün geçtiyse takip edilmesi gerekiyor olabilir. */
 const KARGO_GECIKME_GUN = 7;
+
+/**
+ * Özet ekranındaki listelerin boyu.
+ *
+ * Özet "bugün neye bakayım" sorusunun cevabı; tam liste kendi ekranında
+ * duruyor. Kısa liste beş satır, altında toplam sayı ve "hepsi" bağlantısı:
+ * kaç tane olduğunu söylemeyen bir kısa liste sessizce kesiyor demektir
+ * (K-44).
+ */
+const KISA_LISTE = 5;
 
 export type Is = {
   ad: string;
@@ -61,9 +77,15 @@ export type PanelOzeti = {
   ayKurus: number;
   isler: Is[];
   azalanlar: AzalanStok[];
+  /** Azalan bedenlerin tamamı; listede yalnızca ilk {@link KISA_LISTE} tanesi var. */
+  azalanToplam: number;
   bekleyenler: Bekleyen[];
+  /** Haber bekleyen beden sayısının tamamı. */
+  bekleyenToplam: number;
   eksikler: Eksik[];
 };
+
+export { KISA_LISTE };
 
 function gunBasi(kaymaGun = 0): Date {
   const t = new Date();
@@ -90,7 +112,9 @@ export async function panelOzetiGetir(): Promise<PanelOzeti> {
     gecikenKargo,
     tukenenBeden,
     azalanSatirlar,
+    azalanToplam,
     bekleyenGruplar,
+    bekleyenToplam,
     ayar,
     kunye,
     taslakYasal,
@@ -114,9 +138,9 @@ export async function panelOzetiGetir(): Promise<PanelOzeti> {
     db.order.count({ where: { durum: "kargoda", guncellendi: { lt: kargoSiniri } } }),
     db.productVariant.count({ where: { stok: 0 } }),
     db.productVariant.findMany({
-      where: { stok: { gt: 0, lte: KRITIK_STOK } },
+      where: { stok: { gt: 0, lte: AZALAN_ESIK } },
       orderBy: { stok: "asc" },
-      take: 10,
+      take: KISA_LISTE,
       select: {
         id: true,
         beden: true,
@@ -125,14 +149,20 @@ export async function panelOzetiGetir(): Promise<PanelOzeti> {
         product: { select: { ad: true, slug: true } },
       },
     }),
+    // Kısa listenin altında "kaç tane var" yazabilmek için: sessizce kesen
+    // bir liste, eksik olduğunu bile söylemiyor.
+    db.productVariant.count({ where: { stok: { gt: 0, lte: AZALAN_ESIK } } }),
     // "Gelince haber ver" diyenler: hangi bedeni kaç kişi bekliyor. Neyin
     // önce sipariş edileceği sorusunun en doğrudan cevabı (K-28).
     db.stockAlert.groupBy({
       by: ["variantId"],
       _count: { _all: true },
       orderBy: { _count: { variantId: "desc" } },
-      take: 8,
+      take: KISA_LISTE,
     }),
+    db.stockAlert
+      .groupBy({ by: ["variantId"], _count: { _all: true } })
+      .then((g) => g.length),
     ayarlariGetir(),
     kunyeGetir(),
     db.legalPage.count({ where: { taslakMi: true } }),
@@ -271,7 +301,9 @@ export async function panelOzetiGetir(): Promise<PanelOzeti> {
       renk: v.renk,
       stok: v.stok,
     })),
+    azalanToplam,
     bekleyenler,
+    bekleyenToplam,
     eksikler,
   };
 }

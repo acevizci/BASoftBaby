@@ -20,7 +20,20 @@ import { faturaOlustur } from "@/server/fatura";
 import { slugYap } from "@/server/slug";
 import { aramaMetniniTazele } from "@/server/arama";
 import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
+import { stokAdresi, suzgeciCoz as stokSuzgeciniCoz } from "@/server/stok-ekrani";
 import { kargoyaVerildiEpostasi } from "@/server/eposta";
+
+/**
+ * Kaydedildikten sonra dönülecek adres; katlanır bölüm açık kalsın diye.
+ *
+ * Forma gizli alan olarak konan `ac` değeri doğrudan adrese yazılmıyor:
+ * yalnızca harf, rakam ve tire kabul ediliyor, gerisi atılıyor (K-44).
+ */
+function acikDonus(yol: string, form: FormData, ek = "kayit=1"): string {
+  const ac = String(form.get("ac") ?? "").trim();
+  const temiz = /^[a-z0-9-]{1,40}$/.test(ac) ? ac : "";
+  return temiz ? `${yol}?${ek}&ac=${temiz}#${temiz}` : `${yol}?${ek}`;
+}
 
 /**
  * Panelde bir şey kaydedilince vitrini tazeler.
@@ -152,7 +165,18 @@ export async function stoklariKaydet(form: FormData): Promise<void> {
   // Stok yazıldıktan sonra: bekleyen varsa ve artık stok varsa haber gidiyor.
   await stokBildirimleriniGonder(idler);
   vitriniYenile();
-  redirect("/yonetim/stok?kayit=1");
+
+  // Kaldığı süzgeç ve sayfaya dönülüyor. Değerler forma gizli alan olarak
+  // konuyor ama yine de çözümleyiciden geçiyor: adres elle kurulduğu için
+  // forma ne gelirse gelsin yalnızca bilinen değerler adrese yazılıyor
+  // (K-44).
+  const suzgec = stokSuzgeciniCoz({
+    ara: String(form.get("ara") ?? ""),
+    durum: String(form.get("durum") ?? ""),
+    sayfa: String(form.get("sayfa") ?? ""),
+  });
+  const adres = stokAdresi(suzgec);
+  redirect(`${adres}${adres.includes("?") ? "&" : "?"}kayit=1`);
 }
 
 export async function duyuruEkle(form: FormData): Promise<void> {
@@ -173,7 +197,7 @@ export async function duyuruEkle(form: FormData): Promise<void> {
     },
   });
   vitriniYenile();
-  redirect("/yonetim/duyuru?kayit=1");
+  redirect(acikDonus("/yonetim/duyuru", form));
 }
 
 export async function duyuruCevir(form: FormData): Promise<void> {
@@ -203,7 +227,7 @@ export async function seritAyariKaydet(form: FormData): Promise<void> {
     create: { id: "tek" },
   });
   vitriniYenile();
-  redirect("/yonetim/duyuru?kayit=1");
+  redirect(acikDonus("/yonetim/duyuru", form));
 }
 
 /* ── Siparişler ─────────────────────────────────────────────────────────── */
@@ -561,7 +585,7 @@ export async function kunyeKaydet(veri: FormData): Promise<void> {
   });
 
   vitriniYenile();
-  redirect("/yonetim/yasal?kayit=kunye");
+  redirect(acikDonus("/yonetim/yasal", veri, "kayit=kunye"));
 }
 
 /* ── Kampanyalar ────────────────────────────────────────────────────────── */
@@ -685,7 +709,7 @@ export async function bannerKaydet(veri: FormData): Promise<void> {
   }
 
   vitriniYenile();
-  redirect("/yonetim/banner?kayit=1");
+  redirect(acikDonus("/yonetim/banner", veri));
 }
 
 export async function bannerCevir(veri: FormData): Promise<void> {
@@ -718,7 +742,7 @@ export async function bannerSuresiKaydet(veri: FormData): Promise<void> {
   });
 
   vitriniYenile();
-  redirect("/yonetim/banner?kayit=1");
+  redirect(acikDonus("/yonetim/banner", veri));
 }
 
 /* ---------------------------------------------------------------- fotoğraf */

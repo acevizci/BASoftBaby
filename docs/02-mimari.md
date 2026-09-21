@@ -125,6 +125,7 @@ server/                   iş kuralları — tek kaynak
   onbellek.ts             önbellek etiketleri
   panel-menu.ts           panel menüsünün yapısı ve bekleyen iş sayıları
   panel-ozet.ts           panelin özet ekranı
+  stok-ekrani.ts          stok ekranının araması, süzgeçleri ve sayfalaması
   rapor.ts                satış raporu, dönem karşılaştırması, CSV
   sepet-hatirlatma.ts     bırakılan sepet hatırlatması
   siparis-arama.ts        panelde sipariş arama ve süzme
@@ -149,6 +150,7 @@ ui/                       ortak arayüz parçaları
   siparis-karti.tsx       sipariş özeti (onay, takip ve panelde aynı)
   duyuru-seridi.tsx       üstteki kayan yazı
   hero-banner.tsx         ana sayfadaki dönen banner
+  katlanir.tsx            panelde katlanan bölüm (<details>, JavaScript'siz)
 public/marka/             logo dosyaları
 ```
 
