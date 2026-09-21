@@ -7,6 +7,7 @@ import {
   kategoriTasi,
 } from "@/server/yonetim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import PanelBildirim, { ORTAK_HATALAR } from "@/ui/panel-bildirim";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,21 @@ const ANA_DUGME =
  * `?duzenle=<id>` ile dolu açılan form: panelin geri kalanı gibi burası da
  * JavaScript kapalı tarayıcıda çalışıyor.
  */
+/** Bildirim metinleri koddan; adres yalnızca kodu taşıyor (K-57). */
+const BILDIRIMLER: Record<string, string> = {
+  "1": "Kaydedildi.",
+  silindi: "Kategori silindi.",
+  acildi: "Kategori açıldı. Vitrinde ve menüde görünüyor.",
+  kapatildi: "Kategori kapatıldı. Vitrinde ve menüde görünmüyor.",
+  sira: "Sıra değişti. Vitrinde de bu sırayla görünüyor.",
+};
+
+const HATALAR: Record<string, string> = {
+  ...ORTAK_HATALAR,
+  ad: "Kategori adı boş bırakılamaz.",
+  "hedef-yok": "Ürünlerin taşınacağı kategoriyi seç.",
+};
+
 export default async function KategoriEkrani({
   searchParams,
 }: PageProps<"/yonetim/kategoriler">) {
@@ -42,32 +58,17 @@ export default async function KategoriEkrani({
     <div className="flex flex-col gap-5">
       <h1 className="text-2xl">Kategoriler</h1>
 
-      {kayit === "1" && (
-        <p className="rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">
-          Kaydedildi.
-        </p>
-      )}
-      {kayit === "silindi" && (
-        <p className="rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">
-          Kategori silindi.
-        </p>
-      )}
-      {hata === "ad" && (
-        <p className="rounded-marka bg-mercan-soluk px-4 py-3 text-sm font-semibold text-mercan-koyu">
-          Kategori adı boş bırakılamaz.
-        </p>
-      )}
+      <PanelBildirim kayit={kayit} hata={hata} bildirimler={BILDIRIMLER} hatalar={HATALAR} />
+
+      {/* Bu ikisi adres satırından bir **sayı** alıyor; cümle sayfada
+          tamamlanıyor. Metin taşınmıyor (K-57). */}
       {kayit === "tasindi" && (
         <p className="rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">
           Kategori silindi, <span className="rakam">{String(adet ?? "")}</span> ürün seçtiğin
           kategoriye taşındı.
         </p>
       )}
-      {hata === "hedef-yok" && (
-        <p className="rounded-marka bg-mercan-soluk px-4 py-3 text-sm font-semibold text-mercan-koyu">
-          Ürünlerin taşınacağı kategoriyi seç.
-        </p>
-      )}
+
 
       <section className="rounded-marka border border-cizgi bg-yuzey p-5">
         <h2 className="text-lg">Sıra ve durum</h2>

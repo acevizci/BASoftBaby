@@ -2,6 +2,8 @@ import { db } from "@/server/veritabani";
 import { kampanyaCevir, kampanyaKaydet, kampanyaSil } from "@/server/yonetim";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import PanelBildirim, { ORTAK_HATALAR } from "@/ui/panel-bildirim";
+import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +18,21 @@ function tarihYaz(t: Date | null): string {
 function degerYaz(tip: string, deger: number): string {
   return tip === "yuzde" ? `%${deger}` : fiyatYaz(deger);
 }
+
+const UYARI = <>Kampanya kalıcı olarak siliniyor; geri alınamıyor. Sepetlerde artık uygulanmayacak. Yalnızca durdurmak istiyorsan &quot;Kapat&quot; yeter.</>;
+
+/** Bildirim metinleri koddan; adres yalnızca kodu taşıyor (K-57). */
+const BILDIRIMLER: Record<string, string> = {
+  "1": "Kaydedildi.",
+  silindi: "Kampanya silindi. Sepetlerde artık uygulanmıyor.",
+  acildi: "Kampanya yayına alındı.",
+  kapatildi: "Kampanya kapatıldı.",
+};
+
+const HATALAR: Record<string, string> = {
+  ...ORTAK_HATALAR,
+  kupon: "Bu kupon kodu başka bir kampanyada kullanılıyor. Başka bir kod seç.",
+};
 
 export default async function KampanyaEkrani({
   searchParams,
@@ -43,17 +60,7 @@ export default async function KampanyaEkrani({
         indiren uygulanır, müşteri de hangisinin uygulandığını sepette görür.
       </p>
 
-      {kayit === "1" && (
-        <p className="rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">
-          Kaydedildi.
-        </p>
-      )}
-
-      {hata === "kupon" && (
-        <p className="rounded-marka bg-mercan-soluk px-4 py-3 text-sm font-semibold text-mercan-koyu">
-          Bu kupon kodu başka bir kampanyada kullanılıyor. Başka bir kod seç.
-        </p>
-      )}
+      <PanelBildirim kayit={kayit} hata={hata} bildirimler={BILDIRIMLER} hatalar={HATALAR} />
 
       <section className="rounded-marka border border-cizgi bg-yuzey p-5">
         <h2 className="text-lg">Tanımlı kampanyalar</h2>
@@ -117,15 +124,14 @@ export default async function KampanyaEkrani({
                             {k.aktif ? "Kapat" : "Aç"}
                           </button>
                         </form>
-                        <form action={kampanyaSil}>
-                          <input type="hidden" name="id" value={k.id} />
-                          <button
-                            type="submit"
-                            className="rounded-full border border-cizgi px-3 py-1.5 text-xs font-bold text-metin-2 hover:border-mercan hover:text-mercan-koyu"
-                          >
-                            Sil
-                          </button>
-                        </form>
+                        <SilmeOnayi uyari={UYARI}>
+                          <form action={kampanyaSil}>
+                            <input type="hidden" name="id" value={k.id} />
+                            <button type="submit" className={SIL_DUGMESI}>
+                              Evet, sil
+                            </button>
+                          </form>
+                        </SilmeOnayi>
                       </div>
                     </td>
                   </tr>

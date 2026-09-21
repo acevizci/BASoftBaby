@@ -173,5 +173,5 @@ export async function bedenTasi(veri: FormData): Promise<void> {
   );
 
   vitriniYenile();
-  redirect(SAYFA);
+  redirect(`${SAYFA}?kayit=sira`);
 }

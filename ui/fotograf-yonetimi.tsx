@@ -46,6 +46,7 @@ export default function FotografYonetimi({
   renkler,
   hata,
   eklenen,
+  sonuc,
   sonraki,
 }: {
   slug: string;
@@ -54,6 +55,14 @@ export default function FotografYonetimi({
   renkler: RenkAdi[];
   hata?: string;
   eklenen?: number;
+  /**
+   * Yükleme dışındaki işlemin sonucu: silme ve sıra değiştirme.
+   *
+   * Fotoğraf silmek hiçbir şey söylemiyordu — küçük bir kare listeden
+   * kayboluyordu, o kadar. Yanlış fotoğrafı sildiğini fark etmenin tek yolu
+   * dikkatle bakmaktı (K-57).
+   */
+  sonuc?: "silindi" | "sira";
   /** Fotoğrafı olmayan bir sonraki ürün; fotoğraf çekimi yarım kalmasın. */
   sonraki?: { slug: string; ad: string; kalan: number };
 }) {
@@ -73,6 +82,14 @@ export default function FotografYonetimi({
           {hata === "bos" ? "Önce bir dosya seç." : hata}
         </p>
       )}
+      {sonuc && !hata && (
+        <p className="mt-3 rounded-marka bg-nane-soluk px-3 py-2 text-sm text-nane-koyu">
+          {sonuc === "silindi"
+            ? "Fotoğraf silindi. Depodan da kaldırıldı."
+            : "Sıra değişti. İlk sıradaki fotoğraf kapak fotoğrafı."}
+        </p>
+      )}
+
       {eklenen !== undefined && !hata && (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-marka bg-nane-soluk px-3 py-2 text-sm text-nane-koyu">
           <span>{eklenen > 0 ? `${eklenen} fotoğraf eklendi.` : "Kaydedildi."}</span>

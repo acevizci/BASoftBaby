@@ -10,7 +10,6 @@ import {
   type StokBedeni,
   type StokUrunu,
 } from "@/server/stok-ekrani";
-import BedenTablosu from "@/ui/beden-tablosu";
 import { RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
 import { bedenSirasi, sonSira } from "@/server/bedenler";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
@@ -56,20 +55,6 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
         Biten ve azalan bedenler önce geliyor. Değiştirip kaydet; sıfır yazdığın beden
         mağazada seçilemez hale gelir.
       </p>
-
-      {/* Hangi bedeni ne kadar tutacağına karar verirken boy-kilo karşılığı
-          lazım oluyor; katlı duruyor, açan görüyor (K-55). */}
-      <details className="group">
-        <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 text-xs font-bold text-metin-2 hover:text-metin [&::-webkit-details-marker]:hidden">
-          Beden - boy - kilo tablosu
-          <span aria-hidden="true" className="transition group-open:rotate-180">
-            ▾
-          </span>
-        </summary>
-        <div className="mt-2 max-w-md">
-          <BedenTablosu not="Mağazadaki beden rehberiyle aynı ölçüler." />
-        </div>
-      </details>
 
       {kayit === "1" && (
         <p className="rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">

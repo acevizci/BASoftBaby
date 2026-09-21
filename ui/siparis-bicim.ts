@@ -14,12 +14,21 @@ export const DURUM_ADLARI: Record<Durum, string> = {
   iptal: "İptal",
 };
 
-export const ODEME_DURUMLARI = ["bekliyor", "odendi", "iade"] as const;
+/**
+ * Ödeme durumları.
+ *
+ * `iade-bekliyor` parası alınmış ama iptal/iade edilmiş siparişi işaretliyor:
+ * **mağazanın müşteriye borcu var.** Eskiden böyle bir sipariş `bekliyor`a
+ * düşüyordu, yani alınmış paranın kaydı siliniyordu ve kimse iade etmesi
+ * gerektiğini bilmiyordu (K-57). `iade` ise para geri gönderildikten sonra.
+ */
+export const ODEME_DURUMLARI = ["bekliyor", "odendi", "iade-bekliyor", "iade"] as const;
 export type OdemeDurumu = (typeof ODEME_DURUMLARI)[number];
 
 export const ODEME_ADLARI: Record<OdemeDurumu, string> = {
   bekliyor: "Ödeme bekliyor",
   odendi: "Ödendi",
+  "iade-bekliyor": "İade bekliyor",
   iade: "İade edildi",
 };
 
@@ -35,7 +44,12 @@ export function yontemAdi(yontem: string): string {
   return YONTEM_ADLARI[yontem as Yontem] ?? yontem;
 }
 
-/** Rozet rengi: bekleyen mercan, yolda sarı, biten nane, iptal gri. */
+/**
+ * Rozet rengi: bekleyen mercan, yolda sarı, biten nane, kapanan gri.
+ *
+ * `iade-bekliyor` mercan kalıyor — mağazanın yapacağı bir iş var. `iade`
+ * ise gri: para gitti, dosya kapandı.
+ */
 export function durumRengi(durum: string): string {
   switch (durum) {
     case "teslim":
@@ -45,6 +59,7 @@ export function durumRengi(durum: string): string {
     case "hazirlaniyor":
       return "bg-sari-soluk text-sari-koyu";
     case "iptal":
+    case "iade":
       return "bg-cizgi-soluk text-metin-3";
     default:
       return "bg-mercan-soluk text-mercan-koyu";

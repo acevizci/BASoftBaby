@@ -11,6 +11,7 @@ import {
   bedenTasi,
 } from "@/server/yonetim-beden";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,7 @@ const BILDIRIMLER: Record<string, string> = {
   kapatildi: "Beden kapatıldı. Mağazada görünmüyor, stoklara dokunulmadı.",
   acildi: "Beden yeniden açıldı.",
   silindi: "Beden silindi.",
+  sira: "Sıra değişti. Ürün sayfasında ve stok ekranında bu sırayla görünüyor.",
 };
 
 const HATALAR: Record<string, string> = {
@@ -36,6 +38,7 @@ const HATALAR: Record<string, string> = {
   tekrar: "Bu adda bir beden zaten var.",
   sonbeden: "Son açık beden kapatılamıyor — mağazada satılabilir beden kalmazdı.",
   kullanimda: "Bu beden üründe kullanılıyor, silinemiyor. Bunun yerine kapatabilirsin.",
+  bulunamadi: "Kayıt bulunamadı — başka biri silmiş olabilir. Liste yenilendi.",
 };
 
 /**
@@ -188,15 +191,22 @@ export default async function BedenEkrani({
                         yerine sebebini yazıyor: yoksa "silme nerede" diye
                         aranırdı (K-52, K-56). */}
                     {silinebilir ? (
-                      <form action={bedenSil}>
-                        <input type="hidden" name="id" value={b.id} />
-                        <button
-                          type="submit"
-                          className={`${KUCUK_DUGME} hover:border-mercan hover:text-mercan-koyu`}
-                        >
-                          Sil
-                        </button>
-                      </form>
+                      <SilmeOnayi
+                        uyari={
+                          <>
+                            Beden kalıcı olarak siliniyor; geri alınamıyor. Hiçbir üründe
+                            kullanılmadığı için stok kaybı olmuyor. Yalnızca mağazadan
+                            kaldırmak istiyorsan &quot;Kapat&quot; yeter.
+                          </>
+                        }
+                      >
+                        <form action={bedenSil}>
+                          <input type="hidden" name="id" value={b.id} />
+                          <button type="submit" className={SIL_DUGMESI}>
+                            Evet, sil
+                          </button>
+                        </form>
+                      </SilmeOnayi>
                     ) : (
                       <span className="text-xs text-metin-3">
                         Üründe kullanılıyor — silmek yerine kapat.

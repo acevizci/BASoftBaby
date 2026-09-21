@@ -2593,6 +2593,102 @@ sipariş satırının olduğu gibi kalması veritabanından doğrulandı.
 
 ---
 
+### K-57 · Ödenmiş siparişin iptali, sessiz işlemler ve yapışkan kaydet
+
+Üç ayrı iş; ortak yanları panelde çalışan kişinin ne olduğunu bilmesi.
+
+#### 1. Ödenmiş sipariş iptal edilince para kaydı siliniyordu
+
+`siparisiIptalEtVeStoguIadeEt()` siparişi iptal ederken ödeme durumunu
+koşulsuz `bekliyor` yapıyordu. İşlev iki yerden çağrılıyor ve ikisi aynı şey
+değil:
+
+- **Kart ödemesi tutmadığında** — para hiç alınmadı, `bekliyor` doğru.
+- **Müşterinin iptal talebi onaylandığında** — sipariş `odendi` olabiliyor,
+  havalesi gelmiş olabiliyor.
+
+İkincisinde alınmış paranın kaydı siliniyordu: ekranda "ödeme bekliyor"
+yazıyordu, kimse müşteriye iade etmesi gerektiğini bilmiyordu. Sessiz bir
+veri kaybı, üstelik parayla ilgili olanı.
+
+Yeni bir ödeme durumu eklendi: **`iade-bekliyor`** — *parası alındı, sipariş
+iptal/iade edildi, mağazanın müşteriye borcu var.* Ödenmemiş siparişin iptali
+eskisi gibi `bekliyor`a düşüyor. Ödeme durumu iptalden **önce** okunuyor;
+sonrası çok geç.
+
+Rozet renkleri de buna göre: `iade-bekliyor` mercan (yapılacak iş var),
+`iade` gri (para gitti, dosya kapandı). Eskiden `iade` de mercandı, yani
+biten iş bekleyen iş gibi duruyordu.
+
+#### 2. Sessiz işlemler
+
+Panelde bir sürü işlem hiçbir şey söylemeden bitiyordu — ne yönlendirme, ne
+mesaj: kampanya silme, banner silme, duyuru silme, hepsinin aç/kapat
+karşılığı, kategori ve fotoğraf sıra değiştirme. Kampanyayı siliyordun,
+ekranda hiçbir şey olmuyordu; sildiğini anlamanın tek yolu listeye dikkatle
+bakmaktı. Yanlış satıra bastıysan hiç anlamıyordun.
+
+Üç kural kondu:
+
+1. **Her işlem sonucunu söylüyor.** Aç/kapat, sil, sırala — hepsi ne olduğunu
+   yazan bir bildirimle dönüyor.
+2. **Metin koddan geliyor, adres satırından değil.** Adres yalnızca bir kod
+   taşıyor (`?kayit=silindi`); cümle sayfadaki haritadan seçiliyor. Yoksa biri
+   `?kayit=<istediği yazı>` bağlantısı hazırlayıp panelde istediğini
+   gösterebilirdi — aynı gerekçe giriş ekranında da yazılıydı (K-45). Sayı
+   taşımak serbest: "kaç ürün taşındı" cümlesi sayfada tamamlanıyor.
+3. **Bulunamayan kayıt sessizce dönmüyor.** `if (!id) return;` kalıbı her
+   yerdeydi: bozuk ya da yarışmış bir istek hiçbir şey yapmadan bitiyordu.
+   Artık "kayıt bulunamadı — başka biri silmiş olabilir" diyor.
+
+Ortak bir bildirim bileşeni çıktı
+([`../ui/panel-bildirim.tsx`](../ui/panel-bildirim.tsx)); sekiz sayfada aynı
+JSX tekrarlanıyordu.
+
+**Yıkıcı işlemler artık onay istiyor.** Kampanya, banner, duyuru, beden ve
+varyant silme tek tıkla ve geri dönüşsüzdü; "Sil" düğmesi "Kapat"ın hemen
+yanındaydı. Onay `<details>` ile
+([`../ui/silme-onayi.tsx`](../ui/silme-onayi.tsx)): JavaScript gerekmiyor,
+klavyeyle açılıyor, sitenin geri kalanıyla aynı dilde — `confirm()` kutusu
+değil. Açılan kutuda **ne olacağı** yazıyor ("stoğu da siliniyor",
+"sepetlerde uygulanmayacak") ve kapatılabilir şeylerde ikinci çıkış yolu
+gösteriliyor: çoğu zaman istenen şey silmek değil, yayından kaldırmak.
+
+Fotoğraf yükleme hatasının ayrıntılı metni adres satırında taşınmaya devam
+ediyor. Kuralın istisnası: o metinler teşhis için yazılmıştı (Vercel depo
+bağlantısı hatası bütün bir hata ayıklamayı kurtarmıştı) ve sayfa kimlik
+doğrulamasının arkasında. Kodla değiştirmek teşhis değerini yok ederdi.
+
+#### 3. Ürün formunda yapışkan kaydet
+
+Ürün formu uzun; en üstteki bir alanı düzeltip kaydetmek için sayfanın dibine
+inmek gerekiyordu. Stok ekranındaki kaydet düğmesi zaten `sticky` idi, ikisi
+aynı oldu. Kategori ve beden formlarına gerek yok: ikisi de katlanır bölüm
+içinde ve kısa.
+
+Ayrıca stok ekranındaki beden-boy-kilo tablosu kaldırıldı (K-55'te
+eklenmişti); ürün düzenlemedeki kaldı — stok ekranında karar verirken değil,
+ürünü tanımlarken lazım oluyor.
+
+**Denenen:** ödenmiş siparişin iptal talebi onaylanınca durumun
+`iptal|iade-bekliyor` olması ve stoğun geri verilmesi (veritabanından
+doğrulandı); ekranda "İade bekliyor" yazması; stok ekranında tablonun
+olmaması, ürün düzenlemede olması; kaydet düğmesinin `position: sticky`
+olması ve kaydırıldığında görünür kalması; kampanyada tek tıkla silme
+kalmaması, onay kutusunun sonucu yazması, silince bildirim çıkması; duyuru
+aç/kapat ve kategori sıralamasının bildirim vermesi; fotoğraf silme ve sıra
+bildirimlerinin görünmesi; JavaScript kapalı tarayıcıda onay kutusunun
+açılması.
+
+**Nerede:** [`../server/odeme-akis.ts`](../server/odeme-akis.ts),
+[`../ui/siparis-bicim.ts`](../ui/siparis-bicim.ts),
+[`../ui/panel-bildirim.tsx`](../ui/panel-bildirim.tsx),
+[`../ui/silme-onayi.tsx`](../ui/silme-onayi.tsx),
+[`../server/yonetim.ts`](../server/yonetim.ts),
+[`../ui/urun-formu.tsx`](../ui/urun-formu.tsx)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

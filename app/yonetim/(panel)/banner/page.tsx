@@ -4,6 +4,8 @@ import Katlanir from "@/ui/katlanir";
 import { BANNER_GORSELLERI, BANNER_PALETLERI, bannerSaniyeGetir, tumBannerlar } from "@/server/banner";
 import { bannerCevir, bannerKaydet, bannerSil, bannerSuresiKaydet } from "@/server/yonetim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import PanelBildirim, { ORTAK_HATALAR } from "@/ui/panel-bildirim";
+import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
 
 export const dynamic = "force-dynamic";
 
@@ -23,12 +25,22 @@ function tarihYaz(t: Date | null): string {
   return t ? t.toLocaleDateString("tr-TR") : "—";
 }
 
+const UYARI = <>Banner kalıcı olarak siliniyor; geri alınamıyor. Ana sayfadan kalkacak. Yalnızca yayından kaldırmak istiyorsan &quot;Kapat&quot; yeter.</>;
+
+/** Bildirim metinleri koddan; adres yalnızca kodu taşıyor (K-57). */
+const BILDIRIMLER: Record<string, string> = {
+  "1": "Kaydedildi.",
+  silindi: "Banner silindi. Ana sayfadan kalktı.",
+  acildi: "Banner yayına alındı.",
+  kapatildi: "Banner kapatıldı. Ana sayfada görünmüyor.",
+};
+
 export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim/banner">) {
   // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { kayit, ac } = await searchParams;
+  const { kayit, hata, ac } = await searchParams;
   const [bannerlar, saniye] = await Promise.all([tumBannerlar(), bannerSaniyeGetir()]);
 
   const yayinda = bannerlar.filter((b) => b.aktif).length;
@@ -41,11 +53,7 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
         geçer; tek banner varsa sabit durur. Hiç banner yoksa varsayılan tanıtım yazısı görünür.
       </p>
 
-      {kayit === "1" && (
-        <p className="rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">
-          Kaydedildi.
-        </p>
-      )}
+      <PanelBildirim kayit={kayit} hata={hata} bildirimler={BILDIRIMLER} hatalar={ORTAK_HATALAR} />
 
       <section className="rounded-marka border border-cizgi bg-yuzey p-5">
         <h2 className="text-lg">Şu an mağazada görünen</h2>
@@ -134,15 +142,14 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
                     {b.aktif ? "Kapat" : "Aç"}
                   </button>
                 </form>
-                <form action={bannerSil}>
-                  <input type="hidden" name="id" value={b.id} />
-                  <button
-                    type="submit"
-                    className="rounded-full border border-cizgi px-3 py-1.5 text-xs font-bold text-metin-2 hover:border-mercan hover:text-mercan-koyu"
-                  >
-                    Sil
-                  </button>
-                </form>
+                <SilmeOnayi uyari={UYARI}>
+                  <form action={bannerSil}>
+                    <input type="hidden" name="id" value={b.id} />
+                    <button type="submit" className={SIL_DUGMESI}>
+                      Evet, sil
+                    </button>
+                  </form>
+                </SilmeOnayi>
               </li>
             ))}
           </ul>

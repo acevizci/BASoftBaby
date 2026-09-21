@@ -18,7 +18,7 @@ export default async function UrunDuzenle({
   await yoneticiGerekli();
 
   const { slug } = await params;
-  const { kayit, fhata, fkayit, hata } = await searchParams;
+  const { kayit, fhata, fkayit, fsil, fsira, hata } = await searchParams;
 
   const [urun, kategoriler] = await Promise.all([
     db.product.findUnique({
@@ -60,6 +60,7 @@ export default async function UrunDuzenle({
   });
 
   const eklenen = typeof fkayit === "string" ? Number(fkayit) : undefined;
+  const fotografSonucu = fsil === "1" ? "silindi" : fsira === "1" ? "sira" : undefined;
 
   return (
     <div className="flex flex-col gap-6">
@@ -94,6 +95,7 @@ export default async function UrunDuzenle({
       <FotografYonetimi
         slug={urun.slug}
         hata={typeof fhata === "string" ? fhata : undefined}
+        sonuc={fotografSonucu}
         eklenen={Number.isFinite(eklenen) ? eklenen : undefined}
         sonraki={
           sonrakiFotografsiz

@@ -37,12 +37,32 @@ export async function odemeGirisimiKaydet(
  * Koşul olarak siparişin durumu da veriliyor: iki dönüş çağrısı yarışırsa
  * stok iki kez geri verilmesin. Ürünü silinmiş satırın (variantId boş)
  * stoğu geri verilemiyor, sipariş kaydı yine de iptal oluyor.
+ *
+ * **Parası alınmış sipariş iptal edilirse ödeme durumu `bekliyor` olmuyor.**
+ * Bu işlev iki yerden çağrılıyor: kart ödemesi tutmadığında (para hiç
+ * alınmadı, `bekliyor` doğru) ve müşterinin iptal talebi onaylandığında —
+ * orada sipariş `odendi` olabiliyor, havalesi gelmiş olabiliyor. İkisine
+ * aynı şeyi yazmak, alınmış paranın kaydını siliyordu: ekranda "ödeme
+ * bekliyor" yazıyor, kimse iade etmesi gerektiğini bilmiyordu (K-57).
+ *
+ * Artık ödenmiş sipariş iptal edilince ödeme durumu `iade-bekliyor` oluyor
+ * ve iade borcu listeye düşüyor. Ödenmemişse eskisi gibi `bekliyor`.
  */
 export async function siparisiIptalEtVeStoguIadeEt(orderId: string): Promise<void> {
   const iadeEdilen = await db.$transaction(async (islem) => {
+    // Ödeme durumu iptalden önce okunuyor: sonrası çok geç.
+    const oncesi = await islem.order.findUnique({
+      where: { id: orderId },
+      select: { odemeDurumu: true },
+    });
+    const parasiAlindi = oncesi?.odemeDurumu === "odendi";
+
     const iptal = await islem.order.updateMany({
       where: { id: orderId, durum: { not: "iptal" } },
-      data: { durum: "iptal", odemeDurumu: "bekliyor" },
+      data: {
+        durum: "iptal",
+        odemeDurumu: parasiAlindi ? "iade-bekliyor" : "bekliyor",
+      },
     });
     if (iptal.count === 0) return [];
 

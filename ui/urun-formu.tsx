@@ -9,6 +9,7 @@ import {
   type GorselTipi,
   type RenkAdi,
 } from "@/ui/katalog-bicim";
+import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
 
 type Varyant = { id: string; beden: string; renk: string; stok: number };
 
@@ -238,9 +239,12 @@ export default function UrunFormu({
           </div>
         </div>
 
+        {/* Yapışkan: ürün formu uzun, en üstteki bir alanı düzeltip
+            kaydetmek için sayfanın dibine inmek gerekiyordu. Stok ekranındaki
+            kaydet düğmesi zaten böyleydi, ikisi aynı oldu (K-57). */}
         <button
           type="submit"
-          className="self-start rounded-full bg-mercan px-6 py-3 font-bold text-white transition hover:brightness-95"
+          className="sticky bottom-4 z-10 self-start rounded-full bg-mercan px-6 py-3 font-bold text-white shadow-md transition hover:brightness-95"
         >
           {yeni ? "Ürünü oluştur" : "Değişiklikleri kaydet"}
         </button>
@@ -287,16 +291,25 @@ export default function UrunFormu({
                       <td className="py-2">{RENK_ADLARI[v.renk as RenkAdi] ?? v.renk}</td>
                       <td className="rakam py-2">{v.stok}</td>
                       <td className="py-2 text-right">
-                        <form action={varyantSil}>
-                          <input type="hidden" name="id" value={v.id} />
-                          <input type="hidden" name="slug" value={urun.slug} />
-                          <button
-                            type="submit"
-                            className="rounded-full border border-cizgi px-3 py-1.5 text-xs font-bold text-metin-2 hover:border-mercan hover:text-mercan-koyu"
-                          >
-                            Sil
-                          </button>
-                        </form>
+                        {/* Varyant silmek o beden-renk birleşiminin stoğunu da
+                            siliyor; tek tıkla olmamalı (K-57). */}
+                        <SilmeOnayi
+                          uyari={
+                            <>
+                              Bu beden-renk birleşimi ve <b>{v.stok} adetlik stoğu</b>{" "}
+                              siliniyor; geri alınamıyor. Geçici olarak satıştan kaldırmak
+                              istiyorsan stoğu 0 yapmak yeter.
+                            </>
+                          }
+                        >
+                          <form action={varyantSil}>
+                            <input type="hidden" name="id" value={v.id} />
+                            <input type="hidden" name="slug" value={urun.slug} />
+                            <button type="submit" className={SIL_DUGMESI}>
+                              Evet, sil
+                            </button>
+                          </form>
+                        </SilmeOnayi>
                       </td>
                     </tr>
                   ))}

@@ -4,6 +4,8 @@ import Katlanir from "@/ui/katlanir";
 import { seritAyariGetir, tumDuyurular } from "@/server/duyuru";
 import { duyuruCevir, duyuruEkle, duyuruSil, seritAyariKaydet } from "@/server/yonetim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import PanelBildirim, { ORTAK_HATALAR } from "@/ui/panel-bildirim";
+import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
 
 export const dynamic = "force-dynamic";
 
@@ -15,12 +17,22 @@ function tarihYaz(t?: Date): string {
   return t ? t.toLocaleDateString("tr-TR") : "—";
 }
 
+const UYARI = <>Duyuru kalıcı olarak siliniyor; geri alınamıyor. Yalnızca şeritten kaldırmak istiyorsan &quot;Kapat&quot; yeter.</>;
+
+/** Bildirim metinleri koddan; adres yalnızca kodu taşıyor (K-57). */
+const BILDIRIMLER: Record<string, string> = {
+  "1": "Kaydedildi.",
+  silindi: "Duyuru silindi. Şeritten kalktı.",
+  acildi: "Duyuru yayına alındı.",
+  kapatildi: "Duyuru kapatıldı. Şeritte görünmüyor.",
+};
+
 export default async function DuyuruEkrani({ searchParams }: PageProps<"/yonetim/duyuru"> ) {
   // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { kayit, ac } = await searchParams;
+  const { kayit, hata, ac } = await searchParams;
   const [duyurular, ayar] = await Promise.all([tumDuyurular(), seritAyariGetir()]);
 
   const yayinda = duyurular.filter((d) => d.aktif).length;
@@ -33,11 +45,7 @@ export default async function DuyuruEkrani({ searchParams }: PageProps<"/yonetim
         bir şey yapmazsın.
       </p>
 
-      {kayit === "1" && (
-        <p className="rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">
-          Kaydedildi.
-        </p>
-      )}
+      <PanelBildirim kayit={kayit} hata={hata} bildirimler={BILDIRIMLER} hatalar={ORTAK_HATALAR} />
 
       <section className="rounded-marka border border-cizgi bg-yuzey p-5">
         <h2 className="text-lg">Şu an mağazada görünen</h2>
@@ -89,15 +97,14 @@ export default async function DuyuruEkrani({ searchParams }: PageProps<"/yonetim
                     {d.aktif ? "Kapat" : "Aç"}
                   </button>
                 </form>
-                <form action={duyuruSil}>
-                  <input type="hidden" name="id" value={d.id} />
-                  <button
-                    type="submit"
-                    className="rounded-full border border-cizgi px-3 py-1.5 text-xs font-bold text-metin-2 hover:border-mercan hover:text-mercan-koyu"
-                  >
-                    Sil
-                  </button>
-                </form>
+                <SilmeOnayi uyari={UYARI}>
+                  <form action={duyuruSil}>
+                    <input type="hidden" name="id" value={d.id} />
+                    <button type="submit" className={SIL_DUGMESI}>
+                      Evet, sil
+                    </button>
+                  </form>
+                </SilmeOnayi>
               </li>
             ))}
           </ul>

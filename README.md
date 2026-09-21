@@ -92,6 +92,10 @@ duyuru şeridi,
 ana sayfa banner'ı, kampanyalar ve satış ayarları (kargo ücreti,
 bedava kargo eşiği, havale bilgisi).
 
+Panelde her işlem sonucunu söylüyor — silme, aç/kapat, sıralama dahil; yıkıcı
+işlemler (kampanya, banner, duyuru, beden, varyant silme) iki adımlı onay
+istiyor ve ne kaybolacağını yazıyor (K-57).
+
 **Bedenler panelden yönetiliyor** (`/yonetim/bedenler`): yeni beden ekleme,
 ad ve boy-kilo ölçülerini değiştirme, sıralama, kapatma ve silme. Ad
 değiştirilince o bedendeki ürünler de taşınıyor, satılmış siparişlerin kaydı
@@ -167,6 +171,10 @@ talebini açıyor; siparişin tamamını değil tek bir ürünü de iade edebili
 Hangi siparişe ne açılabileceğine sunucu karar veriyor: kargoya verilmemişse
 iptal, verilmişse iade, teslimden sonra 14 gün içinde iade ve değişim (K-33).
 Onaylanan iptal siparişi iptal edip stoğu geri veriyor.
+
+Parası alınmış bir sipariş iptal edilirse ödeme durumu **&quot;İade bekliyor&quot;**
+oluyor: mağazanın müşteriye borcu olduğu kayıtta duruyor. Eskiden
+&quot;ödeme bekliyor&quot;a düşüyordu, yani alınmış paranın izi siliniyordu (K-57).
 
 ## Üyelik
 
