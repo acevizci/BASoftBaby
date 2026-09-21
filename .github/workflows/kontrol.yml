@@ -34,10 +34,6 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/basoftbaby
-      # Panel şifresi tanımlı olmazsa panel kendini kapatıyor; derlemede
-      # sayfaların üretilebilmesi için bir değer gerekiyor. Gerçek şifre
-      # değil, yalnızca derleme için.
-      YONETIM_SIFRE: derleme
 
     steps:
       - uses: actions/checkout@v4

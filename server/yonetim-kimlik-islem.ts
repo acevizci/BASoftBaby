@@ -20,6 +20,7 @@ import {
   kurulumSifresi,
   oturumlariDusur,
   sahipGerekli,
+  sahipKalsinDiye,
   sonSahipMi,
   yonetimOturumuAc,
   yonetimOturumuKapat,
@@ -169,7 +170,13 @@ export async function kullaniciCevir(form: FormData): Promise<void> {
     if (await sonSahipMi(id)) listeye("hata", "son-sahip");
   }
 
-  await db.adminUser.update({ where: { id }, data: { aktif: !kayit.aktif } });
+  // Kapatma açık sahip bırakmıyorsa hiç uygulanmıyor; kontrol işlemin
+  // içinde, yukarıdaki okuma yalnızca hata metni için (K-46).
+  const oldu = await sahipKalsinDiye((islem) =>
+    islem.adminUser.update({ where: { id }, data: { aktif: !kayit.aktif } }),
+  );
+  if (!oldu) listeye("hata", "son-sahip");
+
   if (kayit.aktif) await oturumlariDusur(id);
 
   listeye("kayit", kayit.aktif ? "kapatildi" : "acildi");
@@ -188,11 +195,12 @@ export async function kullaniciSil(form: FormData): Promise<void> {
   if (id === ben.id) listeye("hata", "kendini-silemez");
   if (await sonSahipMi(id)) listeye("hata", "son-sahip");
 
-  try {
-    await db.adminUser.delete({ where: { id } });
-  } catch {
-    listeye("hata", "bulunamadi");
-  }
+  const varMi = await db.adminUser.count({ where: { id } });
+  if (varMi === 0) listeye("hata", "bulunamadi");
+
+  const oldu = await sahipKalsinDiye((islem) => islem.adminUser.delete({ where: { id } }));
+  if (!oldu) listeye("hata", "son-sahip");
+
   listeye("kayit", "silindi");
 }
 
@@ -208,7 +216,11 @@ export async function rolDegistir(form: FormData): Promise<void> {
     listeye("hata", "son-sahip");
   }
 
-  await db.adminUser.update({ where: { id }, data: { rol } });
+  const oldu = await sahipKalsinDiye((islem) =>
+    islem.adminUser.update({ where: { id }, data: { rol } }),
+  );
+  if (!oldu) listeye("hata", "son-sahip");
+
   listeye("kayit", "rol");
 }
 

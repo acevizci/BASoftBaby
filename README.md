@@ -25,9 +25,10 @@ npm run dev
 Sonra tarayıcıda `http://localhost:3000`.
 
 `.env` içinde iki değer var: `DATABASE_URL` (Postgres bağlantısı) ve
-`YONETIM_SIFRE` (panelin **kurulum** şifresi — ilk kullanıcıyı oluşturmak
-için; sonrasında panele kişisel hesaplarla giriliyor). İkisi de depoya girmez;
-yayında Vercel'in proje ayarlarında durur.
+`YONETIM_SIFRE` (panelin **kurulum** şifresi — yalnızca ilk kullanıcıyı
+oluşturmak için; sonrasında panele kişisel hesaplarla giriliyor ve bu değişken
+silinebilir). İkisi de depoya girmez; yayında Vercel'in proje ayarlarında
+durur.
 
 | Komut | Ne yapar |
 | --- | --- |
@@ -98,8 +99,17 @@ engelli.
 
 İlk kurulum: hiç kullanıcı yokken giriş sayfası "ilk kullanıcıyı oluştur"
 hâline geçiyor ve `YONETIM_SIFRE` ile korunuyor. Hesap açıldıktan sonra o
-şifreyle kimse giriş yapamıyor. Ortam değişkeni hiç tanımlı değilse ve
-kullanıcı da yoksa sayfa 404 veriyor — ayar unutulursa panel açıkta kalmıyor.
+şifreyle kimse giriş yapamıyor ve değişken silinebilir. Ortam değişkeni hiç
+tanımlı değilse ve kullanıcı da yoksa sayfa 404 veriyor — ayar unutulursa
+panel açıkta kalmıyor.
+
+**Kurtarma yolu tek:** panele girmenin başka yolu olmadığı için **her zaman
+en az bir açık sahip kalıyor.** Silme, kapatma ve rol düşürme bunu bozacaksa
+hiç uygulanmıyor; kontrol değişiklikle aynı veritabanı işleminde ve
+`Serializable` yalıtımla yapılıyor, yani iki kişi aynı anda birbirini silse
+bile biri geri çevriliyor (K-46). Tek sahipsen panel bunu ekranda söylüyor ve
+ikinci bir sahip açmanı öneriyor — şifreni unutursan seni içeri alabilecek
+tek şey o.
 
 Oturum 12 saat (müşterininki 30 gün): panelde stok, sipariş ve müşteri
 bilgisi var. Kapatılan ya da şifresi değiştirilen bir kullanıcının açık

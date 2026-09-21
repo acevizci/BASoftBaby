@@ -22,6 +22,7 @@ import "server-only";
  */
 
 import { createHash, randomBytes } from "node:crypto";
+import type { Prisma } from "@/db/uretilen/client";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
@@ -297,12 +298,55 @@ export async function kullanicilariGetir(): Promise<KullaniciSatiri[]> {
  * Son açık sahip mi?
  *
  * Kendini kapatmak, silmek ya da rolünü düşürmek panele girilemez hâle
- * getirebilir. Bunun tek çaresi veritabanına elle müdahale olurdu; o yüzden
- * kural kodda duruyor, uyarı metninde değil.
+ * getirebilir. Kural kodda duruyor, uyarı metninde değil.
+ *
+ * **Bu tek başına yetmiyor**: okuma ile yazma arasında geçen sürede başka
+ * bir istek aynı işi yapabilir (bkz. {@link sahipKalsinDiye}). Buradaki
+ * kontrol düğmenin ve hata metninin doğru olması için; garanti işlemde.
  */
 export async function sonSahipMi(adminId: string): Promise<boolean> {
-  const digerSahipler = await db.adminUser.count({
-    where: { rol: "sahip", aktif: true, id: { not: adminId } },
+  return (await acikSahipSayisi({ haric: adminId })) === 0;
+}
+
+export async function acikSahipSayisi(secenek: { haric?: string } = {}): Promise<number> {
+  return db.adminUser.count({
+    where: {
+      rol: "sahip",
+      aktif: true,
+      ...(secenek.haric ? { id: { not: secenek.haric } } : {}),
+    },
   });
-  return digerSahipler === 0;
+}
+
+/**
+ * Açık sahip bırakmayan değişikliği uygulamayan sarmalayıcı.
+ *
+ * `YONETIM_SIFRE` silindikten sonra panele girmenin tek yolu bir hesapla
+ * giriş yapmak; kurulum ekranı ancak hiç kullanıcı kalmazsa geri geliyor ve
+ * o da değişken yoksa açılmıyor. Yani **son açık sahip kaybolursa panel
+ * kalıcı olarak kapanıyor**, çaresi veritabanına elle müdahale oluyor.
+ *
+ * Önce okuyup sonra yazmak bunu garanti etmiyor: iki sahip aynı anda
+ * birbirini silerse ikisi de kontrolden geçer, ikisi de yazar, ortada sahip
+ * kalmaz. O yüzden değişiklik ve sayım **tek bir işlemde**, üstelik
+ * `Serializable` yalıtımla yapılıyor — çakışan iki işlemden biri
+ * veritabanınca geri çevriliyor. Sayım yazmadan sonra: işlem sahipsiz bir
+ * duruma varıyorsa tamamı geri alınıyor (K-46).
+ */
+export async function sahipKalsinDiye(
+  degistir: (islem: Prisma.TransactionClient) => Promise<unknown>,
+): Promise<boolean> {
+  try {
+    await db.$transaction(
+      async (islem) => {
+        await degistir(islem);
+        const kalan = await islem.adminUser.count({ where: { rol: "sahip", aktif: true } });
+        if (kalan === 0) throw new Error("sahipsiz-kalir");
+      },
+      { isolationLevel: "Serializable" },
+    );
+    return true;
+  } catch {
+    return false;
+  }
 }

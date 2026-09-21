@@ -54,6 +54,15 @@ export default async function KullanicilarSayfasi({
   const bildirim = typeof kayit === "string" ? KULLANICI_BILDIRIMLERI[kayit] : undefined;
   const hataMetni = typeof hata === "string" ? KULLANICI_HATALARI[hata] : undefined;
 
+  // Tek açık sahip varsa panele girmenin tek yolu o hesap: kurulum ekranı
+  // ancak hiç kullanıcı kalmazsa ve `YONETIM_SIFRE` tanımlıysa geri geliyor.
+  // Bu yüzden durum ekranda yazıyor — kod bunu zaten koruyor ama kişinin
+  // bilmesi lazım (K-46).
+  // Sayfayı yalnızca açık bir sahip açabildiği için "tek sahip" hep
+  // buradaki kişi oluyor.
+  const acikSahipSayisi = kullanicilar.filter((k) => k.aktif && k.rol === "sahip").length;
+  const tekSahibim = acikSahipSayisi === 1;
+
   return (
     <div className="flex flex-col gap-5">
       <h1 className="text-2xl">Kullanıcılar</h1>
@@ -65,6 +74,18 @@ export default async function KullanicilarSayfasi({
       {bildirim && <p className={IYI_KUTU}>{bildirim}</p>}
       {hataMetni && <p className={HATA_KUTUSU}>{hataMetni}</p>}
 
+      {tekSahibim && (
+        <div className="rounded-marka border border-sari bg-sari-soluk px-4 py-3 text-sm text-sari-koyu">
+          <p className="font-bold">Açık tek sahip sensin.</p>
+          <p className="mt-1">
+            Bu hesap panele girmenin tek yolu; kapatılamıyor, silinemiyor ve rolü
+            düşürülemiyor. Ama şifresini unutursan panele girilemez —{" "}
+            <strong>ikinci bir sahip hesabı açmanı öneririm.</strong> İki sahip olunca
+            biri ötekinin şifresini yenileyebiliyor.
+          </p>
+        </div>
+      )}
+
       <section className="rounded-marka border border-cizgi bg-yuzey p-5">
         <h2 className="flex flex-wrap items-baseline gap-x-3 text-lg">
           Panel kullanıcıları
@@ -75,7 +96,7 @@ export default async function KullanicilarSayfasi({
 
         <ul className="mt-3 flex flex-col divide-y divide-cizgi-soluk">
           {kullanicilar.map((k) => (
-            <Kullanici key={k.id} kullanici={k} benimId={ben.id} />
+            <Kullanici key={k.id} kullanici={k} benimId={ben.id} tekSahibim={tekSahibim} />
           ))}
         </ul>
       </section>
@@ -130,14 +151,26 @@ export default async function KullanicilarSayfasi({
 
       <p className="text-xs text-metin-3">
         Şifre sıfırlama e-postası henüz yok. Şifresini unutan bir kullanıcıya buradan yeni bir
-        şifre atayabilirsin; ataman o kişinin açık oturumlarını da düşürür.
+        şifre atayabilirsin; ataman o kişinin açık oturumlarını da düşürür. Açık sahip
+        kalmayacak hiçbir değişikliğe izin verilmiyor — panele girmenin tek yolu bir hesapla
+        giriş yapmak.
       </p>
     </div>
   );
 }
 
-function Kullanici({ kullanici: k, benimId }: { kullanici: KullaniciSatiri; benimId: string }) {
+function Kullanici({
+  kullanici: k,
+  benimId,
+  tekSahibim,
+}: {
+  kullanici: KullaniciSatiri;
+  benimId: string;
+  /** Açık tek sahip bu sayfayı açan kişi mi? Öyleyse satırında "tek" yazıyor. */
+  tekSahibim: boolean;
+}) {
   const benMiyim = k.id === benimId;
+  const tekSahipMi = benMiyim && tekSahibim;
 
   return (
     <li className="flex flex-col gap-3 py-4">
@@ -163,6 +196,7 @@ function Kullanici({ kullanici: k, benimId }: { kullanici: KullaniciSatiri; beni
           }`}
         >
           {ROL_ADLARI[k.rol]}
+          {tekSahipMi && <span className="font-normal"> · tek</span>}
         </span>
 
         <span
@@ -175,9 +209,9 @@ function Kullanici({ kullanici: k, benimId }: { kullanici: KullaniciSatiri; beni
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        {/* Kendi hesabını kapatmak ya da silmek paneli kilitleyebilir; düğme
-            hiç çıkmıyor. Kural sunucuda da var — görünmeyen düğme koruma
-            değildir. */}
+        {/* Kendi hesabını ve açık tek sahibi kapatmak/silmek paneli
+            kilitleyebilir; düğme hiç çıkmıyor. Kural sunucuda da var —
+            görünmeyen düğme koruma değildir (K-45, K-46). */}
         {!benMiyim && (
           <>
             <form action={kullaniciCevir}>

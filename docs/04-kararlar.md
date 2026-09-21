@@ -1947,6 +1947,62 @@ sıfırlaması eklenecek.
 
 ---
 
+### K-46 · Kurtarma yolu: son açık sahip her zaman kalıyor
+**21 Eylül 2026**
+
+`YONETIM_SIFRE` Vercel'den siliniyor. Bu doğru karar — K-45'ten sonra o
+değişken çalışan sitede hiçbir işe yaramıyor, yalnızca "hiç kullanıcı yok"
+durumunda kurulum ekranını açıyor. Ama silinince **kurtarma yolu da
+kalmıyor**: panele girmenin tek yolu bir hesapla giriş yapmak, kurulum ekranı
+ise hem hiç kullanıcı kalmasını hem değişkenin tanımlı olmasını istiyor.
+
+Yani artık tek bir değişmez var, ve o tutmazsa panel kalıcı olarak kapanıyor:
+**her zaman en az bir açık sahip olmalı.**
+
+K-45'teki kontroller bunu söylüyordu ama **garanti etmiyordu.** Önce
+`sonSahipMi()` okunuyor, sonra yazılıyordu. İki sahip aynı anda birbirini
+silerse ikisi de "öteki duruyor" görüyor, ikisi de yazıyor ve ortada sahip
+kalmıyordu. Uzak ihtimal, ama kurtarma yolu yokken bir kerelik bir çakışmanın
+bedeli veritabanına elle müdahale.
+
+**Değişiklik ve sayım tek işlemde.** Silme, kapatma ve rol düşürme artık
+`sahipKalsinDiye()` içinden geçiyor: değişiklik uygulanıyor, sonra aynı
+işlemin içinde açık sahip sayılıyor, sıfırsa işlem geri alınıyor. Yalıtım
+düzeyi `Serializable` — çakışan iki işlemden birini veritabanı kendisi geri
+çeviriyor. Okuma-sonra-yazma kalıbı bu garantiyi veremiyordu, çünkü iki işlem
+birbirinin henüz yazılmamış değişikliğini göremiyor.
+
+`sonSahipMi()` duruyor ama işi değişti: artık **düğmenin çıkıp çıkmayacağına
+ve hata metnine** karar veriyor, güvenliğe değil. Garanti işlemde.
+
+**Tek sahip olduğun ekranda yazıyor.** Kullanıcılar sayfasının başında sarı
+bir kutu: "Açık tek sahip sensin… şifreni unutursan panele girilemez —
+**ikinci bir sahip hesabı açmanı öneririm.**" Kod zaten koruyor ama kişinin
+bunu bilmesi gerekiyor; iki sahip olunca biri ötekinin şifresini
+yenileyebiliyor, yani gerçek kurtarma yolu bu. Rol rozetinin yanında da
+"· tek" yazıyor.
+
+**Denendi** (28 madde). Kilitlenme yollarının hepsi tek tek denendi: kendi
+satırında kapat/sil/rol düğmelerinin hiç çıkmaması, kendi kimliğinin hiçbir
+gizli alanda bulunmaması, ikinci sahip varken silmenin ve kapatmanın geçmesi,
+kapalı bir sahibin silinebilmesi, silinen kullanıcının oturumunun düşmesi,
+düşürülen kullanıcının sayfayı açamaması. Düğme olmadığında da reddedildiğini
+görmek için **gerçek form kopyalanıp kimliği değiştirilerek** gönderildi
+(Next'in eylem kimliği de kopyalandığı için sunucuya gerçek bir eylem isteği
+gidiyor): silme, kapatma ve rol düşürme üçü de reddedildi. Son olarak iki
+sahip, iki ayrı tarayıcı oturumundan **aynı anda** birbirini sildi — biri
+geçti, öteki geri çevrildi, kalan sahip giriş yapabildi. Üç turda da aynı
+sonuç.
+
+**Yan not:** CI iş akışındaki `YONETIM_SIFRE: derleme` satırı kaldırıldı;
+derleme artık o değişkene ihtiyaç duymuyor (denendi).
+
+**Nerede:** [`../server/yonetim-kimlik.ts`](../server/yonetim-kimlik.ts),
+[`../server/yonetim-kimlik-islem.ts`](../server/yonetim-kimlik-islem.ts),
+[`../app/yonetim/(panel)/kullanicilar`](../app/yonetim/(panel)/kullanicilar)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı
