@@ -1,3 +1,6 @@
+import Link from "next/link";
+import DosyaBirak from "@/ui/dosya-birak";
+import GonderDugmesi from "@/ui/gonder-dugmesi";
 import {
   fotografAdiKaydet,
   fotografEkle,
@@ -39,14 +42,17 @@ export default function FotografYonetimi({
   fotograflar,
   hata,
   eklenen,
+  sonraki,
 }: {
   slug: string;
   fotograflar: PanelFotografi[];
   hata?: string;
   eklenen?: number;
+  /** Fotoğrafı olmayan bir sonraki ürün; fotoğraf çekimi yarım kalmasın. */
+  sonraki?: { slug: string; ad: string; kalan: number };
 }) {
   return (
-    <section className="rounded-marka border border-cizgi bg-yuzey p-5">
+    <section id="fotograflar" className="rounded-marka border border-cizgi bg-yuzey p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="font-baslik text-lg font-bold">Fotoğraflar</h2>
         <p className="text-xs text-metin-3">
@@ -62,24 +68,28 @@ export default function FotografYonetimi({
         </p>
       )}
       {eklenen !== undefined && !hata && (
-        <p className="mt-3 rounded-marka bg-nane-soluk px-3 py-2 text-sm text-nane-koyu">
-          {eklenen > 0 ? `${eklenen} fotoğraf eklendi.` : "Kaydedildi."}
-        </p>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-marka bg-nane-soluk px-3 py-2 text-sm text-nane-koyu">
+          <span>{eklenen > 0 ? `${eklenen} fotoğraf eklendi.` : "Kaydedildi."}</span>
+          {/* Çekimden dönen kişi ürün ürün dolaşmak zorunda kalmasın:
+              sıradaki fotoğrafsız ürün buradan bir tık ötede. */}
+          {sonraki && (
+            <Link
+              href={`/yonetim/urunler/${sonraki.slug}#fotograflar`}
+              className="font-bold underline"
+            >
+              Sıradaki fotoğrafsız ürün: {sonraki.ad} ({sonraki.kalan} kaldı) →
+            </Link>
+          )}
+        </div>
       )}
 
       <form action={fotografEkle} className="mt-4 flex flex-wrap items-end gap-3">
         <input type="hidden" name="slug" value={slug} />
-        <label className="flex min-w-[220px] flex-1 flex-col gap-1.5">
-          <span className="text-xs font-bold text-metin-2">Fotoğraf seç</span>
-          <input
-            type="file"
-            name="fotograf"
-            multiple
-            required
-            accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
-            className="text-sm file:mr-3 file:rounded-full file:border-0 file:bg-mavi-soluk file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-mavi-koyu"
-          />
-        </label>
+        <DosyaBirak
+          ad="fotograf"
+          etiket="Fotoğraf seç"
+          kabul="image/jpeg,image/png,image/webp,image/avif,image/gif"
+        />
         <label className="flex min-w-[180px] flex-1 flex-col gap-1.5">
           <span className="text-xs font-bold text-metin-2">Açıklama (isteğe bağlı)</span>
           <input
@@ -88,16 +98,19 @@ export default function FotografYonetimi({
             className={GIRDI}
           />
         </label>
-        <button
-          type="submit"
+        <GonderDugmesi
+          bekleyen="Yükleniyor…"
           className="rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-95"
         >
           Yükle
-        </button>
+        </GonderDugmesi>
       </form>
       <p className="mt-2 text-xs text-metin-3">
-        Birden fazla dosya seçebilirsin. Fotoğraflar yüklenirken otomatik küçültülüp webp&apos;ye
-        çevriliyor, telefonla çekilmiş büyük dosyalar sorun değil. En fazla 12 MB.
+        Birden fazla dosya seçebilirsin. Fotoğraflar yüklenirken otomatik küçültülüp
+        webp&apos;ye çevriliyor, telefonla çekilmiş büyük dosyalar sorun değil. En fazla
+        12 MB. Açıklama boş bırakılırsa ürünün adı yazılıyor; her fotoğrafa kendi
+        açıklamasını yazmak hem görme engelli müşteriler hem arama motoru için daha
+        iyi — aşağıdaki listeden tek tek düzeltebilirsin.
       </p>
 
       {fotograflar.length > 0 && (

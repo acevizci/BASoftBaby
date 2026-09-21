@@ -1582,6 +1582,109 @@ geniş ekranda gizlenmesi; JavaScript kapalı tarayıcıda ikisinin de çalışm
 
 ---
 
+### K-41 · Fotoğraf akışı bitirilebilir hâle geldi
+**21 Eylül 2026**
+
+Fotoğraf yükleme zaten vardı: çoklu dosya, otomatik küçültme, webp'ye çevirme,
+sıralama, kapak seçimi. Eksik olan **hangi ürünün fotoğrafı olmadığını
+görmekti.** Excel'den elli ürün yüklendiğinde (K-26) hangilerinin fotoğrafı
+eksik kaldığını anlamanın yolu yoktu; ürün ürün açıp bakmak gerekiyordu.
+
+Üç yerden görünüyor artık:
+
+- **Ürün listesinde fotoğraf sütunu.** Fotoğrafı olanda küçük görsel ve adet,
+  olmayanda tıklanabilir bir "Fotoğraf yok" rozeti — doğrudan o ürünün
+  fotoğraf bölümüne gidiyor.
+- **"Fotoğrafsız" süzgeci**, sayısıyla birlikte.
+- **Özet ekranında iş kartı** (K-32'deki yapılacaklar listesinde).
+
+**Yükleme sonrası sıradaki ürün.** Çekimden dönen kişi otuz fotoğrafı tek tek
+doğru ürüne koyacak. Yükleme bitince "Sıradaki fotoğrafsız ürün: X (12 kaldı)"
+bağlantısı çıkıyor. Listeye dönüp yerini bulmak yerine tek tık: iş bir kuyruk
+hâline geliyor ve bitiyor.
+
+**Sürükle bırak** eklendi ama içindeki şey hâlâ düz bir `<input type="file">`:
+JavaScript kapalıyken kutu olduğu gibi çalışıyor. Eklenen tek şey dosyaları
+alanın üzerine bırakabilmek ve **kaç dosya seçildiğini görmek** — telefon
+galerisinden sekiz fotoğraf seçtikten sonra "gerçekten seçildi mi" sorusu
+kalmasın diye.
+
+Yükle düğmesi artık bekleme durumunu gösteriyor: sekiz büyük fotoğraf
+yüklenirken form sessizce bekliyordu.
+
+**Nerede:** [`../ui/dosya-birak.tsx`](../ui/dosya-birak.tsx),
+[`../ui/fotograf-yonetimi.tsx`](../ui/fotograf-yonetimi.tsx),
+[`../app/yonetim/urunler/page.tsx`](../app/yonetim/urunler/page.tsx)
+
+---
+
+### K-42 · Satış raporu: tek renk, sunucuda çizilen grafik
+**21 Eylül 2026**
+
+Özet ekranı bugünü gösteriyor (K-32); rapor bir dönemi gösteriyor. Hazır
+dönemler (bu ay, geçen ay, son 30 gün, son 12 ay) ya da elle tarih aralığı.
+
+**İptaller hiçbir toplama girmiyor** ama iptal **oranı** ayrıca gösteriliyor:
+iptal edilmiş sipariş ciro değil, ama yükselen bir iptal oranı başlı başına
+bir haber. **Her dönem bir öncekiyle karşılaştırılıyor** — tek başına "42
+sipariş" bir şey söylemiyor; geçen ay 60'sa başka, 20'yse başka.
+
+**Grafik tek renkli.** Çizilen tek bir ölçü var (ciro) ve büyüklüğü sütunun
+boyu taşıyor; renk hiçbir şey kodlamıyor. Markanın üç "koyu" tonu kategorik
+palet olarak denendi ve **doğrulayıcıdan geçemedi** — mavi ile yeşil normal
+görüşte bile ayırt edilemeyecek kadar yakın (ΔE 14,2; eşik 15). Tek renge
+geçmek bu sorunu tamamen ortadan kaldırıyor, üstelik doğru olan da bu:
+büyüklük karşılaştırması sıralı bir ölçü, kimlik değil.
+
+Renk için ayrı bir belirteç eklendi (`--grafik`). Metin tonları okunurluk
+için seçiliyor, dolgu tonları yüzeye karşı kontrast **ve açıklık bandı** için;
+ikisi aynı değer olmak zorunda değil. Açık temada `#c2433a`, koyu temada
+`#d9564c` — ikisi de kendi yüzeyine karşı ayrı ayrı doğrulandı. Koyu temanın
+rengi açık temanınkinin çevrilmişi değil, kendi bandında seçilmiş bir değer.
+
+**Kırılımlar pasta değil sıralı çubuk.** Pastada dilim büyüklüğünü
+karşılaştırmak açı karşılaştırmak demek ve insan bunu iyi yapamıyor; yan yana
+uzunluk karşılaştırmak kolay. Üstelik sıralı liste hem oranı hem sırayı aynı
+anda söylüyor.
+
+**Grafik sunucuda çiziliyor.** İstemcide grafik kütüphanesi yok: sayfa
+JavaScript kapalıyken de grafiği gösteriyor. İpucu için her sütunun içinde
+`<title>` var — tarayıcının kendi ipucu balonu, JavaScript gerektirmiyor.
+
+Biçim ayrıntıları rehberden: sütun en fazla 24 piksel, veri ucu 4 piksel
+yuvarlak ve taban köşeli, komşular arasında boşluk, ızgara saç teli
+inceliğinde ve kesiksiz, sayı yalnızca en yüksek sütunun üstünde. O etiket
+eksendeki kısaltmayı tekrarlamıyor, **kesin değeri** yazıyor; kenardaki
+sütunda hizalaması değişiyor ki çizim alanının dışına taşıp kırpılmasın.
+
+Altmış günden uzun dönem güne değil **aya** bölünüyor: bir yılı 365 sütunda
+göstermek grafik değil duvar olurdu.
+
+Yan düzeltme: büyük tek başına sayılarda eşit genişlikli rakam (tabular-nums)
+kullanılmıyordu artık — "121" gibi bir sayı o boyutta gereksiz gevşek
+görünüyor. Eşit genişlik tabloda ve eksende işe yarıyor, orada kalıyor. Aynı
+düzeltme özet ekranına da uygulandı.
+
+**CSV** her sipariş kalemini ayrı satır olarak veriyor: muhasebeye giderken
+toplamlar değil kalemler gerekiyor. Noktalı virgül ve BOM, Türkçe Excel'in
+dosyayı çift tıklayınca doğru açması için (K-26'da okurken de aynı gerçekle
+karşılaşmıştık).
+
+**Denendi** (39 madde, 25 günlük üretilmiş satış verisiyle): fotoğrafsız
+ürünlerin üç yerden görünmesi, yüklemeden sonra sıradaki ürüne geçiş, listede
+küçük görselin çıkması; rapor sayılarının veritabanıyla birebir tutması,
+iptallerin ciroya girmemesi, SVG'nin çizilmesi ve ipucu başlıklarının olması,
+uzun dönemin aya bölünmesi, kırılım yüzdelerinin toplamının yüze çıkması,
+CSV'nin satır sayısı ve biçimi, JavaScript kapalı tarayıcıda grafiğin ve
+süzgeçlerin çalışması. Grafik iki temada da ekran görüntüsüyle gözden
+geçirildi.
+
+**Nerede:** [`../server/rapor.ts`](../server/rapor.ts),
+[`../ui/sutun-grafik.tsx`](../ui/sutun-grafik.tsx),
+[`../app/yonetim/rapor`](../app/yonetim/rapor)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

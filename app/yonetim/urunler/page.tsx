@@ -4,11 +4,32 @@ import { fiyatYaz } from "@/ui/katalog-bicim";
 
 export const dynamic = "force-dynamic";
 
-export default async function UrunListesi() {
-  const urunler = await db.product.findMany({
-    include: { category: true, variants: true },
-    orderBy: { olusturuldu: "asc" },
-  });
+const ROZET = "rounded-full border px-3 py-1.5 text-xs font-bold transition";
+
+/**
+ * Ürün listesi.
+ *
+ * Listede fotoğraf sütunu var ve fotoğrafsız ürünler süzülebiliyor: Excel'den
+ * elli ürün yüklendiğinde hangilerinin fotoğrafı eksik kaldığını görmenin
+ * başka yolu yoktu (K-41).
+ */
+export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/urunler">) {
+  const { eksik } = await searchParams;
+  const fotografsizSuzgeci = eksik === "fotograf";
+
+  const [urunler, fotografsizAdedi] = await Promise.all([
+    db.product.findMany({
+      where: fotografsizSuzgeci ? { images: { none: {} } } : {},
+      include: {
+        category: true,
+        variants: true,
+        images: { orderBy: { sira: "asc" }, take: 1, select: { kucukYol: true, yol: true, altMetin: true } },
+        _count: { select: { images: true } },
+      },
+      orderBy: { olusturuldu: "asc" },
+    }),
+    db.product.count({ where: { images: { none: {} } } }),
+  ]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -30,14 +51,40 @@ export default async function UrunListesi() {
         </div>
       </div>
 
+      {fotografsizAdedi > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/yonetim/urunler"
+            className={`${ROZET} ${
+              fotografsizSuzgeci
+                ? "border-cizgi text-metin-2 hover:border-metin-3"
+                : "border-mercan bg-mercan-soluk text-mercan-koyu"
+            }`}
+          >
+            Hepsi
+          </Link>
+          <Link
+            href="/yonetim/urunler?eksik=fotograf"
+            className={`${ROZET} ${
+              fotografsizSuzgeci
+                ? "border-mercan bg-mercan-soluk text-mercan-koyu"
+                : "border-cizgi text-metin-2 hover:border-metin-3"
+            }`}
+          >
+            Fotoğrafsız <span className="rakam">({fotografsizAdedi})</span>
+          </Link>
+        </div>
+      )}
+
       <div className="overflow-x-auto rounded-marka border border-cizgi bg-yuzey">
-        <table className="w-full min-w-[640px] text-sm">
+        <table className="w-full min-w-[760px] text-sm">
           <thead className="border-b border-cizgi text-left text-xs uppercase tracking-wide text-metin-3">
             <tr>
               <th className="px-4 py-3">Ürün</th>
               <th className="px-4 py-3">Kategori</th>
               <th className="px-4 py-3">Fiyat</th>
               <th className="px-4 py-3">Stok</th>
+              <th className="px-4 py-3">Fotoğraf</th>
               <th className="px-4 py-3">Durum</th>
             </tr>
           </thead>
@@ -62,6 +109,29 @@ export default async function UrunListesi() {
                       <span className="font-bold text-mercan-koyu">tükendi</span>
                     ) : (
                       `${stok} adet`
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {u._count.images === 0 ? (
+                      <Link
+                        href={`/yonetim/urunler/${u.slug}#fotograflar`}
+                        className="rounded-full bg-sari-soluk px-2.5 py-1 text-xs font-bold text-sari-koyu hover:brightness-95"
+                      >
+                        Fotoğraf yok
+                      </Link>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={u.images[0].kucukYol || u.images[0].yol}
+                          alt=""
+                          width={36}
+                          height={36}
+                          className="rounded-[8px] bg-yuzey-sicak object-cover"
+                          style={{ width: 36, height: 36 }}
+                        />
+                        <span className="rakam text-xs text-metin-3">{u._count.images}</span>
+                      </span>
                     )}
                   </td>
                   <td className="px-4 py-3">

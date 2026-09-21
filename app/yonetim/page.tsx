@@ -59,7 +59,7 @@ export default async function YonetimOzeti() {
         <div className="mt-3 grid gap-4 sm:grid-cols-3">
           <div>
             <p className="text-xs font-bold text-metin-3">Sipariş</p>
-            <p className="rakam font-baslik text-3xl font-bold">{o.bugunAdet}</p>
+            <p className="font-baslik text-3xl font-bold">{o.bugunAdet}</p>
             <p className="text-xs text-metin-3">
               {o.dunAdet === 0 && o.bugunAdet === 0
                 ? "dün de yoktu"
@@ -70,12 +70,12 @@ export default async function YonetimOzeti() {
           </div>
           <div>
             <p className="text-xs font-bold text-metin-3">Bugünkü tutar</p>
-            <p className="rakam font-baslik text-3xl font-bold">{fiyatYaz(o.bugunKurus)}</p>
+            <p className="font-baslik text-3xl font-bold">{fiyatYaz(o.bugunKurus)}</p>
             <p className="text-xs text-metin-3">iptaller hariç</p>
           </div>
           <div>
             <p className="text-xs font-bold text-metin-3">Bu ay</p>
-            <p className="rakam font-baslik text-3xl font-bold">{fiyatYaz(o.ayKurus)}</p>
+            <p className="font-baslik text-3xl font-bold">{fiyatYaz(o.ayKurus)}</p>
             <p className="rakam text-xs text-metin-3">{o.ayAdet} sipariş</p>
           </div>
         </div>

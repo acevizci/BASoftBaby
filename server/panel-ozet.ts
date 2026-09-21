@@ -94,6 +94,7 @@ export async function panelOzetiGetir(): Promise<PanelOzeti> {
     ayar,
     kunye,
     taslakYasal,
+    fotografsizUrun,
     bekleyenTalep,
     yanitsizYorum,
   ] = await Promise.all([
@@ -135,6 +136,7 @@ export async function panelOzetiGetir(): Promise<PanelOzeti> {
     ayarlariGetir(),
     kunyeGetir(),
     db.legalPage.count({ where: { taslakMi: true } }),
+    db.product.count({ where: { aktif: true, images: { none: {} } } }),
     bekleyenTalepSayisi(),
     yanitsizOlumsuzYorum(),
   ]);
@@ -201,6 +203,13 @@ export async function panelOzetiGetir(): Promise<PanelOzeti> {
       adres: "/yonetim/yorumlar?durum=olumsuz",
       acil: yanitsizYorum > 0,
       aciklama: "Memnun kalmamış müşteri; yanıtlamak gizlemekten iyidir.",
+    },
+    {
+      ad: "Fotoğrafsız ürün",
+      adet: fotografsizUrun,
+      adres: "/yonetim/urunler?eksik=fotograf",
+      acil: fotografsizUrun > 0,
+      aciklama: "Yayında ama fotoğrafı yok; müşteri çizim görüyor.",
     },
     {
       ad: "Tükenen beden",

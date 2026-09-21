@@ -26,6 +26,17 @@ export default async function UrunDuzenle({
   ]);
   if (!urun) notFound();
 
+  // Fotoğraf çekiminden dönen kişi ürün ürün dolaşmak zorunda kalmasın:
+  // yükleme bittiğinde sıradaki fotoğrafsız ürün gösteriliyor (K-41).
+  const [sonrakiFotografsiz, fotografsizKalan] = await Promise.all([
+    db.product.findFirst({
+      where: { images: { none: {} }, slug: { not: slug } },
+      orderBy: { olusturuldu: "asc" },
+      select: { slug: true, ad: true },
+    }),
+    db.product.count({ where: { images: { none: {} }, slug: { not: slug } } }),
+  ]);
+
   const sirali = [...urun.variants].sort((a, b) => {
     const fark =
       (BEDENLER as readonly string[]).indexOf(a.beden) -
@@ -68,6 +79,11 @@ export default async function UrunDuzenle({
         slug={urun.slug}
         hata={typeof fhata === "string" ? fhata : undefined}
         eklenen={Number.isFinite(eklenen) ? eklenen : undefined}
+        sonraki={
+          sonrakiFotografsiz
+            ? { ...sonrakiFotografsiz, kalan: fotografsizKalan }
+            : undefined
+        }
         fotograflar={urun.images.map((g) => ({
           id: g.id,
           yol: g.yol,

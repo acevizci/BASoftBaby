@@ -24,6 +24,11 @@
   --ayicik: #f2b76b;
   --ayicik-kontur: #b37a42;
 
+  /* Grafik çubuğu. Metin tonlarından ayrı bir belirteç: metin rengi okunurluk
+     için, dolgu rengi yüzeye karşı kontrast ve açıklık bandı için seçiliyor.
+     İkisi aynı değer olmak zorunda değil (K-42). */
+  --grafik: #c2433a;
+
   /* yüzeyler ve yazı */
   --sayfa: #efe9e0;
   --zemin: #fffcf7;
@@ -48,6 +53,7 @@
     --nane-koyu: #7fd4ab;
     --mercan-koyu: #f59289;
     --sari-koyu: #e0b56a;
+    --grafik: #d9564c;
 
     --sayfa: #14120f;
     --zemin: #1e1b16;
@@ -70,6 +76,7 @@
   --nane-koyu: #7fd4ab;
   --mercan-koyu: #f59289;
   --sari-koyu: #e0b56a;
+  --grafik: #d9564c;
 
   --sayfa: #14120f;
   --zemin: #1e1b16;
@@ -97,6 +104,7 @@
   --color-sari: var(--sari);
   --color-sari-koyu: var(--sari-koyu);
   --color-sari-soluk: var(--sari-soluk);
+  --color-grafik: var(--grafik);
   --color-ayicik: var(--ayicik);
   --color-ayicik-kontur: var(--ayicik-kontur);
 

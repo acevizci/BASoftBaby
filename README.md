@@ -70,7 +70,8 @@ Siparişler (numara, ad, e-posta, telefon ve kargo takip
 numarasıyla arama; durum, ödeme ve tarih süzgeçleri), ürün ekleme ve düzenleme,
 beden-renk stokları,
 kategoriler (açma, adını değiştirme, sıralama, kapatma, silme),
-Excel/CSV'den toplu ürün yükleme, duyuru şeridi,
+Excel/CSV'den toplu ürün yükleme, satış raporu (dönem seçimi, grafik, CSV),
+duyuru şeridi,
 ana sayfa banner'ı, kampanyalar ve satış ayarları (kargo ücreti,
 bedava kargo eşiği, havale bilgisi). Açılabilmesi için `YONETIM_SIFRE` tanımlı olmalı; tanımlı değilse panel
 kendini tamamen kapatır (404 verir), yani ayar unutulursa açıkta kalmaz.
