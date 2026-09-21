@@ -34,8 +34,13 @@ export async function generateMetadata({ params }: PageProps<"/urun/[slug]">): P
   };
 }
 
-export default async function UrunSayfasi({ params }: PageProps<"/urun/[slug]">) {
+export default async function UrunSayfasi({
+  params,
+  searchParams,
+}: PageProps<"/urun/[slug]">) {
   const { slug } = await params;
+  // "Stoka girince haber ver" formunun sonucu adres satırında dönüyor.
+  const { bildirim } = await searchParams;
   const urun = await urunGetir(slug);
   if (!urun) notFound();
 
@@ -168,6 +173,8 @@ export default async function UrunSayfasi({ params }: PageProps<"/urun/[slug]">)
             bedenler={bedenler}
             renkler={urun.renkler}
             varyantlar={urun.varyantlar}
+            slug={urun.slug}
+            bildirimDurumu={typeof bildirim === "string" ? bildirim : undefined}
           />
 
           <div className="flex flex-col gap-3 rounded-marka border border-cizgi bg-yuzey p-4 text-sm">

@@ -18,6 +18,7 @@ import { GorselHatasi, gorselDosyalariniSil, gorselYukle } from "@/server/gorsel
 import { TASIYICILAR, takipAdresi, tasiyiciAdi } from "@/server/kargo";
 import { faturaOlustur } from "@/server/fatura";
 import { slugYap } from "@/server/slug";
+import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
 import { kargoyaVerildiEpostasi } from "@/server/eposta";
 
 /**
@@ -103,7 +104,7 @@ export async function varyantEkle(form: FormData): Promise<void> {
   const stok = Number(metin(form, "stok") || "0");
 
   const urun = await db.product.findUniqueOrThrow({ where: { slug } });
-  await db.productVariant.upsert({
+  const varyant = await db.productVariant.upsert({
     where: { productId_beden_renk: { productId: urun.id, beden, renk } },
     update: { stok: Math.max(0, stok) },
     create: {
@@ -113,7 +114,9 @@ export async function varyantEkle(form: FormData): Promise<void> {
       stok: Math.max(0, stok),
       sku: `${slug}-${beden.replace(/\s/g, "")}-${renk}`,
     },
+    select: { id: true },
   });
+  await stokBildirimleriniGonder([varyant.id]);
   vitriniYenile();
   redirect(`/yonetim/urunler/${slug}?kayit=1`);
 }
@@ -129,14 +132,18 @@ export async function varyantSil(form: FormData): Promise<void> {
 /** Stok ekranı: tek seferde birçok varyantın adedini günceller. */
 export async function stoklariKaydet(form: FormData): Promise<void> {
   const islemler = [];
+  const idler: string[] = [];
   for (const [ad, deger] of form.entries()) {
     if (!ad.startsWith("stok-")) continue;
     const id = ad.slice(5);
     const adet = Number(String(deger));
     if (!Number.isFinite(adet) || adet < 0) continue;
     islemler.push(db.productVariant.update({ where: { id }, data: { stok: Math.trunc(adet) } }));
+    idler.push(id);
   }
   await db.$transaction(islemler);
+  // Stok yazıldıktan sonra: bekleyen varsa ve artık stok varsa haber gidiyor.
+  await stokBildirimleriniGonder(idler);
   vitriniYenile();
   redirect("/yonetim/stok?kayit=1");
 }

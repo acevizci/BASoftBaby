@@ -84,6 +84,7 @@ model ProductVariant {
 
   cartItems  CartItem[]
   orderItems OrderItem[]
+  bildirimler StockAlert[]
 
   @@unique([productId, beden, renk])
   @@index([productId])
@@ -587,5 +588,24 @@ model ProductImport {
   uygulandi   DateTime?
   olusturuldu DateTime  @default(now())
 
+  @@index([olusturuldu])
+}
+
+/// "Stoka girince haber ver" isteği.
+///
+/// Tükenmiş bir beden-renk için müşterinin bıraktığı adres. Ticari ileti
+/// değil, müşterinin kendi isteği üzerine gönderilen tek seferlik bir
+/// bildirim; o yüzden pazarlama izni aranmıyor. Gönderildiği an kayıt
+/// siliniyor: adresin tutulma sebebi ortadan kalkmış oluyor (K-28).
+model StockAlert {
+  id        String         @id @default(cuid())
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  eposta      String
+  olusturuldu DateTime @default(now())
+
+  @@unique([variantId, eposta])
+  @@index([variantId])
   @@index([olusturuldu])
 }

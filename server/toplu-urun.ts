@@ -21,6 +21,7 @@
 import ExcelJS from "exceljs";
 import { db } from "@/server/veritabani";
 import { slugYap } from "@/server/slug";
+import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
 import { BEDENLER, GORSEL_TIPLERI, RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
 
 /** Tablodaki bir satırın çözülmüş hâli. */
@@ -501,6 +502,7 @@ export async function planiUygula(satirlar: Satir[]): Promise<{ urun: number; va
   }
 
   let varyantSayisi = 0;
+  const yazilanVaryantlar: string[] = [];
 
   await db.$transaction(
     async (islem) => {
@@ -575,11 +577,28 @@ export async function planiUygula(satirlar: Satir[]): Promise<{ urun: number; va
             create: { productId: urun.id, beden: s.beden, renk: s.renk, stok: s.stok, sku },
           });
           varyantSayisi += 1;
+          yazilanVaryantlar.push(
+            `${urun.id}|${s.beden}|${s.renk}`,
+          );
         }
       }
     },
     { timeout: 120_000, maxWait: 20_000 },
   );
+
+  // Toplu yükleme tükenmiş bir bedene stok girmiş olabilir; bekleyenlere
+  // haber veriliyor. İşlemin dışında: e-posta işlemi uzatmamalı.
+  const idler = await db.productVariant.findMany({
+    where: {
+      OR: yazilanVaryantlar.map((a) => {
+        const [productId, beden, renk] = a.split("|");
+        return { productId, beden, renk };
+      }),
+      stok: { gt: 0 },
+    },
+    select: { id: true },
+  });
+  await stokBildirimleriniGonder(idler.map((v) => v.id));
 
   return { urun: gruplar.size, varyant: varyantSayisi };
 }

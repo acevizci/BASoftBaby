@@ -944,6 +944,54 @@ atlanması.
 
 ---
 
+### K-28 · Stok bildirimi izin istemiyor, çünkü isteyen müşterinin kendisi
+**21 Eylül 2026**
+
+Tükenmiş bir beden-renk seçildiğinde "gelince haber verelim mi?" formu
+çıkıyor. O birleşim stoğa girdiğinde tek bir e-posta gidiyor.
+
+**Pazarlama izni aranmıyor** — sepet hatırlatmasının (K-27) tersine. Fark şu:
+sepet hatırlatmasını biz göndermeye karar veriyoruz, bu e-postayı müşteri
+kendisi istiyor ve tek bir olay için istiyor. Ticari elektronik iletinin
+"talep üzerine" ayrımı bu. Bu yüzden de listeden çıkma bağlantısı yok; çıkacak
+bir liste yok, e-posta bir kez gidiyor.
+
+**Haber verilince adres siliniyor.** Kaydın tek sebebi "kime haber verilecek"
+sorusuydu; cevap verildikten sonra adresi tutmak gereksiz veri saklamak olur.
+Gönderim başarısız olursa kayıt duruyor: stok bir daha değiştiğinde yeniden
+deneniyor. Bir yıl boyunca stoğa girmemiş ürünün bekleyen kaydı da günlük
+temizlikte siliniyor.
+
+**Stoğun arttığı her yerden tetikleniyor.** Panelden stok girişi, varyant
+ekleme, Excel'den toplu yükleme (K-26) ve iptal olan siparişin stoğu geri
+vermesi — dördü de aynı işlevi çağırıyor. Tek kapı olması önemli: yarın beşinci
+bir yol eklenirse orada da aynı satır yazılacak. Gönderim veritabanı işleminin
+**dışında** yapılıyor; e-posta beklemek stok yazan işlemi uzatmamalı.
+
+**Aynı adres aynı varyanta iki kez yazılmıyor.** İkinci istek sessizce geçiyor.
+Stokta olan bir şey için de kayıt açılmıyor — form zaten görünmüyor, ama
+sunucu da kabul etmiyor.
+
+**Bilinen sınır:** beden seçici varsayılan olarak stokta olan bir varyantı
+seçiyor, form ancak tükenmiş bir birleşim seçilince çıkıyor ve seçim
+JavaScript ile yapılıyor. Yani JavaScript kapalı tarayıcıda form, ürünün
+**bütün** varyantları tükenmişse görünüyor. Formun kendisi düz HTML; göründüğü
+her durumda JavaScript'siz çalışıyor. Bunu düzeltmek beden seçiciyi baştan
+bağlantı tabanlı yazmayı gerektirir; kazanç buna değmiyor.
+
+**Denendi** (20 madde, sahte bir Resend sunucusuyla): formun yalnızca tükenmiş
+seçimde çıkması, düğmenin "Tükendi" olup kapanması, isteğin kaydı, aynı adresin
+çoğalmaması, geçersiz adresin sunucuda reddedilmesi, stok girilince e-postanın
+gitmesi ve kaydın silinmesi, ikinci stok girişinde tekrar gönderilmemesi,
+stokta olana kayıt açılmaması, iade edilen stoğun da bildirim tetiklemesi,
+JavaScript kapalı tarayıcı.
+
+**Nerede:** [`../server/stok-bildirimi.ts`](../server/stok-bildirimi.ts),
+[`../ui/stok-bildirimi.tsx`](../ui/stok-bildirimi.tsx),
+[`../ui/varyant-secici.tsx`](../ui/varyant-secici.tsx)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

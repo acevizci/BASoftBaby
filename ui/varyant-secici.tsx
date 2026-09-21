@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import SepeteEkle from "@/ui/sepete-ekle";
+import StokBildirimi from "@/ui/stok-bildirimi";
 import {
   BEDEN_OLCULERI,
   RENK_ADLARI,
@@ -21,10 +22,14 @@ export default function VaryantSecici({
   bedenler,
   renkler,
   varyantlar,
+  slug,
+  bildirimDurumu,
 }: {
   bedenler: string[];
   renkler: RenkAdi[];
   varyantlar: Varyant[];
+  slug: string;
+  bildirimDurumu?: string;
 }) {
   const ilk = varyantlar.find((v) => v.stok > 0) ?? varyantlar[0];
   const [beden, setBeden] = useState<string>(ilk.beden);
@@ -109,6 +114,10 @@ export default function VaryantSecici({
       </p>
 
       <SepeteEkle variantId={secili?.id} devreDisi={stok === 0} tamGenislik />
+
+      {stok === 0 && secili && (
+        <StokBildirimi variantId={secili.id} slug={slug} durum={bildirimDurumu} />
+      )}
     </div>
   );
 }

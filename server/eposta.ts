@@ -274,3 +274,36 @@ Bu hatırlatmaları almak istemiyorsan tek tıkla çıkabilirsin:
 ${iptal}${await altBilgi()}`,
   );
 }
+
+export type StokBildirimi = { urunAd: string; slug: string; beden: string; renk: string };
+
+/**
+ * "Stoka girdi" bildirimi.
+ *
+ * Müşterinin kendi isteği üzerine, tek bir olay için gönderiliyor; tanıtım
+ * olmadığı için pazarlama izni aranmıyor ve listeden çıkma bağlantısı da
+ * gerekmiyor — zaten bir daha gönderilmiyor (K-28).
+ */
+export async function stokBildirimEpostasi(
+  kime: string,
+  bilgi: StokBildirimi,
+): Promise<EpostaSonucu> {
+  const adres = `${siteAdresi()}/urun/${bilgi.slug}`;
+
+  return gonder(
+    kime,
+    `${bilgi.urunAd} yeniden stokta`,
+    `Merhaba,
+
+Haber vermemizi istediğin ürün yeniden stokta:
+
+${bilgi.urunAd} — ${bilgi.beden}, ${bilgi.renk}
+
+${adres}
+
+Sepete eklemek ürünü ayırmıyor; adet sınırlı olabilir.
+
+Bu e-postayı, bu ürün için haber verilmesini istediğin için aldın. Tek
+seferlik; isteğin kaydı bu e-postayla birlikte silindi.${await altBilgi()}`,
+  );
+}

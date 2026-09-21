@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { suresiGecenOdemeleriTemizle } from "@/server/odeme-akis";
 import { eskiYuklemeleriTemizle } from "@/server/toplu-urun";
 import { birakilanSepetleriHatirlat } from "@/server/sepet-hatirlatma";
+import { eskiBildirimIsteklerimiTemizle } from "@/server/stok-bildirimi";
 
 /**
  * Günlük iş: yarıda kalan kart ödemeleri, eski toplu yükleme kayıtları ve
@@ -29,5 +30,7 @@ export async function GET(istek: NextRequest) {
   // Bırakılan sepet hatırlatması da burada: günde bir kez çalışması yeterli
   // ve Hobby paketinde ikinci bir zamanlı iş yok (K-27).
   const hatirlatma = await birakilanSepetleriHatirlat();
-  return NextResponse.json({ temizlenen, yukleme, hatirlatma });
+  // Bir yıldır stoğa girmemiş ürünün bekleyen adresini tutmanın anlamı yok.
+  const bildirim = await eskiBildirimIsteklerimiTemizle();
+  return NextResponse.json({ temizlenen, yukleme, hatirlatma, bildirim });
 }

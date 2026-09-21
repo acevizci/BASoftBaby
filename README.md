@@ -77,6 +77,10 @@ sepet başına bir kez, altında tek tıkla listeden çıkma bağlantısıyla. T
 elektronik iletinin kuralı bu (K-27). Üyeliksiz sepetlere hiç gönderilmiyor:
 sahibinin adresi bilinmiyor.
 
+Tükenmiş bir beden-renk için "gelince haber ver" bırakılabiliyor. Bu izin
+istemiyor — müşterinin kendi isteği, tek bir olay için. Haber verildiği an
+adres siliniyor (K-28).
+
 `RESEND_ANAHTARI` tanımlı değilse hiçbir e-posta gönderilmiyor ve akışlar
 çalışmaya devam ediyor.
 

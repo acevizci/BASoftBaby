@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "@/server/veritabani";
+import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
 import { odemeSorgula } from "@/server/odeme";
 import { odemeAlindiEpostasi } from "@/server/eposta";
 
@@ -38,26 +39,33 @@ export async function odemeGirisimiKaydet(
  * stoğu geri verilemiyor, sipariş kaydı yine de iptal oluyor.
  */
 export async function siparisiIptalEtVeStoguIadeEt(orderId: string): Promise<void> {
-  await db.$transaction(async (islem) => {
+  const iadeEdilen = await db.$transaction(async (islem) => {
     const iptal = await islem.order.updateMany({
       where: { id: orderId, durum: { not: "iptal" } },
       data: { durum: "iptal", odemeDurumu: "bekliyor" },
     });
-    if (iptal.count === 0) return;
+    if (iptal.count === 0) return [];
 
     const satirlar = await islem.orderItem.findMany({
       where: { orderId },
       select: { variantId: true, adet: true },
     });
 
+    const idler: string[] = [];
     for (const satir of satirlar) {
       if (!satir.variantId) continue;
       await islem.productVariant.update({
         where: { id: satir.variantId },
         data: { stok: { increment: satir.adet } },
       });
+      idler.push(satir.variantId);
     }
+    return idler;
   });
+
+  // İade edilen stok son adetse, "gelince haber ver" diyen bekliyordur.
+  // İşlemin dışında: e-posta gönderimi veritabanı işlemini uzatmamalı.
+  await stokBildirimleriniGonder(iadeEdilen);
 }
 
 /**
