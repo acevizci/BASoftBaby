@@ -72,52 +72,53 @@ export function menuyuKur(
   rol: Rol = "yonetici",
 ): { ozet: MenuMaddesi; gruplar: MenuGrubu[] } {
   return {
-    ozet: { yol: "/yonetim", ad: "Özet" },
+    ozet: { yol: "/yonetim", ad: "Özet", ikon: "ozet" },
     gruplar: [
       {
         baslik: "Satış",
         maddeler: [
-          { yol: "/yonetim/gunluk", ad: "Günün işi", rozet: s.hazirlanacak, ton: "bekleyen" },
-          { yol: "/yonetim/siparisler", ad: "Siparişler", rozet: s.siparis, ton: "bekleyen" },
-          { yol: "/yonetim/talepler", ad: "Talepler", rozet: s.talep, ton: "bekleyen" },
-          { yol: "/yonetim/iadeler", ad: "İadeler", rozet: s.iade, ton: "bekleyen" },
+          { yol: "/yonetim/gunluk", ad: "Günün işi", ikon: "gunluk", rozet: s.hazirlanacak, ton: "bekleyen" },
+          { yol: "/yonetim/siparisler", ad: "Siparişler", ikon: "siparis", rozet: s.siparis, ton: "bekleyen" },
+          { yol: "/yonetim/talepler", ad: "Talepler", ikon: "talep", rozet: s.talep, ton: "bekleyen" },
+          { yol: "/yonetim/iadeler", ad: "İadeler", ikon: "iade", rozet: s.iade, ton: "bekleyen" },
           {
             yol: "/yonetim/yorumlar",
             ad: "Değerlendirmeler",
+            ikon: "yorum",
             rozet: s.yorum,
             ton: "hatirlatma",
           },
-          { yol: "/yonetim/rapor", ad: "Satış raporu" },
+          { yol: "/yonetim/rapor", ad: "Satış raporu", ikon: "rapor" },
         ],
       },
       {
         baslik: "Katalog",
         maddeler: [
-          { yol: "/yonetim/urunler", ad: "Ürünler", rozet: s.fotografsiz, ton: "hatirlatma" },
-          { yol: "/yonetim/kategoriler", ad: "Kategoriler" },
-          { yol: "/yonetim/bedenler", ad: "Bedenler" },
-          { yol: "/yonetim/stok", ad: "Stok", rozet: s.sorunluStok, ton: "hatirlatma" },
+          { yol: "/yonetim/urunler", ad: "Ürünler", ikon: "urun", rozet: s.fotografsiz, ton: "hatirlatma" },
+          { yol: "/yonetim/kategoriler", ad: "Kategoriler", ikon: "kategori" },
+          { yol: "/yonetim/bedenler", ad: "Bedenler", ikon: "beden" },
+          { yol: "/yonetim/stok", ad: "Stok", ikon: "stok", rozet: s.sorunluStok, ton: "hatirlatma" },
         ],
       },
       {
         baslik: "Vitrin",
         maddeler: [
-          { yol: "/yonetim/kampanyalar", ad: "Kampanyalar" },
-          { yol: "/yonetim/banner", ad: "Ana sayfa banner" },
-          { yol: "/yonetim/duyuru", ad: "Duyuru şeridi" },
+          { yol: "/yonetim/kampanyalar", ad: "Kampanyalar", ikon: "kampanya" },
+          { yol: "/yonetim/banner", ad: "Ana sayfa banner", ikon: "banner" },
+          { yol: "/yonetim/duyuru", ad: "Duyuru şeridi", ikon: "duyuru" },
         ],
       },
       {
         baslik: "Ayarlar",
         maddeler: [
-          { yol: "/yonetim/ayarlar", ad: "Satış ayarları" },
-          { yol: "/yonetim/yasal", ad: "Yasal metinler" },
+          { yol: "/yonetim/ayarlar", ad: "Satış ayarları", ikon: "ayar" },
+          { yol: "/yonetim/yasal", ad: "Yasal metinler", ikon: "yasal" },
           // Kullanıcı yönetimi yalnızca sahipte; yöneticinin menüsünde
           // açamayacağı bir madde durmuyor (K-45).
           ...(rol === "sahip"
-            ? [{ yol: "/yonetim/kullanicilar", ad: "Kullanıcılar" }]
+            ? [{ yol: "/yonetim/kullanicilar", ad: "Kullanıcılar", ikon: "kullanici" as const }]
             : []),
-          { yol: "/yonetim/tani", ad: "Tanı" },
+          { yol: "/yonetim/tani", ad: "Tanı", ikon: "tani" },
         ],
       },
     ],

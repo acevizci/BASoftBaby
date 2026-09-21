@@ -8,6 +8,7 @@ import { siteAdresi, tamAdres } from "@/server/site";
 import { kategorileriGetir, oneCikanUrunler } from "@/server/katalog";
 import { ayarlariGetir, type SatisAyari } from "@/server/sepet";
 import { fiyatYaz, YAS_GRUPLARI } from "@/ui/katalog-bicim";
+import { tonSiniflari } from "@/ui/kategori-tonu";
 
 /**
  * Ana sayfadaki yaş kutuları. Önceden tek bir bedene bağlıydı: "6-12 ay"
@@ -74,16 +75,25 @@ export default async function AnaSayfa() {
       <section className="mx-auto max-w-6xl px-4 py-12">
         <h2 className="text-xl">Yaşa göre</h2>
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {YAS_KUTULARI.map((y) => (
-            <Link
-              key={y.kod}
-              href={`/urunler?yas=${encodeURIComponent(y.kod)}`}
-              className="rounded-marka border border-cizgi bg-yuzey px-4 py-5 text-center shadow-sm transition hover:border-mercan"
-            >
-              <p className="font-baslik font-bold">{y.ad}</p>
-              <p className="rakam mt-1 text-sm text-metin-3">{y.aciklama}</p>
-            </Link>
-          ))}
+          {YAS_KUTULARI.map((y, i) => {
+            const ton = tonSiniflari(i);
+            return (
+              <Link
+                key={y.kod}
+                href={`/urunler?yas=${encodeURIComponent(y.kod)}`}
+                className={`group rounded-marka border ${ton.kenar} ${ton.zemin} px-4 py-5 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md`}
+              >
+                {/* İşaret rengi kimliği taşıyor; yazı metin tonlarında
+                    kalıyor, soluk zeminde kontrast düşmesin (K-60). */}
+                <span
+                  aria-hidden="true"
+                  className={`mx-auto mb-2 block h-2 w-8 rounded-full ${ton.isaret} transition group-hover:w-12`}
+                />
+                <p className="font-baslik font-bold text-metin">{y.ad}</p>
+                <p className="rakam mt-1 text-sm text-metin-2">{y.aciklama}</p>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -104,16 +114,25 @@ export default async function AnaSayfa() {
       <section className="mx-auto max-w-6xl px-4 pb-14">
         <h2 className="text-xl">Kategoriler</h2>
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          {kategoriler.map((k) => (
-            <Link
-              key={k.slug}
-              href={`/${k.slug}`}
-              className="rounded-marka border border-cizgi bg-yuzey p-4 shadow-sm transition hover:border-mercan"
-            >
-              <p className="font-baslik font-bold">{k.ad}</p>
-              <p className="mt-1 text-sm text-metin-3">{k.aciklama}</p>
-            </Link>
-          ))}
+          {kategoriler.map((k) => {
+            // Ton kategorinin kendi sırasından: kapatma ötekilerin rengini
+            // kaydırmıyor (K-60).
+            const ton = tonSiniflari(k.sira);
+            return (
+              <Link
+                key={k.slug}
+                href={`/${k.slug}`}
+                className={`group rounded-marka border ${ton.kenar} ${ton.zemin} p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`mb-2 block h-2 w-8 rounded-full ${ton.isaret} transition group-hover:w-12`}
+                />
+                <p className="font-baslik font-bold text-metin">{k.ad}</p>
+                <p className="mt-1 text-sm text-metin-2">{k.aciklama}</p>
+              </Link>
+            );
+          })}
         </div>
       </section>
 

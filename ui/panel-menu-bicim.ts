@@ -6,9 +6,38 @@
  * hesaplayan sorgular orada kaldı, burada yalnızca biçim var.
  */
 
+/**
+ * Menü ikonlarının anahtarları.
+ *
+ * İkon kütüphanesi eklenmedi: altı-yedi ikon için bir paket kurmak, sayfaya
+ * inen JavaScript'i artırmak ve tema uyumunu dışarı emanet etmek demekti.
+ * Yollar `ui/panel-ikon.tsx` içinde, `currentColor` ile çizildikleri için
+ * açık/koyu temada kendiliğinden doğru renkte duruyorlar (K-60).
+ */
+export type IkonAdi =
+  | "ozet"
+  | "gunluk"
+  | "siparis"
+  | "talep"
+  | "iade"
+  | "yorum"
+  | "rapor"
+  | "urun"
+  | "kategori"
+  | "beden"
+  | "stok"
+  | "kampanya"
+  | "banner"
+  | "duyuru"
+  | "ayar"
+  | "yasal"
+  | "kullanici"
+  | "tani";
+
 export type MenuMaddesi = {
   yol: string;
   ad: string;
+  ikon: IkonAdi;
   /** Bekleyen iş sayısı; sıfırsa rozet gösterilmiyor. */
   rozet?: number;
   /**

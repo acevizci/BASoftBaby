@@ -2872,6 +2872,78 @@ açılması ve irsaliyenin oluşturulabilmesi.
 
 ---
 
+### K-60 · Ana sayfa kategorileri ve panel menüsü
+
+#### Kategoriler marka paletine geçti
+
+Ana sayfadaki kategori ve "yaşa göre" kutuları düz beyaz kartlardı: ince bir
+çerçeve, siyah başlık, gri açıklama. Sayfanın en renksiz yeri — üstelik hemen
+üstündeki ürün kartlarında marka paleti dolu dolu kullanılıyordu.
+
+Kartlar marka tonlarının soluk zeminlerini aldı ve her birinin üstünde tonun
+dolu renginde küçük bir işaret var (imleç üstüne gelince uzuyor).
+
+**Ton neye göre seçiliyor?** Önce `slug`dan bir karma denendi ve **kötü
+çıktı**: beş kategorinin üçü aynı rengi aldı, nane hiç görünmedi. Sebebi
+klasik bir hata — `31^k mod 4 = 0` olduğu için yalnızca son harfler etkiliydi.
+FNV-1a ile de düzelmedi: **küçük kümede hiçbir karma iyi dağılmıyor**,
+dağılım rastgeleliğin garantisi değil.
+
+Doğru çözüm karma değil **atama**: ton kategorinin sıra numarasından geliyor,
+dört tonu sırayla veriyor. Beş kategoride dört renk de mutlaka çıkıyor. Sıra
+panelde 1'den başlayarak yeniden numaralandığı için bir kategori
+**kapatılınca ötekilerin rengi kaymıyor**; yalnızca bilerek sıralama
+değiştirilirse renkler de kayıyor, o da nadir ve kasıtlı bir işlem.
+
+**Yazı rengi tona bağlanmadı.** Soluk zemin üzerinde marka tonunun koyu
+karşılığı 4,5:1 eşiğini her renkte geçmiyor (mercan 4,39 idi, K-50). Yazı
+metin tonlarında kaldı; kimliği zemin ve işaret taşıyor. Ölçüldü: en düşük
+kontrast **4,99:1**.
+
+#### Panel menüsü
+
+Menü işlevseldi ama düz bir metin listesiydi: ikon yok, geniş ekranda
+daraltılamıyor, kullanıcı kutusu sade.
+
+- **İkonlar eklendi**, kütüphane olmadan. Altı-yedi ikon için bir paket
+  kurmak sayfaya inen JavaScript'i artırır ve tema uyumunu dışarı emanet
+  ederdi. Hepsi tek çizgi kalınlığında ve `currentColor` ile — açık ve koyu
+  temada kendiliğinden doğru renkte.
+- **Geniş ekranda daraltılabiliyor** (210px ↔ 56px). Dar hâlde yalnızca
+  ikonlar; ad `sr-only` olarak DOM'da kalıyor ve `title` ipucu veriyor.
+- **Rozet dar menüde noktaya dönüşüyor.** Sayı 56 piksele sığmıyor ama
+  "bekleyen iş var" bilgisi kaybolmamalı; sayı ekran okuyucuda okunmaya
+  devam ediyor.
+- **Grup başlıkları dar menüde kalkıyor**, ayırıcı çizgi duruyor: gruplama
+  kaybolmuyor.
+- Kullanıcı kutusunda baş harfler var; dar menüde ad sığmıyor ama "kim
+  girmiş" bilgisi tamamen kaybolmuyor.
+
+**Daraltma tercihi çerezde**, istemci durumunda değil. `useState` ile
+tutulsaydı her gezinmede sıfırlanır, onay kutusu + CSS ile tutulsaydı her
+sayfa yüklemesinde açılırdı. Çerez sunucuda okunuyor: ilk boyamada doğru
+genişlik çiziliyor, sıçrama olmuyor ve JavaScript kapalı tarayıcıda da
+çalışıyor — daraltma düğmesi bir form. Çerezde kişisel bir şey yok, yalnızca
+"dar mı geniş mi".
+
+**Denenen:** beş kategori kartının dört ayrı tonda olması, hiçbirinin düz
+beyaz olmaması, yazı kontrastının 4,5:1 eşiğini geçmesi (ölçülen en düşük
+4,99), yaş kutularının da tonlu olması; menüde 18 ikon bulunması, 210px →
+56px daralması, dar menüde ikonların durması ve adın görsel olarak 1 piksel
+kalıp DOM'da kalması, tercihin sayfalar arasında korunması, dar menüde açık
+sayfa işaretinin doğru olması, geri genişletilebilmesi, istemci
+gezinmesinde işaretin doğru kalması (K-51 gerilemesi yok), JavaScript
+kapalı tarayıcıda daraltıp genişletebilmek, telefonda menünün kapalı
+başlayıp açılması.
+
+**Nerede:** [`../ui/kategori-tonu.ts`](../ui/kategori-tonu.ts),
+[`../app/(magaza)/page.tsx`](../app/(magaza)/page.tsx),
+[`../ui/panel-menu.tsx`](../ui/panel-menu.tsx),
+[`../ui/panel-ikon.tsx`](../ui/panel-ikon.tsx),
+[`../server/panel-gorunum.ts`](../server/panel-gorunum.ts)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

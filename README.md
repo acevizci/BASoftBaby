@@ -120,6 +120,11 @@ belgesi. Kural tek modülde (`server/siparis-belge.ts`); bağlantılar
 çıkmıyor, sayfalar adres elle yazılsa da reddediyor, toplu etikette
 atlananların numarası yazılıyor (K-54).
 
+Sol menüde ikonlar var ve geniş ekranda daraltılabiliyor (210px ↔ 56px);
+tercih çerezde tutulduğu için sayfalar arasında kalıyor ve JavaScript kapalı
+tarayıcıda da çalışıyor. Dar menüde rozet sayısı noktaya dönüşüyor, madde
+adları ekran okuyucu için duruyor (K-60).
+
 ### Panele giriş ve kullanıcılar
 
 Panel kendi giriş ekranında (`/yonetim/giris`), site temasıyla. Tarayıcının
