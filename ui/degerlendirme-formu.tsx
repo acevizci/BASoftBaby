@@ -94,7 +94,7 @@ export default function DegerlendirmeFormu({
 
                 <button
                   type="submit"
-                  className="self-start rounded-full bg-mercan px-5 py-2 text-sm font-bold text-white transition hover:brightness-95"
+                  className="self-start rounded-full bg-dugme px-5 py-2 text-sm font-bold text-dugme-yazi transition hover:brightness-95"
                 >
                   Değerlendirmeyi gönder
                 </button>

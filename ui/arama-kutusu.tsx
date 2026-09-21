@@ -112,7 +112,7 @@ export default function AramaKutusu({
         />
         <button
           type="submit"
-          className="flex-none rounded-full bg-mercan px-4 py-2 text-sm font-bold text-white transition hover:brightness-95"
+          className="flex-none rounded-full bg-dugme px-4 py-2 text-sm font-bold text-dugme-yazi transition hover:brightness-95"
         >
           Ara
         </button>

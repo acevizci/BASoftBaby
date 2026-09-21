@@ -128,7 +128,7 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
                 </span>
                 <span
                   className={`rounded-full px-2.5 py-1 text-xs font-bold ${
-                    b.aktif ? "bg-nane-soluk text-nane-koyu" : "bg-cizgi-soluk text-metin-3"
+                    b.aktif ? "bg-nane-soluk text-nane-koyu" : "bg-cizgi-soluk text-metin-2"
                   }`}
                 >
                   {b.aktif ? "Yayında" : "Kapalı"}
@@ -261,7 +261,7 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
 
           <button
             type="submit"
-            className="self-start rounded-full bg-mercan px-6 py-3 font-bold text-white transition hover:brightness-95"
+            className="self-start rounded-full bg-dugme px-6 py-3 font-bold text-dugme-yazi transition hover:brightness-95"
           >
             Banner ekle
           </button>

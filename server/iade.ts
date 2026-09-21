@@ -54,8 +54,17 @@ export type IadeHesabi = {
 export async function iadeTutari(
   orderId: string,
   satirlar?: IadeSatiri[],
+  /**
+   * Açık bir işlemin içinden çağrılıyorsa o işlemin istemcisi.
+   *
+   * Verilmezse sorgular havuzdan ayrı bir bağlantı alıyor. İşlem içinden
+   * ayrı bağlantıyla okumak bu hesapta yanlış sonuç vermiyor — okunan
+   * alanların hiçbirini işlem değiştirmiyor — ama yük altında havuzu
+   * tüketebiliyor: işlem bir bağlantıyı tutarken ikincisini istiyor (K-62).
+   */
+  islem: Prisma.TransactionClient | typeof db = db,
 ): Promise<IadeHesabi | undefined> {
-  const siparis = await db.order.findUnique({
+  const siparis = await islem.order.findUnique({
     where: { id: orderId },
     select: {
       araToplamKurus: true,
@@ -81,7 +90,7 @@ export async function iadeTutari(
   // dahil.
   const oncekiler = hepsi
     ? []
-    : await db.orderRequestItem.findMany({
+    : await islem.orderRequestItem.findMany({
         where: { request: { orderId, tur: "iade", durum: "tamamlandi" } },
         select: { adet: true },
       });

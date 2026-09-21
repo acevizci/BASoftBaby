@@ -340,7 +340,7 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
 
           <GonderDugmesi
             bekleyen="Siparişin alınıyor…"
-            className="self-start rounded-full bg-mercan px-8 py-3.5 font-bold text-white transition hover:brightness-95"
+            className="self-start rounded-full bg-dugme px-8 py-3.5 font-bold text-dugme-yazi transition hover:brightness-95"
           >
             Siparişi ver
           </GonderDugmesi>

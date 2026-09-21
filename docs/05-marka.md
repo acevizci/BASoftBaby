@@ -40,9 +40,20 @@ Kullanım rolleri ve yazıda kullanılan koyu karşılıkları için
 | Ay nane | `#A8DDC7` |
 | Krem zemin | `#FCF5E7` |
 
-Pastel tonlar metinde yeterli kontrast vermediği için yazıda ve düğmelerde aynı
-rengin koyu karşılığı kullanılır: mavi `#2F6E9E`, nane `#2C8760`, mercan
-`#C2433A`.
+Pastel tonlar metinde yeterli kontrast vermediği için yazıda aynı rengin koyu
+karşılığı kullanılır: mavi `#2F6E9E`, nane `#277856`, mercan `#B33B33`.
+
+Bu koyu karşılıklar logodan örneklenmiş değil, **okunurluk için türetilmiş**
+değerler. İnceleme sırasında ölçülüp ayarlandılar (K-62): nane eski hâlinde
+(`#2C8760`) kendi soluk zemininde 3,99:1, beyazda 4,43 veriyordu; mercan
+(`#C2433A`) soluk zeminde 4,39. Yardımcı metnin tonu `--metin-3` de
+`#9B9289` → `#787064` oldu (beyazda 3,06 → 4,88).
+
+**Düğmeler koyu karşılığı kullanmıyor, kendi belirtecini kullanıyor**
+(`--dugme` / `--dugme-yazi`). Sebebi koyu tema: `-koyu` tonları orada açık
+renge dönüyor (koyu zeminde yazı olsunlar diye), yani düğme zemini olarak
+kullanılamıyorlar. Düğme açık temada koyu zemin + beyaz yazı, koyu temada
+açık zemin + koyu yazı.
 
 ## Yazı tipleri
 

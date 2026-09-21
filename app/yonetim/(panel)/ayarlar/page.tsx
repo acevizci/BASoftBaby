@@ -128,7 +128,7 @@ export default async function AyarEkrani({ searchParams }: PageProps<"/yonetim/a
 
         <button
           type="submit"
-          className="self-start rounded-full bg-mercan px-6 py-3 font-bold text-white transition hover:brightness-95"
+          className="self-start rounded-full bg-dugme px-6 py-3 font-bold text-dugme-yazi transition hover:brightness-95"
         >
           Ayarları kaydet
         </button>

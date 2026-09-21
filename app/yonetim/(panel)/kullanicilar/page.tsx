@@ -209,7 +209,7 @@ function Kullanici({
 
         <span
           className={`rounded-full px-2.5 py-1 text-xs font-bold ${
-            k.aktif ? "bg-nane-soluk text-nane-koyu" : "bg-cizgi-soluk text-metin-3"
+            k.aktif ? "bg-nane-soluk text-nane-koyu" : "bg-cizgi-soluk text-metin-2"
           }`}
         >
           {k.aktif ? "Açık" : "Kapalı"}

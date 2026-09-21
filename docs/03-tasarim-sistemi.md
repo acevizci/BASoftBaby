@@ -2,6 +2,13 @@
 
 *19 Eylül 2026*
 
+> **Kontrast kuralı.** Pastel marka tonları (`--mavi`, `--nane`, `--mercan`,
+> `--sari`) yazı rengi ya da beyaz yazı taşıyan düğme zemini olarak
+> kullanılmıyor: hiçbiri WCAG AA eşiğini geçmiyor. Yazıda `-koyu`
+> karşılıkları, birincil düğmede `--dugme`/`--dugme-yazi` belirteçleri var.
+> `-koyu` tonları koyu temada **açık** renge dönüyor (koyu zeminde yazı
+> olsunlar diye), bu yüzden düğme zemini olarak kullanılamıyorlar (K-62).
+
 Renkler doğrudan logodan alındı — tahmin edilmedi, logo görselinden piksel
 örneklemesiyle çıkarıldı. Gezilebilir hâli için [`../tasarim/mokap.html`](../tasarim/mokap.html).
 

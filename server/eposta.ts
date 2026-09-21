@@ -157,6 +157,40 @@ ${takip}${await altBilgi()}`,
   );
 }
 
+/**
+ * Para iadesi tamamlandığında.
+ *
+ * İade akışında müşteri iki kez haber alıyordu: talebi alındığında ve
+ * sonuçlandığında. **Paranın gerçekten gönderildiği an** sessizdi — oysa
+ * beklenen haber o (K-62). Havalede özellikle önemli: müşteri hesabına
+ * bakmadan bilemiyor.
+ *
+ * Kartta "bankana göre birkaç iş günü" uyarısı var: para iyzico'dan çıkmış
+ * olsa bile kartta görünmesi zaman alıyor ve bu süre bize bağlı değil.
+ */
+export async function iadeYapildiEpostasi(
+  alici: string,
+  bilgi: { numara: string; adSoyad: string; tutarKurus: number; yontem: string },
+): Promise<EpostaSonucu> {
+  const kartMi = bilgi.yontem === "kart";
+
+  return gonder(
+    alici,
+    `İaden gönderildi · ${bilgi.numara}`,
+    `Merhaba ${bilgi.adSoyad},
+
+${bilgi.numara} numaralı siparişin için ${tutar(bilgi.tutarKurus)} tutarında iade yapıldı.
+
+${
+  kartMi
+    ? "İade kartına gönderildi. Bankana göre hesabında görünmesi birkaç iş günü sürebiliyor; bu süre bankanın işleyişine bağlı."
+    : "İade, bize bildirdiğin hesaba havale ile gönderildi."
+}
+
+Bir sorun olursa bu e-postayı yanıtlaman yeterli.${await altBilgi()}`,
+  );
+}
+
 /** Kargoya verildiğinde: takip numarası ve taşıyıcının sorgulama adresi. */
 export async function kargoyaVerildiEpostasi(
   siparis: SiparisEpostasi,

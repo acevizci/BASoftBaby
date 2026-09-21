@@ -243,7 +243,7 @@ export default async function KategoriSayfasi({
               </p>
               <Link
                 href={`/${kategori}`}
-                className="mt-4 inline-block rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white"
+                className="mt-4 inline-block rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi"
               >
                 Süzgeçleri temizle
               </Link>

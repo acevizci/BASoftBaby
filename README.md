@@ -381,6 +381,13 @@ da hediye alıcısının tutarı görmesi gerekmiyor. Düzenleme tarih-saati ile
 fiili sevk tarih-saati ayrı tutuluyor; sevk anı kargo kaydedildiğinde
 kendiliğinden doluyor (K-59).
 
+**Erişilebilirlik.** Mağaza ve panelde, açık ve koyu temada, görünür her
+yazının zeminine karşı kontrastı ölçülüyor ve WCAG AA eşiğini (normal yazıda
+4,5:1) geçiyor. Marka paletinin pastel tonları yazıda ve düğme zemininde
+kullanılmıyor; birincil düğme kendi belirtecini kullanıyor ve iki temada ayrı
+çözülüyor — açık temada koyu zemin + beyaz yazı, koyu temada açık zemin +
+koyu yazı (K-62).
+
 ## Yasal metinler ve künye
 
 Mesafeli satış sözleşmesi, ön bilgilendirme formu, KVKK aydınlatma metni ve

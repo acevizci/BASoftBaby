@@ -98,7 +98,7 @@ export default async function VerilerimSayfasi({ searchParams }: PageProps<"/hes
           </label>
           <button
             type="submit"
-            className="self-start rounded-full bg-mercan-koyu px-6 py-2.5 font-bold text-white transition hover:brightness-110"
+            className="self-start rounded-full bg-dugme px-6 py-2.5 font-bold text-dugme-yazi transition hover:brightness-110"
           >
             Hesabımı kalıcı olarak sil
           </button>

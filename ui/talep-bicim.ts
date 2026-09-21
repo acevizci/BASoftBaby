@@ -1,4 +1,15 @@
 /**
+ * Cayma hakkı süresi (gün).
+ *
+ * Mesafeli Sözleşmeler Yönetmeliği'nin alt sınırı 14 gün; uzatmak serbest,
+ * kısaltmak değil. Burada duruyor çünkü hem kural motoru (`server/talep.ts`)
+ * hem de müşteriye söz veren bilgi sayfaları aynı sayıyı kullanmak zorunda —
+ * ayrı yazılsaydı süre uzatıldığında sayfalar eski sözü vermeye devam
+ * ederdi (K-62).
+ */
+export const CAYMA_GUN = 14;
+
+/**
  * İptal, iade ve değişim taleplerinin ekranda görünen adları.
  * Prisma'ya bulaşmayan saf modül: istemci bileşenleri de kullanabilir.
  */

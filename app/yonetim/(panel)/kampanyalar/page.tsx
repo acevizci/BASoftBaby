@@ -89,7 +89,7 @@ export default async function KampanyaEkrani({
                         className={`ml-2 rounded-full px-2 py-0.5 text-xs font-bold ${
                           k.aktif
                             ? "bg-nane-soluk text-nane-koyu"
-                            : "bg-cizgi-soluk text-metin-3"
+                            : "bg-cizgi-soluk text-metin-2"
                         }`}
                       >
                         {k.aktif ? "Açık" : "Kapalı"}
@@ -250,7 +250,7 @@ export default async function KampanyaEkrani({
 
           <button
             type="submit"
-            className="self-start rounded-full bg-mercan px-6 py-3 font-bold text-white transition hover:brightness-95"
+            className="self-start rounded-full bg-dugme px-6 py-3 font-bold text-dugme-yazi transition hover:brightness-95"
           >
             Kampanyayı oluştur
           </button>

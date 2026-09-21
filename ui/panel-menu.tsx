@@ -71,7 +71,7 @@ export default function PanelMenu({
         </span>
         <span className="flex items-center gap-2">
           {bekleyen > 0 && (
-            <span className="rakam rounded-full bg-mercan px-2 py-0.5 text-xs font-bold text-white">
+            <span className="rakam rounded-full bg-dugme px-2 py-0.5 text-xs font-bold text-dugme-yazi">
               {bekleyen}
               <span className="sr-only"> bekleyen iş</span>
             </span>
@@ -240,7 +240,7 @@ function Madde({ madde, yol, dar }: { madde: MenuMaddesi; yol: string; dar: bool
           <span
             className={`rakam flex-none rounded-full px-2 py-0.5 text-xs font-bold ${
               madde.ton === "bekleyen"
-                ? "bg-mercan text-white"
+                ? "bg-dugme text-dugme-yazi"
                 : "border border-cizgi bg-yuzey text-metin-2"
             }`}
           >

@@ -72,7 +72,7 @@ export async function siparisiIptalEtVeStoguIadeEt(orderId: string): Promise<voi
     // Parası alınmışsa borç kayda giriyor. Tutar siparişin tamamı: iptal
     // parça parça olmuyor, kargo da iade ediliyor.
     if (parasiAlindi) {
-      const tutar = await iadeTutari(orderId);
+      const tutar = await iadeTutari(orderId, undefined, islem);
       if (tutar) {
         await iadeKaydiAc(
           orderId,

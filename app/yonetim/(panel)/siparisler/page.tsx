@@ -121,7 +121,7 @@ export default async function SiparisListesi({ searchParams }: PageProps<"/yonet
             />
             <button
               type="submit"
-              className="rounded-full bg-mercan px-5 py-2 text-sm font-bold text-white transition hover:brightness-95"
+              className="rounded-full bg-dugme px-5 py-2 text-sm font-bold text-dugme-yazi transition hover:brightness-95"
             >
               Ara
             </button>
@@ -358,7 +358,7 @@ export default async function SiparisListesi({ searchParams }: PageProps<"/yonet
               type="submit"
               formAction="/yonetim/siparisler/etiketler"
               formMethod="get"
-              className="rounded-full bg-mercan px-4 py-1.5 text-xs font-bold text-white transition hover:brightness-95"
+              className="rounded-full bg-dugme px-4 py-1.5 text-xs font-bold text-dugme-yazi transition hover:brightness-95"
             >
               Etiketleri yazdır
             </button>

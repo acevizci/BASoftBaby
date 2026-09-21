@@ -3,6 +3,7 @@ import Link from "next/link";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import { ayarlariGetir } from "@/server/sepet";
 import { BOLUM, YAZI } from "../bilgi-bicim";
+import { CAYMA_GUN } from "@/ui/talep-bicim";
 
 export const metadata: Metadata = {
   title: "Sıkça sorulanlar",
@@ -129,7 +130,7 @@ export default async function SikcaSorulanlar() {
           soru: "Beden tutmazsa değiştirebilir miyim?",
           cevap: (
             <>
-              Evet, 14 gün içinde ve değişim kargosu bizden. Adımlar{" "}
+              Evet, {CAYMA_GUN} gün içinde ve değişim kargosu bizden. Adımlar{" "}
               <Link href="/iade-degisim" className="font-bold text-mavi-koyu hover:underline">
                 iade ve değişim
               </Link>{" "}
@@ -178,8 +179,11 @@ export default async function SikcaSorulanlar() {
                 className="group rounded-marka border border-cizgi bg-yuzey px-4 py-3"
               >
                 <summary className="cursor-pointer list-none text-sm font-bold marker:content-none">
-                  <span className="text-mercan group-open:hidden">+ </span>
-                  <span className="hidden text-mercan group-open:inline">- </span>
+                  {/* Pastel mercan beyaz üzerinde 2,94:1; koyu karşılığı
+                      5,85. Marka belgesinin kendi kuralı: pastel tonlar
+                      yazıda kullanılmıyor (K-62). */}
+                  <span className="text-mercan-koyu group-open:hidden">+ </span>
+                  <span className="hidden text-mercan-koyu group-open:inline">- </span>
                   {s.soru}
                 </summary>
                 <p className="mt-2 text-sm leading-relaxed text-metin-2">{s.cevap}</p>

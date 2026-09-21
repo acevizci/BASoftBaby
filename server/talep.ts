@@ -27,10 +27,17 @@ import { db } from "@/server/veritabani";
 import { siparisiIptalEtVeStoguIadeEt } from "@/server/odeme-akis";
 import { iadeKaydiAc, iadeTutari } from "@/server/iade";
 import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
-import { TALEP_TURLERI, type TalepTuru } from "@/ui/talep-bicim";
+import { CAYMA_GUN, TALEP_TURLERI, type TalepTuru } from "@/ui/talep-bicim";
 
-/** Cayma hakkı süresi — yasal alt sınır. Uzatmak serbest, kısaltmak değil. */
-export const CAYMA_GUN = 14;
+/**
+ * Cayma hakkı süresi — yasal alt sınır. Uzatmak serbest, kısaltmak değil.
+ *
+ * Değer `ui/talep-bicim.ts` içinde: hem bu `server-only` modül hem de
+ * müşteriye söz veren bilgi sayfaları aynı sayıyı kullanmalı. Sayı iki yerde
+ * ayrı yazılsaydı süre uzatıldığında sayfalar yanlış söz vermeye devam
+ * ederdi (K-62).
+ */
+export { CAYMA_GUN } from "@/ui/talep-bicim";
 
 export type TalepSatiri = {
   orderItemId: string;
@@ -349,6 +356,7 @@ async function urunGeriGeldi(
     const tutar = await iadeTutari(
       orderId,
       satirlar.map((s) => ({ orderItemId: s.orderItemId, adet: s.adet })),
+      islem,
     );
     if (tutar) {
       await iadeKaydiAc(

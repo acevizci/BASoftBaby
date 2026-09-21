@@ -83,7 +83,7 @@ export default async function DuyuruEkrani({ searchParams }: PageProps<"/yonetim
                   className={`rounded-full px-2.5 py-1 text-xs font-bold ${
                     d.aktif
                       ? "bg-nane-soluk text-nane-koyu"
-                      : "bg-cizgi-soluk text-metin-3"
+                      : "bg-cizgi-soluk text-metin-2"
                   }`}
                 >
                   {d.aktif ? "Yayında" : "Kapalı"}
@@ -146,7 +146,7 @@ export default async function DuyuruEkrani({ searchParams }: PageProps<"/yonetim
           </div>
           <button
             type="submit"
-            className="self-start rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white"
+            className="self-start rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi"
           >
             Şeride ekle
           </button>
@@ -216,7 +216,7 @@ export default async function DuyuruEkrani({ searchParams }: PageProps<"/yonetim
 
           <button
             type="submit"
-            className="self-start rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white"
+            className="self-start rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi"
           >
             Ayarları kaydet
           </button>

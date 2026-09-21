@@ -64,7 +64,7 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
           </Link>
           <Link
             href="/yonetim/urunler/yeni"
-            className="rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white"
+            className="rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi"
           >
             Yeni ürün
           </Link>

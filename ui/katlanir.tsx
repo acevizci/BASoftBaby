@@ -61,7 +61,7 @@ export default function Katlanir({
           {eylem && (
             <span
               aria-hidden="true"
-              className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-mercan text-base leading-none text-white"
+              className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-dugme text-base leading-none text-dugme-yazi"
             >
               +
             </span>

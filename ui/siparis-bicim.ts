@@ -60,7 +60,10 @@ export function durumRengi(durum: string): string {
       return "bg-sari-soluk text-sari-koyu";
     case "iptal":
     case "iade":
-      return "bg-cizgi-soluk text-metin-3";
+      // `metin-3` bu zeminde 2,63:1 veriyordu — eşiğin çok altında.
+      // `metin-2` 4,94 (K-62). Rozetin "sessiz" olması silik olması
+      // demek değil; sessizliği renk değil dolgu taşıyor.
+      return "bg-cizgi-soluk text-metin-2";
     default:
       return "bg-mercan-soluk text-mercan-koyu";
   }

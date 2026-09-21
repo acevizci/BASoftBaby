@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BOLUM, KUTU, YAZI } from "../bilgi-bicim";
+import { CAYMA_GUN } from "@/ui/talep-bicim";
 
 export const metadata: Metadata = {
   title: "İade ve değişim",
-  description: "14 gün içinde koşulsuz iade, beden değişimi ve para iadesi adımları.",
+  description: `${CAYMA_GUN} gün içinde koşulsuz iade, beden değişimi ve para iadesi adımları.`,
 };
 
 const ADIMLAR = [
@@ -40,7 +41,7 @@ export default function IadeDegisim() {
       </p>
 
       <div className={KUTU}>
-        Teslim aldığın günden itibaren <strong>14 gün</strong> içinde, kullanılmamış ve
+        Teslim aldığın günden itibaren <strong>{CAYMA_GUN} gün</strong> içinde, kullanılmamış ve
         etiketi sökülmemiş ürünleri iade edebilir ya da bedenini değiştirebilirsin.
         Değişim kargosu bizden.
       </div>
@@ -81,12 +82,12 @@ export default function IadeDegisim() {
       <p className={YAZI}>
         Hijyen gereği iç giyim, emzik, biberon ve benzeri ürünler ambalajı açıldıysa iade
         alınamıyor. Yıkanmış, kullanılmış ya da etiketi sökülmüş ürünler de iade kapsamı
-        dışında. Ambalajı açılmamış olduğu sürece bu ürünlerde de 14 gün kuralı geçerli.
+        dışında. Ambalajı açılmamış olduğu sürece bu ürünlerde de {CAYMA_GUN} gün kuralı geçerli.
       </p>
 
       <h2 className={BOLUM}>Kusurlu ürün</h2>
       <p className={YAZI}>
-        Dikişi açılmış, çıtçıtı kopmuş ya da kumaşında hata olan bir ürün geldiyse 14 gün
+        Dikişi açılmış, çıtçıtı kopmuş ya da kumaşında hata olan bir ürün geldiyse {CAYMA_GUN} gün
         sınırına bakmıyoruz. Fotoğrafı ile birlikte bize yaz, ürünü ücretsiz yeniliyoruz ya
         da bedelini iade ediyoruz.
       </p>

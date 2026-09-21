@@ -28,7 +28,7 @@ export default async function Bulunamadi() {
       <UstCubuk />
       <main className="flex-1">
         <div className="mx-auto max-w-xl px-4 py-16 text-center">
-          <p className="rakam font-baslik text-5xl font-bold text-mercan">404</p>
+          <p className="rakam font-baslik text-5xl font-bold text-mercan-koyu">404</p>
           <h1 className="mt-4 text-2xl sm:text-3xl">Bu sayfayı bulamadık</h1>
           <p className="mt-3 text-sm text-metin-2">
             Adres yanlış yazılmış olabilir ya da aradığın ürün kaldırılmış olabilir.
@@ -53,7 +53,7 @@ export default async function Bulunamadi() {
             />
             <button
               type="submit"
-              className="rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-95"
+              className="rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi transition hover:brightness-95"
             >
               Ara
             </button>

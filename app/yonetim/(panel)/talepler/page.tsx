@@ -287,7 +287,7 @@ function Sonuc({ ad, deger, ana = false }: { ad: string; deger: string; ana?: bo
       value={deger}
       className={
         ana
-          ? "rounded-full bg-mercan px-5 py-2 text-sm font-bold text-white transition hover:brightness-95"
+          ? "rounded-full bg-dugme px-5 py-2 text-sm font-bold text-dugme-yazi transition hover:brightness-95"
           : "rounded-full border border-cizgi px-5 py-2 text-sm font-bold text-metin-2 transition hover:border-mercan hover:text-metin"
       }
     >

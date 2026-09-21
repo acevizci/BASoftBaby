@@ -48,7 +48,7 @@ export default async function GunlukEkrani() {
               ))}
               <button
                 type="submit"
-                className="rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-95"
+                className="rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi transition hover:brightness-95"
               >
                 Hepsinin etiketini yazdır
               </button>

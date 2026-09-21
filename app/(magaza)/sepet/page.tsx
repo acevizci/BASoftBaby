@@ -21,7 +21,7 @@ export default async function SepetSayfasi() {
         </p>
         <Link
           href="/urunler"
-          className="mt-6 inline-block rounded-full bg-mercan px-6 py-3 font-bold text-white transition hover:brightness-95"
+          className="mt-6 inline-block rounded-full bg-dugme px-6 py-3 font-bold text-dugme-yazi transition hover:brightness-95"
         >
           Ürünlere göz at
         </Link>
@@ -208,7 +208,7 @@ export default async function SepetSayfasi() {
           ) : (
             <Link
               href="/odeme"
-              className="mt-4 block rounded-full bg-mercan px-6 py-3 text-center font-bold text-white transition hover:brightness-95"
+              className="mt-4 block rounded-full bg-dugme px-6 py-3 text-center font-bold text-dugme-yazi transition hover:brightness-95"
             >
               Siparişi tamamla
             </Link>

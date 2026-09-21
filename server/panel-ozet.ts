@@ -19,6 +19,7 @@ import { kunyeGetir } from "@/server/yasal";
 import { bekleyenTalepSayisi } from "@/server/talep";
 import { OLUMSUZ_PUAN, yanitsizOlumsuzYorum } from "@/server/yorum";
 import { AZALAN_ESIK } from "@/server/stok-ekrani";
+import { GECIKMIS_GUN } from "@/server/kargo-bekleme";
 
 /**
  * Bu adedin altına düşen beden "azalan" sayılıyor.
@@ -29,7 +30,14 @@ import { AZALAN_ESIK } from "@/server/stok-ekrani";
 export { AZALAN_ESIK as KRITIK_STOK } from "@/server/stok-ekrani";
 
 /** Kargoya verileli bu kadar gün geçtiyse takip edilmesi gerekiyor olabilir. */
-const KARGO_GECIKME_GUN = 7;
+/**
+ * Kargo gecikme eşiği `server/kargo-bekleme.ts`'ten geliyor.
+ *
+ * Aynı sayı iki yerde yazılıydı: özet "7 günden uzun" diyor, sipariş
+ * listesindeki rozet kendi eşiğine bakıyordu. Biri değiştirilseydi ikisi
+ * birbirini tutmazdı (K-62).
+ */
+const KARGO_GECIKME_GUN = GECIKMIS_GUN;
 
 /**
  * Özet ekranındaki listelerin boyu.

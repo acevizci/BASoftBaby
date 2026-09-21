@@ -81,7 +81,7 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
         />
         <button
           type="submit"
-          className="rounded-full bg-mercan px-5 py-2 text-sm font-bold text-white transition hover:brightness-95"
+          className="rounded-full bg-dugme px-5 py-2 text-sm font-bold text-dugme-yazi transition hover:brightness-95"
         >
           Ara
         </button>
@@ -149,7 +149,7 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
 
             <button
               type="submit"
-              className="sticky bottom-4 self-start rounded-full bg-mercan px-6 py-3 font-bold text-white shadow-md transition hover:brightness-95"
+              className="sticky bottom-4 self-start rounded-full bg-dugme px-6 py-3 font-bold text-dugme-yazi shadow-md transition hover:brightness-95"
             >
               Stokları kaydet
             </button>

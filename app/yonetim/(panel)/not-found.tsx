@@ -9,7 +9,7 @@ import Link from "next/link";
 export default function PanelBulunamadi() {
   return (
     <div className="flex flex-col items-start gap-4 py-8">
-      <p className="rakam font-baslik text-4xl font-bold text-mercan">404</p>
+      <p className="rakam font-baslik text-4xl font-bold text-mercan-koyu">404</p>
       <h1 className="text-2xl">Bu sayfa yok</h1>
       <p className="max-w-md text-sm text-metin-2">
         Aradığın kayıt silinmiş ya da adres yanlış olabilir. Soldaki menüden devam
@@ -17,7 +17,7 @@ export default function PanelBulunamadi() {
       </p>
       <Link
         href="/yonetim"
-        className="rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-95"
+        className="rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi transition hover:brightness-95"
       >
         Özet ekranına dön
       </Link>

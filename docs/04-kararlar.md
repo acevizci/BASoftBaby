@@ -3032,6 +3032,115 @@ kaydet düğmesinin forma bağlı kalması.
 
 ---
 
+### K-62 · Tam site incelemesi
+
+Dokuz maddelik iş bittikten sonra site baştan sona tarandı: yetkilendirme,
+para ve stok bütünlüğü, bildirim kodları, JavaScript'siz akış, erişilebilirlik
+ve yeni eklenenlerin eski kodla tutarlılığı. Temiz çıkanlar da yazılı, çünkü
+"bakıldı ve sorun yok" bilgisi de bir sonraki incelemede işe yarıyor.
+
+#### Temiz çıkanlar
+
+- **Yetkilendirme.** Panelin bütün sayfa, route handler ve server action'ları
+  yetki kontrolü yapıyor; kontrolsüz olanlar yalnızca giriş, çıkış, şifre
+  sıfırlama ve ilk kurulum — dördü de tanımı gereği açık, ilk kurulum ayrıca
+  "hiç kullanıcı yoksa" koşuluna bağlı. Sipariş onay sayfası çereze, takip
+  sayfası numara+e-postaya, üye sipariş sayfası hesap bağına, veri indirme
+  ucu oturuma bakıyor. Sipariş numarasını tahmin ederek başkasının adresini
+  görmek mümkün değil.
+- **Para ve stok.** Sipariş tutarı istemciden gelmiyor, veritabanındaki
+  fiyatlardan sunucuda hesaplanıyor. Stok düşümü koşullu (`stok >= adet`) ve
+  tek işlem içinde, yani iki müşteri son adedi aynı anda alamıyor.
+- **Kırık bağlantı yok.** 90 sayfa gezildi, toplanan 120 iç bağlantı ayrıca
+  denendi. Tek 404 `/_vercel/insights/script.js` — yayında Vercel sunuyor,
+  yerelde yok.
+- **JavaScript kapalı satın alma.** Katalog → ürün → sepete ekle → ödeme →
+  sipariş oluştu → onay sayfası; hepsi JavaScript kapalı tarayıcıda çalıştı.
+- **N+1 sorgu yok.** Döngü içinde sorgu yapan yerlerin hepsi ya sipariş
+  satırı kadar sınırlı ya da arka plan işi.
+
+#### Bulunanlar ve düzeltilenler
+
+**1. Müşteriye yalan söyleyen sipariş sayfası.** Parası alınıp iptal edilmiş
+bir siparişte `/siparis/[numara]` ölçütü yalnızca `odendi` idi. Kartlı
+siparişte **"Ödeme tamamlanamadı · Kartından bir tahsilat yapılmadı"**
+yazıyordu — para alınmıştı ve iade bekliyordu. Havalede daha kötüsü:
+müşteriden parayı **tekrar yatırması** isteniyordu. Yeni ödeme durumunu
+(K-57) eklerken bu sayfa denetlenmemişti. Artık iade durumları ayrı ele
+alınıyor ve "tekrar ödeme yapmana gerek yok" diyor.
+
+**2. Rapor iadeleri görmüyordu.** İptaller ciro dışındaydı ama **iade
+edilmiş** bir satış tam ciro sayılmaya devam ediyordu. İadeyi ciroya
+mahsup etmek de yanlış olurdu: iade genelde satıştan sonraki bir dönemde
+oluyor ve o dönemin cirosunu eksiye çekebiliyor. Üç rakam birden veriliyor:
+ciro, iade ve net. İade dönemi **tamamlandığı güne** göre sayılıyor — para
+o gün çıkıyor.
+
+**3. İade tamamlanınca müşteriye haber gitmiyordu.** Talep alındığında ve
+sonuçlandığında e-posta vardı; **paranın gerçekten gönderildiği an**
+sessizdi, oysa beklenen haber o. Gönderim başarısızlığı iadeyi geri almıyor:
+e-posta servisi çalışmıyor diye paranın gönderildiği kaydı düşürmek yanlış
+olurdu.
+
+**4. İşlem içinden işlem dışı sorgu.** `iadeTutari` bir `$transaction`
+içinden çağrılıyor ama kendi sorgularını havuzdan ayrı bir bağlantıyla
+yapıyordu. Yanlış sonuç vermiyordu — okuduğu alanların hiçbirini o işlem
+değiştirmiyor — ama yük altında havuzu tüketebilirdi: işlem bir bağlantıyı
+tutarken ikincisini istiyor. İşlem istemcisi artık parametre olarak
+geçiyor.
+
+**5. İki yerde yazılan iki sabit.** Cayma süresi (14 gün) hem kural
+motorunda hem üç bilgi sayfasında ayrı ayrı yazılıydı; süre uzatılsa
+sayfalar eski sözü vermeye devam ederdi. Kargo gecikme eşiği (7 gün) de
+panel özetinde ve sipariş listesinde ayrı ayrı. İkisi de tek kaynağa
+bağlandı.
+
+#### Erişilebilirlik: ölçünce çıkan zincir
+
+Kontrast göz kararı değil, tarayıcıda hesaplanmış renklerden ölçüldü — her
+görünür yazı, zeminiyle, iki temada, WCAG'nin büyük/normal yazı ayrımıyla.
+Bir bulgu ötekini açtı:
+
+| Bulgu | Ölçülen | Sonrası |
+|---|---|---|
+| Silme onayı uyarı yazısı | 4,39:1 | K-50'de ölçülüp reddedilen çifti kendi yeni bileşenimde tekrar kullanmışım — üstelik "neyi kalıcı sileceğini" anlatan yazıda |
+| Panelin **bütün** hata kutuları | 4,39:1 | `panel-bicim.ts`'teki ortak `HATA_KUTUSU` aynı çifti kullanıyor |
+| İptal/iade rozeti | 2,63:1 | `metin-3` gri zeminde |
+| **Bütün birincil düğmeler** | 2,94:1 | Beyaz yazı pastel mercan üzerinde, 53 yerde |
+| `metin-3` belirtecinin kendisi | 2,99:1 | Sitedeki bütün yardımcı metinler |
+| Nane `-koyu` tonu | 3,99:1 | "Yayında", "Açık", "Ödendi" rozetleri; beyazda bile 4,43 |
+| SSS akordeon `+`/`−` | 2,94:1 | Pastel mercan yazı olarak |
+
+Düğme düzeltmesinin ilk hâli **yanlıştı ve ölçüm yakaladı:** `bg-mercan-koyu`
+yapmak açık temada çözüyor ama koyu temada bozuyor (2,24:1), çünkü `-koyu`
+tonları koyu temada **açık** renge dönüyor — koyu zeminde yazı olsunlar diye.
+Düğme artık kendi belirtecini kullanıyor (`--dugme`, `--dugme-yazi`) ve iki
+temada ayrı çözülüyor: açık temada koyu zemin + beyaz yazı (5,85), koyu
+temada açık zemin + koyu yazı (7,65).
+
+Renk kararlarının çoğu marka belgesinin **kendi kuralına dönüş**: "Pastel
+tonlar metinde yeterli kontrast vermediği için her rengin bir de koyu
+karşılığı var: yazı ve düğmelerde o kullanılır." Kod bu kuraldan sapmıştı.
+`--grafik` ayrı belirteç olarak kaldı, dokunulmadı (K-42).
+
+Son durum: mağaza ve panel, açık ve koyu temada, eşiğin altında tek yazı yok.
+
+**Denenen:** 90 sayfalık tarama ve 120 bağlantı kontrolü; JavaScript kapalı
+tam satın alma akışı; iade durumlarında müşteri sayfasının dört hâli; bütün
+önceki grupların işlevleri (menü ikonları ve daraltma, günün işi, iadeler,
+bedenler, toplu çubuk ve silme onayı, sayfa sonundaki kaydet düğmesi, rapor
+iade kutusu, tonlu kategoriler, veritabanından beden rehberi) — gerileme yok;
+iki temada kontrast ölçümü.
+
+**Nerede:** [`../app/globals.css`](../app/globals.css),
+[`../app/(magaza)/siparis/[numara]/page.tsx`](../app/(magaza)/siparis),
+[`../server/rapor.ts`](../server/rapor.ts),
+[`../server/eposta.ts`](../server/eposta.ts),
+[`../server/iade.ts`](../server/iade.ts),
+[`../ui/talep-bicim.ts`](../ui/talep-bicim.ts)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

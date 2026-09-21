@@ -47,7 +47,7 @@ export default async function YonetimOzeti({ searchParams }: PageProps<"/yonetim
           </Link>
           <Link
             href="/yonetim/urunler/yeni"
-            className="rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white"
+            className="rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi"
           >
             Yeni ürün
           </Link>
@@ -129,7 +129,12 @@ export default async function YonetimOzeti({ searchParams }: PageProps<"/yonetim
                   <span className={`block text-sm font-bold ${i.acil ? "" : "text-metin-2"}`}>
                     {i.ad}
                   </span>
-                  <span className="block text-xs text-metin-3">{i.aciklama}</span>
+                  {/* Acil kartın zemini soluk mercan; `metin-3` orada
+                      2,66:1 veriyordu — eşiğin altında. Renkli zeminde bir
+                      ton koyu yazı gerekiyor (K-62). */}
+                  <span className={`block text-xs ${i.acil ? "text-metin-2" : "text-metin-3"}`}>
+                    {i.aciklama}
+                  </span>
                 </span>
               </Link>
             </li>

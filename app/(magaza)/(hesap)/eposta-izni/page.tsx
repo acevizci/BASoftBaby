@@ -49,7 +49,7 @@ export default async function EpostaIzni({ searchParams }: PageProps<"/eposta-iz
         >
           Hesap ayarları
         </Link>
-        <Link href="/" className="rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white">
+        <Link href="/" className="rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi">
           Alışverişe dön
         </Link>
       </div>

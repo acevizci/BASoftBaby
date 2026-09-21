@@ -64,7 +64,7 @@ export default async function SiparisTakip({ searchParams }: PageProps<"/siparis
         </label>
         <button
           type="submit"
-          className="rounded-full bg-mercan px-6 py-2.5 font-bold text-white transition hover:brightness-95"
+          className="rounded-full bg-dugme px-6 py-2.5 font-bold text-dugme-yazi transition hover:brightness-95"
         >
           Sorgula
         </button>

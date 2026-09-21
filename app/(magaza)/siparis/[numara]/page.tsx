@@ -107,7 +107,7 @@ export default async function SiparisOnayi({
               </p>
               <Link
                 href="/sepet"
-                className="mt-4 inline-block rounded-full bg-mercan px-6 py-2.5 font-bold text-white transition hover:brightness-95"
+                className="mt-4 inline-block rounded-full bg-dugme px-6 py-2.5 font-bold text-dugme-yazi transition hover:brightness-95"
               >
                 Sepete dön, tekrar dene
               </Link>

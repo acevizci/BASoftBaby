@@ -9,6 +9,7 @@ import { kategorileriGetir, oneCikanUrunler } from "@/server/katalog";
 import { ayarlariGetir, type SatisAyari } from "@/server/sepet";
 import { fiyatYaz, YAS_GRUPLARI } from "@/ui/katalog-bicim";
 import { tonSiniflari } from "@/ui/kategori-tonu";
+import { CAYMA_GUN } from "@/ui/talep-bicim";
 
 /**
  * Ana sayfadaki yaş kutuları. Önceden tek bir bedene bağlıydı: "6-12 ay"
@@ -28,7 +29,7 @@ function guvenSatirlari(ayar: SatisAyari): string[] {
     ayar.bedavaKargoEsigi > 0
       ? `${fiyatYaz(ayar.bedavaKargoEsigi)} üzeri kargo bedava`
       : "Aynı gün kargo",
-    "14 gün içinde iade",
+    `${CAYMA_GUN} gün içinde iade`,
     "Üyeliksiz sipariş",
   ];
 }

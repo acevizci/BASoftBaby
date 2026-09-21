@@ -10,7 +10,7 @@ const GIRDI =
   "rounded-[10px] border-[1.5px] border-cizgi bg-yuzey px-3 py-2 text-sm text-metin outline-none focus:border-mercan";
 const ETIKET = "text-xs font-bold text-metin-2";
 const DUGME =
-  "rounded-full bg-mercan px-6 py-2.5 font-bold text-white transition hover:brightness-95";
+  "rounded-full bg-dugme px-6 py-2.5 font-bold text-dugme-yazi transition hover:brightness-95";
 
 /**
  * Yasal metinler ve künye ekranı.

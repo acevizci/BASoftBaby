@@ -14,6 +14,11 @@
  *
  * Panelden elle iade kaydı da açılabiliyor: her iade bir talepten doğmuyor,
  * telefonla anlaşılan bir indirim ya da kargo bedeli de olabiliyor.
+ *
+ * **Tamamlanan her iade müşteriye bildiriliyor.** Beklenen haber bu; hesabına
+ * bakmadan bilemez. Gönderim başarısız olsa bile kayıt kapanıyor: e-posta
+ * servisi çalışmıyor diye paranın gönderildiği kaydı düşürmek yanlış
+ * olurdu (K-62).
  */
 
 import { headers } from "next/headers";
@@ -23,6 +28,7 @@ import { db } from "@/server/veritabani";
 import { TUM_ETIKETLER } from "@/server/onbellek";
 import { iadeKaydiAc, iadeyiBasarisizIsaretle, iadeyiTamamla } from "@/server/iade";
 import { kartIadesiYap } from "@/server/odeme-iade";
+import { iadeYapildiEpostasi } from "@/server/eposta";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 const SAYFA = "/yonetim/iadeler";
@@ -50,11 +56,22 @@ export async function iadeyiIsaretle(form: FormData): Promise<void> {
   const ref = String(form.get("saglayiciRef") ?? "").trim().slice(0, 200);
   if (!id) redirect(`${SAYFA}?hata=bulunamadi`);
 
+  const kayit = await db.refund.findUnique({
+    where: { id },
+    select: {
+      tutarKurus: true,
+      yontem: true,
+      order: { select: { numara: true, adSoyad: true, eposta: true } },
+    },
+  });
+
   const sonuc = await iadeyiTamamla(id, {
     saglayiciRef: ref || undefined,
     yapanId: yonetici.id,
   });
   if (!sonuc) redirect(`${SAYFA}?hata=bulunamadi`);
+
+  if (kayit) await musteriyeBildir(kayit);
 
   vitriniYenile();
   redirect(`${SAYFA}?kayit=tamamlandi`);
@@ -83,6 +100,17 @@ export async function karttanIadeEt(form: FormData): Promise<void> {
   }
 
   await iadeyiTamamla(id, { saglayiciRef: sonuc.saglayiciRef, yapanId: yonetici.id });
+
+  const bilgi = await db.refund.findUnique({
+    where: { id },
+    select: {
+      tutarKurus: true,
+      yontem: true,
+      order: { select: { numara: true, adSoyad: true, eposta: true } },
+    },
+  });
+  if (bilgi) await musteriyeBildir(bilgi);
+
   vitriniYenile();
   redirect(`${SAYFA}?kayit=kart`);
 }
@@ -111,4 +139,21 @@ export async function elleIadeAc(form: FormData): Promise<void> {
 
   vitriniYenile();
   redirect(`${SAYFA}?kayit=acildi`);
+}
+
+/**
+ * İade e-postası. Gönderim başarısızlığı iadeyi geri almıyor — e-posta
+ * servisi çalışmıyor diye paranın gönderildiği kaydı düşürmek yanlış olurdu.
+ */
+async function musteriyeBildir(kayit: {
+  tutarKurus: number;
+  yontem: string;
+  order: { numara: string; adSoyad: string; eposta: string };
+}): Promise<void> {
+  await iadeYapildiEpostasi(kayit.order.eposta, {
+    numara: kayit.order.numara,
+    adSoyad: kayit.order.adSoyad,
+    tutarKurus: kayit.tutarKurus,
+    yontem: kayit.yontem,
+  });
 }

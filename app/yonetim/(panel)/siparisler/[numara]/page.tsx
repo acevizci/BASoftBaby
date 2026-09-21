@@ -124,7 +124,7 @@ export default async function SiparisDetayi({
 
           <button
             type="submit"
-            className="self-start rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white"
+            className="self-start rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi"
           >
             Kaydet
           </button>
@@ -206,7 +206,7 @@ export default async function SiparisDetayi({
 
           <button
             type="submit"
-            className="self-start rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white"
+            className="self-start rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi"
           >
             Kargoyu kaydet
           </button>
@@ -307,7 +307,7 @@ export default async function SiparisDetayi({
                 <input type="hidden" name="numara" value={siparis.numara} />
                 <button
                   type="submit"
-                  className="rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white"
+                  className="rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi"
                 >
                   İrsaliye oluştur
                 </button>
@@ -380,7 +380,7 @@ export default async function SiparisDetayi({
               </div>
               <button
                 type="submit"
-                className="self-start rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white"
+                className="self-start rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi"
               >
                 Fatura kaydını güncelle
               </button>
@@ -398,7 +398,7 @@ export default async function SiparisDetayi({
                 <input type="hidden" name="numara" value={siparis.numara} />
                 <button
                   type="submit"
-                  className="rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white"
+                  className="rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi"
                 >
                   Fatura oluştur
                 </button>

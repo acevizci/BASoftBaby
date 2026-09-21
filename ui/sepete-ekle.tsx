@@ -31,8 +31,8 @@ export default function SepeteEkle({
           kucuk ? "px-4 py-2 text-sm" : "px-6 py-3 text-base",
           tamGenislik ? "w-full" : "",
           kapali
-            ? "cursor-not-allowed bg-cizgi-soluk text-metin-3"
-            : "bg-mercan text-white hover:brightness-95",
+            ? "cursor-not-allowed bg-cizgi-soluk text-metin-2"
+            : "bg-dugme text-dugme-yazi hover:brightness-95",
         ].join(" ")}
       >
         {kapali ? "Tükendi" : "Sepete ekle"}

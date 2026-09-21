@@ -29,7 +29,7 @@ export default function BelgeEngeli({
       </div>
       <Link
         href={`/yonetim/siparisler/${numara}`}
-        className="self-start rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white"
+        className="self-start rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi"
       >
         Siparişe dön
       </Link>

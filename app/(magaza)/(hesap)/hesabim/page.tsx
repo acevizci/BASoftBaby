@@ -62,7 +62,7 @@ export default async function SiparislerimSayfasi({ searchParams }: PageProps<"/
           </p>
           <Link
             href="/"
-            className="mt-4 inline-block rounded-full bg-mercan px-6 py-2.5 font-bold text-white transition hover:brightness-95"
+            className="mt-4 inline-block rounded-full bg-dugme px-6 py-2.5 font-bold text-dugme-yazi transition hover:brightness-95"
           >
             Alışverişe başla
           </Link>

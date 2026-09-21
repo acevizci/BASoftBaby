@@ -253,7 +253,7 @@ export default function UrunFormu({
         {yeni && (
           <button
             type="submit"
-            className="self-start rounded-full bg-mercan px-6 py-3 font-bold text-white transition hover:brightness-95"
+            className="self-start rounded-full bg-dugme px-6 py-3 font-bold text-dugme-yazi transition hover:brightness-95"
           >
             Ürünü oluştur
           </button>
@@ -395,7 +395,7 @@ export function UrunKaydetDugmesi() {
       <button
         type="submit"
         form={FORM_KIMLIGI}
-        className="rounded-full bg-mercan px-6 py-3 font-bold text-white transition hover:brightness-95"
+        className="rounded-full bg-dugme px-6 py-3 font-bold text-dugme-yazi transition hover:brightness-95"
       >
         Değişiklikleri kaydet
       </button>

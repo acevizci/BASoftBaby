@@ -44,7 +44,8 @@ export default function SilmeOnayi({
         <p className="text-xs text-mercan-koyu">{uyari}</p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {children}
-          <span className="text-xs text-metin-3">
+          {/* Renkli zeminde `metin-3` 2,66:1 veriyordu (K-62). */}
+          <span className="text-xs text-metin-2">
             Vazgeçmek için bu kutuyu kapatman yeterli.
           </span>
         </div>
@@ -55,4 +56,4 @@ export default function SilmeOnayi({
 
 /** Onay kutusundaki asıl silme düğmesi. */
 export const SIL_DUGMESI =
-  "rounded-full bg-mercan px-4 py-1.5 text-xs font-bold text-white transition hover:brightness-95";
+  "rounded-full bg-dugme px-4 py-1.5 text-xs font-bold text-dugme-yazi transition hover:brightness-95";

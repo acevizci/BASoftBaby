@@ -18,7 +18,7 @@ const ETIKET = "text-xs font-bold text-metin-2";
 const KUCUK_DUGME =
   "rounded-full border border-cizgi bg-yuzey px-3 py-1.5 text-xs font-bold text-metin-2 transition hover:border-mercan hover:text-metin disabled:opacity-40";
 const ANA_DUGME =
-  "rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-95";
+  "rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi transition hover:brightness-95";
 
 /**
  * Kategori yönetimi.

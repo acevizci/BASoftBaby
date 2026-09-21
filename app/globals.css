@@ -4,7 +4,18 @@
    Marka renkleri
    Kodlar logodan piksel örneklemesiyle alındı; dokümanı docs/05-marka.md.
    Pastel tonlar metinde yeterli kontrast vermediği için her rengin bir de
-   "koyu" karşılığı var: yazı ve düğmelerde o kullanılır.
+   "koyu" karşılığı var: yazı ve düğmelerde o kullanılır. Bunlar logodan
+   örneklenmiş değil, okunurluk için türetilmiş değerler — kontrast
+   gerektirdiğinde ayarlanıyorlar.
+
+   `--mercan-koyu` bir tık koyultuldu (#c2433a → #b33b33): eski değer soluk
+   mercan zemin üzerinde 4,39:1 veriyordu, yani WCAG'nin 4,5 eşiğinin
+   altındaydı. Panelin bütün hata kutuları (panel-bicim.ts'teki
+   HATA_KUTUSU) ve silme onayı bu çifti kullanıyor — yani paneldeki her
+   uyarı eşiğin altındaydı. Yeni değer 5,08:1; beyaz üzerinde 5,85 ve
+   düğme zemini olarak beyaz yazıyla 5,85 veriyor, yani her kullanımda
+   iyileşti (K-62). Grafik çubuğu `--grafik` ayrı bir belirteç, dokunulmadı
+   (K-42).
    ========================================================================== */
 
 :root {
@@ -13,16 +24,30 @@
   --mavi-koyu: #2f6e9e;
   --mavi-soluk: #eaf3fa;
   --nane: #77d9ab;
-  --nane-koyu: #2c8760;
+  /* Eski #2c8760 kendi soluk zemininde 3,99:1, beyazda 4,43 veriyordu —
+     ikisi de eşiğin altında. "Yayında", "Açık", "Ödendi" rozetlerinin
+     hepsi bu tondaydı. Yeni değer 4,84 / 5,37 (K-62). */
+  --nane-koyu: #277856;
   --nane-soluk: #e6f7ee;
   --mercan: #f36c62;
-  --mercan-koyu: #c2433a;
+  --mercan-koyu: #b33b33;
   --mercan-soluk: #fdebe9;
   --sari: #f3c265;
   --sari-koyu: #8f6410;
   --sari-soluk: #fdf3dd;
   --ayicik: #f2b76b;
   --ayicik-kontur: #b37a42;
+
+  /* Birincil eylem düğmesi: zemin ve üstündeki yazı.
+     Markanın mercanı (#f36c62) pastel; beyaz yazıyla 2,94:1 veriyor, yani
+     WCAG eşiğinin çok altında — sitedeki her birincil düğme böyleydi.
+     `-koyu` tonunu zemin yapmak açık temada çözüyor ama koyu temada
+     bozuyor: `-koyu` tonları koyu temada **açık** renge dönüyor (koyu
+     zeminde yazı olsunlar diye). O yüzden düğme kendi belirtecini
+     kullanıyor ve iki temada ayrı çözülüyor: açık temada koyu zemin +
+     beyaz yazı, koyu temada açık zemin + koyu yazı (K-62). */
+  --dugme: #b33b33;
+  --dugme-yazi: #ffffff;
 
   /* Grafik çubuğu. Metin tonlarından ayrı bir belirteç: metin rengi okunurluk
      için, dolgu rengi yüzeye karşı kontrast ve açıklık bandı için seçiliyor.
@@ -36,7 +61,12 @@
   --yuzey-sicak: #fbf5eb;
   --metin: #332f2a;
   --metin-2: #6c655c;
-  --metin-3: #9b9289;
+  /* `metin-3` yardımcı metnin tonu: sessiz ama okunur olmalı. Eski değer
+     (#9b9289) beyaz üzerinde 3,06:1 veriyordu — sitedeki bütün yardımcı
+     metinler WCAG eşiğinin altındaydı. Yeni değer beyazda 4,88, zeminde
+     4,77, sıcak yüzeyde 4,50. `metin-2`den (5,75) hâlâ açık, yani
+     hiyerarşi duruyor (K-62). */
+  --metin-3: #787064;
   --cizgi: #eae3d7;
   --cizgi-soluk: #f3ede3;
 }
@@ -54,6 +84,9 @@
     --mercan-koyu: #f59289;
     --sari-koyu: #e0b56a;
     --grafik: #d9564c;
+    /* Koyu temada düğme açık zeminli, yazısı koyu: 7,65:1. */
+    --dugme: #f59289;
+    --dugme-yazi: #1e1b16;
 
     --sayfa: #14120f;
     --zemin: #1e1b16;
@@ -61,13 +94,15 @@
     --yuzey-sicak: #2c271f;
     --metin: #f2ece2;
     --metin-2: #bdb4a7;
-    --metin-3: #8d8578;
+    --metin-3: #978f81;
     --cizgi: #3a342b;
     --cizgi-soluk: #2f2a22;
   }
 }
 
 :root[data-tema="koyu"] {
+  --dugme: #f59289;
+  --dugme-yazi: #1e1b16;
   --mavi-soluk: #1d2b36;
   --nane-soluk: #162b23;
   --mercan-soluk: #35201e;
@@ -84,7 +119,7 @@
   --yuzey-sicak: #2c271f;
   --metin: #f2ece2;
   --metin-2: #bdb4a7;
-  --metin-3: #8d8578;
+  --metin-3: #978f81;
   --cizgi: #3a342b;
   --cizgi-soluk: #2f2a22;
 }
@@ -105,6 +140,8 @@
   --color-sari-koyu: var(--sari-koyu);
   --color-sari-soluk: var(--sari-soluk);
   --color-grafik: var(--grafik);
+  --color-dugme: var(--dugme);
+  --color-dugme-yazi: var(--dugme-yazi);
   --color-ayicik: var(--ayicik);
   --color-ayicik-kontur: var(--ayicik-kontur);
 

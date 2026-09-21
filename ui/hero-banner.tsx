@@ -90,7 +90,7 @@ function Slayt({ banner, kopya = false }: { banner: Banner; kopya?: boolean }) {
           <Link
             href={banner.dugmeLink}
             tabIndex={kopya ? -1 : undefined}
-            className="rounded-full bg-mercan px-6 py-3 font-bold text-white transition hover:brightness-95"
+            className="rounded-full bg-dugme px-6 py-3 font-bold text-dugme-yazi transition hover:brightness-95"
           >
             {banner.dugmeYazi}
           </Link>
