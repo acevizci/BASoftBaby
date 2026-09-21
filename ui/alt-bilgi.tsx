@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BILGI_SAYFALARI } from "@/app/(bilgi)/bilgi-bicim";
+import { BILGI_SAYFALARI } from "@/app/(magaza)/(bilgi)/bilgi-bicim";
 import { kunyeGetir, yasalSayfalariGetir } from "@/server/yasal";
 
 /**

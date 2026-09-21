@@ -50,7 +50,7 @@ gerektirmiyor ve her boyutta net çıkıyor.
 **Bilinen sınır:** Orijinal suluboya tarzında, vektör sürümde fırça dokusu yok.
 Karakter ve renkler korundu. Orijinal dosya bulunursa o kullanılabilir.
 
-**Nerede:** [`../marka/`](../marka/)
+**Nerede:** [`../public/marka/`](../public/marka/)
 
 ---
 
@@ -179,8 +179,8 @@ fiyat, stok ve duyuru her zaman o anki hâliyle görünüyor.
 
 **Nerede:** [`../server/sepet.ts`](../server/sepet.ts),
 [`../server/siparis.ts`](../server/siparis.ts),
-[`../app/sepet`](../app/sepet), [`../app/odeme`](../app/odeme),
-[`../app/siparis-takip`](../app/siparis-takip)
+[`../app/(magaza)/sepet`](../app/(magaza)/sepet), [`../app/(magaza)/odeme`](../app/(magaza)/odeme),
+[`../app/(magaza)/siparis-takip`](../app/(magaza)/siparis-takip)
 
 ---
 
@@ -324,7 +324,7 @@ ileride gerekirse eklenecek.
 
 **Nerede:** [`../server/uyelik.ts`](../server/uyelik.ts),
 [`../server/uyelik-islem.ts`](../server/uyelik-islem.ts),
-[`../app/(hesap)`](../app/(hesap))
+[`../app/(magaza)/(hesap)`](../app/(magaza)/(hesap))
 
 ---
 
@@ -381,7 +381,7 @@ onayın kanıtlanabilmesini istiyor.
 
 **Nerede:** [`../server/yasal.ts`](../server/yasal.ts),
 [`../ui/yasal-metin.tsx`](../ui/yasal-metin.tsx),
-[`../app/yasal/[slug]`](../app/yasal),
+[`../app/(magaza)/yasal/[slug]`](../app/(magaza)/yasal),
 [`../app/yonetim/yasal`](../app/yonetim/yasal)
 
 ---
@@ -518,9 +518,9 @@ aynı cevap veriliyor, yoksa hangi adreslerin kayıtlı olduğu tek tek denenere
 
 **Nerede:** [`../server/eposta.ts`](../server/eposta.ts),
 [`../server/uyelik.ts`](../server/uyelik.ts),
-[`../app/(hesap)/sifremi-unuttum`](../app/(hesap)/sifremi-unuttum),
-[`../app/(hesap)/sifre-sifirla`](../app/(hesap)/sifre-sifirla),
-[`../app/(hesap)/eposta-dogrula`](../app/(hesap)/eposta-dogrula)
+[`../app/(magaza)/(hesap)/sifremi-unuttum`](../app/(magaza)/(hesap)/sifremi-unuttum),
+[`../app/(magaza)/(hesap)/sifre-sifirla`](../app/(magaza)/(hesap)/sifre-sifirla),
+[`../app/(magaza)/(hesap)/eposta-dogrula`](../app/(magaza)/(hesap)/eposta-dogrula)
 
 ---
 
@@ -714,7 +714,7 @@ yaş süzgecinden önce de vardı; deneme yazılırken ortaya çıktı.
 
 **Nerede:** [`../ui/katalog-bicim.ts`](../ui/katalog-bicim.ts),
 [`../server/katalog.ts`](../server/katalog.ts),
-[`../app/(vitrin)/[kategori]`](../app/(vitrin)),
+[`../app/(magaza)/(vitrin)/[kategori]`](../app/(magaza)/(vitrin)),
 [`../ui/varyant-secici.tsx`](../ui/varyant-secici.tsx)
 
 ---
@@ -940,7 +940,7 @@ atlanması.
 
 **Nerede:** [`../server/sepet-hatirlatma.ts`](../server/sepet-hatirlatma.ts),
 [`../server/eposta.ts`](../server/eposta.ts),
-[`../app/(hesap)/eposta-izni`](../app/(hesap)/eposta-izni)
+[`../app/(magaza)/(hesap)/eposta-izni`](../app/(magaza)/(hesap)/eposta-izni)
 
 ---
 
@@ -1387,7 +1387,7 @@ vitrin bilgisi döndürmesi ve tek harfte susması, üst çubuktaki kutunun
 
 **Nerede:** [`../server/arama-metin.ts`](../server/arama-metin.ts),
 [`../ui/arama-kutusu.tsx`](../ui/arama-kutusu.tsx),
-[`../app/(vitrin)/arama/page.tsx`](../app/(vitrin)/arama)
+[`../app/(magaza)/(vitrin)/arama/page.tsx`](../app/(magaza)/(vitrin)/arama)
 
 ---
 
@@ -1424,7 +1424,7 @@ siparişin hesapta görünmeyip takipte görünmesi, giriş yapmamış ziyaretç
 yönlendirilmesi, takip sayfasının bozulmamış olması, JavaScript kapalı
 tarayıcı.
 
-**Nerede:** [`../app/(hesap)/hesabim/siparis`](../app/(hesap)/hesabim/siparis),
+**Nerede:** [`../app/(magaza)/(hesap)/hesabim/siparis`](../app/(magaza)/(hesap)/hesabim/siparis),
 [`../server/uyelik.ts`](../server/uyelik.ts)
 
 ---
@@ -1536,7 +1536,7 @@ bağının kopması, değerlendirmenin durup adının anonimleşmesi, JavaScript
 kapalı tarayıcı.
 
 **Nerede:** [`../server/kisisel-veri.ts`](../server/kisisel-veri.ts),
-[`../app/(hesap)/hesabim/verilerim`](../app/(hesap)/hesabim/verilerim)
+[`../app/(magaza)/(hesap)/hesabim/verilerim`](../app/(magaza)/(hesap)/hesabim/verilerim)
 
 ---
 
@@ -1682,6 +1682,69 @@ geçirildi.
 **Nerede:** [`../server/rapor.ts`](../server/rapor.ts),
 [`../ui/sutun-grafik.tsx`](../ui/sutun-grafik.tsx),
 [`../app/yonetim/rapor`](../app/yonetim/rapor)
+
+---
+
+### K-43 · Panel kendi çerçevesine taşındı
+**21 Eylül 2026**
+
+Panelin menüsü on dört bağlantılık düz bir listeydi, hangi sayfada olunduğunu
+göstermiyordu ve telefonda içerikten önce ekranın yarısını kaplıyordu. Dört
+şey birden değişti.
+
+**Menü gruplandı.** Satış (Siparişler, Talepler, Değerlendirmeler, Satış
+raporu), Katalog (Ürünler, Kategoriler, Stok), Vitrin (Kampanyalar, Ana sayfa
+banner, Duyuru şeridi), Ayarlar (Satış ayarları, Yasal metinler, Tanı). Özet
+grupların dışında, en üstte: panelin ana sayfası, bir kategorinin üyesi değil.
+Gruplar **açılır kapanır değil, sadece başlıklı** — her gün kullanılan bir
+panelde bir şeyi görmek için önce açmak gerekmesin.
+
+**Açık sayfa işaretli.** Alt sayfalar da üst maddeyi işaretliyor:
+`/yonetim/urunler/zibin` açıkken "Ürünler" işaretli kalıyor. `aria-current`
+ile, yani renkten başka bir şey de söylüyor. Yolu middleware ekliyor
+(`x-yonetim-yol`): sunucu bileşeninde adres satırına ulaşmanın başka yolu yok
+ve menüyü yalnızca bunun için istemci bileşenine çevirmek gereksiz bir
+JavaScript yükü olurdu.
+
+**Bekleyen iş sayıları menüde.** "Bakılacak bir şey var mı" sorusunun cevabı
+özet ekranına gitmeden görünüyor. Sayı yalnızca sıfırdan büyükken çıkıyor;
+her maddenin yanında sürekli duran bir rakam kısa sürede görünmez oluyor.
+**Rozetin iki tonu var**: müşterinin beklediği işler (bekleyen sipariş, yeni
+talep) dolu mercan, mağazanın kendi işleri (fotoğrafsız ürün, biten stok)
+sessiz çerçeveli. Hepsi kırmızı olsaydı hiçbiri kırmızı olmazdı. Ekran
+okuyucuda rakamın yanında "bekleyen" okunuyor — "Siparişler 4" tek başına bir
+şey söylemiyor.
+
+**Telefonda menü açılır.** `<details>` ile, yani JavaScript kapalıyken de
+çalışıyor (K-40'taki mağaza menüsüyle aynı yol). Kapalı başlıkta açık sayfanın
+adı ve müşteri bekleyen işlerin toplamı yazıyor: menü kapalıyken de "bugün iş
+var mı" cevaplanıyor. Geniş ekranda hep açık — tarayıcının kapalı `<details>`
+içeriğini gizleyen kuralı `.open-yok` sınıfıyla 64rem üstünde etkisiz
+kılınıyor.
+
+**Asıl sorun bunların hiçbiri değildi.** Telefon görüntüsüne bakınca panelin
+üstünde **mağazanın başlığı** duruyordu: duyuru şeridi, logo, kategori
+bağlantıları, ürün arama kutusu, sepet sayacı ve altta mağaza alt bilgisi.
+Sipariş yönetirken hiçbirinin işi yok. Kök düzen bunları her sayfaya basıyordu.
+
+Mağaza sayfaları `app/(magaza)` grubuna alındı ve çerçeve oraya taşındı; kök
+düzende yalnızca `<html>`, yazı tipleri, yükleme çizgisi ve ölçümleme kaldı.
+**Grup adı adrese girmiyor**: bütün sayfaların adresi harfi harfine aynı kaldı
+(derleme çıktısındaki yol listesiyle ve tarayıcıda tek tek doğrulandı). Panel
+artık kendi çerçevesinde: telefonda içerik ilk ekranda başlıyor.
+
+**Denendi** (33 madde): panelde mağaza logosu/arama kutusu/alt bilgi yok ve
+`<main>` bölgesi var; mağaza adreslerinin hepsi eski hâliyle açılıyor ve üst
+çubuğu yerinde (`/`, `/sepet`, `/siparis-takip`, `/giris`, `/hesabim`,
+`/arama`, kategori, ürün); Özet yalnızca `/yonetim`'de, alt sayfa üst maddeyi
+işaretliyor; sipariş rozeti dolu, stok rozeti sessiz, sayı sıfırsa rozet yok;
+telefonda menü kapalı başlıyor, kapalı başlıkta açık sayfa ve bekleyen toplamı
+yazıyor; JavaScript kapalı tarayıcıda menü açılıyor.
+
+**Nerede:** [`../server/panel-menu.ts`](../server/panel-menu.ts),
+[`../app/yonetim/layout.tsx`](../app/yonetim/layout.tsx),
+[`../app/(magaza)/layout.tsx`](../app/(magaza)/layout.tsx),
+[`../middleware.ts`](../middleware.ts)
 
 ---
 

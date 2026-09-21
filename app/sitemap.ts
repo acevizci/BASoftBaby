@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { BILGI_SAYFALARI } from "@/app/(bilgi)/bilgi-bicim";
+import { BILGI_SAYFALARI } from "@/app/(magaza)/(bilgi)/bilgi-bicim";
 import { kategorileriGetir, urunleriGetir } from "@/server/katalog";
 import { yasalSayfalariGetir } from "@/server/yasal";
 import { tamAdres } from "@/server/site";

@@ -1,0 +1,118 @@
+import "server-only";
+
+/**
+ * Panel menüsünün yapısı ve rozet sayıları.
+ *
+ * **Menü gruplanıyor.** On dört madde düz bir liste olarak duruyordu; hangisi
+ * günlük iş, hangisi ayda bir açılan bir ayar, hiçbir şey söylemiyordu.
+ * Gruplar açılır kapanır değil, sadece başlıklı: her gün kullanılan bir
+ * panelde bir şeyi görmek için önce açmak gerekmesin (K-43).
+ *
+ * **Bekleyen iş sayıları menüde.** Mağaza sahibi "bakılacak bir şey var mı"
+ * sorusunun cevabını özet ekranına gitmeden görüyor. Sayı yalnızca sıfırdan
+ * büyükken çıkıyor; her maddenin yanında sürekli duran bir rakam kısa sürede
+ * görünmez oluyor.
+ */
+
+import { db } from "@/server/veritabani";
+import { OLUMSUZ_PUAN } from "@/server/yorum";
+
+export type MenuMaddesi = {
+  yol: string;
+  ad: string;
+  /** Bekleyen iş sayısı; sıfırsa rozet gösterilmiyor. */
+  rozet?: number;
+  /**
+   * Rozetin tonu. `bekleyen`: müşteri cevap bekliyor, geciktikçe zarar veriyor
+   * — dikkat çeken renk. `hatirlatma`: mağazanın kendi işi, bugün yapılmazsa
+   * kimse beklemiyor — sessiz renk. Hepsi kırmızı olsaydı hiçbiri
+   * kırmızı olmazdı.
+   */
+  ton?: "bekleyen" | "hatirlatma";
+};
+
+export type MenuGrubu = { baslik: string; maddeler: MenuMaddesi[] };
+
+/** Rozet sayıları; menüdeki sırayla aynı adlarla. */
+export type Sayaclar = {
+  siparis: number;
+  talep: number;
+  yorum: number;
+  fotografsiz: number;
+  tukenen: number;
+};
+
+export async function menuSayaclari(): Promise<Sayaclar> {
+  const [siparis, talep, yorum, fotografsiz, tukenen] = await Promise.all([
+    db.order.count({ where: { durum: { in: ["bekliyor", "hazirlaniyor"] } } }),
+    db.orderRequest.count({ where: { durum: "yeni" } }),
+    db.review.count({ where: { durum: "yayinda", yanit: "", puan: { lte: OLUMSUZ_PUAN } } }),
+    db.product.count({ where: { aktif: true, images: { none: {} } } }),
+    db.productVariant.count({ where: { stok: 0 } }),
+  ]);
+  return { siparis, talep, yorum, fotografsiz, tukenen };
+}
+
+/**
+ * Menü yapısı.
+ *
+ * Özet grupların dışında ve en üstte: panelin ana sayfası, bir kategoriye
+ * ait değil.
+ */
+export function menuyuKur(s: Sayaclar): { ozet: MenuMaddesi; gruplar: MenuGrubu[] } {
+  return {
+    ozet: { yol: "/yonetim", ad: "Özet" },
+    gruplar: [
+      {
+        baslik: "Satış",
+        maddeler: [
+          { yol: "/yonetim/siparisler", ad: "Siparişler", rozet: s.siparis, ton: "bekleyen" },
+          { yol: "/yonetim/talepler", ad: "Talepler", rozet: s.talep, ton: "bekleyen" },
+          {
+            yol: "/yonetim/yorumlar",
+            ad: "Değerlendirmeler",
+            rozet: s.yorum,
+            ton: "hatirlatma",
+          },
+          { yol: "/yonetim/rapor", ad: "Satış raporu" },
+        ],
+      },
+      {
+        baslik: "Katalog",
+        maddeler: [
+          { yol: "/yonetim/urunler", ad: "Ürünler", rozet: s.fotografsiz, ton: "hatirlatma" },
+          { yol: "/yonetim/kategoriler", ad: "Kategoriler" },
+          { yol: "/yonetim/stok", ad: "Stok", rozet: s.tukenen, ton: "hatirlatma" },
+        ],
+      },
+      {
+        baslik: "Vitrin",
+        maddeler: [
+          { yol: "/yonetim/kampanyalar", ad: "Kampanyalar" },
+          { yol: "/yonetim/banner", ad: "Ana sayfa banner" },
+          { yol: "/yonetim/duyuru", ad: "Duyuru şeridi" },
+        ],
+      },
+      {
+        baslik: "Ayarlar",
+        maddeler: [
+          { yol: "/yonetim/ayarlar", ad: "Satış ayarları" },
+          { yol: "/yonetim/yasal", ad: "Yasal metinler" },
+          { yol: "/yonetim/tani", ad: "Tanı" },
+        ],
+      },
+    ],
+  };
+}
+
+/**
+ * Bir menü maddesi açık sayfaya karşılık geliyor mu?
+ *
+ * Alt sayfalar da maddeyi işaretliyor: `/yonetim/urunler/zibin` açıkken
+ * "Ürünler" işaretli kalıyor. "/yonetim" her şeyin ön eki olduğu için tam
+ * eşleşme aranıyor, yoksa bütün sayfalarda Özet de işaretli görünürdü.
+ */
+export function acikMi(yol: string, madde: string): boolean {
+  if (madde === "/yonetim") return yol === "/yonetim";
+  return yol === madde || yol.startsWith(`${madde}/`);
+}

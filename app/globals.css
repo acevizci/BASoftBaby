@@ -169,6 +169,22 @@ button:disabled,
   font-variant-numeric: tabular-nums;
 }
 
+/* Geniş ekranda `<details>` hep açık gibi davransın.
+   Panel menüsü küçük ekranda açılır kapanır, geniş ekranda düz bir liste.
+   Aynı bağlantıları iki kez yazmamak için tek bir `<details>` kullanılıyor
+   ve kapalıyken içeriği gizleyen tarayıcı kuralı burada etkisiz kılınıyor
+   (bkz. docs/04-kararlar.md, K-43). */
+@media (min-width: 64rem) {
+  details.open-yok > *:not(summary) {
+    display: block;
+    content-visibility: visible;
+  }
+  details.open-yok::details-content {
+    content-visibility: visible;
+    block-size: auto;
+  }
+}
+
 /* ==========================================================================
    Duyuru şeridi
    Mesaj dizisi iki kez arka arkaya basılır ve şerit tam bir dizi kadar

@@ -49,19 +49,27 @@ kalmışsa temizleyip geçiyor (K-25).
 
 | Klasör | İçinde ne var |
 | --- | --- |
-| `app/` | Sayfalar ve ortak çerçeve. `globals.css` marka renklerini tanımlar |
+| `app/` | Kök çerçeve (yazı tipleri, `globals.css`) ve yönlendirme |
+| `app/(magaza)/` | Mağaza sayfaları ve mağaza çerçevesi: duyuru şeridi, üst çubuk, alt bilgi |
+| `app/yonetim/` | Yönetim paneli; kendi çerçevesi, mağaza başlığı olmadan (K-43) |
 | `db/` | Veritabanı şeması, göç dosyaları ve başlangıç verisi |
 | `ui/` | Ortak arayüz parçaları: duyuru şeridi, üst çubuk, alt bilgi |
 | `server/` | İş kuralları. Sayfalar veriyi hep buradan okur |
-| `app/(hesap)/` | Giriş, kayıt ve hesap sayfaları |
-| `app/yasal/` | Sözleşmeler, KVKK ve çerez politikası sayfaları |
+| `app/(magaza)/(hesap)/` | Giriş, kayıt ve hesap sayfaları |
+| `app/(magaza)/yasal/` | Sözleşmeler, KVKK ve çerez politikası sayfaları |
 | `public/marka/` | Logo dosyaları (SVG ve PNG) |
 | `docs/` | Plan, mimari, tasarım sistemi, kararlar |
 | `tasarim/` | Gezilebilir tasarım mokapı |
 
 ## Yönetim paneli
 
-`/yonetim` adresinde. Özet ekranı günlük yapılacakları gösteriyor: havale onayı
+`/yonetim` adresinde, kendi çerçevesinde: mağazanın başlığı, arama kutusu ve
+sepeti panelde görünmüyor. Menü dört grupta (Satış, Katalog, Vitrin, Ayarlar),
+açık sayfa işaretli ve bekleyen iş sayıları maddelerin yanında — müşterinin
+beklediği işler dolu renkte, mağazanın kendi işleri sessiz. Telefonda menü
+açılır hâlde, kapalı başlıkta bekleyen iş toplamı yazıyor (K-43).
+
+Özet ekranı günlük yapılacakları gösteriyor: havale onayı
 bekleyen ve hazırlanacak siparişler, geciken kargolar, tükenen bedenler,
 "gelince haber ver" diyenler ve tamamlanmamış ayarlar — her biri kendi
 listesine bağlanıyor (K-32).

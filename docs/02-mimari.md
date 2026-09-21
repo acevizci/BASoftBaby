@@ -48,41 +48,54 @@ Kural basit: sayfalar sadece görünüm, iş kuralları `server/` altında. Ayn�
 indirim hesabı hem sepette hem siparişte hem ödemede çağrıldığı için tek bir
 yerde durması şart.
 
+Mağaza ile panel iki ayrı çerçeve: mağaza başlığının (logo, kategoriler,
+arama, sepet) panelde işi yok. Parantezli grup adları adrese girmiyor,
+yani `app/(magaza)/sepet` yine `/sepet` (K-43).
+
 ```
 app/
-  layout.tsx              her sayfayı saran ortak çerçeve
+  layout.tsx              <html>, yazı tipleri, yükleme çizgisi, ölçümleme
   globals.css             marka renkleri ve yazı tipleri
-  page.tsx                ana sayfa
-  (vitrin)/               herkese açık sayfalar
-    [kategori]/           kategori listesi, filtreler
-    urun/[slug]/          ürün detayı, varyant seçimi
-  (bilgi)/                yardım sayfaları, ortak çerçeve + geçiş bağlantıları
-    beden-rehberi/        boy-kilo tablosu, kalıp notları
-    kargo-teslimat/       ücret ve süreler (rakamlar satış ayarından)
-    iade-degisim/         14 gün, adımlar, para iadesi
-    sikca-sorulanlar/     başlıklara ayrılmış SSS
-  sepet/                  sepet
-  odeme/                  adres ve sipariş özeti
-  siparis/[numara]/       sipariş onayı (yalnız siparişi verene açık)
-  siparis-takip/          numara + e-posta ile sipariş sorgulama
-  yasal/[slug]/           sözleşmeler, KVKK, çerez politikası
+  (magaza)/               mağaza — duyuru şeridi + üst çubuk + alt bilgi
+    layout.tsx            mağaza çerçevesi
+    page.tsx              ana sayfa
+    (vitrin)/             herkese açık sayfalar
+      [kategori]/         kategori listesi, filtreler
+      urun/[slug]/        ürün detayı, varyant seçimi
+      arama/              ürün araması
+    (bilgi)/              yardım sayfaları, ortak çerçeve + geçiş bağlantıları
+      beden-rehberi/      boy-kilo tablosu, kalıp notları
+      kargo-teslimat/     ücret ve süreler (rakamlar satış ayarından)
+      iade-degisim/       14 gün, adımlar, para iadesi
+      sikca-sorulanlar/   başlıklara ayrılmış SSS
+    sepet/                sepet
+    odeme/                adres ve sipariş özeti
+    siparis/[numara]/     sipariş onayı (yalnız siparişi verene açık)
+    siparis-takip/        numara + e-posta ile sipariş sorgulama
+    yasal/[slug]/         sözleşmeler, KVKK, çerez politikası
+    (hesap)/              üyelik — adres satırına segment eklemez
+      giris/ kayit/       giriş ve hesap açma
+      sifremi-unuttum/ sifre-sifirla/ eposta-dogrula/ eposta-izni/
+      hesabim/            siparişlerim (ana ekran)
+        adresler/         adres defteri
+        bilgiler/         ad-telefon ve şifre değiştirme
+        siparis/[numara]/ sipariş ayrıntısı, iptal/iade, değerlendirme
+        verilerim/        KVKK: veri indirme ve hesap silme
   api/odeme/iyzico/donus/ iyzico dönüş ucu
   api/cron/odeme-temizlik/ yarıda kalan ödemelerin temizliği
   api/kargo/durum/        taşıyıcı durum bildirimi
+  api/canli/              uyanık tutma ucu
+  yuklenen/[dosya]/       yerel ortamda yüklenen fotoğraflar
   sitemap.ts robots.ts    site haritası ve arama motoru kuralları
-  (hesap)/                üyelik — adres satırına segment eklemez
-    giris/ kayit/         giriş ve hesap açma
-    sifremi-unuttum/ sifre-sifirla/ eposta-dogrula/
-    hesabim/              siparişlerim (ana ekran)
-      adresler/           adres defteri
-      bilgiler/           ad-telefon ve şifre değiştirme
-  yonetim/                şifreyle korunuyor
-    siparisler/ urunler/ stok/ kampanyalar/ banner/ duyuru/ ayarlar/ yasal/
+  yonetim/                şifreyle korunuyor — kendi çerçevesi, gruplu menü
+    layout.tsx            panel çerçevesi (menü, rozetler, açık sayfa işareti)
+    siparisler/ talepler/ yorumlar/ rapor/    Satış
+    urunler/ kategoriler/ stok/               Katalog
+    kampanyalar/ banner/ duyuru/              Vitrin
+    ayarlar/ yasal/ tani/                     Ayarlar
       siparisler/[numara]/etiket/  yazdırılabilir barkodlu kargo etiketi
       siparisler/[numara]/fatura/  yazdırılabilir e-arşiv faturası
-
-  — henüz yok, sırası gelince —
-  (hesap)/iade/           iade talebi açma
+      urunler/toplu/               Excel/CSV'den toplu yükleme
 
 server/                   iş kuralları — tek kaynak
   veritabani.ts           Prisma bağlantısı
@@ -106,13 +119,29 @@ server/                   iş kuralları — tek kaynak
   kargo.ts                taşıyıcılar, gönderi kaydı, takip adresleri
   kargo-islem.ts          taşıyıcı durum bildiriminin işlenmesi
   fatura.ts               fatura kaydı, KDV ayrıştırması, numara sayacı
+  arama.ts arama-metin.ts  ürün araması; Türkçe harf katlama ayrı ve saf dosyada
+  giris-sinir.ts          giriş denemesi sınırı (e-posta ve IP başına)
+  kisisel-veri.ts         KVKK: veri dökümü ve hesap silme
+  onbellek.ts             önbellek etiketleri
+  panel-menu.ts           panel menüsünün yapısı ve bekleyen iş sayıları
+  panel-ozet.ts           panelin özet ekranı
+  rapor.ts                satış raporu, dönem karşılaştırması, CSV
+  sepet-hatirlatma.ts     bırakılan sepet hatırlatması
+  siparis-arama.ts        panelde sipariş arama ve süzme
+  slug.ts                 Türkçe metinden adres parçası
+  stok-bildirimi.ts stok-bildirimi-islem.ts  "stoka girince haber ver"
+  talep.ts talep-islem.ts talep-yonetim.ts   iptal / iade / değişim talepleri
+  tani.ts                 dağıtım tanısı (bölge, veritabanı gecikmesi)
+  toplu-urun.ts toplu-urun-islem.ts  Excel/CSV'den toplu ürün yükleme
+  yorum.ts yorum-islem.ts yorum-yonetim.ts  değerlendirme ve puanlama
 
 db/
   schema.prisma           veri modeli
   migrations/             şema değişiklik geçmişi
   tohum.ts                başlangıç verisi
 
-middleware.ts             yönetim panelinin şifre koruması
+middleware.ts             panelin şifre koruması; açık sayfanın yolunu
+                          `x-yonetim-yol` başlığıyla düzene geçirir
 
 ui/                       ortak arayüz parçaları
   katalog-bicim.ts        Prisma'ya bulaşmayan saf görünüm sabitleri

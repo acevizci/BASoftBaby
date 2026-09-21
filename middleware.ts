@@ -26,7 +26,15 @@ export function middleware(istek: NextRequest) {
   if (baslik?.startsWith("Basic ")) {
     const cozulmus = atob(baslik.slice(6));
     const verilen = cozulmus.slice(cozulmus.indexOf(":") + 1);
-    if (esitMi(verilen, sifre)) return NextResponse.next();
+    if (esitMi(verilen, sifre)) {
+      // Açık olan sayfanın yolu isteğe ekleniyor: panel menüsü hangi maddenin
+      // işaretli olacağını buradan okuyor. Sunucu bileşeninde adres satırını
+      // okumanın başka yolu yok ve bunun için menüyü istemci bileşenine
+      // çevirmek gereksiz bir JavaScript yükü olurdu (K-43).
+      const basliklar = new Headers(istek.headers);
+      basliklar.set("x-yonetim-yol", istek.nextUrl.pathname);
+      return NextResponse.next({ request: { headers: basliklar } });
+    }
   }
 
   return new NextResponse("Yönetim paneli", {

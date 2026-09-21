@@ -3,10 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Baloo_2, Nunito_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { siteAdresi } from "@/server/site";
-import DuyuruSeridi from "@/ui/duyuru-seridi";
 import YuklemeCizgisi from "@/ui/yukleme";
-import UstCubuk from "@/ui/ust-cubuk";
-import AltBilgi from "@/ui/alt-bilgi";
 import "./globals.css";
 
 // latin-ext olmadan ı, ş, ğ, İ gibi harfler yedek yazı tipinden gelir ve
@@ -64,10 +61,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Suspense fallback={null}>
           <YuklemeCizgisi />
         </Suspense>
-        <DuyuruSeridi />
-        <UstCubuk />
-        <main className="flex-1">{children}</main>
-        <AltBilgi />
+        {children}
         {/* Ölçümleme: çerez kullanmıyor, ziyaretçiyi tanımlıyor ve siteler
             arasında izlemiyor. Bu yüzden çerez onay bandı gerekmiyor (K-16).
             Vercel'de Analytics açık değilse hiçbir veri gitmiyor. */}
