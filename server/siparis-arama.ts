@@ -49,6 +49,13 @@ export type SiparisSatiri = {
   durum: string;
   odemeDurumu: string;
   odemeYontemi: string;
+  /**
+   * Kargoya verildiği an — gönderi kaydının açıldığı tarih.
+   *
+   * Sipariş `guncellendi` kullanılamıyor: her panel dokunuşunda değişiyor.
+   * "Kaç gündür yolda" sorusunun cevabı buradan (K-59).
+   */
+  kargoyaVerildi: Date | null;
 };
 
 export type AramaSonucu = {
@@ -178,12 +185,20 @@ export async function siparisleriAra(s: SiparisSuzgeci): Promise<AramaSonucu> {
         durum: true,
         odemeDurumu: true,
         odemeYontemi: true,
+        gonderiler: {
+          orderBy: { olusturuldu: "asc" },
+          take: 1,
+          select: { olusturuldu: true },
+        },
       },
     }),
   ]);
 
   return {
-    satirlar,
+    satirlar: satirlar.map(({ gonderiler, ...s }) => ({
+      ...s,
+      kargoyaVerildi: gonderiler[0]?.olusturuldu ?? null,
+    })),
     toplamAdet,
     toplamTutarKurus: toplam._sum.toplamKurus ?? 0,
     sayfa: s.sayfa,

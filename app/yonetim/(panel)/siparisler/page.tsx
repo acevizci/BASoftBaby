@@ -21,6 +21,11 @@ import {
   yontemAdi,
 } from "@/ui/siparis-bicim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import {
+  SORULACAK_GUN,
+  beklemeRozeti,
+  kargoBeklemesi,
+} from "@/server/kargo-bekleme";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +61,12 @@ export default async function SiparisListesi({ searchParams }: PageProps<"/yonet
   const suzgec = suzgeciCoz(parametreler);
   const { toplu, hata: topluHata } = parametreler;
   const sonuc = await siparisleriAra(suzgec);
+
+  // Bu sayfadaki siparişlerden kaçı uzun süredir yolda. Sayfalama yüzünden
+  // sayfa başına hesaplanıyor; amaç toplam istatistik değil, gözden kaçmasın.
+  const yoldaBekleyen = sonuc.satirlar.filter(
+    (x) => kargoBeklemesi(x).durum !== "yok" && kargoBeklemesi(x).durum !== "normal",
+  ).length;
 
   // Süzgeçsiz toplam: "hiç sipariş yok" ile "bu süzgece uyan yok" farkı
   // ekranda ayrılsın diye.
@@ -182,6 +193,16 @@ export default async function SiparisListesi({ searchParams }: PageProps<"/yonet
         </div>
       </form>
 
+      {/* Kaç sipariş uzun süredir yolda: rozeti tek tek aramak yerine
+          başta toplamı yazıyor (K-59). */}
+      {yoldaBekleyen > 0 && (
+        <p className="rounded-marka border border-sari bg-sari-soluk px-4 py-3 text-sm text-sari-koyu">
+          <strong>{yoldaBekleyen} sipariş</strong> {SORULACAK_GUN} günden uzun süredir
+          kargoda görünüyor. Taşıyıcı bildirimi henüz bağlı olmadığı için teslim edilenleri
+          elle işaretlemek gerekiyor: listeden seçip &quot;Teslim edildi yap&quot; yeterli.
+        </p>
+      )}
+
       <div className="flex flex-wrap gap-2">
         <Link
           href={adres({ durum: undefined })}
@@ -290,6 +311,20 @@ export default async function SiparisListesi({ searchParams }: PageProps<"/yonet
                       <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${durumRengi(s.durum)}`}>
                         {durumAdi(s.durum)}
                       </span>
+                      {/* Kargo toplayıcısı bağlanana kadar teslim bildirimi
+                          gelmiyor; uzun süre yolda kalan sipariş burada
+                          görünüyor ve toplu işlemle teslim işaretlenebiliyor
+                          (K-59). */}
+                      {(() => {
+                        const rozet = beklemeRozeti(kargoBeklemesi(s));
+                        return rozet ? (
+                          <span
+                            className={`rakam mt-0.5 block w-fit rounded-full px-2 py-0.5 text-xs font-bold ${rozet.sinif}`}
+                          >
+                            {rozet.metin}
+                          </span>
+                        ) : null;
+                      })()}
                     </td>
                     <td className="px-4 py-3">
                       <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${durumRengi(s.odemeDurumu)}`}>

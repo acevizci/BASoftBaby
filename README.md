@@ -76,6 +76,14 @@ bekleyen ve hazırlanacak siparişler, geciken kargolar, tükenen bedenler,
 "gelince haber ver" diyenler ve tamamlanmamış ayarlar — her biri kendi
 listesine bağlanıyor (K-32).
 
+**Günün işi** (`/yonetim/gunluk`): ödemesi tamamlanmış ve henüz kargoya
+verilmemiş siparişler, yanında birleştirilmiş toplama listesi — beş siparişte
+geçen aynı bedeni bir kez raftan alıyorsun. Yazdırılabiliyor. Kargoya
+verilişinin üstünden uzun süre geçen siparişler sipariş listesinde rozetle
+işaretleniyor; taşıyıcı bildirimi bağlanana kadar teslim işaretleme elle
+yapılıyor — tahmine dayalı otomatik tarih müşterinin 14 günlük cayma hakkını
+kısaltırdı (K-59).
+
 Siparişler (numara, ad, e-posta, telefon ve kargo takip
 numarasıyla arama; durum, ödeme ve tarih süzgeçleri; listeden seçip toplu
 durum değiştirme ve toplu kargo etiketi yazdırma, K-48), ürün ekleme ve düzenleme,
@@ -353,6 +361,13 @@ ayarlarından değiştiriliyor; **kesilmiş faturalar sonradan değişmiyor.**
 kalemler, matrah, KDV ve genel toplam. Resmî faturayı e-arşivde kestikten
 sonra numarasını ve belgesinin adresini aynı ekrana yazabilir, durumu
 "kesildi" yapabilirsin.
+
+**Sevk irsaliyesi** ayrı bir belge ve ayrı bir seri numarası taşıyor
+(`BA-I-2026-0001`): fatura satışın belgesi, irsaliye malın belgesi — kutunun
+yanında gidiyor. **Fiyat yazmıyor**, çünkü kutuyu açan kargo görevlisinin ya
+da hediye alıcısının tutarı görmesi gerekmiyor. Düzenleme tarih-saati ile
+fiili sevk tarih-saati ayrı tutuluyor; sevk anı kargo kaydedildiğinde
+kendiliğinden doluyor (K-59).
 
 ## Yasal metinler ve künye
 

@@ -209,6 +209,8 @@ model StoreSetting {
   kdvOrani           Int    @default(10)
   /// Fatura numarası sayacı. Fatura oluşturulurken aynı işlem içinde artıyor.
   sonFaturaNo        Int    @default(0)
+  /// Sevk irsaliyesi sayacı; faturadan ayrı bir seri (K-59).
+  sonIrsaliyeNo      Int    @default(0)
   /// Panelde kargo alanına önceden seçili gelen taşıyıcı.
   varsayilanTasiyici String @default("yurtici")
 }
@@ -304,6 +306,7 @@ model Order {
   odemeler    Payment[]
   gonderiler  Shipment[]
   fatura      Invoice?
+  irsaliye    Waybill?
   talepler    OrderRequest[]
   iadeler     Refund[]
 
@@ -624,6 +627,37 @@ model Shipment {
 
   @@index([orderId])
   @@index([takipNo])
+}
+
+/// Sevk irsaliyesi.
+///
+/// **Faturadan ayrı bir belge.** Fatura satışın belgesi, irsaliye malın
+/// belgesi: kutunun yanında gider, malın kimden kime, ne zaman fiilen
+/// sevk edildiğini gösterir. Fiyat taşımak zorunda değil — taşımıyor da:
+/// kutuyu açan kargo görevlisinin ya da hediye alıcısının fiyatı görmesi
+/// gerekmiyor (K-59).
+///
+/// Zorunlu alanlar kayıtta: kendi seri-sıra numarası, düzenleme tarih-saati
+/// ve **fiili sevk tarih-saati**. Düzenleme ile sevk farklı olabiliyor:
+/// akşam hazırlanıp sabah kargoya verilen paket.
+model Waybill {
+  id      String @id @default(cuid())
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  /// BA-I-2026-0001
+  numara String   @unique
+  /// Belgenin düzenlendiği an
+  tarih  DateTime @default(now())
+  /// Malın fiilen sevk edildiği an; boşsa henüz çıkmamış
+  sevk   DateTime?
+
+  /// Taşıyıcı ve takip numarası — belgenin üstünde yazıyor
+  tasiyici String @default("")
+  takipNo  String @default("")
+
+  olusturuldu DateTime @default(now())
+  guncellendi DateTime @updatedAt
 }
 
 /// e-Arşiv fatura kaydı.

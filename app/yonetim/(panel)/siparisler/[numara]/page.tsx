@@ -5,6 +5,7 @@ import { siparisGetirPanel } from "@/server/siparis";
 import {
   faturaHazirla,
   faturaKaydiGuncelle,
+  irsaliyeHazirla,
   kargoKaydet,
   siparisDurumuKaydet,
 } from "@/server/yonetim";
@@ -12,6 +13,7 @@ import { GONDERI_DURUM_ADLARI, TASIYICILAR, gonderiGetir } from "@/server/kargo"
 import { faturaGetir } from "@/server/fatura";
 import { belgeBasilabilirMi } from "@/server/siparis-belge";
 import { siparisinIadeleri } from "@/server/iade";
+import { irsaliyeGetir } from "@/server/irsaliye";
 import { ayarlariGetir } from "@/server/sepet";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import { DURUMLAR, ODEME_DURUMLARI, durumAdi, odemeAdi } from "@/ui/siparis-bicim";
@@ -46,6 +48,7 @@ export default async function SiparisDetayi({
   // Bu siparişin iade kayıtları: borç ve ödendiği an sipariş ekranında da
   // görünmeli, ayrı bir listeye bakmayı gerektirmemeli (K-58).
   const iadeler = await siparisinIadeleri(siparis.numara);
+  const irsaliye = await irsaliyeGetir(siparis.numara);
 
   return (
     <div className="flex flex-col gap-5">
@@ -255,6 +258,68 @@ export default async function SiparisDetayi({
           </ul>
         </section>
       )}
+
+      {/* İrsaliye faturadan ayrı bir belge: fatura satışın, irsaliye malın
+          belgesi. Kutunun yanında gidiyor ve fiyat taşımıyor (K-59). */}
+      <section className="rounded-marka border border-cizgi bg-yuzey p-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-lg">Sevk irsaliyesi</h2>
+          {irsaliye && belge.basilabilir && (
+            <Link
+              href={`/yonetim/siparisler/${siparis.numara}/irsaliye`}
+              className="text-sm font-bold text-mavi-koyu hover:underline"
+            >
+              İrsaliyeyi yazdır
+            </Link>
+          )}
+        </div>
+
+        {irsaliye ? (
+          <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-[160px_1fr]">
+            <dt className="text-metin-3">İrsaliye no</dt>
+            <dd className="rakam font-bold">{irsaliye.numara}</dd>
+            <dt className="text-metin-3">Düzenleme</dt>
+            <dd className="rakam">
+              {irsaliye.tarih.toLocaleString("tr-TR", {
+                dateStyle: "short",
+                timeStyle: "short",
+              })}
+            </dd>
+            <dt className="text-metin-3">Fiili sevk</dt>
+            <dd className="rakam">
+              {irsaliye.sevk
+                ? irsaliye.sevk.toLocaleString("tr-TR", {
+                    dateStyle: "short",
+                    timeStyle: "short",
+                  })
+                : "kargo kaydedilince dolacak"}
+            </dd>
+          </dl>
+        ) : (
+          <>
+            <p className="mt-1 text-xs text-metin-3">
+              Malın yanında giden belge. Fiyat yazmıyor; kutuyu açanın tutarı görmesi
+              gerekmiyor. Kargo bilgisini kaydettiğinde fiili sevk tarihi kendiliğinden
+              doluyor.
+            </p>
+            {belge.basilabilir ? (
+              <form action={irsaliyeHazirla} className="mt-4">
+                <input type="hidden" name="numara" value={siparis.numara} />
+                <button
+                  type="submit"
+                  className="rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white"
+                >
+                  İrsaliye oluştur
+                </button>
+              </form>
+            ) : (
+              <p className="mt-3 rounded-marka bg-yuzey-sicak px-3 py-2 text-xs text-metin-2">
+                {belge.sebep}
+              </p>
+            )}
+          </>
+        )}
+      </section>
 
       <section className="rounded-marka border border-cizgi bg-yuzey p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">

@@ -229,6 +229,10 @@ kargoda / teslim / iptal), `araToplam`, `indirim`, `kargoUcreti`, `kdv`,
 `genelToplam` (hepsi kuruş), `teslimatAdresi`, `faturaAdresi` (kopya, bağlantı
 değil)
 
+**Waybill** — `orderId`, `numara` (BA-I- serisi), `tarih` (düzenleme),
+`sevk?` (fiili sevk anı), `tasiyici`, `takipNo`. Sevk irsaliyesi: malın
+belgesi, faturadan ayrı seri, fiyat taşımıyor (K-59).
+
 **Refund** — `orderId`, `requestId?`, `tutarKurus`, `yontem`, `durum`
 (bekliyor · tamamlandi · basarisiz), `saglayiciRef?`, `hata?`. Para iadesi
 kaydı: mağazanın müşteriye borcu. Bir siparişin birden çok iadesi olabilir;

@@ -2783,6 +2783,95 @@ yazması; JavaScript kapalı tarayıcıda iade işaretleme.
 
 ---
 
+### K-59 · Günün işi, sevk irsaliyesi ve kargoda bekleyenler
+
+Üçü de aynı soruya bakıyor: bugün ne yapacağım, malın yanına ne koyacağım,
+neyi unuttum.
+
+#### Kargoda bekleyenler — otomatik teslim **yapılmadı**
+
+Gönderi durumunu taşıyıcıdan alan uç hazır (`/api/kargo/durum`): bildirim
+geldiğinde sipariş kendiliğinden "teslim edildi" oluyor ve `teslimTarihi`
+yazılıyor. Ama toplayıcı hesabı şirket kuruluşuna bağlı (A-11), yani bugün o
+ucu çağıran kimse yok.
+
+**Süreye bakıp kendiliğinden teslim işaretlemek seçilmedi.** Teslim tarihi
+14 günlük cayma hakkının başladığı an; tahmine dayalı bir tarih gerçek
+teslimden erkense müşterinin yasal süresini kısaltıyor. Mağazanın kendi
+kolaylığı için müşterinin hakkını kısaltmak doğru değil.
+
+Onun yerine görünürlük: kargoya verilişinin üstünden 4 günden fazla geçen
+sipariş listede sarı, 7 günden fazla geçen mercan rozet alıyor ve listenin
+başında kaç tane olduğu yazıyor. Teslim işaretleme zaten var olan toplu
+işlemle tek tıkla yapılıyor. Karar insanda kalıyor ama unutulmuyor.
+
+"Kaç gündür yolda" `Shipment.olusturuldu`'dan sayılıyor — takip numarasının
+girildiği, yani malın taşıyıcıya verildiği an. `Order.guncellendi`
+kullanılamıyor: her panel dokunuşunda değişiyor.
+
+#### Günün işi
+
+Panelde her parça ayrı ayrı vardı — sipariş listesi, süzgeçler, toplu etiket
+— ama "bugün ne hazırlayacağım" sorusunun tek bir cevabı yoktu. Mağaza
+sahibi listeyi süzüyor, siparişleri tek tek açıyor, hangi üründen kaç adet
+toplayacağını kâğıda yazıyordu.
+
+`/yonetim/gunluk` iki şeyi yan yana koyuyor:
+
+1. **Hazırlanacak siparişler** — ödemesi tamamlanmış ve henüz kargoya
+   verilmemiş olanlar. Ölçüt `belgeBasilabilirMi` ile aynı: ödemesi
+   gelmemiş sipariş için raftan ürün ayırmak, parayı almadan malı bağlamak
+   olurdu (K-54). Kuralı ikinci kez yazmak yerine aynı işleve soruluyor.
+2. **Toplama listesi** — bütün siparişlerin ürünleri **birleştirilmiş**
+   hâli. Beş siparişte geçen aynı bedeni beş kez rafa gitmek yerine bir kez
+   alıyorsun.
+
+Gün sınırı sipariş tarihine göre çizilmiyor: havalesi dün gelen siparişin
+parası bugün onaylanmış olabiliyor. Ölçüt "bugün sipariş verildi" değil,
+"şu an ödenmiş ve henüz çıkmamış" — yapılacak iş bu.
+
+Sayfa yazdırılabiliyor: elinde kâğıtla rafa gidilen bir iş.
+
+#### Sevk irsaliyesi
+
+Fatura satışın belgesi, muhasebeye gider; **irsaliye malın belgesi**, kutunun
+yanında gider. İkisi ayrı belge, ayrı seri numarası (`BA-I-2026-0001`,
+faturanınki `BA-F-`).
+
+**Fiyat taşımıyor.** Zorunlu olmadığı gibi taşımaması daha doğru: kutuyu açan
+kargo görevlisinin ya da hediye alıcısının tutarı görmesi gerekmiyor. Bebek
+kıyafetinde hediye siparişi az değil.
+
+Üstünde olması gerekenler kayıtta: iki tarafın künyesi, seri-sıra numarası,
+**düzenleme tarih-saati** ve **fiili sevk tarih-saati**. Son ikisi farklı
+olabiliyor — paket akşam hazırlanır, sabah kargoya verilir. O yüzden sevk anı
+irsaliye kesilirken boş kalabiliyor ve kargo kaydedildiğinde doluyor; ama
+**bir kez**: ikinci bir kargo kaydı kesilmiş belgeyi geriye dönük
+değiştirmemeli.
+
+Ödemesi tamamlanmamış siparişe irsaliye de basılmıyor — malın çıkmaması
+gereken siparişin sevk belgesi olmaz (K-54).
+
+**Denenen:** 9 gündür yolda olan siparişin rozetle işaretlenmesi, baştaki
+toplam uyarısı, otomatik teslim yapılmadığının doğrulanması ve toplu işlemle
+teslim işaretlendiğinde `teslimTarihi`nin yazılması; günün işi listesinde
+ödemesi gelenin olup gelmeyenin olmaması, toplama listesinin sipariş
+sayısından bağımsız birleşmesi, menü maddesi ve toplu etiket düğmesi;
+irsaliyenin `BA-I` serisinde numara alması, fiyat içermemesi, malın cinsi ve
+miktarını, düzenleme ve fiili sevk alanlarını, imza alanlarını ve "fatura
+yerine geçmez" ibaresini taşıması; kargo kaydedilince fiili sevkin dolması;
+ödenmemiş siparişte reddedilmesi; JavaScript kapalı tarayıcıda günün işinin
+açılması ve irsaliyenin oluşturulabilmesi.
+
+**Nerede:** [`../server/kargo-bekleme.ts`](../server/kargo-bekleme.ts),
+[`../server/gunluk.ts`](../server/gunluk.ts),
+[`../app/yonetim/(panel)/gunluk/page.tsx`](../app/yonetim/(panel)/gunluk/page.tsx),
+[`../server/irsaliye.ts`](../server/irsaliye.ts),
+[`../app/yonetim/(panel)/siparisler/[numara]/irsaliye`](../app/yonetim/(panel)/siparisler),
+[`../db/schema.prisma`](../db/schema.prisma)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

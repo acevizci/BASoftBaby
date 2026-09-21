@@ -18,6 +18,7 @@ import { GorselHatasi, gorselDosyalariniSil, gorselYukle } from "@/server/gorsel
 import { TASIYICILAR, takipAdresi, tasiyiciAdi } from "@/server/kargo";
 import { faturaOlustur } from "@/server/fatura";
 import { belgeBasilabilirMi } from "@/server/siparis-belge";
+import { irsaliyeOlustur, irsaliyeSevkiniYaz } from "@/server/irsaliye";
 import { slugYap } from "@/server/slug";
 import { RENK_ADLARI } from "@/ui/katalog-bicim";
 
@@ -691,6 +692,12 @@ export async function kargoKaydet(veri: FormData): Promise<void> {
     },
   });
 
+  // İrsaliye kargo girilmeden kesilmiş olabiliyor (paket akşam hazırlanır,
+  // sabah verilir). Fiili sevk anı burada doluyor — bir kez (K-59).
+  if (takipNo) {
+    await irsaliyeSevkiniYaz(siparis.id, { tasiyici, takipNo });
+  }
+
   if (takipNo && takipNo !== oncekiTakip) {
     await kargoyaVerildiEpostasi(
       {
@@ -733,6 +740,31 @@ export async function faturaHazirla(veri: FormData): Promise<void> {
   await faturaOlustur(numara);
   vitriniYenile();
   redirect(`/yonetim/siparisler/${numara}/fatura`);
+}
+
+/**
+ * Siparişin sevk irsaliyesini oluşturur.
+ *
+ * Faturayla aynı kural: ödemesi tamamlanmamış siparişin malı da çıkmamalı
+ * (K-54, K-59).
+ */
+export async function irsaliyeHazirla(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
+  const numara = String(veri.get("numara") ?? "").trim().toUpperCase();
+  if (!numara) return;
+
+  const siparis = await db.order.findUnique({
+    where: { numara },
+    select: { odemeDurumu: true, durum: true },
+  });
+  if (!siparis) return;
+  if (!belgeBasilabilirMi(siparis).basilabilir) {
+    redirect(`/yonetim/siparisler/${numara}?hata=odenmedi`);
+  }
+
+  await irsaliyeOlustur(numara);
+  redirect(`/yonetim/siparisler/${numara}/irsaliye`);
 }
 
 /** Resmî fatura dışarıda kesildiyse numarası ve belgesi buraya yazılıyor. */
