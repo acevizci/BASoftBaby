@@ -33,6 +33,8 @@ Vercel'in proje ayarlarında durur.
 | `npm run dev` | Geliştirme sunucusu, kaydettiğin an ekranda |
 | `npm run build` | Yayına çıkacak sürümü derler |
 | `npm run goc` | Bekleyen veritabanı göçlerini uygular (yapı da bunu çağırır) |
+
+Bu üçü her gönderimde GitHub Actions'ta da çalışıyor (K-37).
 | `npm run kontrol` | Tip ve kod denetimi — göndermeden önce bunu çalıştır |
 | `npm run tohum` | Kategorileri, örnek ürünleri ve duyuruları veritabanına yazar |
 
@@ -81,6 +83,17 @@ Hangi siparişe ne açılabileceğine sunucu karar veriyor: kargoya verilmemişs
 iptal, verilmişse iade, teslimden sonra 14 gün içinde iade ve değişim (K-33).
 Onaylanan iptal siparişi iptal edip stoğu geri veriyor.
 
+## Üyelik
+
+Üye kendi siparişini hesabında görüyor; iptal, iade ve değerlendirme formları
+orada (K-36). Verilerini JSON olarak indirebiliyor ve hesabını silebiliyor —
+silme ekranı sipariş ve fatura kayıtlarının yasal saklama süresince kalacağını
+açıkça yazıyor (K-39).
+
+Giriş denemesi sınırlı: e-posta başına beş, IP başına yirmi hatalı denemeden
+sonra on beş dakika kilit. Kilit hesabın var olup olmadığını ele vermiyor
+(K-38).
+
 ## Arama
 
 Üst çubuktaki kutudan. Türkçe harflere dikkat etmek gerekmiyor: "zibin" de
@@ -89,6 +102,10 @@ içeriğinde aranıyor; birden çok kelime yazılırsa hepsinin bulunması gerek
 
 Yazarken altta öneriler çıkıyor, ama bu bir kolaylık: JavaScript kapalıyken
 kutu düz bir forma dönüşüp sonuç sayfasına gidiyor (K-35).
+
+Listeler sıralanabiliyor (önerilen, önce ucuz, önce pahalı, yeniler, puana
+göre). Küçük ekranda kategoriler açılır menüde; ikisi de JavaScript
+gerektirmiyor (K-40).
 
 ## Değerlendirmeler
 

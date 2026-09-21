@@ -183,6 +183,8 @@ export type UrunSuzgeci = {
   enFazlaKurus?: number;
   /** Serbest arama metni; kelimelere bölünüp hepsi aranıyor. */
   ara?: string;
+  /** Liste sıralaması; boşsa kataloğa giriş sırası. */
+  sirala?: string;
 };
 
 /**
@@ -252,7 +254,41 @@ async function urunleriSorgula(suzgec: UrunSuzgeci = {}): Promise<Urun[]> {
     }),
     urunIndirimleri(),
   ]);
-  return satirlar.map((s) => urunYap(s as SatirTipi, kampanyalar));
+  return sirala(
+    satirlar.map((s) => urunYap(s as SatirTipi, kampanyalar)),
+    suzgec.sirala,
+  );
+}
+
+/**
+ * Sıralama sorguda değil, kampanyalar uygulandıktan **sonra** yapılıyor.
+ *
+ * Fiyata göre sıralarken müşterinin gördüğü fiyat geçerli olmalı: indirimli
+ * bir ürün liste fiyatına göre sıralanırsa "önce ucuz" listesinde yanlış
+ * yerde çıkar. İndirim ise sorgudan sonra hesaplanıyor.
+ */
+function sirala(urunler: Urun[], nasil?: string): Urun[] {
+  const fiyat = (u: Urun) => u.kampanya?.indirimliFiyatKurus ?? u.fiyatKurus;
+
+  switch (nasil) {
+    case "ucuz":
+      return [...urunler].sort((a, b) => fiyat(a) - fiyat(b));
+    case "pahali":
+      return [...urunler].sort((a, b) => fiyat(b) - fiyat(a));
+    case "yeni":
+      // Sorgu eskiden yeniye getiriyor; tersi yeniden eskiye.
+      return [...urunler].reverse();
+    case "puan":
+      // Hiç değerlendirmesi olmayan ürün sona: puanı yok, sıfır değil (K-34).
+      return [...urunler].sort((a, b) => {
+        if (a.yorumSayisi === 0 && b.yorumSayisi === 0) return 0;
+        if (a.yorumSayisi === 0) return 1;
+        if (b.yorumSayisi === 0) return -1;
+        return b.puan - a.puan;
+      });
+    default:
+      return urunler;
+  }
 }
 
 /** Ana sayfadaki "Bu haftanın favorileri" şeridi. */

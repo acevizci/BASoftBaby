@@ -28,12 +28,15 @@ function gunYaz(t: Date): string {
 export default function TalepFormu({
   numara,
   eposta,
+  donus,
   bilgi,
   sonuc,
   mesaj,
 }: {
   numara: string;
   eposta: string;
+  /** Form gönderilince dönülecek sayfa; boşsa sipariş takibi. */
+  donus?: string;
   bilgi: TalepDurumBilgisi;
   sonuc?: string;
   mesaj?: string;
@@ -101,6 +104,7 @@ export default function TalepFormu({
         <form action={talepGonder} className="mt-5 flex flex-col gap-4">
           <input type="hidden" name="numara" value={numara} />
           <input type="hidden" name="eposta" value={eposta} />
+          {donus && <input type="hidden" name="nereye" value={donus} />}
 
           {bilgi.sonGun && (
             <p className="text-xs text-metin-3">

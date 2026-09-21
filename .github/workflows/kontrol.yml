@@ -1,0 +1,60 @@
+name: Kontrol
+
+# Her gönderimde tip denetimi, kod denetimi ve derleme.
+#
+# Doğrudan `main`'e dağıtım yapılıyor: bir hata ancak Vercel'in yapısı
+# düşünce ortaya çıkıyordu ve o noktada zaten dağıtım denenmiş oluyor. Bu iş
+# aynı denetimleri gönderim anında çalıştırıyor.
+#
+# Veritabanı gerekiyor çünkü `next build` sayfaları derlerken Prisma
+# istemcisini yüklüyor. Göçler uygulanıyor ama tohum atılmıyor: derleme için
+# şemanın olması yeterli, veri gerekmiyor.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  kontrol:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: basoftbaby
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/basoftbaby
+      # Panel şifresi tanımlı olmazsa panel kendini kapatıyor; derlemede
+      # sayfaların üretilebilmesi için bir değer gerekiyor. Gerçek şifre
+      # değil, yalnızca derleme için.
+      YONETIM_SIFRE: derleme
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Paketleri kur
+        run: npm ci
+
+      - name: Göçleri uygula
+        run: npx prisma migrate deploy
+
+      - name: Tip ve kod denetimi
+        run: npm run kontrol
+
+      - name: Derle
+        run: npm run build

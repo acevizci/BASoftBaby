@@ -724,3 +724,27 @@ model Review {
   @@index([productId, durum])
   @@index([durum, olusturuldu])
 }
+
+/// Giriş denemesi sayacı.
+///
+/// scrypt her denemeyi yavaşlatıyor ama sınır koymuyor: bir hesaba saatlerce
+/// şifre denenebilirdi. Sayaç iki anahtarla tutuluyor (K-38):
+///
+/// - `eposta:<özet>` — hedeflenen hesabı korur. Anahtar e-postanın özeti,
+///   hesabın kimliği değil: hesap var da olsa yok da olsa aynı davranıyor,
+///   yani kilit mesajı hangi adreslerin kayıtlı olduğunu ele vermiyor.
+/// - `ip:<özet>` — tek bir yerden çok sayıda hesaba şifre denemesini durdurur.
+///
+/// IP'nin kendisi değil özeti saklanıyor ve kayıtlar günlük temizlikte
+/// siliniyor: sayaç için gereken şey adresin kendisi değil, aynı yerden
+/// gelip gelmediği.
+model LoginThrottle {
+  /// "eposta:<sha256>" ya da "ip:<sha256>"
+  id          String    @id
+  sayac       Int       @default(0)
+  ilkDeneme   DateTime  @default(now())
+  kilitBitis  DateTime?
+  guncellendi DateTime  @updatedAt
+
+  @@index([guncellendi])
+}

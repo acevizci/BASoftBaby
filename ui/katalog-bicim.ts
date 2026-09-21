@@ -64,6 +64,23 @@ export type Urun = {
 };
 
 /** Bedenler sıralı sabit: veritabanında metin olarak duruyor, ekranda sırası bu. */
+/**
+ * Liste sıralaması.
+ *
+ * Varsayılan "önerilen": kataloğa giriş sırası, yani mağaza sahibinin
+ * seçtiği düzen. Ötekiler müşterinin kendi ölçütü.
+ */
+export const SIRALAMALAR = ["onerilen", "ucuz", "pahali", "yeni", "puan"] as const;
+export type Siralama = (typeof SIRALAMALAR)[number];
+
+export const SIRALAMA_ADLARI: Record<Siralama, string> = {
+  onerilen: "Önerilen",
+  ucuz: "Önce ucuz",
+  pahali: "Önce pahalı",
+  yeni: "Yeniler",
+  puan: "Puana göre",
+};
+
 export const BEDENLER = ["0-3 ay", "3-6 ay", "6-9 ay", "9-12 ay", "12-18 ay", "18-24 ay"] as const;
 
 export type Beden = (typeof BEDENLER)[number];

@@ -25,6 +25,12 @@ import {
 } from "@/server/uyelik";
 import { dogrulamaEpostasi, sifreSifirlamaEpostasi } from "@/server/eposta";
 import { sepetiUyeyeBagla } from "@/server/sepet";
+import { hesabiSil } from "@/server/kisisel-veri";
+import {
+  basariliGiris,
+  basarisizDeneme,
+  girisDenenebilirMi,
+} from "@/server/giris-sinir";
 
 function temiz(veri: FormData, alan: string): string {
   return String(veri.get(alan) ?? "").trim();
@@ -90,6 +96,16 @@ export async function girisYap(veri: FormData): Promise<void> {
   const eposta = temiz(veri, "eposta").toLowerCase();
   const sifre = String(veri.get("sifre") ?? "");
 
+  // Sınır şifre denenmeden önce bakılıyor: kilitliyken scrypt'i çalıştırmanın
+  // anlamı yok, üstelik cevabın süresi denemenin yapılıp yapılmadığını ele
+  // verirdi (K-38).
+  const sinir = await girisDenenebilirMi(eposta);
+  if (sinir.kilitli) {
+    redirect(
+      `/giris?hata=kilit&dk=${sinir.kalanDk}&nereye=${encodeURIComponent(nereye)}`,
+    );
+  }
+
   const musteri = await db.customer.findUnique({
     where: { eposta },
     select: { id: true, sifreOzeti: true },
@@ -98,9 +114,18 @@ export async function girisYap(veri: FormData): Promise<void> {
   // E-posta kayıtlı değilse de şifre yanlışsa da aynı cevap veriliyor: yoksa
   // hangi adreslerin kayıtlı olduğu tek tek denenerek öğrenilebilirdi.
   if (!musteri || !(await sifreTutuyorMu(sifre, musteri.sifreOzeti))) {
+    // Bu denemeyle kilit kurulduysa sebebi hemen söyleniyor; müşteri bir kez
+    // daha deneyip öğrenmek zorunda kalmasın.
+    const sonrasi = await basarisizDeneme(eposta);
+    if (sonrasi.kilitli) {
+      redirect(
+        `/giris?hata=kilit&dk=${sonrasi.kalanDk}&nereye=${encodeURIComponent(nereye)}`,
+      );
+    }
     redirect(`/giris?hata=kimlik&nereye=${encodeURIComponent(nereye)}`);
   }
 
+  await basariliGiris(eposta);
   await oturumAc(musteri.id);
   await sepetiUyeyeBagla();
   revalidatePath("/", "layout");
@@ -376,4 +401,34 @@ export async function varsayilanYap(veri: FormData): Promise<void> {
 
   revalidatePath("/", "layout");
   redirect("/hesabim/adresler?kayit=varsayilan");
+}
+
+/**
+ * Hesabı siler (KVKK silme hakkı).
+ *
+ * Şifre yeniden isteniyor: hesabı silmek geri alınamaz ve açık kalmış bir
+ * tarayıcıda başkasının tek tıkla yapabileceği bir şey olmamalı.
+ */
+export async function hesabimiSil(veri: FormData): Promise<void> {
+  const musteri = await girisYapan();
+  if (!musteri) redirect("/giris?hata=giris&nereye=%2Fhesabim%2Fverilerim");
+
+  const sifre = String(veri.get("sifre") ?? "");
+  const onay = temiz(veri, "onay");
+
+  const kayit = await db.customer.findUnique({
+    where: { id: musteri.id },
+    select: { sifreOzeti: true },
+  });
+  if (!kayit || !(await sifreTutuyorMu(sifre, kayit.sifreOzeti))) {
+    redirect("/hesabim/verilerim?hata=sifre-yanlis");
+  }
+  if (onay.toLocaleUpperCase("tr") !== "SİL") {
+    redirect("/hesabim/verilerim?hata=onay");
+  }
+
+  await hesabiSil(musteri.id);
+  await oturumKapat();
+  revalidatePath("/", "layout");
+  redirect("/?hesap=silindi");
 }

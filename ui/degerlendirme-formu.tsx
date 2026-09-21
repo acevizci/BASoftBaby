@@ -15,12 +15,15 @@ const GIRDI =
 export default function DegerlendirmeFormu({
   numara,
   eposta,
+  donus,
   satirlar,
   sonuc,
   mesaj,
 }: {
   numara: string;
   eposta: string;
+  /** Form gönderilince dönülecek sayfa; boşsa sipariş takibi. */
+  donus?: string;
   satirlar: DegerlendirilebilirSatir[];
   sonuc?: string;
   mesaj?: string;
@@ -64,6 +67,7 @@ export default function DegerlendirmeFormu({
               <form action={degerlendirmeGonder} className="flex flex-col gap-3">
                 <input type="hidden" name="numara" value={numara} />
                 <input type="hidden" name="eposta" value={eposta} />
+                {donus && <input type="hidden" name="nereye" value={donus} />}
                 <input type="hidden" name="orderItemId" value={s.orderItemId} />
 
                 <div>

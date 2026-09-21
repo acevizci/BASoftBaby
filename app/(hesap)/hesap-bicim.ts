@@ -7,6 +7,7 @@ export const HESAP_SAYFALARI = [
   { yol: "/hesabim", ad: "Siparişlerim" },
   { yol: "/hesabim/adresler", ad: "Adreslerim" },
   { yol: "/hesabim/bilgiler", ad: "Bilgilerim" },
+  { yol: "/hesabim/verilerim", ad: "Verilerim" },
 ] as const;
 
 export const GIRDI =
@@ -34,6 +35,10 @@ export const HATALAR: Record<string, string> = {
   kayitli: "Bu e-posta ile bir hesap zaten var. Giriş yapabilirsin.",
   "sifre-yanlis": "Mevcut şifren tutmuyor.",
   giris: "Bu sayfa için giriş yapman gerekiyor.",
+  onay: "Onay kutusuna SİL yazman gerekiyor.",
+  // Kilit mesajındaki dakika adres satırından geliyor; metin değil sayı
+  // taşındığı için buraya sayfada ekleniyor (bkz. giriş sayfası).
+  kilit: "Çok fazla hatalı giriş denemesi yapıldı.",
 };
 
 export const BILDIRIMLER: Record<string, string> = {

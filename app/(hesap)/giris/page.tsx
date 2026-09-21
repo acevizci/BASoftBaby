@@ -14,11 +14,19 @@ export const metadata: Metadata = { title: "Giriş yap", robots: { index: false 
  * müşteri sepetinin başına geri gelsin diye.
  */
 export default async function GirisSayfasi({ searchParams }: PageProps<"/giris">) {
-  const { hata, nereye } = await searchParams;
+  const { hata, nereye, dk } = await searchParams;
   if (await girisYapan()) redirect("/hesabim");
 
   const hedef = typeof nereye === "string" && nereye.startsWith("/") ? nereye : "/hesabim";
-  const hataMetni = typeof hata === "string" ? HATALAR[hata] : undefined;
+  const temelHata = typeof hata === "string" ? HATALAR[hata] : undefined;
+
+  // Kilit süresi adres satırında sayı olarak geliyor; metin taşınsaydı biri
+  // hazırladığı bağlantıyla sayfamızda istediği yazıyı gösterebilirdi.
+  const kalanDk = Number(typeof dk === "string" ? dk : "");
+  const hataMetni =
+    hata === "kilit" && Number.isInteger(kalanDk) && kalanDk > 0 && kalanDk <= 60
+      ? `${temelHata} ${kalanDk} dakika sonra yeniden deneyebilirsin. Şifreni unuttuysan sıfırlayabilirsin.`
+      : temelHata;
 
   return (
     <div className="mx-auto max-w-md px-4 py-10">

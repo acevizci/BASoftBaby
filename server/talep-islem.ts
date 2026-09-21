@@ -17,7 +17,18 @@ import { talepAc } from "@/server/talep";
 import { talepAlindiEpostasi, talepBildirimiEpostasi } from "@/server/eposta";
 import { turAdi } from "@/ui/talep-bicim";
 
-function geri(numara: string, eposta: string, ek: string): string {
+/**
+ * Formun döneceği adres.
+ *
+ * Aynı form iki yerde: sipariş takip sayfasında ve üyenin kendi sipariş
+ * ayrıntısında. Nereden gelindiyse oraya dönülüyor. Yalnızca kendi sitemizin
+ * düz bir yolu kabul ediliyor — `//baska-site` gibi bir değer verilirse
+ * müşteri formu doldurduktan sonra başka bir siteye atılabilirdi.
+ */
+function geri(numara: string, eposta: string, ek: string, nereye: string): string {
+  if (nereye.startsWith("/") && !nereye.startsWith("//") && !nereye.includes("?")) {
+    return `${nereye}?${ek}`;
+  }
   const p = new URLSearchParams({ numara, eposta });
   return `/siparis-takip?${p.toString()}&${ek}`;
 }
@@ -28,6 +39,7 @@ export async function talepGonder(form: FormData): Promise<void> {
   const tur = String(form.get("tur") ?? "").trim();
   const sebep = String(form.get("sebep") ?? "").trim();
   const aciklama = String(form.get("aciklama") ?? "").trim();
+  const nereye = String(form.get("nereye") ?? "").trim();
 
   if (!numara || !eposta) redirect("/siparis-takip");
 
@@ -38,7 +50,7 @@ export async function talepGonder(form: FormData): Promise<void> {
   // Bulunamadı ile eşleşmedi aynı cevabı veriyor: numara deneyerek hangi
   // numaraların var olduğu öğrenilmesin.
   if (!siparis || siparis.eposta.toLowerCase() !== eposta) {
-    redirect(geri(numara, eposta, "talep=yetki"));
+    redirect(geri(numara, eposta, "talep=yetki", nereye));
   }
 
   // Satır seçimleri `satir-<orderItemId>` adıyla geliyor.
@@ -51,7 +63,7 @@ export async function talepGonder(form: FormData): Promise<void> {
 
   const sonuc = await talepAc({ numara, tur, sebep, aciklama, satirlar });
   if (!sonuc.tamam) {
-    redirect(geri(numara, eposta, `talep=hata&mesaj=${encodeURIComponent(sonuc.hata)}`));
+    redirect(geri(numara, eposta, `talep=hata&mesaj=${encodeURIComponent(sonuc.hata)}`, nereye));
   }
 
   const kayit = await db.orderRequest.findUniqueOrThrow({
@@ -77,5 +89,5 @@ export async function talepGonder(form: FormData): Promise<void> {
   await talepAlindiEpostasi(eposta, bilgi);
   await talepBildirimiEpostasi(bilgi);
 
-  redirect(geri(numara, eposta, "talep=alindi"));
+  redirect(geri(numara, eposta, "talep=alindi", nereye));
 }

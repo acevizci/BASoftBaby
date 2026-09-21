@@ -1391,6 +1391,197 @@ vitrin bilgisi döndürmesi ve tek harfte susması, üst çubuktaki kutunun
 
 ---
 
+### K-36 · Üye kendi siparişini hesabında görüyor
+**21 Eylül 2026**
+
+`/hesabim` siparişleri listeliyordu ama ayrıntı için sipariş takip sayfasına
+gönderiyordu; üye orada **numarasını ve e-postasını yeniden yazmak** zorunda
+kalıyordu. Zaten giriş yapmış birinden kimliğini tekrar istemek gereksiz.
+
+Daha kötüsü: iptal, iade ve değerlendirme formları (K-33, K-34) yalnızca
+takip sayfasındaydı. Yani üye hesabından sipariş iptal edemiyor, ürün
+değerlendiremiyordu. Özellikleri yaparken müşteri yolunun bu ucu
+tamamlanmamıştı.
+
+`/hesabim/siparis/[numara]` eklendi: sipariş kartı, değerlendirme formu ve
+talep formu bir arada.
+
+**Kimlik oturumdan ve iki koşullu.** Sipariş bu hesaba **bağlı** olmalı ve
+e-posta tutmalı. Yalnızca e-postaya bakmak yetmezdi: aynı adresle üyeliksiz
+verilmiş ve henüz hesaba bağlanmamış siparişler var, onlar hesapta değil
+takip sayfasında görünüyor — bağlama ancak e-posta doğrulandıktan sonra
+oluyor (K-14). Başkasının siparişi sayfa yokmuş gibi davranıyor.
+
+Formlar artık **geldikleri sayfaya** dönüyor. Dönüş yolu gizli bir alanda
+taşınıyor ve yalnızca kendi sitemizin düz bir yolu kabul ediliyor:
+`//baska-site` gibi bir değer verilseydi müşteri formu doldurduktan sonra
+başka bir siteye atılabilirdi.
+
+**Denendi** (19 madde): hesaptan ayrıntıya geçiş, kimliğin yeniden
+sorulmaması, iki formun da burada olması, formların aynı sayfaya dönmesi ve
+kaydın yazılması, başkasının siparişinin 404 vermesi, hesaba bağlanmamış
+siparişin hesapta görünmeyip takipte görünmesi, giriş yapmamış ziyaretçinin
+yönlendirilmesi, takip sayfasının bozulmamış olması, JavaScript kapalı
+tarayıcı.
+
+**Nerede:** [`../app/(hesap)/hesabim/siparis`](../app/(hesap)/hesabim/siparis),
+[`../server/uyelik.ts`](../server/uyelik.ts)
+
+---
+
+### K-37 · Denetimler gönderimde çalışıyor
+**21 Eylül 2026**
+
+Depoda hiçbir otomatik denetim yoktu. Doğrudan `main`'e dağıtım yapıldığı
+için bir tip hatası ancak Vercel'in yapısı düştüğünde ortaya çıkıyordu — ve o
+noktada zaten dağıtım denenmiş, kilit alınmış, zaman harcanmış oluyordu.
+
+`.github/workflows/kontrol.yml`: her gönderimde `npm run kontrol` (tip ve kod
+denetimi) ve `npm run build`. Postgres bir servis olarak kalkıyor çünkü
+derleme Prisma istemcisini yüklüyor ve göçleri uyguluyor.
+
+Yapı iki ortam değişkeniyle yetiniyor: veritabanı adresi ve panel şifresi.
+Şifre tanımlı olmazsa panel kendini tamamen kapatıyor (404) ve sayfalar
+üretilemiyor; oraya konan değer gerçek şifre değil, yalnızca derleme için.
+
+**Denendi:** iş akışının adımları boş bir veritabanında birebir çalıştırıldı —
+göçler uygulandı, denetim ve derleme sıfır koduyla bitti.
+
+**Nerede:** [`../.github/workflows/kontrol.yml`](../.github/workflows/kontrol.yml)
+
+---
+
+### K-38 · Giriş denemesi sınırı: iki sayaç, hesabı ele vermeden
+**21 Eylül 2026**
+
+Açık sorulardan A-10 kapandı. scrypt her denemeyi yavaşlatıyordu (16 MB
+bellek maliyeti) ama **sınır koymuyordu:** bir hesaba saatlerce şifre
+denenebilirdi.
+
+**İki ayrı sayaç, iki ayrı saldırı biçimi için:**
+
+- **E-posta başına** (5 hata / 15 dakika) — belirli bir hesaba şifre deneyen
+  saldırı.
+- **IP başına** (20 hata / 15 dakika) — tek bir yerden çok sayıda hesaba tek
+  tek şifre deneyen saldırı. E-posta sayacı bunu yakalayamaz, çünkü her
+  hesaba bir deneme düşüyor. Sınırın yüksek olmasının sebebi aynı evden ya da
+  iş yerinden birden çok kişinin girmeye çalışabilmesi.
+
+**Kilit hesabın varlığını ele vermiyor.** Sayacın anahtarı hesabın kimliği
+değil, e-postanın özeti. Hesap var da olsa yok da olsa aynı davranıyor:
+denemede olmayan bir adres de tam beşinci denemede kilitleniyor. Böylece
+"kilitlendi" mesajı hangi adreslerin kayıtlı olduğunu söylemiyor.
+
+**Kilit açıkça söyleniyor.** "Yanlış şifre" demeye devam etmek, doğru
+şifresini yazan gerçek müşteriyi sebebini bilmeden çaresiz bırakırdı. Kaç
+dakika kaldığı da yazıyor ve şifre sıfırlamaya yönlendiriliyor.
+
+Kilit **beşinci hatalı denemenin cevabında** söyleniyor, altıncıda değil:
+sayaç dolduğunda kullanıcıya hemen bildiriliyor. Bunun için sayaç işlevi
+sonucunu döndürüyor.
+
+Sınır şifre denenmeden **önce** kontrol ediliyor: kilitliyken scrypt'i
+çalıştırmanın anlamı yok, üstelik cevabın süresi denemenin yapılıp
+yapılmadığını ele verirdi.
+
+IP'nin kendisi değil özeti saklanıyor; sayaç için gereken şey adresin kendisi
+değil, aynı yerden gelip gelmediği. Kayıtlar günlük temizlikte siliniyor.
+
+**Denendi** (20 madde): ilk denemelerin geçmesi, beşincide kilit, kalan
+dakikanın bildirilmesi, kilitliyken doğru şifrenin de geçmemesi, olmayan
+hesabın aynı davranması, özetin ham e-posta içermemesi, doğru şifrenin sayacı
+sıfırlaması, IP sayacının ayrı birikmesi, altı farklı hesap denemesinin
+kilitlememesi, temizlik işi, JavaScript kapalı tarayıcı.
+
+**Nerede:** [`../server/giris-sinir.ts`](../server/giris-sinir.ts)
+
+---
+
+### K-39 · KVKK: veri indirme ve hesap silme, "her şey silindi" demeden
+**21 Eylül 2026**
+
+Gizlilik metni verilere erişme ve silinmesini isteme haklarını sayıyordu ama
+tek yolu "künyedeki kanallardan bize yaz"dı. İkisi de artık üyenin kendi
+yapabileceği bir şey.
+
+**Veri indirme** JSON dosyası olarak. JSON seçildi çünkü eksiksiz: PDF'te
+tablolar kırpılır, CSV'de siparişin satırları gibi iç içe yapılar düzleşir.
+Hesap bilgileri, adres defteri, siparişler ve satırları, talepler,
+değerlendirmeler ve oturum sayısı giriyor.
+
+**Şifre özeti ve oturum jetonları dosyaya yazılmıyor.** İkisi de kimlik
+doğrulama sırrı; kişinin kendi verisi olsa bile indirilen dosya e-postayla
+paylaşılıyor, bulutta duruyor.
+
+**Silme, her şeyi silmek değil — ve ekran bunu söylüyor.** Sipariş ve fatura
+kayıtları vergi mevzuatının öngördüğü süre boyunca saklanmak zorunda. Silinen
+şey hesap: oturumlar, jetonlar, adres defteri, pazarlama izni, bekleyen stok
+bildirimleri ve hesabın kendisi. Siparişler hesapla bağını kaybediyor,
+içlerindeki ad ve adres yasal süre boyunca duruyor. "Her şeyi sildik" demek
+kolay olurdu ama doğru olmazdı; ekranda silinenler ve silinmeyenler ayrı ayrı
+yazılı.
+
+Değerlendirmeler kalıyor ama ad "Müşteri"ye dönüyor: yorumun kendisi başka
+müşteriler için bilgi, adı ise kişisel veri.
+
+Silmek için **şifre yeniden isteniyor ve kutuya SİL yazılıyor.** Geri
+alınamaz bir işlem, açık kalmış bir tarayıcıda başkasının tek tıkla
+yapabileceği bir şey olmamalı.
+
+**Denendi** (30 madde): dosyanın inmesi ve içeriğinin eksiksizliği, şifre
+özetinin ve oturum jetonunun dosyada bulunmaması, giriş yapmamışın
+indirememesi, yanlış şifrenin ve yanlış onay kelimesinin reddedilmesi,
+silmeden sonra hesabın-adreslerin-oturumların gitmesi, siparişin durup hesap
+bağının kopması, değerlendirmenin durup adının anonimleşmesi, JavaScript
+kapalı tarayıcı.
+
+**Nerede:** [`../server/kisisel-veri.ts`](../server/kisisel-veri.ts),
+[`../app/(hesap)/hesabim/verilerim`](../app/(hesap)/hesabim/verilerim)
+
+---
+
+### K-40 · Sıralama ve mobil menü: ikisi de JavaScript'siz
+**21 Eylül 2026**
+
+**Sıralama.** Listelerde beden, yaş, renk ve fiyat süzgeçleri vardı ama
+sıralama yoktu. Beş seçenek eklendi: önerilen (kataloğa giriş sırası, yani
+mağaza sahibinin düzeni), önce ucuz, önce pahalı, yeniler, puana göre. Hem
+kategori sayfasında hem aramada.
+
+Sıralama **sorguda değil, kampanyalar uygulandıktan sonra** yapılıyor. Fiyata
+göre sıralarken müşterinin gördüğü fiyat geçerli olmalı; indirimli bir ürün
+liste fiyatına göre sıralanırsa "önce ucuz" listesinde yanlış yerde çıkar.
+
+Puana göre sıralamada hiç değerlendirmesi olmayan ürün **sona** gidiyor:
+puanı yok, sıfır değil (K-34).
+
+Sıralama bağlantılarla yapılıyor, süzgeçlerle aynı düzende — açılır kutu
+seçtiği anda gitsin isteseydik JavaScript gerekirdi.
+
+**Mobil menü.** Kategoriler üst çubukta düz bir satır hâlinde sarıyordu;
+arama kutusu da eklenince telefonda iyice doluyordu. Küçük ekranda artık
+açılır menü var.
+
+`<details>` kullanıldı: tarayıcının kendi açılır öğesi. JavaScript kapalıyken
+çalışıyor, klavyeyle açılıp kapanıyor, ekran okuyucu "genişlet" diye okuyor.
+Bir düğme ve durum değişkeniyle yapmak JavaScript'e bağımlılık getirirdi —
+sitenin geri kalanı buna bağlı değil.
+
+Kategori bağlantıları iki kez yazılıyor (açılır menüde ve geniş ekran
+şeridinde). `<details>` kapalıyken içeriğini tarayıcı gizlediği için geniş
+ekranda "hep açık" hâle getirmenin temiz bir yolu yok; beş-on bağlantının iki
+kez yazılması bu kırılganlığa değmiyor.
+
+**Denendi** (21 madde): sıralamanın fiyatları gerçekten sıralaması, iki yönün
+birbirinin tersi olması, süzgeçle birlikte çalışması, puansız ürünün sona
+gitmesi, aramada sorgunun korunması; mobil menünün kapalı başlaması, açılması,
+geniş ekranda gizlenmesi; JavaScript kapalı tarayıcıda ikisinin de çalışması.
+
+**Nerede:** [`../ui/ust-cubuk.tsx`](../ui/ust-cubuk.tsx),
+[`../server/katalog.ts`](../server/katalog.ts)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı
@@ -1470,9 +1661,8 @@ tanımlanması gerekiyor. Bu yapılana kadar uzun süre ziyaretçi almayan sited
 ilk açılış saniyeler sürmeye devam ediyor.
 
 ### A-10 · Giriş denemesi sınırı
-Şu an yanlış şifre denemesi sayılmıyor. scrypt her denemeyi kendiliğinden
-yavaşlatıyor, ama sürekli deneyen birine karşı hesap ya da IP başına bir sınır
-gerekiyor. Ödeme adımıyla birlikte ele alınacak.
+**21 Eylül 2026'da kapandı (K-38).** E-posta başına beş, IP başına yirmi
+hatalı denemeden sonra on beş dakika kilit.
 
 ### A-11 · Kargo toplayıcısı ve fatura sağlayıcısı
 Kargo (Geliver/Navlungo) ve e-arşiv fatura (Paraşüt/Bizim Hesap) hesapları

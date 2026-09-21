@@ -21,8 +21,14 @@ export async function degerlendirmeGonder(form: FormData): Promise<void> {
 
   if (!numara || !eposta) redirect("/siparis-takip");
 
+  // Aynı form iki yerde: sipariş takip sayfasında ve üyenin kendi sipariş
+  // ayrıntısında. Nereden gelindiyse oraya dönülüyor; yalnızca kendi
+  // sitemizin düz bir yolu kabul ediliyor.
+  const nereye = String(form.get("nereye") ?? "").trim();
   const geri = (ek: string) =>
-    `/siparis-takip?${new URLSearchParams({ numara, eposta }).toString()}&${ek}`;
+    nereye.startsWith("/") && !nereye.startsWith("//") && !nereye.includes("?")
+      ? `${nereye}?${ek}`
+      : `/siparis-takip?${new URLSearchParams({ numara, eposta }).toString()}&${ek}`;
 
   const siparis = await db.order.findUnique({
     where: { numara },

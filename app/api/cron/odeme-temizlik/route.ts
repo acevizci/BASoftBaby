@@ -3,6 +3,7 @@ import { suresiGecenOdemeleriTemizle } from "@/server/odeme-akis";
 import { eskiYuklemeleriTemizle } from "@/server/toplu-urun";
 import { birakilanSepetleriHatirlat } from "@/server/sepet-hatirlatma";
 import { eskiBildirimIsteklerimiTemizle } from "@/server/stok-bildirimi";
+import { eskiGirisSayaclariniTemizle } from "@/server/giris-sinir";
 
 /**
  * Günlük iş: yarıda kalan kart ödemeleri, eski toplu yükleme kayıtları ve
@@ -32,5 +33,8 @@ export async function GET(istek: NextRequest) {
   const hatirlatma = await birakilanSepetleriHatirlat();
   // Bir yıldır stoğa girmemiş ürünün bekleyen adresini tutmanın anlamı yok.
   const bildirim = await eskiBildirimIsteklerimiTemizle();
-  return NextResponse.json({ temizlenen, yukleme, hatirlatma, bildirim });
+  // Giriş sayaçları: sayaç için gereken şey adresin kendisi değil, aynı
+  // yerden gelip gelmediği — bir gün sonra tutmanın anlamı yok (K-38).
+  const girisSayaci = await eskiGirisSayaclariniTemizle();
+  return NextResponse.json({ temizlenen, yukleme, hatirlatma, bildirim, girisSayaci });
 }

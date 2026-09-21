@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import UrunKarti from "@/ui/urun-karti";
 import AramaKutusu from "@/ui/arama-kutusu";
-import { kategorileriGetir, urunleriGetir } from "@/server/katalog";
+import { SIRALAMALAR, SIRALAMA_ADLARI, kategorileriGetir, urunleriGetir } from "@/server/katalog";
 
 export const dynamic = "force-dynamic";
 
@@ -19,9 +19,10 @@ export default async function AramaSayfasi({ searchParams }: PageProps<"/arama">
   const aranan = await searchParams;
   const q = typeof aranan.q === "string" ? aranan.q.slice(0, 100) : "";
   const kategori = typeof aranan.kategori === "string" ? aranan.kategori : undefined;
+  const siralama = typeof aranan.sirala === "string" ? aranan.sirala : undefined;
 
   const [sonuclar, kategoriler] = await Promise.all([
-    q ? urunleriGetir({ ara: q, kategori }) : Promise.resolve([]),
+    q ? urunleriGetir({ ara: q, kategori, sirala: siralama }) : Promise.resolve([]),
     kategorileriGetir(),
   ]);
 
@@ -31,9 +32,10 @@ export default async function AramaSayfasi({ searchParams }: PageProps<"/arama">
   const sayilar = new Map<string, number>();
   for (const u of hepsi) sayilar.set(u.kategori, (sayilar.get(u.kategori) ?? 0) + 1);
 
-  const adres = (k?: string) => {
+  const adres = (k?: string, sr?: string) => {
     const p = new URLSearchParams({ q });
     if (k) p.set("kategori", k);
+    if (sr && sr !== "onerilen") p.set("sirala", sr);
     return `/arama?${p.toString()}`;
   };
 
@@ -67,7 +69,7 @@ export default async function AramaSayfasi({ searchParams }: PageProps<"/arama">
           {hepsi.length > 0 && sayilar.size > 1 && (
             <div className="mt-3 flex flex-wrap gap-2">
               <Link
-                href={adres()}
+                href={adres(undefined, siralama)}
                 className={`${ROZET} ${
                   kategori
                     ? "border-cizgi text-metin-2 hover:border-metin-3"
@@ -81,7 +83,7 @@ export default async function AramaSayfasi({ searchParams }: PageProps<"/arama">
                 .map((k) => (
                   <Link
                     key={k.slug}
-                    href={adres(k.slug)}
+                    href={adres(k.slug, siralama)}
                     className={`${ROZET} ${
                       kategori === k.slug
                         ? "border-mercan bg-mercan-soluk text-mercan-koyu"
@@ -91,6 +93,29 @@ export default async function AramaSayfasi({ searchParams }: PageProps<"/arama">
                     {k.ad} <span className="rakam">({sayilar.get(k.slug)})</span>
                   </Link>
                 ))}
+            </div>
+          )}
+
+          {sonuclar.length > 1 && (
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              <span className="text-xs text-metin-3">Sırala:</span>
+              {SIRALAMALAR.map((sr) => {
+                const seciliSr = (siralama ?? "onerilen") === sr;
+                return (
+                  <Link
+                    key={sr}
+                    href={adres(kategori, sr)}
+                    aria-pressed={seciliSr}
+                    className={`rounded-full border px-2.5 py-1 text-xs font-bold transition ${
+                      seciliSr
+                        ? "border-mercan bg-mercan-soluk text-mercan-koyu"
+                        : "border-cizgi text-metin-2 hover:border-metin-3"
+                    }`}
+                  >
+                    {SIRALAMA_ADLARI[sr]}
+                  </Link>
+                );
+              })}
             </div>
           )}
 

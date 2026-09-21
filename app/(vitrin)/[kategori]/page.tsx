@@ -7,6 +7,8 @@ import {
   BEDEN_OLCULERI,
   RENK_ADLARI,
   PALET,
+  SIRALAMALAR,
+  SIRALAMA_ADLARI,
   YAS_GRUPLARI,
   kategoriGetir,
   urunleriGetir,
@@ -23,7 +25,7 @@ const FIYAT_ARALIKLARI = [
   { etiket: "700 ₺ altı", kurus: 70000 },
 ];
 
-type Aranan = { yas?: string; beden?: string; renk?: string; fiyat?: string };
+type Aranan = { yas?: string; beden?: string; renk?: string; fiyat?: string; sirala?: string };
 
 export async function generateMetadata({
   params,
@@ -94,6 +96,7 @@ export default async function KategoriSayfasi({
     beden: aranan.beden,
     renk: aranan.renk,
     enFazlaKurus: Number.isFinite(enFazlaKurus) ? enFazlaKurus : undefined,
+    sirala: aranan.sirala,
   });
 
   const suzgecVar = Boolean(aranan.yas || aranan.beden || aranan.renk || aranan.fiyat);
@@ -208,7 +211,32 @@ export default async function KategoriSayfasi({
         </aside>
 
         <div>
-          <p className="rakam text-sm text-metin-3">{urunler.length} ürün listeleniyor</p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="rakam text-sm text-metin-3">{urunler.length} ürün listeleniyor</p>
+
+            {/* Sıralama da bağlantı: süzgeçlerle aynı düzen, JavaScript
+                kapalıyken de çalışıyor. */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs text-metin-3">Sırala:</span>
+              {SIRALAMALAR.map((sr) => {
+                const seciliSr = (aranan.sirala ?? "onerilen") === sr;
+                return (
+                  <Link
+                    key={sr}
+                    href={baglanti(kategori, aranan, "sirala", sr)}
+                    aria-pressed={seciliSr}
+                    className={`rounded-full border px-2.5 py-1 text-xs font-bold transition ${
+                      seciliSr
+                        ? "border-mercan bg-mercan-soluk text-mercan-koyu"
+                        : "border-cizgi text-metin-2 hover:border-metin-3"
+                    }`}
+                  >
+                    {SIRALAMA_ADLARI[sr]}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
 
           {urunler.length === 0 ? (
             <div className="mt-4 rounded-marka border border-cizgi bg-yuzey p-8 text-center">

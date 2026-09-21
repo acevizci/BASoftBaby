@@ -97,7 +97,7 @@ export default async function SiparislerimSayfasi({ searchParams }: PageProps<"/
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-cizgi-soluk pt-3">
                 <span className="rakam font-bold">{fiyatYaz(s.toplamKurus)}</span>
                 <Link
-                  href={`/siparis-takip?numara=${encodeURIComponent(s.numara)}&eposta=${encodeURIComponent(musteri.eposta)}`}
+                  href={`/hesabim/siparis/${encodeURIComponent(s.numara)}`}
                   className="text-sm font-bold text-mavi-koyu hover:underline"
                 >
                   Ayrıntı

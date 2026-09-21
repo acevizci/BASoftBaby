@@ -342,6 +342,21 @@ export type SiparisOzeti = {
  * tutan eski siparişler kendiliğinden bağlanmaz (K-14), onlar numara ve
  * e-postayla sipariş takibinden görülür.
  */
+/**
+ * Sipariş bu hesaba bağlı mı?
+ *
+ * Üyenin kendi sipariş sayfası buna bakıyor: e-postanın tutması tek başına
+ * yetmiyor, siparişin gerçekten hesaba bağlanmış olması gerekiyor. Bağlama
+ * e-posta doğrulandıktan sonra yapılıyor (K-14).
+ */
+export async function buHesabaBagliMi(customerId: string, numara: string): Promise<boolean> {
+  const kayit = await db.order.findFirst({
+    where: { customerId, numara: numara.trim().toUpperCase() },
+    select: { id: true },
+  });
+  return kayit !== null;
+}
+
 export async function siparislerimiGetir(customerId: string): Promise<SiparisOzeti[]> {
   const kayitlar = await db.order.findMany({
     where: { customerId },
