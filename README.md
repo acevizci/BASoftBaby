@@ -81,7 +81,9 @@ numarasıyla arama; durum, ödeme ve tarih süzgeçleri; listeden seçip toplu
 durum değiştirme ve toplu kargo etiketi yazdırma, K-48), ürün ekleme ve düzenleme,
 beden-renk stokları (arama, "sorunlular / bitenler / hepsi" süzgeci ve
 sayfalama; süzgeçli görünümde stoğu yerinde bedenler katlanmış durur, K-44),
-kategoriler (açma, adını değiştirme, sıralama, kapatma, silme),
+kategoriler (açma, adını değiştirme, sıralama, kapatma, silme — dolu bir
+kategori silinirken ürünlerin nereye taşınacağı soruluyor, K-52),
+ürün silme (sipariş geçmişi etkilenmiyor; satılmış ürün için onay isteniyor),
 Excel/CSV'den toplu ürün yükleme, satış raporu (dönem seçimi, grafik, CSV),
 duyuru şeridi,
 ana sayfa banner'ı, kampanyalar ve satış ayarları (kargo ücreti,

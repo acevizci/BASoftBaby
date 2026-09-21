@@ -32,7 +32,7 @@ export default async function KategoriEkrani({
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { duzenle, kayit, hata } = await searchParams;
+  const { duzenle, kayit, hata, adet } = await searchParams;
   const kategoriler = await tumKategoriler();
 
   const duzenlenen =
@@ -57,11 +57,15 @@ export default async function KategoriEkrani({
           Kategori adı boş bırakılamaz.
         </p>
       )}
-      {hata === "dolu" && (
+      {kayit === "tasindi" && (
+        <p className="rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">
+          Kategori silindi, <span className="rakam">{String(adet ?? "")}</span> ürün seçtiğin
+          kategoriye taşındı.
+        </p>
+      )}
+      {hata === "hedef-yok" && (
         <p className="rounded-marka bg-mercan-soluk px-4 py-3 text-sm font-semibold text-mercan-koyu">
-          İçinde ürün olan kategori silinemiyor. Ürünleri başka bir kategoriye taşı ya da
-          kategoriyi kapat — kapalı kategori vitrinde görünmez, ürünleri kendi
-          sayfalarından erişilebilir kalır.
+          Ürünlerin taşınacağı kategoriyi seç.
         </p>
       )}
 
@@ -128,12 +132,57 @@ export default async function KategoriEkrani({
                   </button>
                 </form>
 
-                <form action={kategoriSil}>
-                  <input type="hidden" name="id" value={k.id} />
-                  <button type="submit" className={KUCUK_DUGME} disabled={k.urunAdedi > 0}>
-                    Sil
-                  </button>
-                </form>
+                {/* İçinde ürün varsa önce nereye taşınacağı soruluyor.
+                    Eskiden düğme kapalıydı; bütün kategorilerde ürün olduğu
+                    için silme yokmuş gibi duruyordu (K-52). */}
+                {k.urunAdedi === 0 ? (
+                  <form action={kategoriSil}>
+                    <input type="hidden" name="id" value={k.id} />
+                    <button type="submit" className={KUCUK_DUGME}>
+                      Sil
+                    </button>
+                  </form>
+                ) : (
+                  <details className="group">
+                    <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 text-xs font-bold text-metin-2 hover:text-metin [&::-webkit-details-marker]:hidden">
+                      Sil
+                      <span aria-hidden="true" className="transition group-open:rotate-180">
+                        ▾
+                      </span>
+                    </summary>
+                    <form
+                      action={kategoriSil}
+                      className="mt-2 flex flex-wrap items-end gap-2 rounded-marka border border-cizgi bg-zemin p-3"
+                    >
+                      <input type="hidden" name="id" value={k.id} />
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs font-bold text-metin-2">
+                          <span className="rakam">{k.urunAdedi}</span> ürün nereye taşınsın?
+                        </span>
+                        <select
+                          name="hedefKategori"
+                          required
+                          defaultValue=""
+                          className="rounded-[10px] border-[1.5px] border-cizgi bg-yuzey px-3 py-2 text-sm outline-none focus:border-mercan"
+                        >
+                          <option value="" disabled>
+                            Kategori seç
+                          </option>
+                          {kategoriler
+                            .filter((d) => d.id !== k.id)
+                            .map((d) => (
+                              <option key={d.id} value={d.id}>
+                                {d.ad}
+                              </option>
+                            ))}
+                        </select>
+                      </label>
+                      <button type="submit" className={KUCUK_DUGME}>
+                        Taşı ve sil
+                      </button>
+                    </form>
+                  </details>
+                )}
 
                 <Link href={`/${k.slug}`} className="text-xs font-bold text-mavi-koyu hover:underline">
                   Gör

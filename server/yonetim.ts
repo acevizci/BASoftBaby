@@ -127,6 +127,46 @@ export async function urunKaydet(form: FormData): Promise<void> {
   redirect(`/yonetim/urunler/${slug}?kayit=1`);
 }
 
+/**
+ * Ürünü siler.
+ *
+ * **Sipariş geçmişi zarar görmüyor.** Sipariş satırı ürünün adını, adresini,
+ * bedenini ve rengini kendi içinde kopya tutuyor; varyant bağlantısı
+ * `SetNull` ile kopuyor. Yani beş yıl önce satılmış bir ürün silinse bile
+ * eski sipariş aynı görünüyor — muhasebe ve cayma hakkı kayıtları için
+ * gerekli olan bu (K-52).
+ *
+ * **Silmek yerine pasif yapmak çoğu durumda doğrusu**: ürün vitrinden kalkar
+ * ama değerlendirmeleri, fotoğrafları ve sipariş bağlantısı durur. O yüzden
+ * satılmış bir ürünü silmek için onay yazmak gerekiyor.
+ */
+export async function urunSil(form: FormData): Promise<void> {
+  await yoneticiGerekli();
+
+  const slug = metin(form, "slug");
+  if (!slug) redirect("/yonetim/urunler");
+
+  const urun = await db.product.findUnique({
+    where: { slug },
+    select: { id: true, images: { select: { yol: true, kucukYol: true } } },
+  });
+  if (!urun) redirect("/yonetim/urunler?hata=bulunamadi");
+
+  const siparisAdedi = await db.orderItem.count({
+    where: { variant: { productId: urun.id } },
+  });
+  if (siparisAdedi > 0 && metin(form, "onay").toLocaleUpperCase("tr") !== "SİL") {
+    redirect(`/yonetim/urunler/${slug}?hata=onay`);
+  }
+
+  // Fotoğraf dosyaları da gitsin: kayıt silinince depoda öksüz kalırlardı.
+  await gorselDosyalariniSil(urun.images.flatMap((g) => [g.yol, g.kucukYol]).filter(Boolean));
+  await db.product.delete({ where: { id: urun.id } });
+
+  vitriniYenile();
+  redirect("/yonetim/urunler?kayit=silindi");
+}
+
 export async function varyantEkle(form: FormData): Promise<void> {
   await yoneticiGerekli();
 
@@ -419,6 +459,18 @@ export async function kategoriKaydet(veri: FormData): Promise<void> {
  * de giderdi. Böyle bir durumda kategori kapatılabiliyor — kapalı kategori
  * vitrinde görünmüyor, ürünleri kendi sayfalarından erişilebilir kalıyor.
  */
+/**
+ * Kategoriyi siler; içinde ürün varsa önce onları başka bir kategoriye
+ * taşıyor.
+ *
+ * Eskiden içinde ürün olan kategorinin "Sil" düğmesi kapalıydı. Bütün
+ * kategorilerde ürün olduğu için düğme hep kapalıydı, yani ekranda silme
+ * yokmuş gibi duruyordu. Kapalı bir düğme "yapamazsın" diyor ama "ne
+ * yapmalısın"ı söylemiyor (K-52).
+ *
+ * Taşıma ve silme tek işlemde: yarısı olup yarısı olmasın, ürünler
+ * kategorisiz kalmasın.
+ */
 export async function kategoriSil(veri: FormData): Promise<void> {
   await yoneticiGerekli();
 
@@ -426,7 +478,22 @@ export async function kategoriSil(veri: FormData): Promise<void> {
   if (!id) redirect("/yonetim/kategoriler");
 
   const urunAdedi = await db.product.count({ where: { categoryId: id } });
-  if (urunAdedi > 0) redirect("/yonetim/kategoriler?hata=dolu");
+
+  if (urunAdedi > 0) {
+    const hedefId = String(veri.get("hedefKategori") ?? "").trim();
+    if (!hedefId || hedefId === id) {
+      redirect(`/yonetim/kategoriler?hata=hedef-yok&duzenle=${id}`);
+    }
+    const hedef = await db.category.count({ where: { id: hedefId } });
+    if (hedef === 0) redirect(`/yonetim/kategoriler?hata=hedef-yok&duzenle=${id}`);
+
+    await db.$transaction([
+      db.product.updateMany({ where: { categoryId: id }, data: { categoryId: hedefId } }),
+      db.category.delete({ where: { id } }),
+    ]);
+    vitriniYenile();
+    redirect(`/yonetim/kategoriler?kayit=tasindi&adet=${urunAdedi}`);
+  }
 
   await db.category.delete({ where: { id } });
   vitriniYenile();

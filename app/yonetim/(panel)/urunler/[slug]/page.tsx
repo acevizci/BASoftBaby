@@ -5,6 +5,7 @@ import UrunFormu from "@/ui/urun-formu";
 import { db } from "@/server/veritabani";
 import { BEDENLER } from "@/ui/katalog-bicim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import UrunSilme from "@/ui/urun-silme";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,7 @@ export default async function UrunDuzenle({
   await yoneticiGerekli();
 
   const { slug } = await params;
-  const { kayit, fhata, fkayit } = await searchParams;
+  const { kayit, fhata, fkayit, hata } = await searchParams;
 
   const [urun, kategoriler] = await Promise.all([
     db.product.findUnique({
@@ -31,6 +32,12 @@ export default async function UrunDuzenle({
     db.category.findMany({ orderBy: { sira: "asc" } }),
   ]);
   if (!urun) notFound();
+
+  // Silme kutusunda yazıyor: satılmış bir ürünü silmek geri alınamaz ve
+  // değerlendirmelerini de götürüyor (K-52).
+  const siparisAdedi = await db.orderItem.count({
+    where: { variant: { productId: urun.id } },
+  });
 
   // Fotoğraf çekiminden dönen kişi ürün ürün dolaşmak zorunda kalmasın:
   // yükleme bittiğinde sıradaki fotoğrafsız ürün gösteriliyor (K-41).
@@ -79,6 +86,15 @@ export default async function UrunDuzenle({
             stok: v.stok,
           })),
         }}
+      />
+
+      <UrunSilme
+        slug={urun.slug}
+        ad={urun.ad}
+        siparisAdedi={siparisAdedi}
+        yorumSayisi={urun.yorumSayisi}
+        fotografAdedi={urun.images.length}
+        onayHatasi={hata === "onay"}
       />
 
       <FotografYonetimi

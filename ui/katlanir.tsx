@@ -33,6 +33,7 @@ export default function Katlanir({
   baslik,
   ozet,
   acik = false,
+  eylem = false,
   children,
 }: {
   /** `?ac=<id>` ve `#<id>` ile bu bölüme bağlantı verilebiliyor. */
@@ -41,6 +42,12 @@ export default function Katlanir({
   /** Başlığın sağında, açmadan karar verdiren kısa bilgi. */
   ozet?: ReactNode;
   acik?: boolean;
+  /**
+   * "Yeni bir şey ekle" bölümleri için: başlığın soluna artı işareti
+   * koyuyor. Katlanmış bir form, başlığı bir bölüm adı gibi durduğunda
+   * bulunamıyordu — "banner ekleme yok" diye geri bildirim geldi (K-52).
+   */
+  eylem?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -50,7 +57,17 @@ export default function Katlanir({
       className="group rounded-marka border border-cizgi bg-yuzey open:shadow-sm"
     >
       <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 rounded-marka p-5 [&::-webkit-details-marker]:hidden">
-        <span className="font-baslik text-lg font-bold">{baslik}</span>
+        <span className="flex items-center gap-2 font-baslik text-lg font-bold">
+          {eylem && (
+            <span
+              aria-hidden="true"
+              className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-mercan text-base leading-none text-white"
+            >
+              +
+            </span>
+          )}
+          {baslik}
+        </span>
         {ozet && <span className="text-xs text-metin-3">{ozet}</span>}
         <span
           aria-hidden="true"

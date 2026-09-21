@@ -1,3 +1,4 @@
+import Link from "next/link";
 import DuyuruSeridi from "@/ui/duyuru-seridi";
 import Katlanir from "@/ui/katlanir";
 import { seritAyariGetir, tumDuyurular } from "@/server/duyuru";
@@ -53,6 +54,12 @@ export default async function DuyuruEkrani({ searchParams }: PageProps<"/yonetim
           <span className="rakam text-xs font-semibold text-metin-3">
             {duyurular.length} mesaj · {yayinda} yayında
           </span>
+          <Link
+            href="/yonetim/duyuru?ac=yeni-mesaj#yeni-mesaj"
+            className="ml-auto text-sm font-bold text-mavi-koyu hover:underline"
+          >
+            + Yeni mesaj
+          </Link>
         </h2>
         {duyurular.length === 0 ? (
           <p className="mt-2 text-sm text-metin-3">Henüz mesaj yok.</p>
@@ -97,7 +104,12 @@ export default async function DuyuruEkrani({ searchParams }: PageProps<"/yonetim
         )}
       </section>
 
-      <Katlanir id="yeni-mesaj" baslik="Yeni mesaj" acik={ac === "yeni-mesaj"}>
+      <Katlanir
+        id="yeni-mesaj"
+        baslik="Yeni mesaj ekle"
+        eylem
+        acik={ac === "yeni-mesaj" || duyurular.length === 0}
+      >
         <form action={duyuruEkle} className="flex flex-col gap-3">
           {/* Arka arkaya birkaç mesaj eklenebilsin: kaydettikten sonra bölüm
               açık dönüyor. */}

@@ -102,7 +102,12 @@ export default async function KullanicilarSayfasi({
         </ul>
       </section>
 
-      <Katlanir id="yeni-kullanici" baslik="Yeni kullanıcı" acik={hata !== undefined}>
+      <Katlanir
+        id="yeni-kullanici"
+        baslik="Yeni kullanıcı ekle"
+        eylem
+        acik={hata !== undefined}
+      >
         <form action={kullaniciEkle} className="flex flex-col gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5">

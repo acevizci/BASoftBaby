@@ -1,3 +1,4 @@
+import Link from "next/link";
 import HeroBanner from "@/ui/hero-banner";
 import Katlanir from "@/ui/katlanir";
 import { BANNER_GORSELLERI, BANNER_PALETLERI, bannerSaniyeGetir, tumBannerlar } from "@/server/banner";
@@ -93,6 +94,12 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
           <span className="rakam text-xs font-semibold text-metin-3">
             {bannerlar.length} banner · {yayinda} yayında
           </span>
+          <Link
+            href="/yonetim/banner?ac=yeni-banner#yeni-banner"
+            className="ml-auto text-sm font-bold text-mavi-koyu hover:underline"
+          >
+            + Yeni banner
+          </Link>
         </h2>
         {bannerlar.length === 0 ? (
           <p className="mt-2 text-sm text-metin-3">Henüz banner yok.</p>
@@ -143,7 +150,14 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
 
       </section>
 
-      <Katlanir id="yeni-banner" baslik="Yeni banner" acik={ac === "yeni-banner"}>
+      {/* Hiç banner yokken açık geliyor: boş bir listeyle karşılaşan kişinin
+          yapacağı tek şey zaten eklemek (K-52). */}
+      <Katlanir
+        id="yeni-banner"
+        baslik="Yeni banner ekle"
+        eylem
+        acik={ac === "yeni-banner" || bannerlar.length === 0}
+      >
         <form action={bannerKaydet} className="flex flex-col gap-4">
           {/* Arka arkaya birkaç banner eklenebilsin. */}
           <input type="hidden" name="ac" value="yeni-banner" />

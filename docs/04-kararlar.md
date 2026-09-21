@@ -2311,6 +2311,67 @@ adresin hiçbirinin açılmaması.
 
 ---
 
+### K-52 · Ürün silme, kategori silme ve "ekleme nerede"
+**21 Eylül 2026**
+
+Panelde üç şeyin eksik olduğu söylendi. Bakınca üçü de ayrı çıktı: biri
+gerçekten yoktu, ikisi vardı ama **ekranda yokmuş gibi duruyordu.** Bir
+özelliğin bulunamaması, olmamasıyla aynı şey.
+
+**Ürün silme gerçekten yoktu.** Ürün pasif yapılabiliyordu ama silinemiyordu.
+Eklendi ve iki soru cevaplandı:
+
+*Sipariş geçmişi ne oluyor?* Hiçbir şey. Sipariş satırı ürünün adını,
+adresini, bedenini ve rengini **kendi içinde kopya tutuyor**; varyant
+bağlantısı `SetNull` ile kopuyor. Beş yıl önce satılmış bir ürün silinse
+bile eski sipariş aynı görünüyor — muhasebe ve cayma hakkı kayıtları için
+gereken bu.
+
+*Peki ne kayboluyor?* Değerlendirmeler, fotoğraflar (dosyaları da depodan
+siliniyor, yoksa öksüz kalırlardı) ve siparişten ürün sayfasına giden
+bağlantı. Bu yüzden **satılmış bir ürünü silmek için kutuya SİL yazmak
+gerekiyor**; hiç satılmamış ürün doğrudan siliniyor. Kutunun başlığında
+hangisi olduğu açmadan yazıyor: "5 siparişte geçti — silmek yerine pasif
+yapabilirsin".
+
+**Kategori silme vardı ama düğmesi hep kapalıydı.** İçinde ürün olan
+kategori silinemiyordu ve bütün kategorilerde ürün vardı, yani düğme hiçbir
+zaman açılmıyordu. Kapalı bir düğme "yapamazsın" diyor ama "ne yapmalısın"ı
+söylemiyor; açıklama sayfanın tepesinde, düğmeden uzaktaydı.
+
+Artık dolu bir kategorinin "Sil"i açılıyor ve **ürünlerin nereye taşınacağını
+soruyor**. Taşıma ve silme tek veritabanı işleminde: yarısı olup yarısı
+olmasın, ürün kategorisiz kalmasın. Boş kategoride eskisi gibi düz bir
+"Sil" düğmesi var.
+
+**Banner ve duyuru eklemesi katlanmıştı.** K-44'te uzun sayfaları kısaltmak
+için "Yeni banner" formu `<details>` içine alınmıştı — doğru karardı ama
+başlığı bir **bölüm adı** gibi duruyordu, eylem gibi değil. Üç şey değişti:
+başlığın soluna mercan artı işareti kondu, adı "Yeni banner **ekle**" oldu,
+ve listenin başlığına "+ Yeni banner" bağlantısı eklendi. Ayrıca **hiç kayıt
+yokken bölüm açık geliyor**: boş bir listeyle karşılaşan kişinin yapacağı
+tek şey zaten eklemek.
+
+**Denendi** (28 madde): banner ekleme bağlantısının bölümü açması, banner'ın
+gerçekten eklenip listede görünmesi ve silinmesi; satılmamış ürünün onay
+istemeden silinmesi, satılmış ürünün uyarı ve onay kutusu göstermesi, yanlış
+onayla silinmemesi; boş kategoride düz silme, dolu kategoride hedef
+seçicinin çıkması, hedefsiz gönderimin reddedilmesi, taşı-ve-sil sonrası
+ürün sayısının değişmemesi ve hiçbir ürünün kategorisiz kalmaması.
+
+Denemede iki seçici tuzağı çıktı, ikisi de not edildi: her satırdaki taşıma
+listesi **bütün kategori adlarını** içerdiği için satırı adından seçmek
+neredeyse her satıra uyuyor (slug'dan seçiliyor), ve Playwright'ın
+`has-text`'i alt dizge aradığı için "Taşı ve sil" düğmesi "Sil" aramasına
+uyuyor (tam eşleşme kullanılıyor).
+
+**Nerede:** [`../server/yonetim.ts`](../server/yonetim.ts),
+[`../ui/urun-silme.tsx`](../ui/urun-silme.tsx),
+[`../app/yonetim/(panel)/kategoriler`](../app/yonetim/(panel)/kategoriler),
+[`../ui/katlanir.tsx`](../ui/katlanir.tsx)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı
