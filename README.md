@@ -84,6 +84,12 @@ adres siliniyor (K-28).
 `RESEND_ANAHTARI` tanımlı değilse hiçbir e-posta gönderilmiyor ve akışlar
 çalışmaya devam ediyor.
 
+## Tanı
+
+Panelin **Tanı** sayfası sunucu işlevinin ve veritabanının hangi bölgede
+olduğunu, aralarındaki gidiş-dönüş süresini ve ikisi ayrıysa ne yapılacağını
+gösteriyor. Yavaşlık şüphesinde ilk bakılacak yer (K-29).
+
 ## Sipariş akışı
 
 Sepet veritabanında durur, tarayıcıda yalnızca sepetin kimliğini taşıyan

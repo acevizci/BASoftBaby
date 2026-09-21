@@ -1,0 +1,135 @@
+import { onerilenVercelBolgesi, taniTopla } from "@/server/tani";
+
+export const dynamic = "force-dynamic";
+
+const KART = "rounded-marka border border-cizgi bg-yuzey p-5";
+
+/**
+ * Dağıtım tanısı.
+ *
+ * "Site yavaş" dendiğinde ilk sorulacak soru nerede çalıştığı; bu sayfa onu
+ * tahmin ettirmiyor, yazıyor. Bağlantı adresi hiçbir yerde görünmüyor,
+ * yalnızca bölge kodu.
+ */
+export default async function TaniEkrani() {
+  const t = await taniTopla();
+  const onerilen = onerilenVercelBolgesi(t.veritabaniBolgesi);
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div>
+        <h1 className="text-2xl">Dağıtım tanısı</h1>
+        <p className="mt-1 text-sm text-metin-3">
+          Sitenin nerede çalıştığı ve veritabanına ulaşmasının ne kadar sürdüğü. Yavaşlık
+          şüphesinde ilk bakılacak yer.
+        </p>
+      </div>
+
+      <section className={KART}>
+        <h2 className="text-lg">Bölgeler</h2>
+        <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Satir
+            baslik="Sunucu işlevi"
+            deger={
+              t.islevBolgesi
+                ? `${t.islevSehri ?? "bilinmeyen şehir"} (${t.islevBolgesi})`
+                : "yerelde çalışıyor"
+            }
+          />
+          <Satir
+            baslik="Veritabanı"
+            deger={
+              t.veritabaniBolgesi
+                ? `${t.veritabaniSehri} (${t.veritabaniBolgesi})`
+                : "adresten okunamadı"
+            }
+          />
+          <Satir
+            baslik="Bağlantı biçimi"
+            deger={t.havuzluMu ? "havuzlu (pooler)" : "doğrudan"}
+          />
+          <Satir
+            baslik="Veritabanı gidiş-dönüş"
+            deger={t.gidisDonusMs !== null ? `${t.gidisDonusMs} ms (ortanca)` : "ölçülemedi"}
+          />
+        </dl>
+
+        {t.olculenler.length > 0 && (
+          <p className="mt-3 text-xs text-metin-3">
+            Ölçümler: <span className="rakam">{t.olculenler.join(" · ")}</span> ms. Bağlantı
+            kurma maliyeti dışarıda; ölçülen saf ağ gecikmesi.
+          </p>
+        )}
+
+        {t.hata && (
+          <p className="mt-3 rounded-marka bg-mercan-soluk px-4 py-3 text-sm font-semibold text-mercan-koyu">
+            {t.hata}
+          </p>
+        )}
+      </section>
+
+      <section className={KART}>
+        <h2 className="text-lg">Yorum</h2>
+        {t.aynidaMi === true && (
+          <p className="mt-2 text-sm text-nane-koyu">
+            <span className="font-bold">İşlev ve veritabanı aynı şehirde.</span> Yapılacak
+            bir şey yok; gecikmenin kaynağı başka yerde.
+          </p>
+        )}
+
+        {t.aynidaMi === false && (
+          <div className="mt-2 flex flex-col gap-3 text-sm text-metin-2">
+            <p className="font-bold text-mercan-koyu">
+              İşlev {t.islevSehri}&apos;da, veritabanı {t.veritabaniSehri}&apos;da.
+            </p>
+            <p>
+              Her sayfa birkaç veritabanı sorgusu yapıyor ve her sorgu bu mesafeyi iki kez
+              gidiyor. Ölçülen gidiş-dönüş {t.gidisDonusMs} ms; sayfa başına birkaç sorgu
+              demek, tek başına yüz milisaniyeler demek.
+            </p>
+            {onerilen && (
+              <div>
+                <p>
+                  Çözüm işlevi veritabanının yanına taşımak. Depodaki{" "}
+                  <span className="rakam font-bold">vercel.json</span> dosyasına şu satır
+                  ekleniyor ve yeniden dağıtılıyor:
+                </p>
+                <pre className="mt-2 overflow-x-auto rounded-[10px] bg-metin px-4 py-3 text-xs text-white">
+                  {`"regions": ["${onerilen}"]`}
+                </pre>
+                <p className="mt-2 text-xs text-metin-3">
+                  Tersi de olur: veritabanını işlevin yanına taşımak. Ama Neon&apos;da bölge
+                  değiştirmek yeni bir veritabanı açıp veriyi taşımak demek; işlevi taşımak
+                  tek satır.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {t.aynidaMi === null && (
+          <p className="mt-2 text-sm text-metin-2">
+            Bölgelerden biri okunamadı. Yerelde çalışırken bu normal: sunucu işlevi bölgesi
+            yalnızca Vercel&apos;de tanımlı oluyor.
+          </p>
+        )}
+
+        {t.havuzluMu && (
+          <p className="mt-4 text-xs text-metin-3">
+            Uygulama havuzlu bağlantıyı kullanıyor — doğrusu bu. Göçler ise doğrudan
+            bağlantıyla yapılıyor (K-25).
+          </p>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function Satir({ baslik, deger }: { baslik: string; deger: string }) {
+  return (
+    <div>
+      <dt className="text-xs font-bold text-metin-3">{baslik}</dt>
+      <dd className="mt-0.5 text-sm font-bold">{deger}</dd>
+    </div>
+  );
+}

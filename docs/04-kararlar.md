@@ -992,6 +992,49 @@ JavaScript kapalı tarayıcı.
 
 ---
 
+### K-29 · Bölge tahmin edilmiyor, panelde yazıyor
+**21 Eylül 2026**
+
+Yayındaki cevap başlığı `X-Vercel-Id: fra1::iad1::` diyordu: kenar
+Frankfurt'ta, sunucu işlevi Washington'da. Veritabanı da Washington'daysa
+sorun yok; Frankfurt'taysa her sorgu Atlantik'i iki kez geçiyor demek ve
+sayfa başına birkaç sorgu, tek başına yüz milisaniyeler.
+
+Bunu sormak yerine panele bir **Tanı** sayfası eklendi. Gösterdikleri:
+
+- Sunucu işlevinin bölgesi ve şehri (`VERCEL_REGION`)
+- Veritabanının bölgesi ve şehri — Neon'un sunucu adında zaten yazıyor
+  (`ep-…**.eu-central-1**.aws.neon.tech`)
+- Bağlantı havuzlu mu doğrudan mı
+- Veritabanına gidiş-dönüş: beş `select 1`, ortancası. Bağlantı kurma
+  maliyeti dışarıda; ölçülen saf ağ gecikmesi.
+- İkisi ayrı bölgedeyse ne yapılacağı, `vercel.json`a yazılacak satırla
+  birlikte
+
+**Bağlantı adresi hiçbir yerde görünmüyor** — yalnızca sunucu adından okunan
+bölge kodu. Sayfa panelin altında, yani şifreyle korunuyor; yine de ekrana
+basılmayacak bir şeyi ekrana basmamak doğru olan.
+
+**Neden işlevi taşımak, veritabanını değil.** İkisini aynı şehre getirmenin
+iki yolu var. Neon'da bölge değiştirmek yeni bir veritabanı açıp veriyi
+taşımak demek; `vercel.json`a `"regions": ["fra1"]` yazmak tek satır ve geri
+alınabilir. Tek satır kazanıyor.
+
+Bölge okuma ölçümden ayrı bir işlev (`bolgeleriCoz`): hem denenebiliyor hem
+de veritabanına ulaşılamasa bile bölgeler ekranda görünüyor — asıl merak
+edilen zaten o.
+
+**Denendi** (21 madde): sahte Neon adresleriyle bölge okuma, şehir eşlemesi,
+havuzlu/doğrudan ayrımı, aynı ve ayrı bölge kararı, önerilen Vercel
+bölgesi; eksik, yerel ve çözümlenemeyen adreslerde patlamaması; çözülmüş
+bilgide adresin ve şifrenin bulunmaması; sayfanın tarayıcıda açılması,
+ölçümün görünmesi ve sayfa kaynağında bağlantı adresinin geçmemesi.
+
+**Nerede:** [`../server/tani.ts`](../server/tani.ts),
+[`../app/yonetim/tani/page.tsx`](../app/yonetim/tani/page.tsx)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı
@@ -1062,6 +1105,12 @@ Resend'de hesap açılıp `RESEND_ANAHTARI` Vercel'e girilmeli; gönderen adresi
 alan adının Resend'de doğrulanması gerektiği için alan adına (A-02) bağlı.
 Anahtar tanımlanana kadar e-postalar gönderilmiyor, akışlar çalışmaya devam
 ediyor.
+
+### A-12 · İşlev ve veritabanı bölgesi
+Yayında sunucu işlevi Washington'da (`iad1`) çalışıyor. Veritabanının bölgesi
+panelin **Tanı** sayfasında yazıyor (K-29). İkisi ayrıysa `vercel.json`a
+`"regions": ["<bölge>"]` eklenip yeniden dağıtılacak; sayfa hangi bölgeyi
+yazacağını da gösteriyor.
 
 ### A-10 · Giriş denemesi sınırı
 Şu an yanlış şifre denemesi sayılmıyor. scrypt her denemeyi kendiliğinden
