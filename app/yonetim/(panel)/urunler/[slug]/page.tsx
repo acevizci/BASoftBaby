@@ -3,7 +3,7 @@ import FotografYonetimi from "@/ui/fotograf-yonetimi";
 import type { RenkAdi } from "@/ui/katalog-bicim";
 import UrunFormu from "@/ui/urun-formu";
 import { db } from "@/server/veritabani";
-import { BEDENLER } from "@/ui/katalog-bicim";
+import { bedenSirasi, sonSira, bedenler as bedenleriGetir } from "@/server/bedenler";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import UrunSilme from "@/ui/urun-silme";
 
@@ -50,10 +50,12 @@ export default async function UrunDuzenle({
     db.product.count({ where: { images: { none: {} }, slug: { not: slug } } }),
   ]);
 
+  // Beden sırası ve yeni varyant eklerken seçilebilecek bedenler
+  // veritabanından geliyor (K-56).
+  const [sira, secilebilirBedenler] = await Promise.all([bedenSirasi(), bedenleriGetir()]);
+
   const sirali = [...urun.variants].sort((a, b) => {
-    const fark =
-      (BEDENLER as readonly string[]).indexOf(a.beden) -
-      (BEDENLER as readonly string[]).indexOf(b.beden);
+    const fark = sonSira(sira, a.beden) - sonSira(sira, b.beden);
     return fark !== 0 ? fark : a.renk.localeCompare(b.renk, "tr");
   });
 
@@ -64,6 +66,7 @@ export default async function UrunDuzenle({
       <UrunFormu
         kaydedildi={kayit === "1"}
         kategoriler={kategoriler.map((k) => ({ slug: k.slug, ad: k.ad }))}
+        bedenler={secilebilirBedenler.map((b) => ({ id: b.id, ad: b.ad }))}
         urun={{
           slug: urun.slug,
           ad: urun.ad,

@@ -3,8 +3,6 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import UrunKarti from "@/ui/urun-karti";
 import {
-  BEDENLER,
-  BEDEN_OLCULERI,
   RENK_ADLARI,
   PALET,
   SIRALAMALAR,
@@ -12,9 +10,9 @@ import {
   YAS_GRUPLARI,
   kategoriGetir,
   urunleriGetir,
-  type Beden,
   type RenkAdi,
 } from "@/server/katalog";
+import { bedenler as bedenleriGetir } from "@/server/bedenler";
 
 /** "urunler" gerçek bir kategori değil; tüm katalogu gösteren liste. */
 const TUMU = "urunler";
@@ -101,6 +99,7 @@ export default async function KategoriSayfasi({
 
   const suzgecVar = Boolean(aranan.yas || aranan.beden || aranan.renk || aranan.fiyat);
   const renkler = Object.keys(RENK_ADLARI) as RenkAdi[];
+  const bedenSecenekleri = await bedenleriGetir();
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -147,18 +146,16 @@ export default async function KategoriSayfasi({
               </Link>
             </div>
             <div className="mt-2 flex flex-col gap-2">
-              {BEDENLER.map((b) => (
+              {bedenSecenekleri.map((b) => (
                 <SuzgecDugmesi
-                  key={b}
-                  secili={aranan.beden === b}
-                  href={baglanti(kategori, aranan, "beden", b)}
+                  key={b.id}
+                  secili={aranan.beden === b.ad}
+                  href={baglanti(kategori, aranan, "beden", b.ad)}
                 >
-                  {b}
+                  {b.ad}
                   {/* Boy-kilo karşılığı burada duruyor: beden rehberine gitmeden
                       doğru bedeni seçebilmek iadelerin çoğunu önlüyor. */}
-                  <span className="ml-2 font-semibold text-metin-3">
-                    {BEDEN_OLCULERI[b as Beden].boy}
-                  </span>
+                  <span className="ml-2 font-semibold text-metin-3">{b.boy}</span>
                 </SuzgecDugmesi>
               ))}
             </div>

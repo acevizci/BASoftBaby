@@ -11,7 +11,8 @@ import {
   type StokUrunu,
 } from "@/server/stok-ekrani";
 import BedenTablosu from "@/ui/beden-tablosu";
-import { BEDENLER, RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
+import { RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
+import { bedenSirasi, sonSira } from "@/server/bedenler";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
@@ -43,6 +44,7 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
   const suzgec = suzgeciCoz(parametreler);
   const { kayit } = parametreler;
   const { urunler, sayfa, sonSayfa, toplamAdet, sayaclar } = await stokSayfasi(suzgec);
+  const sira = await bedenSirasi();
 
   const adres = (degisiklik: Partial<typeof suzgec>) =>
     stokAdresi({ ...suzgec, sayfa: 1, ...degisiklik });
@@ -157,7 +159,7 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
             <input type="hidden" name="sayfa" value={String(sayfa)} />
 
             {urunler.map((u) => (
-              <Urun key={u.id} urun={u} hepsiAcik={suzgec.durum === "hepsi"} />
+              <Urun key={u.id} urun={u} hepsiAcik={suzgec.durum === "hepsi"} sira={sira} />
             ))}
 
             <button
@@ -194,16 +196,23 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
   );
 }
 
-function Urun({ urun, hepsiAcik }: { urun: StokUrunu; hepsiAcik: boolean }) {
+function Urun({
+  urun,
+  hepsiAcik,
+  sira,
+}: {
+  urun: StokUrunu;
+  hepsiAcik: boolean;
+  /** Beden sırası; liste veritabanından geliyor (K-56). */
+  sira: Map<string, number>;
+}) {
   // Biten önce, sonra azalan, sonra beden sırası: düzeltilecek olan en üstte
   // dursun diye.
   const sirali = [...urun.bedenler].sort((a, b) => {
     const oncelik = (s: number) => (s === 0 ? 0 : s <= AZALAN_ESIK ? 1 : 2);
     const fark = oncelik(a.stok) - oncelik(b.stok);
     if (fark !== 0) return fark;
-    const bedenFarki =
-      (BEDENLER as readonly string[]).indexOf(a.beden) -
-      (BEDENLER as readonly string[]).indexOf(b.beden);
+    const bedenFarki = sonSira(sira, a.beden) - sonSira(sira, b.beden);
     return bedenFarki !== 0 ? bedenFarki : a.renk.localeCompare(b.renk, "tr");
   });
 

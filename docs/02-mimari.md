@@ -196,6 +196,12 @@ arşiv), `kdvOrani`, `etiketler`
 
 **Category** — `slug`, `ad`, `parentId` (ağaç), `yasAraligi`
 
+**Size** — `ad`, `boy`, `kilo`, `sira`, `aktif`, `yasKodu`. Beden listesi
+panelden yönetiliyor (K-56). `ProductVariant.beden` buraya yabancı anahtarla
+bağlı değil, adı metin olarak tutuyor: sipariş satırındaki kopya sonradan
+değişmemeli. Ad değişince açık varyantlar aynı işlemde güncelleniyor,
+sipariş geçmişi değişmiyor.
+
 ### Müşteri ve sipariş
 
 **Customer** *(kuruldu)* — `eposta` (tekil), `adSoyad`, `telefon`,

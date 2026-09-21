@@ -24,7 +24,7 @@ import { slugYap } from "@/server/slug";
 import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
 import { aramaMetinleriniTazele } from "@/server/arama";
 import { normalle } from "@/server/arama-metin";
-import { BEDENLER, GORSEL_TIPLERI, RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
+import { GORSEL_TIPLERI, RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
 
 /** Tablodaki bir satırın çözülmüş hâli. */
 export type Satir = {
@@ -120,13 +120,18 @@ function renkCoz(ham: string): RenkAdi | null {
   return kodlar.find((k) => k === m || anahtar(RENK_ADLARI[k]) === m) ?? null;
 }
 
-/** "0-3" ya da "0-3 ay" gibi yazımları listedeki bedene oturtur. */
-function bedenCoz(ham: string): string | null {
+/**
+ * "0-3" ya da "0-3 ay" gibi yazımları listedeki bedene oturtur.
+ *
+ * Kabul edilen bedenler artık veritabanından geliyor ve çağıran tarafından
+ * veriliyor: bu modül senkron kalsın diye (K-56).
+ */
+function bedenCoz(ham: string, bedenler: readonly string[]): string | null {
   const m = anahtar(ham);
   if (!m) return null;
   return (
-    BEDENLER.find((b) => anahtar(b) === m) ??
-    BEDENLER.find((b) => anahtar(b) === `${m} ay`) ??
+    bedenler.find((b) => anahtar(b) === m) ??
+    bedenler.find((b) => anahtar(b) === `${m} ay`) ??
     null
   );
 }
@@ -236,6 +241,8 @@ function sutunHaritasi(basliklar: string[]): Partial<Record<SutunAdi, number>> {
 export function satirlariCoz(
   basliklar: string[],
   ham: string[][],
+  /** Kabul edilen bedenler, sırasıyla (bkz. server/bedenler.ts). */
+  bedenler: readonly string[],
 ): { satirlar: Satir[]; hatalar: Hata[] } {
   const harita = sutunHaritasi(basliklar);
   const hatalar: Hata[] = [];
@@ -278,12 +285,12 @@ export function satirlariCoz(
     }
 
     const bedenHam = al(h, "beden");
-    const beden = bedenCoz(bedenHam);
+    const beden = bedenCoz(bedenHam, bedenler);
     if (!beden) {
       hatalar.push({
         satirNo,
         sutun: "Beden",
-        mesaj: `"${bedenHam}" tanınmadı. Kabul edilenler: ${BEDENLER.join(", ")}.`,
+        mesaj: `"${bedenHam}" tanınmadı. Kabul edilenler: ${bedenler.join(", ")}.`,
       });
     }
 

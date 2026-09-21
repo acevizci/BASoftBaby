@@ -26,6 +26,27 @@ model Category {
   @@index([aktif, sira])
 }
 
+/// Beden: ad, boy-kilo karşılığı ve sıra. Panelden yönetiliyor.
+///
+/// `ProductVariant.beden` bu tabloya yabancı anahtarla bağlı değil, adı
+/// metin olarak tutuyor. Sebebi sipariş geçmişi: satılmış bir bedenin adı
+/// sonradan değişse bile sipariş satırındaki kopya olduğu gibi kalmalı.
+/// Beden adı değiştirilirken açık varyantlar aynı işlem içinde
+/// güncelleniyor, sipariş satırları güncellenmiyor.
+model Size {
+  id    String @id @default(cuid())
+  ad    String @unique
+  boy   String
+  kilo  String
+  sira  Int    @default(0)
+  aktif Boolean @default(true)
+
+  /// Ana sayfadaki ve süzgeçteki yaş grubu kodu; boşsa yaş süzgecinde çıkmaz
+  yasKodu String?
+
+  @@index([aktif, sira])
+}
+
 model Product {
   id         String   @id @default(cuid())
   slug       String   @unique

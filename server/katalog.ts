@@ -7,7 +7,8 @@
 
 import { db } from "@/server/veritabani";
 import { urunIndirimleri, urunKampanyasi, type KampanyaKaydi } from "@/server/kampanya";
-import { BEDENLER, type RenkAdi, type RozetTonu, type GorselTipi, type Urun, type Kategori, yasGrubununBedenleri } from "@/ui/katalog-bicim";
+import { type RenkAdi, type RozetTonu, type GorselTipi, type Urun, type Kategori } from "@/ui/katalog-bicim";
+import { bedenSirasi, sonSira, yasGrubununBedenleri } from "@/server/bedenler";
 import { ETIKETLER, paylasilanOnbellek, paylasilanOnbellekli } from "@/server/onbellek";
 import { kelimeler } from "@/server/arama-metin";
 
@@ -49,15 +50,20 @@ type SatirTipi = {
   }[];
 };
 
-function bedenSirasi(beden: string): number {
-  const i = (BEDENLER as readonly string[]).indexOf(beden);
-  return i === -1 ? BEDENLER.length : i;
-}
-
-/** Veritabanı satırını sayfaların beklediği biçime çevirir. */
-function urunYap(satir: SatirTipi, kampanyalar: KampanyaKaydi[] = []): Urun {
+/**
+ * Veritabanı satırını sayfaların beklediği biçime çevirir.
+ *
+ * `sira` beden sıralamasını taşıyor: beden listesi artık veritabanında
+ * olduğu için sıra da oradan geliyor ve çağıran tarafından veriliyor —
+ * bu işlev senkron kalsın diye (K-56).
+ */
+function urunYap(
+  satir: SatirTipi,
+  kampanyalar: KampanyaKaydi[] = [],
+  sira: Map<string, number> = new Map(),
+): Urun {
   const varyantlar = [...satir.variants]
-    .sort((a, b) => bedenSirasi(a.beden) - bedenSirasi(b.beden))
+    .sort((a, b) => sonSira(sira, a.beden) - sonSira(sira, b.beden))
     .map((v) => ({ id: v.id, beden: v.beden, renk: v.renk as RenkAdi, stok: v.stok }));
 
   // Renk listesi varyantlardan türetilir; ayrı bir sütunda tutulup
@@ -167,12 +173,13 @@ export async function kategoriGetir(slug: string): Promise<Kategori | undefined>
 }
 
 export async function urunGetir(slug: string): Promise<Urun | undefined> {
-  const [satir, kampanyalar] = await Promise.all([
+  const [satir, kampanyalar, sira] = await Promise.all([
     db.product.findUnique({ where: { slug }, include: URUN_ICEREN }),
     urunIndirimleri(),
+    bedenSirasi(),
   ]);
   if (!satir || !satir.aktif) return undefined;
-  return urunYap(satir as SatirTipi, kampanyalar);
+  return urunYap(satir as SatirTipi, kampanyalar, sira);
 }
 
 export type UrunSuzgeci = {
@@ -235,10 +242,10 @@ function varyantKosulu(suzgec: UrunSuzgeci, yasBedenleri: readonly string[]) {
 }
 
 async function urunleriSorgula(suzgec: UrunSuzgeci = {}): Promise<Urun[]> {
-  const yasBedenleri = suzgec.yas ? yasGrubununBedenleri(suzgec.yas) : [];
+  const yasBedenleri = suzgec.yas ? await yasGrubununBedenleri(suzgec.yas) : [];
   const aranan = suzgec.ara ? kelimeler(suzgec.ara) : [];
 
-  const [satirlar, kampanyalar] = await Promise.all([
+  const [satirlar, kampanyalar, sira] = await Promise.all([
     db.product.findMany({
       where: {
         aktif: true,
@@ -255,9 +262,10 @@ async function urunleriSorgula(suzgec: UrunSuzgeci = {}): Promise<Urun[]> {
       orderBy: { olusturuldu: "asc" },
     }),
     urunIndirimleri(),
+    bedenSirasi(),
   ]);
   return sirala(
-    satirlar.map((s) => urunYap(s as SatirTipi, kampanyalar)),
+    satirlar.map((s) => urunYap(s as SatirTipi, kampanyalar, sira)),
     suzgec.sirala,
   );
 }
@@ -302,7 +310,7 @@ export const oneCikanUrunler = paylasilanOnbellekli(
 );
 
 async function oneCikanlariSorgula(adet = 8): Promise<Urun[]> {
-  const [satirlar, kampanyalar] = await Promise.all([
+  const [satirlar, kampanyalar, sira] = await Promise.all([
     db.product.findMany({
       where: { aktif: true },
       include: URUN_ICEREN,
@@ -310,8 +318,9 @@ async function oneCikanlariSorgula(adet = 8): Promise<Urun[]> {
       take: adet,
     }),
     urunIndirimleri(),
+    bedenSirasi(),
   ]);
-  return satirlar.map((s) => urunYap(s as SatirTipi, kampanyalar));
+  return satirlar.map((s) => urunYap(s as SatirTipi, kampanyalar, sira));
 }
 
 /**
@@ -326,15 +335,16 @@ export function benzerUrunler(urun: Urun, adet = 4): Promise<Urun[]> {
 const benzerleriSorgula = paylasilanOnbellekli(
   async function benzerleriSorgula(slug: string, kategori: string, adet: number): Promise<Urun[]> {
     const urun = { slug, kategori };
-    const [ayni, kampanyalar] = await Promise.all([
+    const [ayni, kampanyalar, sira] = await Promise.all([
     db.product.findMany({
       where: { aktif: true, slug: { not: urun.slug }, category: { slug: urun.kategori } },
       include: URUN_ICEREN,
       take: adet,
     }),
     urunIndirimleri(),
+    bedenSirasi(),
   ]);
-  if (ayni.length >= adet) return ayni.map((s) => urunYap(s as SatirTipi, kampanyalar));
+  if (ayni.length >= adet) return ayni.map((s) => urunYap(s as SatirTipi, kampanyalar, sira));
 
   const digerleri = await db.product.findMany({
     where: {
@@ -345,7 +355,7 @@ const benzerleriSorgula = paylasilanOnbellekli(
     include: URUN_ICEREN,
     take: adet - ayni.length,
   });
-    return [...ayni, ...digerleri].map((s) => urunYap(s as SatirTipi, kampanyalar));
+    return [...ayni, ...digerleri].map((s) => urunYap(s as SatirTipi, kampanyalar, sira));
   },
   ["benzer-urunler"],
   [ETIKETLER.katalog],

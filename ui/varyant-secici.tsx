@@ -5,13 +5,15 @@ import Link from "next/link";
 import SepeteEkle from "@/ui/sepete-ekle";
 import StokBildirimi from "@/ui/stok-bildirimi";
 import {
-  BEDEN_OLCULERI,
   RENK_ADLARI,
   PALET,
-  type Beden,
   type RenkAdi,
   type Varyant,
 } from "@/ui/katalog-bicim";
+
+/** Beden adı → boy/kilo. Bedenler veritabanından geldiği için sunucudan
+ *  geçiyor: bu bir istemci bileşeni, veritabanına bakamaz (K-56). */
+export type BedenOlculeri = Record<string, { boy: string; kilo: string }>;
 
 /** Bir beden ve renk için stok; olmayan birleşim undefined döner. */
 function bul(varyantlar: Varyant[], beden: string, renk: RenkAdi): Varyant | undefined {
@@ -20,6 +22,7 @@ function bul(varyantlar: Varyant[], beden: string, renk: RenkAdi): Varyant | und
 
 export default function VaryantSecici({
   bedenler,
+  olculer,
   renkler,
   seciliRenk,
   varyantlar,
@@ -27,6 +30,7 @@ export default function VaryantSecici({
   bildirimDurumu,
 }: {
   bedenler: string[];
+  olculer: BedenOlculeri;
   renkler: RenkAdi[];
   /** Adres satırından gelen renk; galeri de buna göre süzülüyor (K-48). */
   seciliRenk: RenkAdi;
@@ -44,7 +48,7 @@ export default function VaryantSecici({
 
   const secili = bul(varyantlar, beden, renk);
   const stok = secili?.stok ?? 0;
-  const olculer = BEDEN_OLCULERI[beden as Beden];
+  const seciliOlcu = olculer[beden];
 
   return (
     <div className="flex flex-col gap-5">
@@ -89,9 +93,9 @@ export default function VaryantSecici({
         </div>
         {/* Seçili bedenin boy-kilo karşılığı: bebek bedenlerinde ay aralığı
             yalnızca bir işaret, asıl ölçü boy. İadelerin çoğu buradan. */}
-        {olculer && (
+        {seciliOlcu && (
           <p className="mt-2 text-xs text-metin-3">
-            {beden} ≈ boy {olculer.boy} · kilo {olculer.kilo}
+            {beden} ≈ boy {seciliOlcu.boy} · kilo {seciliOlcu.kilo}
           </p>
         )}
       </div>

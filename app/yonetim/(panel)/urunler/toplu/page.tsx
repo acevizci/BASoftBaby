@@ -2,7 +2,8 @@ import Link from "next/link";
 import { db } from "@/server/veritabani";
 import { planYap, type Hata, type Satir } from "@/server/toplu-urun";
 import { topluOnizle, topluUygula, topluVazgec } from "@/server/toplu-urun-islem";
-import { BEDENLER, RENK_ADLARI, fiyatYaz } from "@/ui/katalog-bicim";
+import { RENK_ADLARI, fiyatYaz } from "@/ui/katalog-bicim";
+import { bedenAdlari } from "@/server/bedenler";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
@@ -13,8 +14,14 @@ const ANA_DUGME =
 const KUCUK_DUGME =
   "rounded-full border border-cizgi bg-yuzey px-4 py-2 text-xs font-bold text-metin-2 transition hover:border-mercan hover:text-metin";
 
-/** Beklenen sütunlar; ekranda da burada da tek liste. */
-const SUTUN_ACIKLAMA: [string, string][] = [
+/**
+ * Beklenen sütunlar; ekranda da burada da tek liste.
+ *
+ * Beden listesi veritabanından geliyor (K-56): panelden yeni bir beden
+ * eklendiğinde bu yardım metni de, indirilen şablon da kendiliğinden
+ * güncelleniyor.
+ */
+const sutunAciklamalari = (bedenler: string[]): [string, string][] => [
   ["Ürün adı", "Zorunlu. Aynı adı taşıyan satırlar tek ürün olur."],
   ["Kategori", "Zorunlu. Panelde açık bir kategorinin adı ya da adresi."],
   ["Fiyat", "Yeni üründe zorunlu. 249,90 ya da 249.90."],
@@ -25,7 +32,7 @@ const SUTUN_ACIKLAMA: [string, string][] = [
   ["Yıkama talimatı", "Yeni üründe zorunlu."],
   ["Üretici", "İsteğe bağlı."],
   ["Özellikler", "Madde madde; aralarına | koy."],
-  ["Beden", `Zorunlu. ${BEDENLER.join(", ")}.`],
+  ["Beden", `Zorunlu. ${bedenler.join(", ")}.`],
   ["Renk", `Zorunlu. ${Object.values(RENK_ADLARI).join(", ")}.`],
   ["Stok", "Zorunlu. Tam sayı."],
   ["SKU", "Boş bırakılırsa üretilir."],
@@ -42,6 +49,7 @@ export default async function TopluYukleme({
   await yoneticiGerekli();
 
   const { yukleme, hata, mesaj, urun, varyant } = await searchParams;
+  const SUTUN_ACIKLAMA = sutunAciklamalari(await bedenAdlari());
 
   const kayit =
     typeof yukleme === "string"

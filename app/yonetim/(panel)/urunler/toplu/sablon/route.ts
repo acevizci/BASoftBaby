@@ -10,7 +10,8 @@
  */
 import ExcelJS from "exceljs";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
-import { BEDENLER, RENK_ADLARI } from "@/ui/katalog-bicim";
+import { RENK_ADLARI } from "@/ui/katalog-bicim";
+import { bedenAdlari } from "@/server/bedenler";
 
 export const dynamic = "force-dynamic";
 
@@ -59,7 +60,7 @@ export async function GET(): Promise<Response> {
     ["Kumaş içeriği", "Yeni üründe zorunlu — bebek tekstilinde yasal."],
     ["Yıkama talimatı", "Yeni üründe zorunlu."],
     ["Özellikler", "Madde madde; aralarına | koyun."],
-    ["Beden", BEDENLER.join(", ")],
+    ["Beden", (await bedenAdlari()).join(", ")],
     ["Renk", Object.values(RENK_ADLARI).join(", ")],
     ["Stok", "Zorunlu. Tam sayı."],
     ["SKU", "Boş bırakılırsa kendiliğinden üretilir."],

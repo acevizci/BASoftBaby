@@ -92,8 +92,15 @@ duyuru şeridi,
 ana sayfa banner'ı, kampanyalar ve satış ayarları (kargo ücreti,
 bedava kargo eşiği, havale bilgisi).
 
+**Bedenler panelden yönetiliyor** (`/yonetim/bedenler`): yeni beden ekleme,
+ad ve boy-kilo ölçülerini değiştirme, sıralama, kapatma ve silme. Ad
+değiştirilince o bedendeki ürünler de taşınıyor, satılmış siparişlerin kaydı
+olduğu gibi kalıyor. Üründe kullanılan beden silinemiyor — kapatılıyor; son
+açık beden de kapatılamıyor (K-56).
+
 Beden-boy-kilo tablosu mağazadaki beden rehberinde olduğu gibi ürün
-düzenleme ve stok ekranlarında da var; rakamlar tek kaynaktan geliyor (K-55).
+düzenleme ve stok ekranlarında da var; rakamlar tek kaynaktan geliyor
+(K-55, K-56).
 
 **Ödemesi tamamlanmamış ya da iptal edilmiş siparişe kargo etiketi ve fatura
 basılmıyor** — etiket basmak "gönderiyorum" demek, fatura ise satışın

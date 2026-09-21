@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import UrunGalerisi from "@/ui/urun-galerisi";
 import UrunKarti from "@/ui/urun-karti";
 import VaryantSecici from "@/ui/varyant-secici";
+import { bedenOlculeri } from "@/server/bedenler";
 import YorumListesi from "@/ui/yorum-listesi";
 import { Yildiz } from "@/ui/yildiz";
 import { urunYorumlari } from "@/server/yorum";
@@ -53,6 +54,9 @@ export default async function UrunSayfasi({
     urunYorumlari(urun.id),
   ]);
   const bedenler = urununBedenleri(urun);
+  // Boy-kilo bilgisi istemci bileşenine sunucudan geçiyor: bedenler artık
+  // veritabanında (K-56).
+  const olculer = await bedenOlculeri();
 
   // Renk adres satırında taşınıyor: seçim JavaScript'siz çalışıyor, galeri
   // sunucuda süzülüyor ve "mavisi" diye bağlantı paylaşılabiliyor (K-48).
@@ -164,6 +168,7 @@ export default async function UrunSayfasi({
 
           <VaryantSecici
             bedenler={bedenler}
+            olculer={olculer}
             renkler={urun.renkler}
             seciliRenk={seciliRenk}
             varyantlar={urun.varyantlar}

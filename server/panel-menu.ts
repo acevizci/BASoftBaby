@@ -84,6 +84,7 @@ export function menuyuKur(
         maddeler: [
           { yol: "/yonetim/urunler", ad: "Ürünler", rozet: s.fotografsiz, ton: "hatirlatma" },
           { yol: "/yonetim/kategoriler", ad: "Kategoriler" },
+          { yol: "/yonetim/bedenler", ad: "Bedenler" },
           { yol: "/yonetim/stok", ad: "Stok", rozet: s.sorunluStok, ton: "hatirlatma" },
         ],
       },

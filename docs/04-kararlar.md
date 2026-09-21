@@ -2516,6 +2516,83 @@ ekranında açılması ve ölçülerin görünmesi; fotoğraf işlemi sonrası a
 
 ---
 
+### K-56 · Bedenler koddan veritabanına
+
+Beden listesi kodda sabit bir dizindi ve beden adı bir TypeScript tipiydi:
+
+```ts
+export const BEDENLER = ["0-3 ay", …, "18-24 ay"] as const;
+export type Beden = (typeof BEDENLER)[number];
+```
+
+Derleme zamanı güvenliği hoştu: yanlış yazılmış bir beden adı derlenmiyordu.
+Ama mağazayı işleten kişi "24-36 ay" ekleyemiyordu — kod değişikliği, yeniden
+dağıtım ve benim burada olmam gerekiyordu. Ölçüleri kendi kalıplarına göre
+düzeltmek de aynı şekilde. Kategoriler, kampanyalar, banner ve yasal metinler
+gibi **beden de katalog verisi**; panelden yönetilmesi gerekiyor.
+
+Artık `Size` tablosunda: ad, boy, kilo, sıra, açık/kapalı ve yaş grubu.
+Göç, kodda duran altı bedeni aynı ölçülerle tabloya taşıyor — yani göçten
+sonra mağaza ve panel hiçbir fark görmüyor, sadece artık düzenlenebiliyorlar.
+
+**Varyantlar bedene metinle bağlı, yabancı anahtarla değil.** `ProductVariant`
+ve `OrderItem` bedenin adını metin olarak tutmaya devam ediyor. Sebebi
+sipariş geçmişi: satılan şeyin kaydı sonradan değişmemeli (K-19'daki
+gerekçenin aynısı). Beden adı değiştirilince **açık varyantlar aynı işlem
+içinde** güncelleniyor, sipariş satırları güncellenmiyor. İkisi ayrı
+yapılsaydı arada düşen bir istek ürünleri artık var olmayan bir beden adında
+bırakırdı.
+
+**Sıra listenin kendisinde.** Beden alfabetik değil: "12-18 ay", "3-6 ay"dan
+sonra gelmeli. Eskiden sıra dizinin yazılış sırasıydı; artık `sira` sütunu ve
+ok düğmeleriyle değiştiriliyor. Sıra ürün sayfasında, stok ekranında,
+süzgeçte ve beden tablosunda tek yerden geliyor.
+
+**Sıralama işlevleri senkron kaldı.** `urunYap()` gibi saf dönüştürücüler
+veritabanına bakmıyor; beden sırasını `Map<string, number>` olarak çağırandan
+alıyorlar. Her birini async yapmak katalog kodunun yarısını bulaştırırdı.
+Listede olmayan bir beden (elle girilmiş eski bir kayıt) sona düşüyor,
+kaybolmuyor.
+
+**Kullanılan beden silinmiyor, kapatılıyor.** Silmek o bedendeki varyantları
+sahipsiz bırakırdı. Kapatmak mağazada görünmez yapıyor, stoka dokunmuyor ve
+geri alınabiliyor. Ekran bunu düğmeyi gizleyerek değil **sebebini yazarak**
+söylüyor: "Üründe kullanılıyor — silmek yerine kapat." Her bedenin yanında
+kaç varyantta geçtiği ve toplam stoğu yazıyor; silinebilir mi sorusunun
+cevabı orada.
+
+**Son açık beden kapatılamıyor**: bedeni olmayan mağazada hiçbir ürün
+satılamaz.
+
+**Yaş grupları kodda kaldı, üyelik bedene taşındı.** `YAS_GRUPLARI`
+(Yenidoğan, Bebek, Yürüyen) ana sayfadaki kutular ve süzgeç etiketleri —
+vitrin dili. Hangi bedenin hangi gruba girdiği ise beden kaydında
+(`Size.yasKodu`). Bedenler listesi grup tanımında kalsaydı panelden eklenen
+bir beden hiçbir gruba giremezdi. Grubu boş bırakılan beden yaş süzgecinde
+çıkmıyor ama her yerde normal çalışıyor; panel bunu yazıyor.
+
+Bedenler `ETIKETLER.beden` ile paylaşılan önbellekte; panelden bir değişiklik
+yapılınca etiket düşüyor ve mağaza beklemeden görüyor.
+
+**Denenen:** menüden ulaşım; listede kullanım sayısı ve stok; ekleme; aynı
+adın reddedilmesi; yeni bedenin beden rehberinde, katalog süzgecinde, ürün
+formunun beden listesinde ve panel beden tablosunda görünmesi; ok düğmeleriyle
+sıra değiştirme; ad değiştirme; kullanılmayan bedenin silinmesi; kullanılan
+bedende silme yerine uyarı çıkması; kapatılan bedenin mağazadan düşüp stoğun
+durması; JavaScript kapalı tarayıcıda ekleme ve silme. Ayrıca **kullanımdaki
+bir bedenin adı değiştirildiğinde** 30 varyantın yeni ada taşınması ve 5
+sipariş satırının olduğu gibi kalması veritabanından doğrulandı.
+
+**Nerede:** [`../db/schema.prisma`](../db/schema.prisma),
+[`../server/bedenler.ts`](../server/bedenler.ts),
+[`../server/yonetim-beden.ts`](../server/yonetim-beden.ts),
+[`../app/yonetim/(panel)/bedenler/page.tsx`](../app/yonetim/(panel)/bedenler/page.tsx),
+[`../ui/beden-tablosu.tsx`](../ui/beden-tablosu.tsx),
+[`../ui/katalog-bicim.ts`](../ui/katalog-bicim.ts),
+[`../server/katalog.ts`](../server/katalog.ts)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

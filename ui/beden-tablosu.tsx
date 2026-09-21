@@ -1,18 +1,19 @@
-import { BEDENLER, BEDEN_OLCULERI } from "@/ui/katalog-bicim";
+import { bedenler as bedenleriGetir } from "@/server/bedenler";
 
 /**
  * Beden - boy - kilo tablosu.
  *
  * Aynı tablo üç yerde: mağazadaki beden rehberi, ürün düzenleme ekranındaki
- * "Bedenler ve stok" bölümü ve stok ekranı. Rakamlar `BEDEN_OLCULERI`'nden
- * geliyor, yani tek kaynak — panelde yazan ölçüyle müşterinin gördüğü ölçü
- * ayrışamıyor (K-55).
+ * "Bedenler ve stok" bölümü ve stok ekranı. Satırlar `Size` tablosundan
+ * geliyor, yani tek kaynak — panelde düzenlenen ölçüyle müşterinin gördüğü
+ * ölçü ayrışamıyor (K-55, K-56). Kapalı bedenler çıkmıyor: müşteriye
+ * satılmayan bir bedeni anlatmanın anlamı yok.
  *
  * Panele girmesinin sebebi telefonla gelen soru: "18-24 ay kaç kilo?".
  * Bedeni müşteriye anlatan kişi, mağazanın rehber sayfasını ayrı bir sekmede
  * açmak zorunda kalıyordu.
  */
-export default function BedenTablosu({
+export default async function BedenTablosu({
   baslik,
   not,
 }: {
@@ -20,6 +21,16 @@ export default function BedenTablosu({
   baslik?: string;
   not?: string;
 }) {
+  const satirlar = await bedenleriGetir();
+
+  if (satirlar.length === 0) {
+    return (
+      <p className="rounded-marka border border-cizgi bg-yuzey px-4 py-3 text-sm text-metin-2">
+        Henüz beden tanımlanmamış.
+      </p>
+    );
+  }
+
   return (
     <div className="overflow-x-auto rounded-marka border border-cizgi bg-yuzey">
       <table className="w-full text-sm">
@@ -42,13 +53,13 @@ export default function BedenTablosu({
           </tr>
         </thead>
         <tbody>
-          {BEDENLER.map((beden) => (
-            <tr key={beden} className="border-b border-cizgi-soluk last:border-0">
+          {satirlar.map((b) => (
+            <tr key={b.id} className="border-b border-cizgi-soluk last:border-0">
               <th scope="row" className="px-4 py-3 text-left font-bold">
-                {beden}
+                {b.ad}
               </th>
-              <td className="rakam px-4 py-3 text-metin-2">{BEDEN_OLCULERI[beden].boy}</td>
-              <td className="rakam px-4 py-3 text-metin-2">{BEDEN_OLCULERI[beden].kilo}</td>
+              <td className="rakam px-4 py-3 text-metin-2">{b.boy}</td>
+              <td className="rakam px-4 py-3 text-metin-2">{b.kilo}</td>
             </tr>
           ))}
         </tbody>

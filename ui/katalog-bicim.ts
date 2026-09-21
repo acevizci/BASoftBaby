@@ -97,52 +97,34 @@ export const SIRALAMA_ADLARI: Record<Siralama, string> = {
   puan: "Puana göre",
 };
 
-export const BEDENLER = ["0-3 ay", "3-6 ay", "6-9 ay", "9-12 ay", "12-18 ay", "18-24 ay"] as const;
-
-export type Beden = (typeof BEDENLER)[number];
-
-/**
- * Bedenin boy ve kilo karşılığı.
- *
- * Bebek bedenlerinde ay aralığı yalnızca bir işaret; aynı yaştaki iki bebeğin
- * boyu arasında beş santim fark olabiliyor. Bu yüzden boy-kilo bilgisi
- * yalnızca beden rehberi sayfasında kalmıyor, bedenin seçildiği her yerde
- * (süzgeç ve ürün sayfası) görünüyor — bebek kıyafetinde iadelerin çoğu
- * yanlış bedenden.
- */
-export const BEDEN_OLCULERI: Record<Beden, { boy: string; kilo: string }> = {
-  "0-3 ay": { boy: "56 - 62 cm", kilo: "3 - 6 kg" },
-  "3-6 ay": { boy: "62 - 68 cm", kilo: "6 - 8 kg" },
-  "6-9 ay": { boy: "68 - 74 cm", kilo: "8 - 9 kg" },
-  "9-12 ay": { boy: "74 - 80 cm", kilo: "9 - 10 kg" },
-  "12-18 ay": { boy: "80 - 86 cm", kilo: "10 - 11 kg" },
-  "18-24 ay": { boy: "86 - 92 cm", kilo: "11 - 12,5 kg" },
-};
-
 /**
  * Yaş grupları: bir gruba birden çok beden giriyor.
  *
  * Hediye alan müşteri genelde bedeni değil bebeğin kaç aylık olduğunu
  * biliyor. "6-12 ay" diyen biri hem 6-9 hem 9-12 bedenindeki ürünleri
  * görmeli; tek bedene bağlamak ürünlerin yarısını gizliyordu.
+ *
+ * Grupların kendisi burada, **hangi bedenin hangi gruba girdiği ise beden
+ * kaydında** (`Size.yasKodu`). Gruplar mağazanın vitrin diliyle ilgili — ana
+ * sayfadaki dört kutu ve süzgeçteki etiketler; bedenler ise stok verisi ve
+ * panelden değişiyor (K-56). Bedenler listesi burada kalsaydı panelden
+ * eklenen bir beden hiçbir gruba giremezdi.
  */
 export const YAS_GRUPLARI = [
-  { kod: "0-3", ad: "Yenidoğan", aciklama: "0-3 ay", bedenler: ["0-3 ay"] },
-  { kod: "3-6", ad: "Bebek", aciklama: "3-6 ay", bedenler: ["3-6 ay"] },
-  { kod: "6-12", ad: "Bebek", aciklama: "6-12 ay", bedenler: ["6-9 ay", "9-12 ay"] },
-  { kod: "12-24", ad: "Yürüyen", aciklama: "12-24 ay", bedenler: ["12-18 ay", "18-24 ay"] },
-] as const satisfies readonly {
-  kod: string;
-  ad: string;
-  aciklama: string;
-  bedenler: readonly Beden[];
-}[];
+  { kod: "0-3", ad: "Yenidoğan", aciklama: "0-3 ay" },
+  { kod: "3-6", ad: "Bebek", aciklama: "3-6 ay" },
+  { kod: "6-12", ad: "Bebek", aciklama: "6-12 ay" },
+  { kod: "12-24", ad: "Yürüyen", aciklama: "12-24 ay" },
+] as const satisfies readonly { kod: string; ad: string; aciklama: string }[];
 
 export type YasKodu = (typeof YAS_GRUPLARI)[number]["kod"];
 
-/** Yaş grubunun kapsadığı bedenler; bilinmeyen kodda boş dizi. */
-export function yasGrubununBedenleri(kod: string): readonly string[] {
-  return YAS_GRUPLARI.find((y) => y.kod === kod)?.bedenler ?? [];
+export const YAS_KODLARI: readonly string[] = YAS_GRUPLARI.map((y) => y.kod);
+
+/** Yaş grubunun ekranda görünen adı: "Bebek · 6-12 ay". */
+export function yasGrubuYaz(kod: string | null): string {
+  const y = YAS_GRUPLARI.find((g) => g.kod === kod);
+  return y ? `${y.ad} · ${y.aciklama}` : "—";
 }
 
 export const RENK_ADLARI: Record<RenkAdi, string> = {
@@ -186,7 +168,21 @@ export function toplamStok(urun: Urun): number {
   return urun.varyantlar.reduce((t, v) => t + v.stok, 0);
 }
 
+/**
+ * Ürünün bedenleri, beden sırasına göre.
+ *
+ * Sıralama burada yapılmıyor: varyantlar `server/katalog.ts` içinde zaten
+ * beden sırasına dizilmiş geliyor (sıra artık veritabanında, K-56). Burada
+ * yalnızca tekrarlar ayıklanıyor — sıra korunuyor.
+ */
 export function urununBedenleri(urun: Urun): string[] {
-  const set = new Set(urun.varyantlar.map((v) => v.beden));
-  return (BEDENLER as readonly string[]).filter((b) => set.has(b));
+  const gorulen = new Set<string>();
+  const liste: string[] = [];
+  for (const v of urun.varyantlar) {
+    if (!gorulen.has(v.beden)) {
+      gorulen.add(v.beden);
+      liste.push(v.beden);
+    }
+  }
+  return liste;
 }

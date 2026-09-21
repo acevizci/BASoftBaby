@@ -3,7 +3,6 @@ import BedenTablosu from "@/ui/beden-tablosu";
 import UrunGorseli from "@/ui/urun-gorseli";
 import { urunKaydet, varyantEkle, varyantSil } from "@/server/yonetim";
 import {
-  BEDENLER,
   GORSEL_TIPLERI,
   RENK_ADLARI,
   fiyatYaz,
@@ -44,10 +43,13 @@ function kurusYaz(kurus: number | null): string {
 export default function UrunFormu({
   urun,
   kategoriler,
+  bedenler = [],
   kaydedildi,
 }: {
   urun?: FormUrunu;
   kategoriler: { slug: string; ad: string }[];
+  /** Yeni varyantta seçilebilecek bedenler; veritabanından geliyor (K-56). */
+  bedenler?: { id: string; ad: string }[];
   kaydedildi?: boolean;
 }) {
   const yeni = !urun;
@@ -308,9 +310,9 @@ export default function UrunFormu({
             <label className="flex flex-col gap-1.5">
               <span className={ETIKET}>Beden</span>
               <select name="beden" className={GIRDI}>
-                {BEDENLER.map((b) => (
-                  <option key={b} value={b}>
-                    {b}
+                {bedenler.map((b) => (
+                  <option key={b.id} value={b.ad}>
+                    {b.ad}
                   </option>
                 ))}
               </select>
