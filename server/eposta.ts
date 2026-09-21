@@ -231,3 +231,46 @@ Doğruladığında, üye olmadan bu adresle verdiğin eski siparişler de hesab�
 Bağlantı 3 gün geçerli.${await altBilgi()}`,
   );
 }
+
+export type SepetHatirlatmasi = {
+  adSoyad: string;
+  satirlar: { ad: string; beden: string; renk: string; adet: number }[];
+  iptalJetonu: string;
+};
+
+/**
+ * Sepette unutulan ürünlerin hatırlatması.
+ *
+ * Ticari elektronik ileti sayıldığı için yalnızca izin vermiş üyelere
+ * gidiyor ve altında listeden çıkma bağlantısı var — ikisi de 6563 sayılı
+ * kanunun gereği (K-27). Bir sepete bir kez gönderiliyor.
+ */
+export async function sepetHatirlatmaEpostasi(
+  kime: string,
+  bilgi: SepetHatirlatmasi,
+): Promise<EpostaSonucu> {
+  const liste = bilgi.satirlar
+    .map((s) => `• ${s.ad} — ${s.beden}, ${s.renk}${s.adet > 1 ? ` (${s.adet} adet)` : ""}`)
+    .join("\n");
+
+  const iptal = `${siteAdresi()}/eposta-izni?jeton=${encodeURIComponent(bilgi.iptalJetonu)}`;
+
+  return gonder(
+    kime,
+    "Sepetinde bıraktıkların duruyor",
+    `Merhaba ${bilgi.adSoyad},
+
+Sepetine eklediğin ürünler hâlâ duruyor:
+
+${liste}
+
+Kaldığın yerden devam etmek istersen:
+
+${siteAdresi()}/sepet
+
+Stoklar sınırlı olduğu için ürünler tükenebilir; sepete eklemek ayırmıyor.
+
+Bu hatırlatmaları almak istemiyorsan tek tıkla çıkabilirsin:
+${iptal}${await altBilgi()}`,
+  );
+}

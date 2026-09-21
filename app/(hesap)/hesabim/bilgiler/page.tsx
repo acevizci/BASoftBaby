@@ -68,6 +68,22 @@ export default async function BilgilerSayfasi({ searchParams }: PageProps<"/hesa
           </label>
         </div>
 
+        <label className="mt-4 flex items-start gap-2.5">
+          <input
+            type="checkbox"
+            name="pazarlamaIzni"
+            defaultChecked={musteri.pazarlamaIzni}
+            className="mt-0.5 h-4 w-4 flex-none accent-[var(--mercan)]"
+          />
+          <span className="text-sm text-metin-2">
+            Kampanya ve sepet hatırlatma e-postaları
+            <span className="block text-xs text-metin-3">
+              Kaldırırsan tanıtım e-postası gelmez. Sipariş onayı, kargo bildirimi ve
+              şifre sıfırlama gelmeye devam eder; onlar tanıtım değil, işlemin parçası.
+            </span>
+          </span>
+        </label>
+
         <button type="submit" className={`${ANA_DUGME} mt-5`}>
           Kaydet
         </button>

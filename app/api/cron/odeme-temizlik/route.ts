@@ -1,9 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { suresiGecenOdemeleriTemizle } from "@/server/odeme-akis";
 import { eskiYuklemeleriTemizle } from "@/server/toplu-urun";
+import { birakilanSepetleriHatirlat } from "@/server/sepet-hatirlatma";
 
 /**
- * Günlük temizlik: yarıda kalan kart ödemeleri ve eski toplu yükleme kayıtları.
+ * Günlük iş: yarıda kalan kart ödemeleri, eski toplu yükleme kayıtları ve
+ * bırakılan sepet hatırlatmaları.
  *
  * Ödeme ekranını kapatan müşterinin siparişi "ödeme bekliyor" durumunda kalıp
  * stoğu tutuyor. Bu uç 30 dakikayı geçen girişimleri iptal edip stoğu geri
@@ -24,5 +26,8 @@ export async function GET(istek: NextRequest) {
   // Onay ekranı için tutulan toplu yükleme kayıtları da burada süpürülüyor;
   // ayrı bir zamanlı iş açmaya değmez (Hobby paketinde günlük sınır var).
   const yukleme = await eskiYuklemeleriTemizle();
-  return NextResponse.json({ temizlenen, yukleme });
+  // Bırakılan sepet hatırlatması da burada: günde bir kez çalışması yeterli
+  // ve Hobby paketinde ikinci bir zamanlı iş yok (K-27).
+  const hatirlatma = await birakilanSepetleriHatirlat();
+  return NextResponse.json({ temizlenen, yukleme, hatirlatma });
 }

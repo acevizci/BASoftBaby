@@ -185,7 +185,18 @@ model Cart {
   guncellendi DateTime   @updatedAt
   satirlar    CartItem[]
 
+  /// Sepeti dolduran üye. Üyeliksiz sepetlerde boş kalır. Hatırlatma
+  /// e-postası ancak bu doluysa gönderilebiliyor: adresi olmayan birine
+  /// e-posta atılamaz.
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  /// Hatırlatma e-postasının gönderildiği an. Bir sepete bir kez
+  /// hatırlatılıyor; ikinci e-posta ısrar olur.
+  hatirlatildi DateTime?
+
   @@index([guncellendi])
+  @@index([customerId])
 }
 
 model CartItem {
@@ -361,10 +372,19 @@ model Customer {
   olusturuldu DateTime @default(now())
   guncellendi DateTime @updatedAt
 
+  /// Kampanya ve hatırlatma e-postası izni.
+  ///
+  /// Ticari elektronik ileti için önceden onay şart (6563 sayılı kanun).
+  /// Varsayılan kapalı; kutu kayıt formunda işaretsiz geliyor. İznin ne zaman
+  /// verildiği de tutuluyor, çünkü onayın ispatı gönderene ait.
+  pazarlamaIzni       Boolean   @default(false)
+  pazarlamaIzniTarihi DateTime?
+
   oturumlar  CustomerSession[]
   adresler   Address[]
   siparisler Order[]
   jetonlar   CustomerToken[]
+  sepetler   Cart[]
 }
 
 /// Tek kullanımlık e-posta jetonu: şifre sıfırlama ve e-posta doğrulama.

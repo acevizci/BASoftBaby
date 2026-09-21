@@ -35,6 +35,7 @@ export type Musteri = {
   adSoyad: string;
   telefon: string;
   epostaDogrulandiMi: boolean;
+  pazarlamaIzni: boolean;
 };
 
 export type Adres = {
@@ -160,6 +161,7 @@ export async function girisYapan(): Promise<Musteri | undefined> {
           adSoyad: true,
           telefon: true,
           epostaDogrulandi: true,
+          pazarlamaIzni: true,
         },
       },
     },
@@ -189,29 +191,42 @@ export async function girisYapan(): Promise<Musteri | undefined> {
 
 // ─── E-posta jetonları ───────────────────────────────────────────────────
 
-/** Şifre sıfırlama bağlantısı 1 saat, doğrulama bağlantısı 3 gün yaşıyor. */
-const JETON_OMRU_SAAT = { sifirlama: 1, dogrulama: 72 } as const;
+/**
+ * Jeton türleri: ne kadar yaşadıkları ve eskisinin geçerliliğini yitirip
+ * yitirmediği.
+ *
+ * Şifre sıfırlama ve doğrulamada yalnızca en son gönderilen bağlantı
+ * çalışmalı (`tekil`): eski bir e-postadaki bağlantının aylarca açık kalması
+ * risk. Pazarlama iptalinde tersi geçerli — insan hangi e-postayı açarsa
+ * açsın listeden çıkabilmeli, o yüzden eski bağlantılar da yaşamaya devam
+ * ediyor.
+ */
+const JETONLAR = {
+  sifirlama: { saat: 1, tekil: true },
+  dogrulama: { saat: 72, tekil: true },
+  "pazarlama-iptal": { saat: 24 * 180, tekil: false },
+} as const;
 
-export type JetonTuru = keyof typeof JETON_OMRU_SAAT;
+export type JetonTuru = keyof typeof JETONLAR;
 
 /**
  * Tek kullanımlık jeton üretir; geriye e-postaya konacak hâli döner.
  *
  * Veritabanında jetonun kendisi değil SHA-256 özeti duruyor (oturumda olduğu
  * gibi): veritabanını görebilen biri kimsenin şifresini sıfırlayamasın.
- * Aynı türden eski jetonlar siliniyor, yani en son gönderilen bağlantı
- * geçerli oluyor.
  */
 export async function jetonUret(customerId: string, tur: JetonTuru): Promise<string> {
   const jeton = randomBytes(32).toString("base64url");
 
-  await db.customerToken.deleteMany({ where: { customerId, tur } });
+  if (JETONLAR[tur].tekil) {
+    await db.customerToken.deleteMany({ where: { customerId, tur } });
+  }
   await db.customerToken.create({
     data: {
       id: jetonOzeti(jeton),
       customerId,
       tur,
-      biter: new Date(Date.now() + JETON_OMRU_SAAT[tur] * 60 * 60 * 1000),
+      biter: new Date(Date.now() + JETONLAR[tur].saat * 60 * 60 * 1000),
     },
   });
 

@@ -890,6 +890,60 @@ kaldığı için patlıyordu. Güncelleme ile yaratma açıkça ayrıldı.
 
 ---
 
+### K-27 · Sepet hatırlatması izinliye, bir kez, tek tıkla çıkışla
+**21 Eylül 2026**
+
+Sepete ürün koyup sipariş vermeden ayrılan müşteriye hatırlatma e-postası
+eklendi. Mağazacılıkta karşılığı en yüksek e-postalardan biri; ama Türkiye'de
+**ticari elektronik ileti** sayılıyor (6563 sayılı kanun) ve kuralları
+koda gömüldü:
+
+- **Yalnızca izin verene.** Kayıt formuna bir kutu eklendi ve **işaretsiz**
+  geliyor. Önceden işaretli gelmesi onay sayılmıyor; kanun açık rıza istiyor.
+  İznin ne zaman verildiği de kaydediliyor, çünkü onayın ispatı gönderene ait.
+- **Yalnızca doğrulanmış adrese.** Doğrulanmamış adres o kutunun sahibi
+  olunduğunun kanıtı değil; kayıt olurken başkasının adresini yazan biri
+  ona e-posta gönderttirebilirdi (K-14 ile aynı gerekçe).
+- **Sepete bir kez.** İkinci e-posta hatırlatma olmaktan çıkıp ısrar olur.
+- **Çıkmak tek tık.** Her e-postanın altında jetonlu bir bağlantı var; tıklayan
+  giriş yapmadan listeden çıkıyor. "Çıkmak için giriş yap, ayarlara git,
+  kutuyu kaldır" demek kanunun istediği kolaylığın tersi olurdu.
+
+**Üyeliksiz sepetler hiç hatırlatılmıyor.** Sepet çerezle taşınıyor, sahibinin
+adresi bilinmiyor. Sepeti üyeye bağlamak için `Cart.customerId` eklendi; giriş
+yapılınca ve sepete ilk dokunuşta doluyor. Adresi ödeme formundan alıp
+kullanmak da mümkündü ama o adres sipariş için verilmiş bir bilgi, tanıtım
+için değil.
+
+**Zamanlama bir günlük.** Sepet bırakıldıktan bir saat sonra göndermek daha
+çok satış getirir; ama Vercel Hobby'de günde bir zamanlı iş var, o da sabah
+üçte çalışıyor. Bir günün öteki ucu yedi gün: daha eski sepette fiyat da stok
+da değişmiş olur, hatırlatmanın anlamı kalmaz.
+
+Küçük ama önemli ayrıntı: hatırlatma işareti ham SQL ile yazılıyor. Prisma'nın
+`update`'i `guncellendi` alanını `@updatedAt` yüzünden tazeler, sepet "az önce
+dokunulmuş" görünür ve müşteri sepete hiç dokunmamışken pencere kayardı.
+
+Jeton makinesi de değişti: şifre sıfırlama ve doğrulamada yalnızca en son
+bağlantı çalışıyor (eskisi siliniyor), ama listeden çıkmada tersi gerekiyor —
+insan hangi e-postayı açarsa açsın çıkabilmeli. Tür başına "tekil mi"
+ayarlandı.
+
+**Denendi** (26 madde, sahte bir Resend sunucusuyla): kutunun işaretsiz
+gelmesi, izin ve tarihinin kaydı, sepetin üyeye bağlanması, üyeliksiz sepetin
+bağsız kalması, taze sepete gönderilmemesi, doğrulanmamış adrese
+gönderilmemesi, izinsiz üyeye gönderilmemesi, e-postanın içeriği, ikinci kez
+gönderilmemesi, hatırlatmanın sepet tarihini kaydırmaması, çıkma bağlantısının
+oturum olmadan çalışması ve ikinci kez geçmemesi, izin kapalıyken
+gönderilmemesi, hesap ayarından yeniden açılması, otuz günlük ve boş sepetin
+atlanması.
+
+**Nerede:** [`../server/sepet-hatirlatma.ts`](../server/sepet-hatirlatma.ts),
+[`../server/eposta.ts`](../server/eposta.ts),
+[`../app/(hesap)/eposta-izni`](../app/(hesap)/eposta-izni)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

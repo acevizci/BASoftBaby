@@ -20,6 +20,7 @@ import {
 } from "@/server/kampanya";
 import { RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
 import { ETIKETLER, paylasilanOnbellek } from "@/server/onbellek";
+import { girisYapan } from "@/server/uyelik";
 
 const CEREZ = "sepet";
 /** Sepet çerezi 30 gün yaşar. */
@@ -94,11 +95,21 @@ export async function sepetIdAlVeyaKur(): Promise<string> {
   const kavanoz = await cookies();
   const varOlan = kavanoz.get(CEREZ)?.value;
   if (varOlan) {
-    const sepet = await db.cart.findUnique({ where: { id: varOlan }, select: { id: true } });
-    if (sepet) return sepet.id;
+    const sepet = await db.cart.findUnique({
+      where: { id: varOlan },
+      select: { id: true, customerId: true },
+    });
+    if (sepet) {
+      if (!sepet.customerId) await sepetiUyeyeBagla(sepet.id);
+      return sepet.id;
+    }
   }
 
-  const yeni = await db.cart.create({ data: {}, select: { id: true } });
+  const musteri = await girisYapan();
+  const yeni = await db.cart.create({
+    data: { customerId: musteri?.id ?? null },
+    select: { id: true },
+  });
   kavanoz.set(CEREZ, yeni.id, {
     httpOnly: true,
     sameSite: "lax",
@@ -107,6 +118,28 @@ export async function sepetIdAlVeyaKur(): Promise<string> {
     maxAge: CEREZ_OMRU,
   });
   return yeni.id;
+}
+
+/**
+ * Sepeti giriş yapmış üyeye bağlar.
+ *
+ * Sepet çerezle taşınıyor, yani kime ait olduğu kendiliğinden bilinmiyor.
+ * Bırakılan sepet hatırlatması ancak bu bağ kurulduysa gönderilebiliyor:
+ * adresi olmayan birine e-posta atılamaz. Üyeliksiz sepetler bağsız kalıyor
+ * ve hiçbir zaman hatırlatılmıyor.
+ */
+export async function sepetiUyeyeBagla(sepetId?: string): Promise<void> {
+  const id = sepetId ?? (await sepetIdOku());
+  if (!id) return;
+
+  const musteri = await girisYapan();
+  if (!musteri) return;
+
+  // Sahipsiz sepet bağlanıyor; başkasına bağlı sepete dokunulmuyor.
+  await db.cart.updateMany({
+    where: { id, customerId: null },
+    data: { customerId: musteri.id },
+  });
 }
 
 export async function sepetiBosalt(): Promise<void> {

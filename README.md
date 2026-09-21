@@ -66,6 +66,20 @@ ana sayfa banner'ı, kampanyalar ve satış ayarları (kargo ücreti,
 bedava kargo eşiği, havale bilgisi). Açılabilmesi için `YONETIM_SIFRE` tanımlı olmalı; tanımlı değilse panel
 kendini tamamen kapatır (404 verir), yani ayar unutulursa açıkta kalmaz.
 
+## E-posta
+
+Sipariş onayı, ödeme onayı, kargo bildirimi, şifre sıfırlama ve e-posta
+doğrulaması kendiliğinden gidiyor. Bunlar işlemin parçası, izin gerektirmiyor.
+
+Sepetinde ürün bırakan üyeye günde bir kez hatırlatma gönderiliyor — ama
+yalnızca kayıt olurken kutuyu **işaretlemiş** ve adresini doğrulamış üyeye,
+sepet başına bir kez, altında tek tıkla listeden çıkma bağlantısıyla. Ticari
+elektronik iletinin kuralı bu (K-27). Üyeliksiz sepetlere hiç gönderilmiyor:
+sahibinin adresi bilinmiyor.
+
+`RESEND_ANAHTARI` tanımlı değilse hiçbir e-posta gönderilmiyor ve akışlar
+çalışmaya devam ediyor.
+
 ## Sipariş akışı
 
 Sepet veritabanında durur, tarayıcıda yalnızca sepetin kimliğini taşıyan

@@ -62,6 +62,21 @@ export default async function KayitSayfasi({ searchParams }: PageProps<"/kayit">
           <span className="text-xs text-metin-3">En az {EN_KISA_SIFRE} karakter.</span>
         </label>
 
+        <label className="mt-1 flex items-start gap-2.5">
+          <input
+            type="checkbox"
+            name="pazarlamaIzni"
+            className="mt-0.5 h-4 w-4 flex-none accent-[var(--mercan)]"
+          />
+          <span className="text-sm text-metin-2">
+            Kampanyalardan ve sepetimde unuttuklarımdan e-postayla haberim olsun.
+            <span className="block text-xs text-metin-3">
+              İşaretlemesen de siparişinle ilgili e-postalar (onay, kargo) gelir. İstediğin
+              an tek tıkla çıkabilirsin.
+            </span>
+          </span>
+        </label>
+
         <GonderDugmesi bekleyen="Hesabın açılıyor…" className={`${ANA_DUGME} mt-1 self-start`}>
           Hesabımı oluştur
         </GonderDugmesi>

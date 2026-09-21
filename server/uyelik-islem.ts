@@ -24,6 +24,7 @@ import {
   sifreTutuyorMu,
 } from "@/server/uyelik";
 import { dogrulamaEpostasi, sifreSifirlamaEpostasi } from "@/server/eposta";
+import { sepetiUyeyeBagla } from "@/server/sepet";
 
 function temiz(veri: FormData, alan: string): string {
   return String(veri.get(alan) ?? "").trim();
@@ -60,13 +61,26 @@ export async function kayitOl(veri: FormData): Promise<void> {
   const varOlan = await db.customer.findUnique({ where: { eposta }, select: { id: true } });
   if (varOlan) redirect(geri("kayitli"));
 
+  // Ticari elektronik ileti için önceden onay şart (6563 sayılı kanun);
+  // kutu formda işaretsiz geliyor, onay ancak kişi işaretlerse alınıyor.
+  const izin = veri.get("pazarlamaIzni") === "on";
+
   const musteri = await db.customer.create({
-    data: { adSoyad, eposta, telefon, sifreOzeti: await sifreOzetle(sifre) },
+    data: {
+      adSoyad,
+      eposta,
+      telefon,
+      sifreOzeti: await sifreOzetle(sifre),
+      pazarlamaIzni: izin,
+      pazarlamaIzniTarihi: izin ? new Date() : null,
+    },
     select: { id: true },
   });
 
   await dogrulamaGonder(musteri.id, eposta, adSoyad);
   await oturumAc(musteri.id);
+  // Üye olmadan doldurulmuş sepet varsa artık sahibi belli.
+  await sepetiUyeyeBagla();
   revalidatePath("/", "layout");
   redirect(nereye);
 }
@@ -88,6 +102,7 @@ export async function girisYap(veri: FormData): Promise<void> {
   }
 
   await oturumAc(musteri.id);
+  await sepetiUyeyeBagla();
   revalidatePath("/", "layout");
   redirect(nereye);
 }
@@ -106,7 +121,25 @@ export async function bilgileriKaydet(veri: FormData): Promise<void> {
   const telefon = temiz(veri, "telefon");
   if (adSoyad.length < 3) redirect("/hesabim/bilgiler?hata=eksik");
 
-  await db.customer.update({ where: { id: musteri.id }, data: { adSoyad, telefon } });
+  // İzin kapalıdan açığa geçiyorsa tarihi de yazılıyor; onayın ne zaman
+  // verildiğini ispat etmek gönderene ait.
+  const izin = veri.get("pazarlamaIzni") === "on";
+  const onceki = await db.customer.findUnique({
+    where: { id: musteri.id },
+    select: { pazarlamaIzni: true, pazarlamaIzniTarihi: true },
+  });
+
+  await db.customer.update({
+    where: { id: musteri.id },
+    data: {
+      adSoyad,
+      telefon,
+      pazarlamaIzni: izin,
+      pazarlamaIzniTarihi: izin
+        ? (onceki?.pazarlamaIzni ? onceki.pazarlamaIzniTarihi : new Date())
+        : null,
+    },
+  });
   revalidatePath("/", "layout");
   redirect("/hesabim/bilgiler?kayit=bilgi");
 }
