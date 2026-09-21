@@ -55,7 +55,7 @@ export default function UrunKarti({ urun }: { urun: Urun }) {
         </Link>
         <p className="text-xs text-metin-3">{urun.ozet}</p>
 
-        <Puan puan={urun.puan} yorum={urun.yorumSayisi} />
+        {urun.yorumSayisi > 0 && <Puan puan={urun.puan} yorum={urun.yorumSayisi} />}
 
         <ul className="flex gap-1.5" aria-label="Renk seçenekleri">
           {urun.renkler.map((r) => (

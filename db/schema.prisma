@@ -43,6 +43,10 @@ model Product {
   yikamaTalimati String
   ureticiBilgisi String?
 
+  /// Ortalama puan ve yorum sayısı. Değerlendirmelerden hesaplanıyor, elle
+  /// yazılmıyor: uydurma puan hem müşteriyi yanıltır hem e-ticaret
+  /// mevzuatına aykırı (K-34). Hiç yorum yoksa boş kalıyor ve ekranda
+  /// puan satırı hiç görünmüyor.
   puan        Decimal? @db.Decimal(2, 1)
   yorumSayisi Int      @default(0)
 
@@ -65,6 +69,7 @@ model Product {
   variants  ProductVariant[]
   images    ProductImage[]
   campaigns Campaign[]
+  yorumlar  Review[]
 
   @@index([categoryId, aktif])
 }
@@ -292,6 +297,7 @@ model OrderItem {
   fiyatKurus Int
 
   talepSatirlari OrderRequestItem[]
+  yorum          Review?
 
   @@index([orderId])
 }
@@ -669,4 +675,46 @@ model OrderRequestItem {
 
   @@unique([requestId, orderItemId])
   @@index([requestId])
+}
+
+/// Ürün değerlendirmesi.
+///
+/// **Yalnızca gerçekten satın almış kişi yazabiliyor.** Kayıt bir sipariş
+/// satırına bağlı (`orderItemId` tekil): hem alışverişin kanıtı hem de aynı
+/// satır için ikinci yorumun önüne geçiyor. Aynı ürünü iki kez alan iki kez
+/// yazabiliyor, bu doğru.
+///
+/// **Yorum kendiliğinden yayımlanıyor, onay beklemiyor.** Olumsuz yorumu
+/// süzmek e-ticaret mevzuatına aykırı: satıcı olumlu olumsuz ayrımı yapmadan
+/// yayımlamak zorunda. Gizleme yalnızca içerik kuralı için — hakaret, kişisel
+/// veri, alakasız metin — ve sebebi kaydediliyor ki "beğenmedim" diye
+/// gizlenmediği belli olsun (K-34).
+model Review {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  /// Hangi sipariş satırı için yazıldı. Alışverişin kanıtı.
+  orderItemId String    @unique
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  /// Ekranda görünen ad. Tam ad değil: "Ayşe Y." gibi kısaltılıyor.
+  adSoyad String
+  /// 1-5 arası.
+  puan    Int
+  yorum   String
+
+  /// yayinda · gizli
+  durum String @default("yayinda")
+  /// Gizlenme sebebi. Olumsuz olması sebep değildir.
+  gizlemeSebebi String @default("")
+
+  /// Satıcı yanıtı; yorumun altında görünüyor.
+  yanit String @default("")
+
+  olusturuldu DateTime @default(now())
+  guncellendi DateTime @updatedAt
+
+  @@index([productId, durum])
+  @@index([durum, olusturuldu])
 }

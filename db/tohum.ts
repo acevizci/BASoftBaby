@@ -50,8 +50,6 @@ type TohumUrun = {
   eskiFiyatKurus?: number;
   rozetTon?: string;
   rozetYazi?: string;
-  puan: number;
-  yorumSayisi: number;
   kumasIcerigi: string;
   yikamaTalimati: string;
   ozellikler: string[];
@@ -80,8 +78,6 @@ const URUNLER: TohumUrun[] = [
     fiyatKurus: 24990,
     rozetTon: "mercan",
     rozetYazi: "Çok satan",
-    puan: 4.8,
-    yorumSayisi: 126,
     kumasIcerigi: "%100 organik pamuk",
     yikamaTalimati: "30°C hassas yıkama, çamaşır suyu kullanmayın",
     ozellikler: ["Dikişsiz omuz bandı", "Çıtçıtlı alt kapama", "OEKO-TEX sertifikalı"],
@@ -102,8 +98,6 @@ const URUNLER: TohumUrun[] = [
     eskiFiyatKurus: 49990,
     rozetTon: "mint",
     rozetYazi: "İndirimde",
-    puan: 4.9,
-    yorumSayisi: 84,
     kumasIcerigi: "%95 pamuk, %5 elastan",
     yikamaTalimati: "30°C hassas yıkama, düşük ısıda ütüleyin",
     ozellikler: ["Boydan fermuar", "Kapalı ayak", "Çenelik korumalı fermuar ucu"],
@@ -121,8 +115,6 @@ const URUNLER: TohumUrun[] = [
     gorsel: "battaniye",
     palet: "mavi",
     fiyatKurus: 37990,
-    puan: 4.7,
-    yorumSayisi: 203,
     kumasIcerigi: "%100 pamuk müslin",
     yikamaTalimati: "40°C yıkama, her yıkamada yumuşar",
     ozellikler: ["Tek beden 120×120 cm", "Nefes alan dokuma", "Kundak olarak da kullanılır"],
@@ -144,8 +136,6 @@ const URUNLER: TohumUrun[] = [
     eskiFiyatKurus: 19990,
     rozetTon: "mercan",
     rozetYazi: "%20",
-    puan: 4.6,
-    yorumSayisi: 51,
     kumasIcerigi: "%70 bambu, %30 pamuk",
     yikamaTalimati: "30°C yıkama, kurutma makinesine vermeyin",
     ozellikler: ["Kaydırmaz silikon taban", "Lastiği bacağı sıkmaz", "İkili paket"],
@@ -161,8 +151,6 @@ const URUNLER: TohumUrun[] = [
     fiyatKurus: 18990,
     rozetTon: "sari",
     rozetYazi: "Son 3 adet",
-    puan: 4.9,
-    yorumSayisi: 37,
     kumasIcerigi: "%100 pamuk kadife, astarlı",
     yikamaTalimati: "Elde yıkama, gölgede kurutun",
     ozellikler: ["Kulakları kapatan kesim", "Bağcıksız, boğmaz", "Astarlı iç yüzey"],
@@ -179,8 +167,6 @@ const URUNLER: TohumUrun[] = [
     eskiFiyatKurus: 28990,
     rozetTon: "mercan",
     rozetYazi: "%24",
-    puan: 4.8,
-    yorumSayisi: 168,
     kumasIcerigi: "%100 organik pamuk",
     yikamaTalimati: "30°C hassas yıkama, ilk yıkamayı giymeden yapın",
     ozellikler: ["Üç adet bir arada", "Dikişsiz yan bantlar", "Bebek eli kapatmalı kol ucu"],
@@ -200,8 +186,6 @@ const URUNLER: TohumUrun[] = [
     fiyatKurus: 13990,
     rozetTon: "mint",
     rozetYazi: "Yeni",
-    puan: 4.5,
-    yorumSayisi: 29,
     kumasIcerigi: "%100 pamuk ön yüz, su geçirmez arka",
     yikamaTalimati: "40°C yıkama, sık yıkamaya dayanıklı",
     ozellikler: ["Çıtçıtlı boyun", "Üçlü paket", "Leke tutmayan yüzey"],
@@ -222,8 +206,6 @@ const URUNLER: TohumUrun[] = [
     eskiFiyatKurus: 74990,
     rozetTon: "mercan",
     rozetYazi: "%16",
-    puan: 4.9,
-    yorumSayisi: 92,
     kumasIcerigi: "%100 pamuk dış, elyaf dolgu",
     yikamaTalimati: "30°C yıkama, dolgusu topaklanmaz",
     ozellikler: ["Kış kalınlığı 2.5 TOG", "Ters yönde fermuar", "Kolsuz kesim, terletmez"],
@@ -519,8 +501,6 @@ async function main() {
       rozetYazi: u.rozetYazi ?? null,
       gorsel: u.gorsel,
       palet: u.palet,
-      puan: u.puan,
-      yorumSayisi: u.yorumSayisi,
     };
 
     const urun = await db.product.upsert({

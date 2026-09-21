@@ -81,6 +81,16 @@ Hangi siparişe ne açılabileceğine sunucu karar veriyor: kargoya verilmemişs
 iptal, verilmişse iade, teslimden sonra 14 gün içinde iade ve değişim (K-33).
 Onaylanan iptal siparişi iptal edip stoğu geri veriyor.
 
+## Değerlendirmeler
+
+Ürün değerlendirmesini yalnızca o ürünü satın alıp teslim alan müşteri
+yazabiliyor; sipariş takip sayfasından. Yorum kendiliğinden yayımlanıyor,
+olumsuz olanlar da. Gizleme yalnızca içerik kuralı için (hakaret, kişisel
+veri) ve sebep yazmadan yapılamıyor (K-34).
+
+Ürünün puanı yalnızca gerçek değerlendirmelerden hesaplanıyor. Hiç yorum
+yoksa puan boş kalıyor ve yıldız satırı hiç görünmüyor.
+
 ## E-posta
 
 Sipariş onayı, ödeme onayı, kargo bildirimi, şifre sıfırlama ve e-posta

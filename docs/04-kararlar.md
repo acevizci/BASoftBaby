@@ -1266,6 +1266,69 @@ sunulmuyor). İkisi de temizlendi.
 
 ---
 
+### K-34 · Değerlendirmeler: uydurma puan kaldırıldı, olumsuz yorum gizlenmiyor
+**21 Eylül 2026**
+
+Şemada `puan` ve `yorumSayisi` alanları baştan beri vardı ama hiç
+kullanılmıyordu — **tohum dosyası onlara uydurma değerler yazıyordu.** Yayında
+duran sitede "4,8 · 126 değerlendirme" yazıyordu; ortada tek bir değerlendirme
+yoktu. Bu hem müşteriyi yanıltıyordu hem de e-ticaret mevzuatına aykırıydı:
+gerçek alışverişe dayanmayan puan yayımlanamaz.
+
+Göçün içinde bütün ürünlerin puanı sıfırlandı ve tohum dosyasından o alanlar
+çıkarıldı. Puan artık yalnızca gerçek değerlendirmelerden hesaplanıyor; hiç
+yorum yoksa **boş kalıyor** ve ürün kartında da ürün sayfasında da yıldız
+satırı hiç görünmüyor. "0,0 puan" yazmak, olmayan bir bilgiyi varmış gibi
+göstermek olurdu.
+
+**Yalnızca satın alıp teslim alan yazabiliyor.** Her değerlendirme bir sipariş
+satırına bağlı ve satır tekil: hem alışverişin kanıtı hem de aynı satır için
+ikinci yorumun önüne geçiyor. Aynı ürünü iki kez alan iki kez yazabiliyor — o
+iki ayrı alışveriş. Sipariş teslim edilmeden form çıkmıyor: ürünü eline
+almadan değerlendirmek anlamsız.
+
+**Yorum kendiliğinden yayımlanıyor, onay kuyruğu yok.** Sebebi ilke: satıcı
+değerlendirmeleri olumlu olumsuz ayrımı yapmadan yayımlamak zorunda. "Önce ben
+bakayım" düzeni, olumsuz yorumu süzmenin kibar hâli olurdu. Doğrulanmış
+alışveriş şartı zaten spam riskini bitiriyor.
+
+**Gizleme yalnızca içerik kuralı için** — hakaret, kişisel veri, ürünle
+alakasız metin — ve **sebep yazılmadan gizlenemiyor.** Gizlenen yorum panelde
+durmaya devam ediyor, sebebiyle birlikte; sonradan bakıldığında "beğenilmediği
+için gizlenmiş" mi değil mi belli oluyor. Panelin üstünde bu kural yazılı ve
+memnuniyetsiz yoruma yapılacak doğru şeyin yanıtlamak olduğu söyleniyor.
+Özet ekranında "Yanıtsız 3 yıldız ve altı" diye bir iş var — gizlenecek değil,
+yanıtlanacak bir liste.
+
+**Ad kısaltılıyor:** "Ayşe Yılmaz" → "Ayşe Y." Tam soyadı yayımlamak yorumun
+kime ait olduğunu belli etmeye yetmiyor ama kişiyi aramaya yetiyor.
+
+**Puan iki yerde duruyor** — yorumlarda ve ürünün üstünde. İkincisi liste
+sorguları her ürün için yorum tablosuna gitmesin diye; yorum eklenince,
+gizlenince ya da açılınca yeniden hesaplanıyor.
+
+Ürün sayfasında ortalamanın yanında **dağılım çubukları** var: "4,2" tek
+başına beşte üç mü hep dört mü belli etmiyor.
+
+Yıldız seçimi radyo düğmelerinden kuruluyor — JavaScript kapalı tarayıcıda
+çalışıyor, klavyeyle geziliyor, ekran okuyucu "5 üzerinden 4 — Memnunum"
+diye okuyor.
+
+**Denendi** (32 madde): uydurma puanların kalmaması ve puansız üründe yıldız
+satırının hiç çıkmaması, kargodaki siparişte form olmaması, teslim edilende
+olması, yazılan yorumun ürün sayfasında doğrulanmış rozetiyle görünmesi,
+ortalamanın hesaplanması, değerlendirilen ürünün listeden düşmesi, kısa
+yorumun sunucuda reddedilmesi, olumsuz yorumun da yayımlanması ve ortalamayı
+düşürmesi, sebepsiz gizlemenin reddedilmesi, sebepli gizlemenin vitrinden
+düşürüp paneli bırakması ve puanı yeniden hesaplaması, yanıtın ürün sayfasında
+görünmesi, özet kartı, JavaScript kapalı tarayıcı.
+
+**Nerede:** [`../server/yorum.ts`](../server/yorum.ts),
+[`../ui/yorum-listesi.tsx`](../ui/yorum-listesi.tsx),
+[`../app/yonetim/yorumlar/page.tsx`](../app/yonetim/yorumlar/page.tsx)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

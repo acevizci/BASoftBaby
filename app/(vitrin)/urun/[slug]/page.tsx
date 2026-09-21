@@ -5,6 +5,9 @@ import UrunFoto from "@/ui/urun-foto";
 import UrunGorseli from "@/ui/urun-gorseli";
 import UrunKarti from "@/ui/urun-karti";
 import VaryantSecici from "@/ui/varyant-secici";
+import YorumListesi from "@/ui/yorum-listesi";
+import { Yildiz } from "@/ui/yildiz";
+import { urunYorumlari } from "@/server/yorum";
 import YapisalVeri from "@/ui/yapisal-veri";
 import { tamAdres } from "@/server/site";
 import {
@@ -44,9 +47,10 @@ export default async function UrunSayfasi({
   const urun = await urunGetir(slug);
   if (!urun) notFound();
 
-  const [kategori, benzerler] = await Promise.all([
+  const [kategori, benzerler, yorumOzeti] = await Promise.all([
     kategoriGetir(urun.kategori),
     benzerUrunler(urun),
+    urunYorumlari(urun.id),
   ]);
   const bedenler = urununBedenleri(urun);
 
@@ -137,15 +141,17 @@ export default async function UrunSayfasi({
           <div>
             <h1 className="text-2xl sm:text-3xl">{urun.ad}</h1>
             <p className="mt-1 text-sm text-metin-2">{urun.ozet}</p>
-            <p className="mt-2 flex items-center gap-2 text-sm text-metin-3">
-              <span className="text-sari-koyu" aria-hidden="true">
-                {"★".repeat(Math.round(urun.puan))}
-              </span>
-              <span className="rakam font-semibold text-metin-2">
-                {urun.puan.toLocaleString("tr-TR", { minimumFractionDigits: 1 })}
-              </span>
-              <span className="rakam">· {urun.yorumSayisi} değerlendirme</span>
-            </p>
+            {/* Hiç değerlendirme yoksa puan satırı hiç yok: "0,0 puan"
+                yazmak, olmayan bir bilgiyi varmış gibi göstermek olurdu. */}
+            {urun.yorumSayisi > 0 && (
+              <p className="mt-2 flex items-center gap-2 text-sm text-metin-3">
+                <Yildiz puan={urun.puan} />
+                <span className="rakam font-semibold text-metin-2">
+                  {urun.puan.toLocaleString("tr-TR", { minimumFractionDigits: 1 })}
+                </span>
+                <span className="rakam">· {urun.yorumSayisi} değerlendirme</span>
+              </p>
+            )}
           </div>
 
           <div>
@@ -197,6 +203,8 @@ export default async function UrunSayfasi({
           </div>
         </div>
       </div>
+
+      <YorumListesi ozet={yorumOzeti} />
 
       <section className="mt-14">
         <h2 className="text-xl">Bunlara da bakabilirsin</h2>

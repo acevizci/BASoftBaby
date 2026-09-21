@@ -17,6 +17,7 @@ import { epostaAcikMi } from "@/server/eposta";
 import { ayarlariGetir } from "@/server/sepet";
 import { kunyeGetir } from "@/server/yasal";
 import { bekleyenTalepSayisi } from "@/server/talep";
+import { OLUMSUZ_PUAN, yanitsizOlumsuzYorum } from "@/server/yorum";
 
 /** Bu adedin altına düşen beden "azalan" sayılıyor. */
 export const KRITIK_STOK = 3;
@@ -94,6 +95,7 @@ export async function panelOzetiGetir(): Promise<PanelOzeti> {
     kunye,
     taslakYasal,
     bekleyenTalep,
+    yanitsizYorum,
   ] = await Promise.all([
     db.order.aggregate({
       where: { ...satilan, olusturuldu: { gte: bugun } },
@@ -134,6 +136,7 @@ export async function panelOzetiGetir(): Promise<PanelOzeti> {
     kunyeGetir(),
     db.legalPage.count({ where: { taslakMi: true } }),
     bekleyenTalepSayisi(),
+    yanitsizOlumsuzYorum(),
   ]);
 
   const bekleyenVaryantlar =
@@ -191,6 +194,13 @@ export async function panelOzetiGetir(): Promise<PanelOzeti> {
       adres: "/yonetim/siparisler?durum=kargoda",
       acil: gecikenKargo > 0,
       aciklama: "Teslim görünmüyor; takip numarasından sorulabilir.",
+    },
+    {
+      ad: `Yanıtsız ${OLUMSUZ_PUAN} yıldız ve altı`,
+      adet: yanitsizYorum,
+      adres: "/yonetim/yorumlar?durum=olumsuz",
+      acil: yanitsizYorum > 0,
+      aciklama: "Memnun kalmamış müşteri; yanıtlamak gizlemekten iyidir.",
     },
     {
       ad: "Tükenen beden",
