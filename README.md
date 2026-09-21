@@ -128,6 +128,12 @@ Fotoğraf galerisi: küçük görsele basınca büyük kare değişiyor, büyük
 basınca fotoğraf tam ekran büyüyor. İkisi de `:target` ile, JavaScript
 olmadan — geri tuşu çalışıyor, bağlantı paylaşılabiliyor (K-48).
 
+Tükenmiş beden üstü çizili, tükenmiş renk çapraz çizgili — ikisi de **seçili
+öteki seçeneğe göre** hesaplanıyor ve ekran okuyucuya ayrıca söyleniyor
+(K-49). Tükenmiş seçenek tıklanabilir kalıyor: "stoka girince haber ver"
+formu oradan açılıyor. Listede tükenmiş ürünün fotoğrafında "Tükendi" rozeti
+var.
+
 Renk adres satırında (`?renk=mavi`): seçim JavaScript kapalıyken de çalışıyor
 ve galeri o renge ait fotoğrafları gösteriyor. Panelden her fotoğrafa bir
 renk atanıyor; boş bırakılanlar (kumaş yakın çekimi, etiket) her renkte

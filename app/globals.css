@@ -531,3 +531,34 @@ body:has(.buyutec:target) {
     break-after: auto;
   }
 }
+
+/* Tükenmiş renk seçeneği: yuvarlak bir renk örneğine "üstü çizili"
+   yapılamıyor, karşılığı çapraz çizgi. Yalnızca soluklaştırmak belirsizdi —
+   "seçili değil" mi "yok" mu anlaşılmıyordu (K-49).
+
+   Çizgi iki katmanlı: altta beyaz, üstte koyu. Hem açık hem koyu renk
+   örneğinin üstünde görünüyor. */
+.tukenmis {
+  position: relative;
+}
+.tukenmis-acik::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background:
+    linear-gradient(
+      to bottom right,
+      transparent calc(50% - 1.6px),
+      rgb(255 255 255 / 0.85) calc(50% - 1.6px),
+      rgb(255 255 255 / 0.85) calc(50% + 1.6px),
+      transparent calc(50% + 1.6px)
+    ),
+    linear-gradient(
+      to bottom right,
+      transparent calc(50% - 0.7px),
+      var(--metin) calc(50% - 0.7px),
+      var(--metin) calc(50% + 0.7px),
+      transparent calc(50% + 0.7px)
+    );
+}

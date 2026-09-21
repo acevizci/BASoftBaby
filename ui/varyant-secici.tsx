@@ -57,22 +57,32 @@ export default function VaryantSecici({
         </div>
         <div className="mt-2 flex flex-wrap gap-2">
           {bedenler.map((b) => {
-            const bedendeStok = varyantlar.some((v) => v.beden === b && v.stok > 0);
+            // Üstü çizili işareti **seçili renge** göre: eskiden bütün
+            // renklere bakıyordu, yani "Mavi" seçiliyken kremde olan bir
+            // beden açık görünüyor, basınca "tükendi" diyordu. Yanlış
+            // bilgi veren bir işaret, hiç işaret olmamasından kötü (K-49).
+            const bedendeStok = varyantlar.some(
+              (v) => v.beden === b && v.renk === renk && v.stok > 0,
+            );
             return (
               <button
                 key={b}
                 type="button"
                 onClick={() => setBeden(b)}
                 aria-pressed={beden === b}
+                title={bedendeStok ? b : `${b} · ${RENK_ADLARI[renk]} renkte tükendi`}
                 className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
                   beden === b
-                    ? "border-mercan bg-mercan-soluk text-mercan-koyu"
+                    ? `border-mercan bg-mercan-soluk text-mercan-koyu ${bedendeStok ? "" : "line-through"}`
                     : bedendeStok
                       ? "border-cizgi bg-yuzey text-metin-2 hover:border-metin-3"
                       : "border-cizgi-soluk bg-yuzey-sicak text-metin-3 line-through"
                 }`}
               >
                 {b}
+                {/* Renk ve çizgi tek başına yetmiyor; ekran okuyucu da
+                    bilmeli. */}
+                {!bedendeStok && <span className="sr-only"> — tükendi</span>}
               </button>
             );
           })}
@@ -97,11 +107,14 @@ export default function VaryantSecici({
                 key={r}
                 href={`/urun/${slug}?renk=${r}#galeri`}
                 aria-current={renk === r ? "true" : undefined}
-                aria-label={RENK_ADLARI[r]}
-                title={yok ? `${RENK_ADLARI[r]} · bu bedende yok` : RENK_ADLARI[r]}
-                className={`block h-9 w-9 rounded-full ring-2 transition ${
+                aria-label={yok ? `${RENK_ADLARI[r]} — bu bedende tükendi` : RENK_ADLARI[r]}
+                title={yok ? `${RENK_ADLARI[r]} · ${beden} bedeninde tükendi` : RENK_ADLARI[r]}
+                // Yuvarlak bir renge üstü çizili yapılamıyor; karşılığı
+                // çapraz çizgi. Yalnızca soluklaştırmak belirsizdi: "seçili
+                // değil" mi "yok" mu anlaşılmıyordu (K-49).
+                className={`tukenmis block h-9 w-9 rounded-full ring-2 transition ${
                   renk === r ? "ring-mercan" : "ring-cizgi hover:ring-metin-3"
-                } ${yok ? "opacity-40" : ""}`}
+                } ${yok ? "tukenmis-acik opacity-50" : ""}`}
                 style={{ background: PALET[r].c1 }}
               />
             );

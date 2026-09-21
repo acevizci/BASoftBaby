@@ -37,7 +37,7 @@ export default function UrunKarti({ urun }: { urun: Urun }) {
           fotograf={urun.fotograflar[0]}
           gorsel={urun.gorsel}
           palet={urun.palet}
-          className="aspect-square w-full rounded-none"
+          className={`aspect-square w-full rounded-none ${stok === 0 ? "opacity-65" : ""}`}
           sizes="(min-width: 1024px) 300px, 50vw"
         />
         {urun.rozet && (
@@ -45,6 +45,14 @@ export default function UrunKarti({ urun }: { urun: Urun }) {
             className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-wide ${ROZET_SINIFI[urun.rozet.ton]}`}
           >
             {urun.rozet.yazi}
+          </span>
+        )}
+        {/* Tükendiği yalnızca en alttaki düğmeye bakınca anlaşılıyordu;
+            ızgarada göz önce fotoğrafa gidiyor. Fotoğraf da soluklaşıyor —
+            rozet tek başına küçük ekranda gözden kaçıyor (K-49). */}
+        {stok === 0 && (
+          <span className="absolute right-3 top-3 rounded-full bg-metin/85 px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-wide text-white">
+            Tükendi
           </span>
         )}
       </Link>

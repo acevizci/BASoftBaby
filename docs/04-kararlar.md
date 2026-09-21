@@ -2154,6 +2154,56 @@ tarayıcıda ayrıca denendi.
 
 ---
 
+### K-49 · Tükenmiş seçenekler: üstü çizili, ama doğru olanı
+**21 Eylül 2026**
+
+Ürün sayfasında tükenmiş bedenin üstü zaten çiziliydi — ama **yanlış bilgi
+veriyordu.** Çizgi bütün renklere bakarak hesaplanıyordu: "Mavi" seçiliyken
+yalnızca kremde kalan bir beden açık görünüyor, basınca "bu seçim tükendi"
+diyordu. Yanlış bilgi veren bir işaret, hiç işaret olmamasından kötü. Artık
+**seçili renge** göre hesaplanıyor.
+
+Seçili bedenin kendisi tükendiyse o da çizili: eskiden seçili olan madde
+mercan rengine geçtiği için çizgiyi kaybediyordu, yani tam bakılan yerde
+işaret kayboluyordu.
+
+**Renk seçeneklerinde sadece soluklaştırma vardı** ve belirsizdi: soluk
+olması "seçili değil" mi demek "yok" mu? Yuvarlak bir renk örneğine üstü
+çizili yapılamıyor; karşılığı çapraz çizgi. Çizgi iki katmanlı — altta
+beyaz, üstte koyu — çünkü hem krem hem lacivert örneğin üstünde görünmesi
+gerekiyor.
+
+**Renk ve çizgi tek başına yetmiyor.** Her iki işaret de ekran okuyucuya
+ayrıca söyleniyor ("— tükendi") ve fare üstüne gelince hangi beden/renkte
+tükendiği yazıyor. Renkle ya da biçimle verilen bilgi, metinle de
+verilmeliydi.
+
+**Listede kart.** Tükenmiş ürün yalnızca en alttaki kapalı düğmeden
+anlaşılıyordu; ızgarada göz önce fotoğrafa gidiyor. Fotoğrafın sağ üstüne
+"Tükendi" rozeti kondu ve fotoğraf soluklaştı. Rozet tek başına küçük
+ekranda gözden kaçıyordu.
+
+**Fiyatın üstü çizilmedi.** Üstü çizili fiyat e-ticarette "indirimden önceki
+fiyat" demek; stok bilgisi için kullanmak, kampanya sanılmasına yol açardı.
+Zaten kampanyalı üründe gerçek bir üstü çizili fiyat var, ikisi aynı kartta
+çakışırdı.
+
+**Tükenmiş seçenek tıklanabilir kalıyor.** Kapatmak kolay olurdu ama
+"stoka girince haber ver" formu oradan açılıyor (K-28): müşteri tükenmiş
+bedeni seçebilmeli ki adresini bırakabilsin.
+
+**Denendi** (11 madde): kremde hiçbir bedenin çizili olmaması, mavide
+yalnızca tükenmiş iki bedenin çizili olması, seçili tükenmiş bedenin de
+çizili kalması, tükenmiş rengin çapraz çizgi alması ve ekran okuyucuya
+söylemesi, çizginin gerçekten çizilmesi (hesaplanmış stille), kartta
+"Tükendi" rozetinin çıkması.
+
+**Nerede:** [`../ui/varyant-secici.tsx`](../ui/varyant-secici.tsx),
+[`../ui/urun-karti.tsx`](../ui/urun-karti.tsx),
+[`../app/globals.css`](../app/globals.css)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı
