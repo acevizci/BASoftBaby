@@ -2689,6 +2689,100 @@ açılması.
 
 ---
 
+### K-58 · İade süreci: para, stok ve değişim
+
+K-33 talep akışını kurmuştu: müşteri iptal/iade/değişim talebi açıyor, panel
+cevaplıyor. Eksik olan **sonrası**ydı — para ve mal.
+
+- Onaylanan iade "tamamlandı" yapıldığında hiçbir şey olmuyordu: stok geri
+  girmiyor, iade edilecek tutar hesaplanmıyor, hiçbir yere yazılmıyordu.
+- Değişimde yerine gönderilen ürünün stoğu düşmüyordu.
+- İade borcu hiçbir ekranda görünmüyordu (K-57'deki hatanın devamı).
+
+#### Kayıt ve gönderim ayrı
+
+İki iş var ve karıştırılmamalı:
+
+- **Kayıt** — mağazanın müşteriye ne kadar borcu var, ödendi mi. `Refund`
+  tablosu. Her zaman çalışıyor; havalede tek yol da bu.
+- **Gönderim** — paranın gerçekten geri gitmesi. Kartta iyzico'ya, havalede
+  mağaza sahibinin bankasından.
+
+**Kayıt önce açılıyor, gönderim sonra deneniyor.** Tersi olsaydı gönderim
+başarılı olup kayıt düşerse borç iki kez ödenirdi. Aynı sebeple sağlayıcı
+reddederse **kayıt duruyor**, sebebi yazılıyor ve elle tamamlanabiliyor:
+sağlayıcıya ulaşılamadı diye müşterinin alacağının kaydını düşürmek en kötü
+sonuç olurdu.
+
+Bir siparişin birden çok iadesi olabiliyor — üç üründen biri bugün, biri
+haftaya. Sipariş ancak **bekleyen başka iade kalmadığında** `iade` oluyor;
+iki parçalı bir iadenin ilki ödendiğinde borç bitmiş görünmemeli.
+
+#### Tutar satır satır hesaplanıyor
+
+1. Satır tutarı = birim fiyat × iade edilen adet.
+2. **Kampanya indiriminin o satıra düşen payı çıkarılıyor.** İndirim bütün
+   sepete uygulanmıştı; iade edilen kısım da payını taşımalı, yoksa
+   indirimli alınan ürün tam fiyatından iade edilirdi.
+3. **Kargo yalnızca siparişin tamamı iade ediliyorsa** ekleniyor. Cayma
+   hâlinde teslim masrafı da iade ediliyor; ama üründen birini iade edende
+   gönderi yine yapılmış oluyor.
+
+Üçüncü kuralın ilk hâli yanlıştı ve **denemede çıktı:** "tamamı" yalnızca o
+anki talebe bakıyordu. Müşteri iki üründen birini bugün, ötekini haftaya
+iade ederse hiçbir talep tek başına "tamamı" olmuyor ve kargo bedelini hiç
+alamıyordu. Artık birikimli sayılıyor: o siparişte tamamlanmış bütün
+iadelerin adedi toplanıyor, sipariş tamamlandığında kargo o iadede
+ekleniyor. Eşitlik bir kez yakalandığı için kargo da bir kez ekleniyor —
+denemede iki iadenin toplamı siparişin toplamına kuruşu kuruşuna eşit çıktı.
+
+#### Üç tür, üç farklı fiziksel gerçek
+
+- **İptal onaylanınca** sipariş iptal, stok geri, parası alınmışsa iade
+  kaydı. Ürün hiç çıkmadı.
+- **İade tamamlanınca** — ürün fiilen elimize geçince — adetler stoğa
+  giriyor ve tutar kadar iade kaydı açılıyor. "Onaylandı" bunu yapmıyor:
+  onay "gönderebilirsin" demek; ürün gelmeden ne stok ne para hareket
+  etmeli.
+- **Değişim tamamlanınca** eski ürün stoğa giriyor, yerine gönderilen
+  varyantın stoğu düşüyor, para hareketi yok. Panel "yerine ne gönderildi"
+  diye soruyor; sorulmasaydı stok sessizce yanlışa kayardı.
+
+Hepsi tek işlem içinde: yarıda kalan bir sonuçlandırma, stoğu artmış ama
+parası kaydedilmemiş bir sipariş bırakırdı. Aynı sonucu iki kez uygulamak da
+engelli — stoğu iki kez artırırdı.
+
+#### iyzico tarafı yazıldı ama denenmedi
+
+`server/odeme-iade.ts` duruyor ve anahtarlar geldiğinde çalışacak; o gün
+sandbox'ta denenmeli. Denenmemiş olması bir şeyi bozmuyor: `odemeAcikMi()`
+false olduğu sürece hiç çağrılmıyor, düğme ekranda çıkmıyor ve sebebi
+yazıyor.
+
+iyzico'da iki ayrı işlem var: **iptal** (`cancel`) aynı gün ve tam tutar —
+mahsuplaşma öncesi, komisyon da geri alınıyor; **iade** (`refundV2`)
+sonraki günlerde ve kısmi olabiliyor, `paymentId` ile çalışıyor. Hangisinin
+seçileceğine ödemenin tarihi ve tutar karar veriyor.
+
+**Denenen:** iptalin iade kaydı açması ve tutarın siparişin tamamı olması;
+listede görünmesi ve menü rozetinin artması; işaretlenince hem kaydın hem
+siparişin kapanması; sipariş ekranında görünmesi; kısmi iadede indirim
+payının düşülmesi ve kargonun eklenmemesi; ikinci kısmi iadede kargonun
+eklenmesi ve toplamın siparişin toplamına eşit çıkması; iadede stoğun geri
+girmesi; değişimde eski varyantın girip yenisinin düşmesi ve iade kaydı
+açılmaması; elle iade kaydında olmayan sipariş, fazla tutar ve ödenmemiş
+sipariş denetimleri; kart kapalıyken düğmenin çıkmaması ve sebebinin
+yazması; JavaScript kapalı tarayıcıda iade işaretleme.
+
+**Nerede:** [`../server/iade.ts`](../server/iade.ts),
+[`../server/iade-islem.ts`](../server/iade-islem.ts),
+[`../server/odeme-iade.ts`](../server/odeme-iade.ts),
+[`../server/talep.ts`](../server/talep.ts),
+[`../app/yonetim/(panel)/iadeler/page.tsx`](../app/yonetim/(panel)/iadeler/page.tsx),
+[`../db/schema.prisma`](../db/schema.prisma)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

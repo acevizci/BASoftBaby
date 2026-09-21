@@ -305,6 +305,7 @@ model Order {
   gonderiler  Shipment[]
   fatura      Invoice?
   talepler    OrderRequest[]
+  iadeler     Refund[]
 
   @@index([durum, olusturuldu])
   @@index([eposta])
@@ -550,6 +551,49 @@ model Payment {
   @@index([durum, olusturuldu])
 }
 
+/// Para iadesi.
+///
+/// **İade borcu kayıtta durmalı.** Parası alınmış bir sipariş iptal ya da
+/// iade edildiğinde mağazanın müşteriye borcu doğuyor. Eskiden bu hiçbir yere
+/// yazılmıyordu; sipariş "ödeme bekliyor"a düşüyor ve borç kayboluyordu
+/// (K-57).
+///
+/// Bir siparişin birden çok iadesi olabilir: üç üründen biri bugün, biri
+/// haftaya iade edilebiliyor. Her biri ayrı satır, kendi tutarıyla.
+///
+/// Kart ödemelerinde iade iyzico'ya da gönderiliyor (`saglayiciRef`
+/// dönen iade kimliği). Havalede para elle gönderiliyor, kayıt burada
+/// "tamamlandı" işaretleniyor (K-58).
+model Refund {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  /// İadeyi doğuran talep; panelden elle açılan iadede boş kalır.
+  requestId String?
+  request   OrderRequest? @relation(fields: [requestId], references: [id], onDelete: SetNull)
+
+  tutarKurus Int
+  /// havale · kart — siparişin ödeme yöntemi
+  yontem     String
+
+  /// bekliyor · tamamlandi · basarisiz
+  durum String @default("bekliyor")
+  /// iyzico iade kimliği ya da havale dekont açıklaması
+  saglayiciRef String?
+  /// Sağlayıcı reddettiyse sebebi
+  hata         String?
+  /// Panelde kim tamamladı
+  yapanId      String?
+  aciklama     String @default("")
+
+  olusturuldu DateTime  @default(now())
+  tamamlandi  DateTime?
+
+  @@index([durum, olusturuldu])
+  @@index([orderId])
+}
+
 /// Kargo gönderisi.
 ///
 /// Taşıyıcı toplayıcısı (Geliver/Navlungo) bağlanana kadar panelden elle
@@ -685,6 +729,7 @@ model OrderRequest {
   guncellendi DateTime @updatedAt
 
   satirlar OrderRequestItem[]
+  iadeler  Refund[]
 
   @@index([durum, olusturuldu])
   @@index([orderId])

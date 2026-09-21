@@ -3,6 +3,7 @@ import { db } from "@/server/veritabani";
 import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
 import { odemeSorgula } from "@/server/odeme";
 import { odemeAlindiEpostasi } from "@/server/eposta";
+import { iadeKaydiAc, iadeTutari } from "@/server/iade";
 
 /**
  * Ödeme akışının sipariş tarafı: girişim kaydı, dönüşün işlenmesi, ödeme
@@ -45,8 +46,10 @@ export async function odemeGirisimiKaydet(
  * aynı şeyi yazmak, alınmış paranın kaydını siliyordu: ekranda "ödeme
  * bekliyor" yazıyor, kimse iade etmesi gerektiğini bilmiyordu (K-57).
  *
- * Artık ödenmiş sipariş iptal edilince ödeme durumu `iade-bekliyor` oluyor
- * ve iade borcu listeye düşüyor. Ödenmemişse eskisi gibi `bekliyor`.
+ * Artık ödenmiş sipariş iptal edilince **iade kaydı açılıyor** (K-58): ne
+ * kadar borç olduğu, hangi yöntemle ödendiği ve ödenip ödenmediği kayıtta
+ * duruyor, panelin "iade bekleyenler" listesine düşüyor. Ödenmemişse eskisi
+ * gibi `bekliyor`.
  */
 export async function siparisiIptalEtVeStoguIadeEt(orderId: string): Promise<void> {
   const iadeEdilen = await db.$transaction(async (islem) => {
@@ -65,6 +68,20 @@ export async function siparisiIptalEtVeStoguIadeEt(orderId: string): Promise<voi
       },
     });
     if (iptal.count === 0) return [];
+
+    // Parası alınmışsa borç kayda giriyor. Tutar siparişin tamamı: iptal
+    // parça parça olmuyor, kargo da iade ediliyor.
+    if (parasiAlindi) {
+      const tutar = await iadeTutari(orderId);
+      if (tutar) {
+        await iadeKaydiAc(
+          orderId,
+          tutar.toplamKurus,
+          { aciklama: "Sipariş iptal edildi." },
+          islem,
+        );
+      }
+    }
 
     const satirlar = await islem.orderItem.findMany({
       where: { orderId },

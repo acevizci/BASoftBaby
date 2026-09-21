@@ -229,6 +229,11 @@ kargoda / teslim / iptal), `araToplam`, `indirim`, `kargoUcreti`, `kdv`,
 `genelToplam` (hepsi kuruş), `teslimatAdresi`, `faturaAdresi` (kopya, bağlantı
 değil)
 
+**Refund** — `orderId`, `requestId?`, `tutarKurus`, `yontem`, `durum`
+(bekliyor · tamamlandi · basarisiz), `saglayiciRef?`, `hata?`. Para iadesi
+kaydı: mağazanın müşteriye borcu. Bir siparişin birden çok iadesi olabilir;
+sipariş ancak bekleyen iade kalmadığında `iade` olur (K-58).
+
 **OrderItem** — `variantId` (referans), `urunAdi`, `beden`, `renk`, `sku`
 (sipariş anındaki kopya), `birimFiyatKurus`, `adet`
 

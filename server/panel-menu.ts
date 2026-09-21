@@ -32,6 +32,8 @@ import type { MenuGrubu, MenuMaddesi } from "@/ui/panel-menu-bicim";
 export type Sayaclar = {
   siparis: number;
   talep: number;
+  /** Ödenmeyi bekleyen iadeler: mağazanın müşteriye borcu (K-58). */
+  iade: number;
   yorum: number;
   fotografsiz: number;
   /** Biten ya da azalan bedeni olan yayındaki ürün adedi. */
@@ -39,9 +41,10 @@ export type Sayaclar = {
 };
 
 export async function menuSayaclari(): Promise<Sayaclar> {
-  const [siparis, talep, yorum, fotografsiz, sorunluStok] = await Promise.all([
+  const [siparis, talep, iade, yorum, fotografsiz, sorunluStok] = await Promise.all([
     db.order.count({ where: { durum: { in: ["bekliyor", "hazirlaniyor"] } } }),
     db.orderRequest.count({ where: { durum: "yeni" } }),
+    db.refund.count({ where: { durum: { in: ["bekliyor", "basarisiz"] } } }),
     db.review.count({ where: { durum: "yayinda", yanit: "", puan: { lte: OLUMSUZ_PUAN } } }),
     db.product.count({ where: { aktif: true, images: { none: {} } } }),
     // Beden değil **ürün** sayılıyor: rozete tıklayınca açılan listede o
@@ -49,7 +52,7 @@ export async function menuSayaclari(): Promise<Sayaclar> {
     // (K-44).
     db.product.count({ where: { aktif: true, variants: { some: { stok: { lte: AZALAN_ESIK } } } } }),
   ]);
-  return { siparis, talep, yorum, fotografsiz, sorunluStok };
+  return { siparis, talep, iade, yorum, fotografsiz, sorunluStok };
 }
 
 /**
@@ -70,6 +73,7 @@ export function menuyuKur(
         maddeler: [
           { yol: "/yonetim/siparisler", ad: "Siparişler", rozet: s.siparis, ton: "bekleyen" },
           { yol: "/yonetim/talepler", ad: "Talepler", rozet: s.talep, ton: "bekleyen" },
+          { yol: "/yonetim/iadeler", ad: "İadeler", rozet: s.iade, ton: "bekleyen" },
           {
             yol: "/yonetim/yorumlar",
             ad: "Değerlendirmeler",

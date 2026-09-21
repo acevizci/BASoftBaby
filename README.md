@@ -176,6 +176,18 @@ Parası alınmış bir sipariş iptal edilirse ödeme durumu **&quot;İade bekli
 oluyor: mağazanın müşteriye borcu olduğu kayıtta duruyor. Eskiden
 &quot;ödeme bekliyor&quot;a düşüyordu, yani alınmış paranın izi siliniyordu (K-57).
 
+**İade tamamlanınca** (ürün fiilen elinize geçince) iade edilen adetler stoğa
+geri giriyor ve tutar kadar iade kaydı açılıyor. Tutar satır satır
+hesaplanıyor: kampanya indiriminin o satıra düşen payı çıkarılıyor, kargo ise
+yalnızca siparişin tamamı iade edildiğinde ekleniyor — parça parça iade
+edildiyse de, birikimli sayıldığı için sonunda ekleniyor. **Değişimde** eski
+ürün stoğa girer, yerine gönderilen bedenin stoğu düşer; panel hangi bedenin
+gönderildiğini soruyor (K-58).
+
+`/yonetim/iadeler` mağazanın müşteriye borçlu olduğu paraların listesi: havale
+iadesi elle gönderilip işaretleniyor, kart iadesi iyzico'ya tek düğmeyle
+gidiyor (anahtarlar tanımlıysa). Panelden elle iade kaydı da açılabiliyor.
+
 ## Üyelik
 
 Üye kendi siparişini hesabında görüyor; iptal, iade ve değerlendirme formları

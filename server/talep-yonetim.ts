@@ -25,6 +25,7 @@ export async function talebiCevapla(form: FormData): Promise<void> {
   const id = String(form.get("id") ?? "").trim();
   const sonuc = String(form.get("sonuc") ?? "");
   const cevap = String(form.get("cevap") ?? "").trim();
+  const yeniVaryantId = String(form.get("yeniVaryantId") ?? "").trim() || undefined;
 
   if (!id || !(SONUCLAR as readonly string[]).includes(sonuc)) {
     redirect("/yonetim/talepler?hata=1");
@@ -41,7 +42,7 @@ export async function talebiCevapla(form: FormData): Promise<void> {
   });
   if (!kayit) redirect("/yonetim/talepler?hata=1");
 
-  const sonuclanan = await talebiSonuclandir(id, sonuc as Sonuc, cevap);
+  const sonuclanan = await talebiSonuclandir(id, sonuc as Sonuc, cevap, yeniVaryantId);
   if (!sonuclanan) redirect("/yonetim/talepler?hata=1");
 
   await talepCevabiEpostasi(kayit.order.eposta, {

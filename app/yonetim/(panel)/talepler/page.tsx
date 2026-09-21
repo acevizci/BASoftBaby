@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { db } from "@/server/veritabani";
 import { talebiCevapla } from "@/server/talep-yonetim";
-import { fiyatYaz } from "@/ui/katalog-bicim";
+import { RENK_ADLARI, fiyatYaz, type RenkAdi } from "@/ui/katalog-bicim";
 import {
   sebepAdi,
   talepDurumAdi,
@@ -64,11 +64,38 @@ export default async function TalepEkrani({ searchParams }: PageProps<"/yonetim/
       satirlar: {
         select: {
           adet: true,
-          orderItem: { select: { urunAd: true, beden: true, renk: true, fiyatKurus: true } },
+          orderItem: {
+            select: {
+              urunAd: true,
+              beden: true,
+              renk: true,
+              fiyatKurus: true,
+              variant: { select: { productId: true } },
+            },
+          },
         },
       },
     },
   });
+
+  // Değişimde "yerine ne gönderildi" sorulacak: o ürünün bütün varyantları
+  // lazım. Talep başına ayrı sorgu yerine tek sorgu (K-58).
+  const degisimUrunleri = [
+    ...new Set(
+      talepler
+        .filter((t) => t.tur === "degisim")
+        .flatMap((t) => t.satirlar.map((s) => s.orderItem.variant?.productId))
+        .filter((x): x is string => Boolean(x)),
+    ),
+  ];
+  const adayVaryantlar =
+    degisimUrunleri.length > 0
+      ? await db.productVariant.findMany({
+          where: { productId: { in: degisimUrunleri } },
+          orderBy: [{ beden: "asc" }, { renk: "asc" }],
+          select: { id: true, productId: true, beden: true, renk: true, stok: true },
+        })
+      : [];
 
   const suzgecler: [string, string][] = [
     ["acik", "Bekleyen"],
@@ -205,11 +232,45 @@ export default async function TalepEkrani({ searchParams }: PageProps<"/yonetim/
                   className={GIRDI}
                 />
               </label>
+              {t.tur === "degisim" && (
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-xs font-bold text-metin-2">
+                    Yerine gönderilen beden/renk
+                  </span>
+                  <select name="yeniVaryantId" defaultValue="" className={GIRDI}>
+                    <option value="">— seçilmedi (stok elle düzeltilecek) —</option>
+                    {adayVaryantlar
+                      .filter((v) =>
+                        t.satirlar.some((s) => s.orderItem.variant?.productId === v.productId),
+                      )
+                      .map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.beden} · {RENK_ADLARI[v.renk as RenkAdi] ?? v.renk} ({v.stok} adet)
+                        </option>
+                      ))}
+                  </select>
+                  <span className="text-xs text-metin-3">
+                    &quot;Tamamlandı&quot; dediğinde geri gelen ürün stoğa girer, seçtiğin
+                    bedenin stoğu düşer.
+                  </span>
+                </label>
+              )}
+
               <div className="flex flex-wrap gap-2">
                 <Sonuc ad="Onayla" deger="onaylandi" ana />
                 <Sonuc ad="Tamamlandı" deger="tamamlandi" />
                 <Sonuc ad="Kabul etme" deger="reddedildi" />
               </div>
+
+              {/* Hangi düğmenin ne yapacağı yazıyor: "Tamamlandı" stoğu ve
+                  parayı hareket ettiriyor, geri alınamıyor (K-58). */}
+              <p className="text-xs text-metin-3">
+                {t.tur === "iptal"
+                  ? "Onayla: sipariş iptal olur, stok geri döner, parası alındıysa iade kaydı açılır."
+                  : t.tur === "iade"
+                    ? "Onayla: müşteriye ürünü gönderebileceğini bildirir. Tamamlandı: ürün elinize geçtiğinde işaretleyin — stok geri döner ve iade tutarı kadar iade kaydı açılır."
+                    : "Onayla: müşteriye ürünü gönderebileceğini bildirir. Tamamlandı: geri gelen ürün stoğa girer, yerine gönderdiğin bedenin stoğu düşer. Para hareketi olmaz."}
+              </p>
             </form>
           </article>
         ))

@@ -25,6 +25,8 @@ import "server-only";
 
 import { db } from "@/server/veritabani";
 import { siparisiIptalEtVeStoguIadeEt } from "@/server/odeme-akis";
+import { iadeKaydiAc, iadeTutari } from "@/server/iade";
+import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
 import { TALEP_TURLERI, type TalepTuru } from "@/ui/talep-bicim";
 
 /** Cayma hakkı süresi — yasal alt sınır. Uzatmak serbest, kısaltmak değil. */
@@ -240,21 +242,51 @@ export async function talepAc(girdi: TalepGirdisi): Promise<TalepSonucu> {
 /**
  * Talebi sonuçlandırır (panel).
  *
- * Onaylanan **iptal** siparişi gerçekten iptal edip stoğu geri veriyor: o
- * adımı elle bırakmak, onaylanmış ama iptal edilmemiş siparişler demekti.
- * İade ve değişimde ürünün fiziksel olarak geri gelmesi gerektiği için sipariş
- * kendiliğinden değişmiyor; mağaza sahibi ürün eline geçince tamamlıyor.
+ * Üç türün üçü de farklı işliyor, çünkü üçünde de fiziksel dünyada olan şey
+ * farklı (K-58):
+ *
+ * - **İptal onaylanınca** sipariş iptal ediliyor, stok geri veriliyor ve
+ *   parası alınmışsa iade kaydı açılıyor. Ürün hiç çıkmadı.
+ * - **İade tamamlanınca** — yani ürün fiilen elimize geçince — iade edilen
+ *   adetler stoğa geri giriyor ve o satırların tutarı kadar iade kaydı
+ *   açılıyor. "Onaylandı" tek başına bunu yapmıyor: onay, "gönderebilirsin"
+ *   demek; ürün gelmeden ne stok ne para hareket etmeli.
+ * - **Değişim tamamlanınca** eski ürün stoğa giriyor, yerine gönderilen
+ *   varyantın stoğu düşüyor. Para hareketi yok. Yeni varyant verilmezse
+ *   yalnızca geri gelen stoğa ekleniyor — mağaza sahibi elle düzeltebilsin
+ *   diye engellenmiyor, ama panel bunu soruyor.
+ *
+ * Hepsi tek işlem içinde: yarıda kalan bir sonuçlandırma, stoğu artmış ama
+ * parası kaydedilmemiş bir sipariş bırakırdı.
  */
 export async function talebiSonuclandir(
   id: string,
   yeniDurum: "onaylandi" | "reddedildi" | "tamamlandi",
   cevap: string,
+  /** Değişimde yerine gönderilen varyant. */
+  yeniVaryantId?: string,
 ): Promise<{ numara: string; tur: string } | undefined> {
   const talep = await db.orderRequest.findUnique({
     where: { id },
-    select: { id: true, tur: true, durum: true, order: { select: { id: true, numara: true } } },
+    select: {
+      id: true,
+      tur: true,
+      durum: true,
+      order: { select: { id: true, numara: true } },
+      satirlar: {
+        select: {
+          adet: true,
+          orderItemId: true,
+          orderItem: { select: { variantId: true, fiyatKurus: true } },
+        },
+      },
+    },
   });
   if (!talep) return undefined;
+  // Aynı sonucu iki kez uygulamak stoğu iki kez artırırdı.
+  if (talep.durum === yeniDurum) {
+    return { numara: talep.order.numara, tur: talep.tur };
+  }
 
   await db.orderRequest.update({
     where: { id },
@@ -263,9 +295,79 @@ export async function talebiSonuclandir(
 
   if (talep.tur === "iptal" && yeniDurum === "onaylandi") {
     await siparisiIptalEtVeStoguIadeEt(talep.order.id);
+    return { numara: talep.order.numara, tur: talep.tur };
+  }
+
+  if (yeniDurum === "tamamlandi" && (talep.tur === "iade" || talep.tur === "degisim")) {
+    await urunGeriGeldi(talep.order.id, id, talep.tur, talep.satirlar, yeniVaryantId);
   }
 
   return { numara: talep.order.numara, tur: talep.tur };
+}
+
+/**
+ * İade ya da değişimde ürün fiilen geri geldiğinde olanlar.
+ *
+ * Stoğu geri vermek ve iade kaydını açmak tek işlemde; ikisi ayrı olsaydı
+ * arada düşen bir istek stoğu artırmış ama borcu kaydetmemiş olurdu.
+ */
+async function urunGeriGeldi(
+  orderId: string,
+  requestId: string,
+  tur: string,
+  satirlar: {
+    adet: number;
+    orderItemId: string;
+    orderItem: { variantId: string | null; fiyatKurus: number };
+  }[],
+  yeniVaryantId?: string,
+): Promise<void> {
+  const geriGelen: string[] = [];
+
+  await db.$transaction(async (islem) => {
+    for (const s of satirlar) {
+      if (!s.orderItem.variantId) continue; // Ürünü silinmiş satır
+      await islem.productVariant.update({
+        where: { id: s.orderItem.variantId },
+        data: { stok: { increment: s.adet } },
+      });
+      geriGelen.push(s.orderItem.variantId);
+    }
+
+    if (tur === "degisim") {
+      // Yerine gönderilen varyantın stoğu düşüyor; sıfırın altına inmiyor.
+      if (yeniVaryantId) {
+        const toplamAdet = satirlar.reduce((t, s) => t + s.adet, 0);
+        await islem.productVariant.updateMany({
+          where: { id: yeniVaryantId, stok: { gte: toplamAdet } },
+          data: { stok: { decrement: toplamAdet } },
+        });
+      }
+      return; // Değişimde para hareketi yok.
+    }
+
+    const tutar = await iadeTutari(
+      orderId,
+      satirlar.map((s) => ({ orderItemId: s.orderItemId, adet: s.adet })),
+    );
+    if (tutar) {
+      await iadeKaydiAc(
+        orderId,
+        tutar.toplamKurus,
+        {
+          requestId,
+          aciklama: tutar.tamami
+            ? "Siparişin tamamı iade edildi."
+            : "Siparişin bir kısmı iade edildi.",
+        },
+        islem,
+      );
+    }
+  });
+
+  // Geri gelen stok son adetse "gelince haber ver" diyen bekliyordur.
+  // İşlemin dışında: e-posta gönderimi veritabanı işlemini uzatmamalı.
+  await stokBildirimleriniGonder(geriGelen);
 }
 
 /** Panelde bekleyen talep sayısı. */

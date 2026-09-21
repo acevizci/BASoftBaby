@@ -11,6 +11,7 @@ import {
 import { GONDERI_DURUM_ADLARI, TASIYICILAR, gonderiGetir } from "@/server/kargo";
 import { faturaGetir } from "@/server/fatura";
 import { belgeBasilabilirMi } from "@/server/siparis-belge";
+import { siparisinIadeleri } from "@/server/iade";
 import { ayarlariGetir } from "@/server/sepet";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import { DURUMLAR, ODEME_DURUMLARI, durumAdi, odemeAdi } from "@/ui/siparis-bicim";
@@ -42,6 +43,9 @@ export default async function SiparisDetayi({
   if (!siparis) notFound();
 
   const belge = belgeBasilabilirMi(siparis);
+  // Bu siparişin iade kayıtları: borç ve ödendiği an sipariş ekranında da
+  // görünmeli, ayrı bir listeye bakmayı gerektirmemeli (K-58).
+  const iadeler = await siparisinIadeleri(siparis.numara);
 
   return (
     <div className="flex flex-col gap-5">
@@ -205,6 +209,52 @@ export default async function SiparisDetayi({
           </button>
         </form>
       </section>
+
+      {/* İade kayıtları: borç ve ödendiği an siparişin kendi ekranında da
+          görünüyor, ayrı listeye bakmayı gerektirmiyor (K-58). */}
+      {iadeler.length > 0 && (
+        <section className="rounded-marka border border-cizgi bg-yuzey p-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-lg">İadeler</h2>
+            <Link
+              href="/yonetim/iadeler"
+              className="text-sm font-bold text-mavi-koyu hover:underline"
+            >
+              İade listesi
+            </Link>
+          </div>
+          <ul className="mt-3 flex flex-col divide-y divide-cizgi-soluk text-sm">
+            {iadeler.map((i) => (
+              <li key={i.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
+                <span className="rakam font-bold">{fiyatYaz(i.tutarKurus)}</span>
+                <span
+                  className={`rounded-full px-2.5 py-1 text-xs font-bold ${
+                    i.durum === "tamamlandi"
+                      ? "bg-nane-soluk text-nane-koyu"
+                      : i.durum === "basarisiz"
+                        ? "bg-mercan-soluk text-mercan-koyu"
+                        : "bg-sari-soluk text-sari-koyu"
+                  }`}
+                >
+                  {i.durum === "tamamlandi"
+                    ? "İade edildi"
+                    : i.durum === "basarisiz"
+                      ? "Gönderilemedi"
+                      : "Bekliyor"}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-xs text-metin-3">
+                  {i.aciklama}
+                  {i.saglayiciRef && ` · ${i.saglayiciRef}`}
+                  {i.hata && ` · ${i.hata}`}
+                </span>
+                <span className="rakam text-xs text-metin-3">
+                  {(i.tamamlandi ?? i.olusturuldu).toLocaleDateString("tr-TR")}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="rounded-marka border border-cizgi bg-yuzey p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">

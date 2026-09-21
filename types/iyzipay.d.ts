@@ -1,7 +1,7 @@
 /**
- * iyzico'nun resmî Node paketi tip dosyasıyla gelmiyor; kullandığımız iki
- * uç için gereken en az tip burada. Paketin tamamı değil, yalnızca ödeme
- * formu başlatma ve sonucu sorgulama.
+ * iyzico'nun resmî Node paketi tip dosyasıyla gelmiyor; kullandığımız uçlar
+ * için gereken en az tip burada. Paketin tamamı değil: ödeme formu başlatma,
+ * sonucu sorgulama ve iade (K-58).
  */
 declare module "iyzipay" {
   type Sonuc = Record<string, unknown> & {
@@ -25,6 +25,14 @@ declare module "iyzipay" {
     };
     checkoutForm: {
       retrieve(istek: Record<string, unknown>, geriCagri: GeriCagri): void;
+    };
+    /** Aynı gün, tam tutar: mahsuplaşma öncesi iptal. */
+    cancel: {
+      create(istek: Record<string, unknown>, geriCagri: GeriCagri): void;
+    };
+    /** Sonraki günler, kısmi tutar olabilir; `paymentId` ile çalışıyor. */
+    refundV2: {
+      create(istek: Record<string, unknown>, geriCagri: GeriCagri): void;
     };
   }
 
