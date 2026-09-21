@@ -2,6 +2,7 @@ import Link from "next/link";
 import { KISA_LISTE, KRITIK_STOK, panelOzetiGetir } from "@/server/panel-ozet";
 import { RENK_ADLARI, fiyatYaz, type RenkAdi } from "@/ui/katalog-bicim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import PanelBildirim from "@/ui/panel-bildirim";
 
 export const dynamic = "force-dynamic";
 
@@ -11,11 +12,21 @@ function renkAdi(renk: string): string {
   return RENK_ADLARI[renk as RenkAdi] ?? renk;
 }
 
-export default async function YonetimOzeti() {
+/**
+ * Sahibe özel bir sayfaya girmeye çalışan yönetici buraya yollanıyor
+ * (`sahipGerekli`). Eskiden sessizce atılıyordu: bağlantı bozukmuş gibi
+ * duruyordu (K-61).
+ */
+const HATALAR: Record<string, string> = {
+  yok: "O sayfayı yalnızca sahip rolündeki kullanıcılar açabiliyor.",
+};
+
+export default async function YonetimOzeti({ searchParams }: PageProps<"/yonetim">) {
   // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
+  const { yetki } = await searchParams;
   const o = await panelOzetiGetir();
 
   const fark = o.bugunAdet - o.dunAdet;
@@ -23,6 +34,8 @@ export default async function YonetimOzeti() {
 
   return (
     <div className="flex flex-col gap-6">
+      <PanelBildirim hata={yetki} hatalar={HATALAR} />
+
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h1 className="text-2xl">Özet</h1>
         <div className="flex flex-wrap gap-2">

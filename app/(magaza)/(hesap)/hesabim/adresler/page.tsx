@@ -14,6 +14,7 @@ import {
   IYI_KUTU,
   KART,
 } from "../../hesap-bicim";
+import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Adreslerim", robots: { index: false } };
@@ -84,12 +85,18 @@ export default async function AdreslerSayfasi({
                     </button>
                   </form>
                 )}
-                <form action={adresSil}>
-                  <input type="hidden" name="id" value={a.id} />
-                  <button type="submit" className={IKINCIL_DUGME}>
-                    Sil
-                  </button>
-                </form>
+                {/* Adres silme geri alınamıyor; müşteri yeniden yazmak
+                    zorunda kalır (K-61). */}
+                <SilmeOnayi
+                  uyari={<>Bu adres kaydın siliniyor; geri alınamıyor.</>}
+                >
+                  <form action={adresSil}>
+                    <input type="hidden" name="id" value={a.id} />
+                    <button type="submit" className={SIL_DUGMESI}>
+                      Evet, sil
+                    </button>
+                  </form>
+                </SilmeOnayi>
               </div>
             </li>
           ))}

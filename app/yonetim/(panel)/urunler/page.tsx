@@ -3,6 +3,8 @@ import { db } from "@/server/veritabani";
 import { topluUrunIslemi } from "@/server/yonetim";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
+import PanelBildirim, { ORTAK_HATALAR } from "@/ui/panel-bildirim";
 
 export const dynamic = "force-dynamic";
 
@@ -17,12 +19,22 @@ const ISLEM_DUGMESI =
  * elli ürün yüklendiğinde hangilerinin fotoğrafı eksik kaldığını görmenin
  * başka yolu yoktu (K-41).
  */
+/** Bildirim metinleri koddan; adres yalnızca kodu taşıyor (K-57). */
+const BILDIRIMLER: Record<string, string> = {
+  silindi: "Ürün silindi. Sipariş geçmişi bundan etkilenmedi.",
+};
+
+const HATALAR: Record<string, string> = {
+  ...ORTAK_HATALAR,
+  "secim-yok": "Önce listeden ürün seç.",
+};
+
 export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/urunler">) {
   // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { eksik, toplu, adet, atlanan, hata } = await searchParams;
+  const { eksik, toplu, adet, atlanan, kayit, hata } = await searchParams;
   const fotografsizSuzgeci = eksik === "fotograf";
 
   const [urunler, fotografsizAdedi] = await Promise.all([
@@ -106,11 +118,10 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
           )}
         </p>
       )}
-      {hata === "secim-yok" && (
-        <p className="rounded-marka bg-mercan-soluk px-4 py-3 text-sm font-semibold text-mercan-koyu">
-          Önce listeden ürün seç.
-        </p>
-      )}
+      {/* Tek ürün silme buraya `?kayit=silindi` ile dönüyordu ama sayfa
+          `kayit`i hiç okumuyordu: ürün siliniyor, ekranda hiçbir şey
+          yazmıyordu (K-61). */}
+      <PanelBildirim kayit={kayit} hata={hata} bildirimler={BILDIRIMLER} hatalar={HATALAR} />
 
       {/* Toplu işlem formu; tablo da içinde. Düz HTML, JavaScript yok. */}
       <form action={topluUrunIslemi} className="flex flex-col gap-3">
@@ -215,14 +226,22 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
             <button type="submit" name="islem" value="yayin" className={ISLEM_DUGMESI}>
               Yayına al
             </button>
-            <button
-              type="submit"
-              name="islem"
-              value="sil"
-              className={`${ISLEM_DUGMESI} hover:border-mercan hover:text-mercan-koyu`}
+            {/* Toplu silme bir tıkla onlarca ürünü götürebiliyor; tek
+                düğme olmamalı (K-61). */}
+            <SilmeOnayi
+              uyari={
+                <>
+                  Seçtiğin ürünler kalıcı olarak siliniyor; fotoğrafları da depodan
+                  kalkıyor ve geri alınamıyor. Siparişte geçmiş ürünler atlanıyor.
+                  Yalnızca satıştan kaldırmak istiyorsan <strong>Pasife al</strong>{" "}
+                  yeterli.
+                </>
+              }
             >
-              Sil
-            </button>
+              <button type="submit" name="islem" value="sil" className={SIL_DUGMESI}>
+                Evet, seçilenleri sil
+              </button>
+            </SilmeOnayi>
             {/* Toplu silmede SİL yazma kutusu yok; o yüzden satılmış ürünler
                 silinmiyor, atlanıyor ve kaç tanesinin atlandığı yazılıyor
                 (K-53). */}

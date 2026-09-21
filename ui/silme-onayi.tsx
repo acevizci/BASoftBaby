@@ -18,16 +18,24 @@ import type { ReactNode } from "react";
 export default function SilmeOnayi({
   children,
   uyari,
+  etiket = "Sil",
 }: {
   /** Gizli alanlar ve gönder düğmesini taşıyan form içeriği. */
   children: ReactNode;
   /** Silmenin sonucu: ne kaybolacak, geri alınabilir mi. */
   uyari: ReactNode;
+  /**
+   * Açılır başlığın metni.
+   *
+   * Zaten "Ürünü sil" diye bir bölümün içindeysek ikinci bir "Sil" kafa
+   * karıştırıyor; orada "Silmeyi onayla" daha açık (K-61).
+   */
+  etiket?: string;
 }) {
   return (
     <details className="group">
       <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 rounded-full border border-cizgi bg-yuzey px-3 py-1.5 text-xs font-bold text-metin-2 transition hover:border-mercan hover:text-mercan-koyu [&::-webkit-details-marker]:hidden">
-        Sil
+        {etiket}
         <span aria-hidden="true" className="transition group-open:rotate-180">
           ▾
         </span>

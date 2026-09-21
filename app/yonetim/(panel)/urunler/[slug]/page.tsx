@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import FotografYonetimi from "@/ui/fotograf-yonetimi";
 import type { RenkAdi } from "@/ui/katalog-bicim";
-import UrunFormu from "@/ui/urun-formu";
+import UrunFormu, { UrunKaydetDugmesi } from "@/ui/urun-formu";
 import { db } from "@/server/veritabani";
 import { bedenSirasi, sonSira, bedenler as bedenleriGetir } from "@/server/bedenler";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
@@ -115,6 +115,11 @@ export default async function UrunDuzenle({
         // Fotoğrafa yalnızca ürünün kendi renkleri atanabiliyor.
         renkler={[...new Set(sirali.map((v) => v.renk))] as RenkAdi[]}
       />
+
+      {/* Kaydet düğmesi sayfanın sonunda: form yukarıda bitiyor ama
+          altındaki bölümler yüzünden düğme sayfanın ortasında kalıyordu
+          (K-61). Silme bölümü en altta kalmaya devam ediyor (K-53). */}
+      <UrunKaydetDugmesi />
 
       <UrunSilme
         slug={urun.slug}

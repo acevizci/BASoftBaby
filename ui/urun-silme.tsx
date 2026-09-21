@@ -1,5 +1,6 @@
 import Katlanir from "@/ui/katlanir";
 import { urunSil } from "@/server/yonetim";
+import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
 
 /**
  * Ürünü silme bölümü.
@@ -106,12 +107,32 @@ export default function UrunSilme({
           </p>
         )}
 
-        <button
-          type="submit"
-          className="self-start rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-95"
-        >
-          Ürünü sil
-        </button>
+        {/* Satılmışta SİL yazmak zaten bir onay adımı; satılmamışta iki
+            adımlı onay kutusu aynı işi görüyor (K-61). */}
+        {satildi ? (
+          <button
+            type="submit"
+            className="self-start rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-95"
+          >
+            Ürünü sil
+          </button>
+        ) : (
+          <SilmeOnayi
+            etiket="Silmeyi onayla"
+            uyari={
+              <>
+                <strong>{ad}</strong> kalıcı olarak siliniyor; geri alınamıyor.
+                Fotoğrafları da depodan kalkıyor. Yalnızca satıştan kaldırmak
+                istiyorsan yukarıdaki formda &quot;Ürün yayında&quot; kutusunun
+                işaretini kaldırman yeterli.
+              </>
+            }
+          >
+            <button type="submit" className={SIL_DUGMESI}>
+              Evet, ürünü sil
+            </button>
+          </SilmeOnayi>
+        )}
       </form>
     </Katlanir>
   );

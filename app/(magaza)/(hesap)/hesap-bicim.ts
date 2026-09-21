@@ -49,4 +49,6 @@ export const BILDIRIMLER: Record<string, string> = {
   varsayilan: "Varsayılan adres değişti.",
   dogrulandi: "E-posta adresin doğrulandı.",
   "dogrulama-gonderildi": "Doğrulama bağlantısı e-posta adresine gönderildi.",
+  "hesap-silindi":
+    "Hesabın silindi. Sipariş ve fatura kayıtların yasal saklama süresince duruyor; onların dışında bilgilerin kaldırıldı.",
 };

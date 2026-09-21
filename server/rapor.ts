@@ -10,6 +10,14 @@ import "server-only";
  * iptallerle dolu bir ay iyi geçmiş görünürdü. Ama iptal **oranı** ayrıca
  * gösteriliyor — yükselen bir oran başlı başına bir haber.
  *
+ * **İadeler ciroyu düşürmüyor, yanına yazılıyor.** İade edilmiş bir satış
+ * ciro sayılmaya devam ederse ay iyi görünür; ciroyu doğrudan düşürmek ise
+ * "ne kadar sattık" sorusunun cevabını kaybettiriyor — iade genelde satıştan
+ * sonraki bir dönemde oluyor ve o dönemin cirosunu eksiye çekebiliyor. O
+ * yüzden üç rakam birden veriliyor: **ciro**, **iade** ve **net** (K-61).
+ * İade dönemi iadenin tamamlandığı güne göre sayılıyor, satışın gününe göre
+ * değil: para o gün çıkıyor.
+ *
  * **Her dönem bir öncekiyle karşılaştırılıyor.** Tek başına "42 sipariş" bir
  * şey söylemiyor; geçen ay 60'sa başka, 20'yse başka.
  */
@@ -27,6 +35,11 @@ export type Rapor = {
   donem: Donem;
   siparis: number;
   kurus: number;
+  /** Dönemde tamamlanan para iadeleri (K-61). */
+  iadeKurus: number;
+  iadeAdedi: number;
+  /** Ciro eksi iade. */
+  netKurus: number;
   urunAdedi: number;
   ortalamaSepetKurus: number;
   /** Önceki eşit uzunluktaki dönem; karşılaştırma için. */
@@ -176,7 +189,7 @@ export async function raporGetir(donem: Donem): Promise<Rapor> {
   const satilan = { durum: { not: "iptal" } };
   const aralik = { gte: donem.baslangic, lt: donem.bitis };
 
-  const [siparisler, onceki, iptal, satirlar] = await Promise.all([
+  const [siparisler, onceki, iptal, iadeler, satirlar] = await Promise.all([
     db.order.findMany({
       where: { ...satilan, olusturuldu: aralik },
       select: { toplamKurus: true, odemeYontemi: true, olusturuldu: true },
@@ -187,6 +200,12 @@ export async function raporGetir(donem: Donem): Promise<Rapor> {
       _sum: { toplamKurus: true },
     }),
     db.order.count({ where: { durum: "iptal", olusturuldu: aralik } }),
+    // İade dönemi tamamlandığı güne göre: para o gün çıkıyor.
+    db.refund.aggregate({
+      where: { durum: "tamamlandi", tamamlandi: aralik },
+      _count: true,
+      _sum: { tutarKurus: true },
+    }),
     db.orderItem.findMany({
       where: { order: { ...satilan, olusturuldu: aralik } },
       select: {
@@ -201,6 +220,7 @@ export async function raporGetir(donem: Donem): Promise<Rapor> {
   ]);
 
   const kurus = siparisler.reduce((t, s) => t + s.toplamKurus, 0);
+  const iadeKurus = iadeler._sum.tutarKurus ?? 0;
   const urunAdedi = satirlar.reduce((t, s) => t + s.adet, 0);
 
   // Sütunlar
@@ -237,6 +257,9 @@ export async function raporGetir(donem: Donem): Promise<Rapor> {
     donem,
     siparis: siparisler.length,
     kurus,
+    iadeKurus,
+    iadeAdedi: iadeler._count,
+    netKurus: kurus - iadeKurus,
     urunAdedi,
     ortalamaSepetKurus: siparisler.length > 0 ? Math.round(kurus / siparisler.length) : 0,
     oncekiSiparis: onceki._count,

@@ -41,6 +41,14 @@ function kurusYaz(kurus: number | null): string {
   return (kurus / 100).toFixed(2).replace(".", ",");
 }
 
+/**
+ * Kaydet düğmesi formun dışında durabilsin diye forma kimlik veriliyor.
+ *
+ * HTML'in `form` niteliği: bir gönder düğmesi, sayfanın başka bir yerindeki
+ * formu gönderebiliyor. JavaScript gerekmiyor (K-61).
+ */
+const FORM_KIMLIGI = "urun-formu";
+
 export default function UrunFormu({
   urun,
   kategoriler,
@@ -80,7 +88,7 @@ export default function UrunFormu({
         </p>
       )}
 
-      <form action={urunKaydet} className="flex flex-col gap-5">
+      <form id={FORM_KIMLIGI} action={urunKaydet} className="flex flex-col gap-5">
         {!yeni && <input type="hidden" name="eskiSlug" value={urun.slug} />}
 
         <div className="rounded-marka border border-cizgi bg-yuzey p-5">
@@ -239,15 +247,17 @@ export default function UrunFormu({
           </div>
         </div>
 
-        {/* Yapışkan: ürün formu uzun, en üstteki bir alanı düzeltip
-            kaydetmek için sayfanın dibine inmek gerekiyordu. Stok ekranındaki
-            kaydet düğmesi zaten böyleydi, ikisi aynı oldu (K-57). */}
-        <button
-          type="submit"
-          className="sticky bottom-4 z-10 self-start rounded-full bg-mercan px-6 py-3 font-bold text-white shadow-md transition hover:brightness-95"
-        >
-          {yeni ? "Ürünü oluştur" : "Değişiklikleri kaydet"}
-        </button>
+        {/* Yeni üründe kaydet düğmesi formun içinde: altında başka bölüm
+            yok, sayfa formdan ibaret. Var olan üründe düğme sayfanın en
+            sonuna taşındı — aşağıda `UrunKaydetDugmesi` (K-61). */}
+        {yeni && (
+          <button
+            type="submit"
+            className="self-start rounded-full bg-mercan px-6 py-3 font-bold text-white transition hover:brightness-95"
+          >
+            Ürünü oluştur
+          </button>
+        )}
       </form>
 
       {!yeni && (
@@ -363,6 +373,37 @@ export default function UrunFormu({
           </p>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * "Değişiklikleri kaydet" — sayfanın en sonunda.
+ *
+ * Düğme formun içindeyken sayfanın **ortasında** kalıyordu: altında
+ * "Bedenler ve stok", "Fotoğraflar" ve "Ürünü sil" bölümleri var. Yapışkan
+ * yapmak da çözmedi, çünkü `sticky` yalnızca kendi kapsayıcısı ekrandayken
+ * çalışıyor — aşağı bölümlere inince düğme kayboluyordu.
+ *
+ * Çözüm: düğme formun dışında, sayfanın sonunda; `form` niteliğiyle yukarıdaki
+ * forma bağlı. Yapışkan da kaldı, ama artık sayfanın tamamı boyunca
+ * görünüyor.
+ */
+export function UrunKaydetDugmesi() {
+  return (
+    <div className="sticky bottom-4 z-10 flex flex-wrap items-center gap-3 rounded-marka border border-cizgi bg-yuzey/95 p-3 shadow-md backdrop-blur">
+      <button
+        type="submit"
+        form={FORM_KIMLIGI}
+        className="rounded-full bg-mercan px-6 py-3 font-bold text-white transition hover:brightness-95"
+      >
+        Değişiklikleri kaydet
+      </button>
+      <span className="text-xs text-metin-3">
+        Yukarıdaki &quot;Temel bilgiler&quot;, &quot;Görünüm&quot; ve yasal alanlardaki
+        değişiklikleri kaydeder. Beden, stok ve fotoğraf işlemleri kendi bölümlerinde
+        anında kaydediliyor.
+      </span>
     </div>
   );
 }

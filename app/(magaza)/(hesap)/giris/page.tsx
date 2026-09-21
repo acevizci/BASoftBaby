@@ -4,7 +4,16 @@ import type { Metadata } from "next";
 import { girisYap } from "@/server/uyelik-islem";
 import { girisYapan } from "@/server/uyelik";
 import GonderDugmesi from "@/ui/gonder-dugmesi";
-import { ANA_DUGME, ETIKET, GIRDI, HATALAR, HATA_KUTUSU, KART } from "../hesap-bicim";
+import {
+  ANA_DUGME,
+  BILDIRIMLER,
+  ETIKET,
+  GIRDI,
+  HATALAR,
+  HATA_KUTUSU,
+  IYI_KUTU,
+  KART,
+} from "../hesap-bicim";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Giriş yap", robots: { index: false } };
@@ -14,11 +23,12 @@ export const metadata: Metadata = { title: "Giriş yap", robots: { index: false 
  * müşteri sepetinin başına geri gelsin diye.
  */
 export default async function GirisSayfasi({ searchParams }: PageProps<"/giris">) {
-  const { hata, nereye, dk } = await searchParams;
+  const { hata, kayit, nereye, dk } = await searchParams;
   if (await girisYapan()) redirect("/hesabim");
 
   const hedef = typeof nereye === "string" && nereye.startsWith("/") ? nereye : "/hesabim";
   const temelHata = typeof hata === "string" ? HATALAR[hata] : undefined;
+  const bildirim = typeof kayit === "string" ? BILDIRIMLER[kayit] : undefined;
 
   // Kilit süresi adres satırında sayı olarak geliyor; metin taşınsaydı biri
   // hazırladığı bağlantıyla sayfamızda istediği yazıyı gösterebilirdi.
@@ -35,6 +45,7 @@ export default async function GirisSayfasi({ searchParams }: PageProps<"/giris">
         Siparişlerini ve adreslerini görmek için hesabına gir.
       </p>
 
+      {bildirim && <p className={`${IYI_KUTU} mt-4`}>{bildirim}</p>}
       {hataMetni && <p className={HATA_KUTUSU}>{hataMetni}</p>}
 
       <form action={girisYap} className={`mt-6 flex flex-col gap-4 ${KART}`}>

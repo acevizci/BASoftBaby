@@ -8,6 +8,7 @@ import {
 } from "@/server/yonetim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import PanelBildirim, { ORTAK_HATALAR } from "@/ui/panel-bildirim";
+import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
 
 export const dynamic = "force-dynamic";
 
@@ -137,12 +138,24 @@ export default async function KategoriEkrani({
                     Eskiden düğme kapalıydı; bütün kategorilerde ürün olduğu
                     için silme yokmuş gibi duruyordu (K-52). */}
                 {k.urunAdedi === 0 ? (
-                  <form action={kategoriSil}>
-                    <input type="hidden" name="id" value={k.id} />
-                    <button type="submit" className={KUCUK_DUGME}>
-                      Sil
-                    </button>
-                  </form>
+                  // Boş kategori de tek tıkla gitmiyor: "Sil" düğmesi
+                  // "Kapat"ın hemen yanında (K-61).
+                  <SilmeOnayi
+                    uyari={
+                      <>
+                        <strong>{k.ad}</strong> kalıcı olarak siliniyor; geri
+                        alınamıyor. İçinde ürün yok. Yalnızca vitrinden kaldırmak
+                        istiyorsan &quot;Kapat&quot; yeter.
+                      </>
+                    }
+                  >
+                    <form action={kategoriSil}>
+                      <input type="hidden" name="id" value={k.id} />
+                      <button type="submit" className={SIL_DUGMESI}>
+                        Evet, sil
+                      </button>
+                    </form>
+                  </SilmeOnayi>
                 ) : (
                   <details className="group">
                     <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 text-xs font-bold text-metin-2 hover:text-metin [&::-webkit-details-marker]:hidden">

@@ -100,9 +100,16 @@ duyuru şeridi,
 ana sayfa banner'ı, kampanyalar ve satış ayarları (kargo ücreti,
 bedava kargo eşiği, havale bilgisi).
 
-Panelde her işlem sonucunu söylüyor — silme, aç/kapat, sıralama dahil; yıkıcı
-işlemler (kampanya, banner, duyuru, beden, varyant silme) iki adımlı onay
-istiyor ve ne kaybolacağını yazıyor (K-57).
+Panelde her işlem sonucunu söylüyor — silme, aç/kapat, sıralama dahil. Geri
+alınamayan her silme iki adımlı onay istiyor ve ne kaybolacağını yazıyor:
+ürün, kategori, toplu ürün, kullanıcı, fotoğraf, beden, varyant, kampanya,
+banner, duyuru ve müşteri adresi. Onay kutusu kapatılabilir şeylerde ikinci
+yolu da gösteriyor ("silmek yerine kapat") — çoğu zaman istenen şey silmek
+değil (K-57, K-61).
+
+Ürün formundaki **Değişiklikleri kaydet** düğmesi sayfanın sonunda ve
+yapışkan: form sayfanın ortasında bitiyor, düğme HTML'in `form` niteliğiyle
+dışarıdan bağlı olduğu için aşağı inince kaybolmuyor (K-61).
 
 **Bedenler panelden yönetiliyor** (`/yonetim/bedenler`): yeni beden ekleme,
 ad ve boy-kilo ölçülerini değiştirme, sıralama, kapatma ve silme. Ad

@@ -430,5 +430,11 @@ export async function hesabimiSil(veri: FormData): Promise<void> {
   await hesabiSil(musteri.id);
   await oturumKapat();
   revalidatePath("/", "layout");
-  redirect("/?hesap=silindi");
+  // Ana sayfaya değil giriş sayfasına: ana sayfa `searchParams` okumadığı
+  // için bildirim gösteremiyordu ve hesabını silen kişi sıradan bir ana
+  // sayfa görüyordu — geri alınamayan bir işlemin hiçbir onayı yoktu.
+  // Ana sayfaya parametre eklemek onu her ziyarette dinamik yapardı;
+  // giriş sayfası zaten dinamik ve silinen hesabın sahibinin gideceği
+  // yer de orası (K-61).
+  redirect("/giris?kayit=hesap-silindi");
 }

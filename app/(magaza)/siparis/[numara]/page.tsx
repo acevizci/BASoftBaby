@@ -32,18 +32,39 @@ export default async function SiparisOnayi({
   // değil siparişin kendi durumundan okuyoruz: adres satırı kurcalanabilir.
   const kartla = siparis.odemeYontemi === "kart";
   const odendi = siparis.odemeDurumu === "odendi";
-  const odemeBasarisiz = kartla && !odendi;
   const sonHata = siparis.sonOdemeHatasi;
+
+  /**
+   * İade durumları ayrı ele alınıyor.
+   *
+   * Eskiden ölçüt yalnızca `odendi` idi ve iade durumları ona düşünce sayfa
+   * **yanlış** konuşuyordu: parası alınıp iptal edilmiş kartlı siparişte
+   * "Ödeme tamamlanamadı, kartından bir tahsilat yapılmadı" yazıyordu —
+   * para alınmıştı ve iade bekliyordu. Havalede daha kötüsü oluyordu:
+   * müşteriden parayı **tekrar yatırması** isteniyordu (K-61).
+   */
+  const iadeBekliyor = siparis.odemeDurumu === "iade-bekliyor";
+  const iadeEdildi = siparis.odemeDurumu === "iade";
+  const iadeli = iadeBekliyor || iadeEdildi;
+  const odemeBasarisiz = kartla && !odendi && !iadeli;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       <div
         className={`rounded-marka px-5 py-6 text-center ${
-          odemeBasarisiz ? "bg-mercan-soluk" : "bg-nane-soluk"
+          odemeBasarisiz ? "bg-mercan-soluk" : iadeli ? "bg-yuzey-sicak" : "bg-nane-soluk"
         }`}
       >
         <h1 className="text-2xl sm:text-3xl">
-          {odemeBasarisiz ? "Ödeme tamamlanamadı" : odendi ? "Ödemen alındı" : "Siparişin alındı"}
+          {odemeBasarisiz
+            ? "Ödeme tamamlanamadı"
+            : iadeEdildi
+              ? "Ödemen iade edildi"
+              : iadeBekliyor
+                ? "Siparişin iptal edildi"
+                : odendi
+                  ? "Ödemen alındı"
+                  : "Siparişin alındı"}
         </h1>
         <p className="mt-2 text-metin-2">
           Sipariş numaran <span className="rakam font-bold text-metin">{siparis.numara}</span>
@@ -52,7 +73,26 @@ export default async function SiparisOnayi({
 
       <section className="mt-6 rounded-marka border border-cizgi bg-yuzey p-5">
         <h2 className="text-lg">Ödeme</h2>
-        {kartla ? (
+        {iadeli ? (
+          <p className="mt-2 text-sm text-metin-2">
+            {iadeEdildi ? (
+              <>
+                Ödemen iade edildi.{" "}
+                {kartla
+                  ? "Kartına geçmesi bankana göre birkaç iş günü sürebiliyor."
+                  : "Bildirdiğin hesaba gönderildi."}
+              </>
+            ) : (
+              <>
+                Bu siparişin ödemesi alınmıştı ve iade edilecek.{" "}
+                {kartla
+                  ? "İade kartına yapılacak; bankana göre birkaç iş günü sürebiliyor."
+                  : "Havale ile gönderilecek."}{" "}
+                <span className="font-semibold">Tekrar ödeme yapmana gerek yok.</span>
+              </>
+            )}
+          </p>
+        ) : kartla ? (
           odendi ? (
             <p className="mt-2 text-sm text-metin-2">
               Kartından ödeme alındı, siparişin hazırlanmaya başlıyor. Ödeme sağlayıcımız

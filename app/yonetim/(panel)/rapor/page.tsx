@@ -131,12 +131,14 @@ export default async function RaporEkrani({ searchParams }: PageProps<"/yonetim/
         </div>
       </form>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <Kutu
           baslik="Ciro"
           deger={fiyatYaz(r.kurus)}
-          alt={ciroFark.metin}
-          iyi={ciroFark.iyi}
+          alt={
+            r.iadeKurus > 0 ? `net ${fiyatYaz(r.netKurus)} (iade düşülmüş)` : ciroFark.metin
+          }
+          iyi={r.iadeKurus > 0 ? null : ciroFark.iyi}
         />
         <Kutu
           baslik="Sipariş"
@@ -148,6 +150,15 @@ export default async function RaporEkrani({ searchParams }: PageProps<"/yonetim/
           baslik="Ortalama sepet"
           deger={fiyatYaz(r.ortalamaSepetKurus)}
           alt={`${r.urunAdedi} ürün satıldı`}
+        />
+        {/* İade ciroyu düşürmüyor, yanına yazılıyor: iade genelde satıştan
+            sonraki bir dönemde oluyor ve o dönemin cirosunu eksiye
+            çekebilirdi (K-61). */}
+        <Kutu
+          baslik="İade edilen"
+          deger={fiyatYaz(r.iadeKurus)}
+          alt={r.iadeAdedi === 0 ? "iade yok" : `${r.iadeAdedi} iade tamamlandı`}
+          iyi={r.iadeKurus === 0 ? null : false}
         />
         <Kutu
           baslik="İptal"

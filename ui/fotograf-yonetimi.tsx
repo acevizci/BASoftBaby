@@ -8,6 +8,7 @@ import {
   fotografTasi,
 } from "@/server/yonetim";
 import { RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
+import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
 
 /**
  * Ürün fotoğraflarının panel bölümü.
@@ -212,16 +213,24 @@ export default function FotografYonetimi({
                     ↓
                   </button>
                 </form>
-                <form action={fotografSil}>
-                  <input type="hidden" name="id" value={f.id} />
-                  <input type="hidden" name="slug" value={slug} />
-                  <button
-                    type="submit"
-                    className="rounded-full border border-mercan px-3 py-1.5 text-xs font-bold text-mercan-koyu transition hover:bg-mercan-soluk"
-                  >
-                    Sil
-                  </button>
-                </form>
+                {/* Fotoğraf silme geri alınamıyor: dosya depodan da
+                    kalkıyor. Tek tıkla olmamalı (K-61). */}
+                <SilmeOnayi
+                  uyari={
+                    <>
+                      Bu fotoğraf kalıcı olarak siliniyor ve depodan da kaldırılıyor;
+                      geri alınamıyor. Yeniden yüklemen gerekir.
+                    </>
+                  }
+                >
+                  <form action={fotografSil}>
+                    <input type="hidden" name="id" value={f.id} />
+                    <input type="hidden" name="slug" value={slug} />
+                    <button type="submit" className={SIL_DUGMESI}>
+                      Evet, sil
+                    </button>
+                  </form>
+                </SilmeOnayi>
               </div>
             </li>
           ))}

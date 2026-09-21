@@ -26,6 +26,7 @@ import {
   KULLANICI_BILDIRIMLERI,
   KULLANICI_HATALARI,
 } from "../../panel-bicim";
+import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
 
 export const dynamic = "force-dynamic";
 
@@ -240,15 +241,24 @@ function Kullanici({
               </button>
             </form>
 
-            <form action={kullaniciSil}>
-              <input type="hidden" name="id" value={k.id} />
-              <button
-                type="submit"
-                className={`${KUCUK_DUGME} hover:border-mercan hover:text-mercan-koyu`}
-              >
-                Sil
-              </button>
-            </form>
+            {/* Kullanıcı silmek panele giriş hakkını kaldırıyor ve geri
+                alınamıyor; çoğu zaman istenen şey "Kapat" (K-61). */}
+            <SilmeOnayi
+              uyari={
+                <>
+                  <strong>{k.adSoyad}</strong> kalıcı olarak siliniyor; açık oturumları
+                  düşüyor ve kaydı gidiyor. Ayrılan biri için <strong>Kapat</strong>{" "}
+                  daha iyi: oturumları yine düşer ama kim ne yapmış kaydı durur.
+                </>
+              }
+            >
+              <form action={kullaniciSil}>
+                <input type="hidden" name="id" value={k.id} />
+                <button type="submit" className={SIL_DUGMESI}>
+                  Evet, sil
+                </button>
+              </form>
+            </SilmeOnayi>
 
             <details className="group">
               <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 text-xs font-bold text-metin-2 hover:text-metin [&::-webkit-details-marker]:hidden">

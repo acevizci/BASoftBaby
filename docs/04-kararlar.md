@@ -2944,6 +2944,94 @@ başlayıp açılması.
 
 ---
 
+### K-61 · Tam denetim: kaydet düğmesi, kalan onaylar, sessiz kalan kodlar
+
+Geri bildirim iki noktaya değindi ve ikisi de haklıydı: ürün formundaki
+kaydet düğmesi hâlâ yanlış yerdeydi, ürün ve kategori silmede onay yoktu.
+İkisini düzeltmek yerine **bütün silme ve kaydetme işlemleri** baştan
+tarandı.
+
+#### Kaydet düğmesi sayfanın sonuna taşındı
+
+K-57'de düğme `sticky` yapılmıştı ama sorun çözülmemişti: `sticky` yalnızca
+**kendi kapsayıcısı ekrandayken** çalışıyor. Ürün formu sayfanın ortasında
+bitiyor; altında "Bedenler ve stok", "Fotoğraflar" ve "Ürünü sil" bölümleri
+var. Aşağı inince düğme kayboluyordu.
+
+Çözüm HTML'in kendi aracı: düğme formun **dışında**, sayfanın sonunda, `form`
+niteliğiyle yukarıdaki forma bağlı. JavaScript gerekmiyor. Yapışkanlık da
+kaldı, ama artık sayfanın tamamı boyunca görünüyor. Yanında ne kaydedildiğini
+yazan bir satır var — beden, stok ve fotoğraf işlemleri kendi bölümlerinde
+anında kaydediliyor, o düğmeyi beklemiyorlar.
+
+Yeni üründe düğme formun içinde kalıyor: orada altında başka bölüm yok.
+
+#### Kalan onaylar
+
+K-57 kampanya, banner, duyuru, beden ve varyant silmeye onay eklemişti.
+Tarama beş yerin daha açıkta kaldığını gösterdi:
+
+| Yer | Durum |
+|---|---|
+| Ürün silme (satılmamış) | Tek tık. Satılmışta kutuya SİL yazılıyordu, satılmamışta hiçbir şey yoktu |
+| Kategori silme (boş) | Tek tık. Dolu kategoride "ürünler nereye" soruluyordu |
+| **Toplu ürün silme** | Tek tık — onlarca ürünü birden götürebiliyordu |
+| Kullanıcı silme | Tek tık; panele giriş hakkı gidiyor |
+| Fotoğraf silme | Tek tık; dosya depodan da kalkıyor |
+| Adres silme (müşteri) | Tek tık |
+
+Hepsi iki adımlı onaya geçti ve her onay **ne kaybolacağını** yazıyor.
+Kapatılabilir şeylerde ikinci çıkış yolu gösteriliyor: kullanıcıda "Kapat",
+üründe "yayından kaldır", toplu silmede "Pasife al". Çoğu zaman istenen şey
+silmek değil.
+
+Sepetten satır çıkarma ve kupon kaldırma **kasten onaysız**: geri alması
+kolay, sonucu anında görünüyor ve her seferinde onay sormak sepeti
+kullanılmaz hâle getirirdi.
+
+#### Gönderilen ama okunmayan kodlar
+
+Panelde bir eylem `?kayit=silindi` ile dönüyor ama hedef sayfa o parametreyi
+hiç okumuyorsa işlem yine sessiz kalıyor. Bunu göz kararı aramak yerine bütün
+`redirect` çağrılarındaki kodlar çıkarıldı ve her birinin hedef sayfada
+karşılığı olup olmadığı tarandı.
+
+İlk tarama "sıfır bulgu" dedi — **denetleyicinin kendisi bozuktu**: sayfa
+yolunu çözerken yanlış dilim alıyor ve hiçbir sayfayı bulamıyordu, yani
+kontrol boşa çalışmıştı. Düzeltilince üç gerçek bulgu çıktı:
+
+1. **Tek ürün silme** `/yonetim/urunler?kayit=silindi` ile dönüyordu; o sayfa
+   `kayit`i hiç okumuyordu. Ürün siliniyor, ekranda hiçbir şey yazmıyordu —
+   düzeltilmeye çalışılan hatanın tam kendisi.
+2. **Hesap silme** müşteriyi `/?hesap=silindi` ile ana sayfaya atıyordu; ana
+   sayfa `searchParams` okumuyor. Şifresini girip "SİL" yazan kişi sıradan
+   bir ana sayfa görüyordu: geri alınamayan bir işlemin hiçbir onayı yoktu.
+   Ana sayfaya parametre eklemek onu her ziyarette dinamik yapardı, o yüzden
+   yönlendirme giriş sayfasına alındı — zaten dinamik ve silinen hesabın
+   sahibinin gideceği yer de orası.
+3. **`yetki=yok`**: sahibe özel bir sayfaya giren yönetici sessizce özete
+   atılıyordu, bağlantı bozukmuş gibi. Artık sebebi yazıyor.
+
+Geri kalan 24 "bulgu" yanlış alarmdı: metin haritaları paylaşılan
+`*-bicim.ts` dosyalarında olduğu için kaba metin eşlemesi göremiyordu.
+
+**Denenen:** kaydet düğmesinin tek olması, `form` niteliğiyle bağlı olması,
+fotoğraf bölümünden sonra ve silme bölümünden önce gelmesi, sayfanın en
+altında görünür kalması ve formun dışındayken gerçekten kaydetmesi; ürün,
+fotoğraf, kullanıcı ve toplu silmede tek tıkla silme kalmaması, onay
+kutularının ne kaybolacağını ve alternatifini yazması, onaydan sonra silip
+bildirim vermesi; JavaScript kapalı tarayıcıda onay kutusunun açılması ve
+kaydet düğmesinin forma bağlı kalması.
+
+**Nerede:** [`../ui/urun-formu.tsx`](../ui/urun-formu.tsx),
+[`../ui/urun-silme.tsx`](../ui/urun-silme.tsx),
+[`../ui/silme-onayi.tsx`](../ui/silme-onayi.tsx),
+[`../ui/fotograf-yonetimi.tsx`](../ui/fotograf-yonetimi.tsx),
+[`../app/yonetim/(panel)`](../app/yonetim),
+[`../server/uyelik-islem.ts`](../server/uyelik-islem.ts)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı
