@@ -1085,6 +1085,56 @@ sayfa kaynağında bulunması.
 
 ---
 
+### K-31 · Sipariş listesi aranıyor, süzülüyor ve sayfalanıyor
+**21 Eylül 2026**
+
+Sipariş listesi bugüne kadar son 100 siparişi gösteriyor, fazlasını
+**sessizce** kesiyordu. 101. sipariş girdiğinde eski siparişlere ulaşma yolu
+kalmıyordu ve mağaza sahibi bir şeyin eksik olduğunu görmüyordu bile —
+listenin sonunda "devamı var" diyen hiçbir işaret yoktu. Arama eklenirken
+asıl düzeltilen bu oldu: liste artık sayfalanıyor ve kaç kayıt olduğu yazıyor.
+
+**Tek arama kutusu.** Sipariş numarası, ad soyad, e-posta, telefon ve kargo
+takip numarası aynı kutudan aranıyor. Beş ayrı alan sormak, mağaza sahibinin
+elindeki bilginin hangi alana ait olduğunu düşünmesini gerektirirdi; telefonu
+çalan müşteri "Ayşe ben" diyor, numarayı bilmiyor.
+
+**Telefon biçimden bağımsız aranıyor.** Numaralar girildiği gibi duruyor:
+`0555 123 45 67`, `05551234567`, `+90 555 123 45 67` — hepsi aynı numara.
+Düz metin araması bunları birbirine bağlayamıyor, o yüzden karşılaştırma iki
+tarafta da rakam dışı her şey atılarak yapılıyor. Prisma'nın süzgeçleri bunu
+yapamadığı için bu tek koşul ham SQL; sonucu asıl sorguya kimlik listesi
+olarak giriyor.
+
+Burada bir tuzak çıktı ve deneme yakaladı: desen önce `'\D'` yazılmıştı.
+Şablon dizgisinde ters bölüyü JavaScript yutuyor, desen sessizce "D harfini
+sil"e dönüşüyor ve sorgu **hata vermeden** hep boş dönüyor. Deseni `'[^0-9]'`
+yazmak hem doğru hem de bu tuzağa hiç girmiyor.
+
+**Süzgeçler:** durum, ödeme durumu, ödeme yöntemi, tarih aralığı. Hepsi
+birlikte çalışıyor (VE) ve aramayla birleşiyor. Tanınmayan bir değer adres
+satırına elle yazılırsa yok sayılıyor, hata vermiyor.
+
+**Her şey adres satırında.** Form düz GET: JavaScript kapalı tarayıcıda
+çalışıyor, sonuç sayfası yer imine eklenebiliyor, "şu aramayı bir de sen aç"
+diye paylaşılabiliyor. Durum rozetleri bağlantı olduğu için seçili arama
+onlara da taşınıyor — yoksa duruma tıklayınca arama düşerdi.
+
+**Listenin üstünde sayı ve tutar var.** Süzgece uyan sipariş adedi ve tutar
+toplamı. "Bu ay kaç sipariş, ne kadar tuttu" sorusunun cevabı böylece ayrı
+bir rapor ekranı gerektirmiyor.
+
+**Denendi** (33 madde, 137 deneme siparişiyle): sayfalama ve sınırları,
+olmayan ve bozuk sayfa numaraları; numara, ad, e-posta, kargo takip numarası
+ve üç ayrı biçimde yazılmış telefonla arama; dört süzgeç tek tek ve birlikte;
+tarih aralığının bitiş gününü içermesi; arama ile süzgecin birbirini
+düşürmemesi; tutar toplamının doğruluğu; JavaScript kapalı tarayıcı.
+
+**Nerede:** [`../server/siparis-arama.ts`](../server/siparis-arama.ts),
+[`../app/yonetim/siparisler/page.tsx`](../app/yonetim/siparisler/page.tsx)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

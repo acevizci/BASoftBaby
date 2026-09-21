@@ -59,7 +59,9 @@ kalmışsa temizleyip geçiyor (K-25).
 
 ## Yönetim paneli
 
-`/yonetim` adresinde. Siparişler, ürün ekleme ve düzenleme, beden-renk stokları,
+`/yonetim` adresinde. Siparişler (numara, ad, e-posta, telefon ve kargo takip
+numarasıyla arama; durum, ödeme ve tarih süzgeçleri), ürün ekleme ve düzenleme,
+beden-renk stokları,
 kategoriler (açma, adını değiştirme, sıralama, kapatma, silme),
 Excel/CSV'den toplu ürün yükleme, duyuru şeridi,
 ana sayfa banner'ı, kampanyalar ve satış ayarları (kargo ücreti,

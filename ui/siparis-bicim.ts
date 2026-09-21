@@ -23,6 +23,18 @@ export const ODEME_ADLARI: Record<OdemeDurumu, string> = {
   iade: "İade edildi",
 };
 
+export const YONTEMLER = ["havale", "kart"] as const;
+export type Yontem = (typeof YONTEMLER)[number];
+
+export const YONTEM_ADLARI: Record<Yontem, string> = {
+  havale: "Havale / EFT",
+  kart: "Kart",
+};
+
+export function yontemAdi(yontem: string): string {
+  return YONTEM_ADLARI[yontem as Yontem] ?? yontem;
+}
+
 /** Rozet rengi: bekleyen mercan, yolda sarı, biten nane, iptal gri. */
 export function durumRengi(durum: string): string {
   switch (durum) {
