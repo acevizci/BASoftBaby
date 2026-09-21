@@ -9,6 +9,7 @@ import {
   raporGetir,
 } from "@/server/rapor";
 import { fiyatYaz } from "@/ui/katalog-bicim";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +58,10 @@ function Kutu({
 }
 
 export default async function RaporEkrani({ searchParams }: PageProps<"/yonetim/rapor">) {
+  // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
+  // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
+  await yoneticiGerekli();
+
   const aranan = await searchParams;
   const donem = donemCoz(aranan);
   const r = await raporGetir(donem);

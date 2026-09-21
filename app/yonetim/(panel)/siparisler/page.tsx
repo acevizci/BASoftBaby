@@ -20,6 +20,7 @@ import {
   odemeAdi,
   yontemAdi,
 } from "@/ui/siparis-bicim";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,10 @@ function gunYaz(t: Date): string {
 }
 
 export default async function SiparisListesi({ searchParams }: PageProps<"/yonetim/siparisler">) {
+  // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
+  // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
+  await yoneticiGerekli();
+
   const parametreler = await searchParams;
   const suzgec = suzgeciCoz(parametreler);
   const { toplu, hata: topluHata } = parametreler;

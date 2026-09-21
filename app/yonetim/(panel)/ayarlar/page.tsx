@@ -2,6 +2,7 @@ import { ayarlariGetir } from "@/server/sepet";
 import { satisAyariKaydet } from "@/server/yonetim";
 import { TASIYICILAR } from "@/server/kargo";
 import { fiyatYaz } from "@/ui/katalog-bicim";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,10 @@ function kurusYaz(kurus: number): string {
 }
 
 export default async function AyarEkrani({ searchParams }: PageProps<"/yonetim/ayarlar">) {
+  // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
+  // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
+  await yoneticiGerekli();
+
   const { kayit } = await searchParams;
   const ayar = await ayarlariGetir();
 

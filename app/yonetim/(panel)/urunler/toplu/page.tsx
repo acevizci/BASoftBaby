@@ -3,6 +3,7 @@ import { db } from "@/server/veritabani";
 import { planYap, type Hata, type Satir } from "@/server/toplu-urun";
 import { topluOnizle, topluUygula, topluVazgec } from "@/server/toplu-urun-islem";
 import { BEDENLER, RENK_ADLARI, fiyatYaz } from "@/ui/katalog-bicim";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,10 @@ const SUTUN_ACIKLAMA: [string, string][] = [
 export default async function TopluYukleme({
   searchParams,
 }: PageProps<"/yonetim/urunler/toplu">) {
+  // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
+  // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
+  await yoneticiGerekli();
+
   const { yukleme, hata, mesaj, urun, varyant } = await searchParams;
 
   const kayit =

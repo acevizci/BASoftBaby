@@ -19,21 +19,14 @@ import { OLUMSUZ_PUAN } from "@/server/yorum";
 import { AZALAN_ESIK } from "@/server/stok-ekrani";
 import type { Rol } from "@/server/yonetim-kimlik";
 
-export type MenuMaddesi = {
-  yol: string;
-  ad: string;
-  /** Bekleyen iş sayısı; sıfırsa rozet gösterilmiyor. */
-  rozet?: number;
-  /**
-   * Rozetin tonu. `bekleyen`: müşteri cevap bekliyor, geciktikçe zarar veriyor
-   * — dikkat çeken renk. `hatirlatma`: mağazanın kendi işi, bugün yapılmazsa
-   * kimse beklemiyor — sessiz renk. Hepsi kırmızı olsaydı hiçbiri
-   * kırmızı olmazdı.
-   */
-  ton?: "bekleyen" | "hatirlatma";
-};
-
-export type MenuGrubu = { baslik: string; maddeler: MenuMaddesi[] };
+// Tipler ve "hangi madde açık" kuralı saf modülde: menü istemci bileşeni
+// olduğu için `server-only` işaretli bu dosyayı içeri alamıyor (K-51).
+export {
+  acikMi,
+  type MenuGrubu,
+  type MenuMaddesi,
+} from "@/ui/panel-menu-bicim";
+import type { MenuGrubu, MenuMaddesi } from "@/ui/panel-menu-bicim";
 
 /** Rozet sayıları; menüdeki sırayla aynı adlarla. */
 export type Sayaclar = {
@@ -117,16 +110,4 @@ export function menuyuKur(
       },
     ],
   };
-}
-
-/**
- * Bir menü maddesi açık sayfaya karşılık geliyor mu?
- *
- * Alt sayfalar da maddeyi işaretliyor: `/yonetim/urunler/zibin` açıkken
- * "Ürünler" işaretli kalıyor. "/yonetim" her şeyin ön eki olduğu için tam
- * eşleşme aranıyor, yoksa bütün sayfalarda Özet de işaretli görünürdü.
- */
-export function acikMi(yol: string, madde: string): boolean {
-  if (madde === "/yonetim") return yol === "/yonetim";
-  return yol === madde || yol.startsWith(`${madde}/`);
 }

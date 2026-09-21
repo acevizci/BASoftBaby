@@ -11,12 +11,14 @@ import { NextResponse, type NextRequest } from "next/server";
  * 1. Çerez **hiç yoksa** giriş sayfasına yollamak (giriş ve şifre sıfırlama
  *    sayfaları hariç). Bu bir güvenlik önlemi değil, kullanıcıyı boşuna
  *    sayfa yüklemekten kurtaran bir kestirme.
- * 2. Açık sayfanın yolunu isteğe eklemek; panel menüsü hangi maddenin
- *    işaretli olacağını buradan okuyor (K-43).
+ * Eskiden açık sayfanın yolunu da başlıkla geçiriyordu; menü onu okuyordu
+ * (K-43). Çalışmıyordu — düzen istemci tarafı gezinmede yeniden çizilmediği
+ * için yol ilk açılışta donuyordu. Menü artık `usePathname()` kullanıyor,
+ * başlık kaldırıldı (K-51).
  *
- * Asıl kontrol `(panel)/layout.tsx`'te ve `/yonetim` altındaki her route
- * handler'da, veritabanına bakarak yapılıyor. Sahte bir çerez buradan geçer,
- * orada reddedilir (K-45).
+ * Asıl kontrol `/yonetim` altındaki her sayfada, her route handler'da ve
+ * her server action'da, veritabanına bakarak yapılıyor. Sahte bir çerez
+ * buradan geçer, orada reddedilir (K-45).
  */
 
 export const config = { matcher: "/yonetim/:path*" };
@@ -46,7 +48,5 @@ export function middleware(istek: NextRequest) {
     return NextResponse.redirect(adres);
   }
 
-  const basliklar = new Headers(istek.headers);
-  basliklar.set("x-yonetim-yol", yol);
-  return NextResponse.next({ request: { headers: basliklar } });
+  return NextResponse.next();
 }

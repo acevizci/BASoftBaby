@@ -2244,6 +2244,73 @@ açılır menüde de başlıklar ve işaret duruyor.
 
 ---
 
+### K-51 · Düzen istemci gezinmesinde çizilmiyor: iki sonucu vardı
+**21 Eylül 2026**
+
+Panelde bir menü maddesine tıklayınca **başka bir madde** işaretli
+kalıyordu. Sebebi tek bir gerçek: **Next.js istemci tarafı gezinmede
+düzeni yeniden çizmiyor.** Düzenin varlık sebebi zaten bu — sayfalar
+arasında korunan çerçeve. Ama iki şey bu yanılgının üstüne kurulmuştu.
+
+**Birincisi, açık sayfa işareti.** Yol middleware'in eklediği
+`x-yonetim-yol` başlığından okunuyordu (K-43). Düzen ilk açılışta bir kez
+çizildiği için işaret ilk girilen sayfada donuyordu; ancak sayfa
+yenilenince düzeliyordu. Ölçülen hâli:
+
+```
+tam yükleme /yonetim/urunler   -> işaretli: Ürünler
+tıklayıp    /yonetim/stok      -> işaretli: Ürünler   ← yanlış
+tıklayıp    /yonetim/talepler  -> işaretli: Ürünler   ← yanlış
+yenileyince                    -> işaretli: Talepler
+```
+
+Menü istemci bileşenine alındı ve `usePathname()` kullanıyor: router
+durumuna abone, her gezinmede yeniden çalışıyor. Sunucuda çizilirken de o
+anki yolu veriyor, yani ilk boyamada işaret doğru ve JavaScript kapalı
+tarayıcıda da doğru (orada her tıklama zaten tam sayfa yüklemesi).
+Middleware'in başlığı kaldırıldı. Menü yapısı ve sayaçlar sunucuda
+hesaplanıp aşağı veriliyor — veritabanına bakan hiçbir şey tarayıcıya
+inmiyor.
+
+**İkincisi, ve asıl ciddi olanı: oturum kontrolü.** Aynı sebeple
+`yoneticiGerekli()` de yalnızca ilk istekte çalışıyordu. Oturumu düşen
+biri — süresi dolmuş ya da hesabı kapatılmış — **menüden tıklayarak
+sayfaları görmeye devam ediyordu.** Yazma işlemleri engelleniyordu (her
+server action ayrıca kontrol ediyor, K-45) ama okuma sızıyordu: siparişler,
+müşteri adresleri, satış raporu.
+
+Denenerek doğrulandı: oturum veritabanından silindikten sonra menüden
+tıklayınca sayfa açılmaya devam etti. Kapatmanın "açık oturumları anında
+düşürdüğü" iddiası (K-45) tam sayfa yüklemesi için doğruydu, istemci
+gezinmesi için değildi.
+
+**Kontrol her sayfaya kondu.** `/yonetim` altındaki yirmi üç sayfanın
+hepsi `yoneticiGerekli()` ile başlıyor; route handler'lar zaten
+çağırıyordu (K-45), server action'lar da. `yoneticiGetir` istek
+önbelleğine alındı: düzen de sayfa da çağırdığı hâlde veritabanına bir kez
+gidiliyor.
+
+**Unutulmasına karşı tarama.** "Her sayfada olsun" bir kural değil, bir
+umut — yeni sayfa eklerken atlanır. Deneme panelin bütün adreslerini tek
+tek geziyor ve oturumsuz hiçbirinin açılmadığını doğruluyor; yeni bir
+sayfa eklenip kontrolü unutulursa deneme düşüyor.
+
+**Denendi** (14 madde): tam yüklemede işaretin doğru olması, menüden beş
+ayrı sayfaya tıklandığında her adımda işaretin yeni sayfaya geçmesi,
+telefonda kapalı menü başlığının da güncellenmesi, alt sayfanın üst
+maddeyi işaretlemesi, geri tuşundan sonra doğru kalması, JavaScript kapalı
+tarayıcıda doğru olması; oturum düşürüldükten sonra istemci gezinmesinin
+giriş sayfasına atması ve panelin yirmi bir adresinin artı parametreli iki
+adresin hiçbirinin açılmaması.
+
+**Nerede:** [`../ui/panel-menu.tsx`](../ui/panel-menu.tsx),
+[`../ui/panel-menu-bicim.ts`](../ui/panel-menu-bicim.ts),
+[`../app/yonetim/(panel)/layout.tsx`](../app/yonetim/(panel)/layout.tsx),
+[`../server/yonetim-kimlik.ts`](../server/yonetim-kimlik.ts),
+[`../middleware.ts`](../middleware.ts)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

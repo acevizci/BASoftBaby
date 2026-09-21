@@ -1,4 +1,5 @@
 import { onerilenVercelBolgesi, taniTopla } from "@/server/tani";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,10 @@ const KART = "rounded-marka border border-cizgi bg-yuzey p-5";
  * yalnızca bölge kodu.
  */
 export default async function TaniEkrani() {
+  // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
+  // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
+  await yoneticiGerekli();
+
   const t = await taniTopla();
   const onerilen = onerilenVercelBolgesi(t.veritabaniBolgesi);
 

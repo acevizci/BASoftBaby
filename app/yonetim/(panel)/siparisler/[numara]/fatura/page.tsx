@@ -4,6 +4,7 @@ import { faturaGetir } from "@/server/fatura";
 import { siparisGetirPanel } from "@/server/siparis";
 import { kunyeGetir } from "@/server/yasal";
 import { fiyatYaz } from "@/ui/katalog-bicim";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,10 @@ function tarihYaz(t: Date): string {
 export default async function FaturaSayfasi({
   params,
 }: PageProps<"/yonetim/siparisler/[numara]/fatura">) {
+  // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
+  // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
+  await yoneticiGerekli();
+
   const { numara } = await params;
   const [siparis, fatura, kunye] = await Promise.all([
     siparisGetirPanel(numara),

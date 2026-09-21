@@ -2,6 +2,7 @@ import HeroBanner from "@/ui/hero-banner";
 import Katlanir from "@/ui/katlanir";
 import { BANNER_GORSELLERI, BANNER_PALETLERI, bannerSaniyeGetir, tumBannerlar } from "@/server/banner";
 import { bannerCevir, bannerKaydet, bannerSil, bannerSuresiKaydet } from "@/server/yonetim";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,10 @@ function tarihYaz(t: Date | null): string {
 }
 
 export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim/banner">) {
+  // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
+  // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
+  await yoneticiGerekli();
+
   const { kayit, ac } = await searchParams;
   const [bannerlar, saniye] = await Promise.all([tumBannerlar(), bannerSaniyeGetir()]);
 

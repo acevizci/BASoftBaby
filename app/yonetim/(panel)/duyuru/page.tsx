@@ -2,6 +2,7 @@ import DuyuruSeridi from "@/ui/duyuru-seridi";
 import Katlanir from "@/ui/katlanir";
 import { seritAyariGetir, tumDuyurular } from "@/server/duyuru";
 import { duyuruCevir, duyuruEkle, duyuruSil, seritAyariKaydet } from "@/server/yonetim";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,10 @@ function tarihYaz(t?: Date): string {
 }
 
 export default async function DuyuruEkrani({ searchParams }: PageProps<"/yonetim/duyuru"> ) {
+  // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
+  // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
+  await yoneticiGerekli();
+
   const { kayit, ac } = await searchParams;
   const [duyurular, ayar] = await Promise.all([tumDuyurular(), seritAyariGetir()]);
 

@@ -6,6 +6,7 @@ import {
   kategoriSil,
   kategoriTasi,
 } from "@/server/yonetim";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,10 @@ const ANA_DUGME =
 export default async function KategoriEkrani({
   searchParams,
 }: PageProps<"/yonetim/kategoriler">) {
+  // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
+  // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
+  await yoneticiGerekli();
+
   const { duzenle, kayit, hata } = await searchParams;
   const kategoriler = await tumKategoriler();
 

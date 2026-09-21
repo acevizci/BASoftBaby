@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { db } from "@/server/veritabani";
 import { fiyatYaz } from "@/ui/katalog-bicim";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,10 @@ const ROZET = "rounded-full border px-3 py-1.5 text-xs font-bold transition";
  * başka yolu yoktu (K-41).
  */
 export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/urunler">) {
+  // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
+  // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
+  await yoneticiGerekli();
+
   const { eksik } = await searchParams;
   const fotografsizSuzgeci = eksik === "fotograf";
 

@@ -1,6 +1,7 @@
 import { db } from "@/server/veritabani";
 import { kampanyaCevir, kampanyaKaydet, kampanyaSil } from "@/server/yonetim";
 import { fiyatYaz } from "@/ui/katalog-bicim";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,10 @@ function degerYaz(tip: string, deger: number): string {
 export default async function KampanyaEkrani({
   searchParams,
 }: PageProps<"/yonetim/kampanyalar">) {
+  // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
+  // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
+  await yoneticiGerekli();
+
   const { kayit, hata } = await searchParams;
 
   const [kampanyalar, kategoriler, urunler] = await Promise.all([

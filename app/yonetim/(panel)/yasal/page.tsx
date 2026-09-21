@@ -2,6 +2,7 @@ import Link from "next/link";
 import Katlanir from "@/ui/katlanir";
 import { kunyeKaydet, yasalKaydet } from "@/server/yonetim";
 import { kunyeGetir, yasalSayfaGetir, yasalSayfalariGetir } from "@/server/yasal";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,10 @@ const DUGME =
  * motorlarına kapalı kalıyor.
  */
 export default async function YasalEkrani({ searchParams }: PageProps<"/yonetim/yasal">) {
+  // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
+  // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
+  await yoneticiGerekli();
+
   const { duzenle, kayit, hata, ac } = await searchParams;
   const sayfalar = await yasalSayfalariGetir();
 

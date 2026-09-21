@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { KISA_LISTE, KRITIK_STOK, panelOzetiGetir } from "@/server/panel-ozet";
 import { RENK_ADLARI, fiyatYaz, type RenkAdi } from "@/ui/katalog-bicim";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,10 @@ function renkAdi(renk: string): string {
 }
 
 export default async function YonetimOzeti() {
+  // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
+  // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
+  await yoneticiGerekli();
+
   const o = await panelOzetiGetir();
 
   const fark = o.bugunAdet - o.dunAdet;

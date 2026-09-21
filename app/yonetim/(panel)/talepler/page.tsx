@@ -8,6 +8,7 @@ import {
   talepDurumRengi,
   turAdi,
 } from "@/ui/talep-bicim";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,10 @@ function tarihYaz(t: Date): string {
 
 /** Bekleyenler üstte: panelin işi sonuçlanmışları göstermek değil, bekleyeni bitirmek. */
 export default async function TalepEkrani({ searchParams }: PageProps<"/yonetim/talepler">) {
+  // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
+  // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
+  await yoneticiGerekli();
+
   const { durum, kayit, hata } = await searchParams;
   const secili = typeof durum === "string" ? durum : "acik";
 

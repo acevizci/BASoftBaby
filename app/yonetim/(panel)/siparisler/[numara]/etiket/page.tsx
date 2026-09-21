@@ -4,6 +4,7 @@ import KargoEtiketi from "@/ui/kargo-etiketi";
 import { gonderiGetir } from "@/server/kargo";
 import { siparisGetirPanel } from "@/server/siparis";
 import { kunyeGetir } from "@/server/yasal";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,10 @@ export const dynamic = "force-dynamic";
 export default async function EtiketSayfasi({
   params,
 }: PageProps<"/yonetim/siparisler/[numara]/etiket">) {
+  // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
+  // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
+  await yoneticiGerekli();
+
   const { numara } = await params;
   const [siparis, gonderi, kunye] = await Promise.all([
     siparisGetirPanel(numara),

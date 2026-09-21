@@ -13,6 +13,7 @@ import { faturaGetir } from "@/server/fatura";
 import { ayarlariGetir } from "@/server/sepet";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import { DURUMLAR, ODEME_DURUMLARI, durumAdi, odemeAdi } from "@/ui/siparis-bicim";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,10 @@ export default async function SiparisDetayi({
   params,
   searchParams,
 }: PageProps<"/yonetim/siparisler/[numara]">) {
+  // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
+  // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
+  await yoneticiGerekli();
+
   const { numara } = await params;
   const { kayit } = await searchParams;
 

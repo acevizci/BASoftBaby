@@ -4,6 +4,7 @@ import type { RenkAdi } from "@/ui/katalog-bicim";
 import UrunFormu from "@/ui/urun-formu";
 import { db } from "@/server/veritabani";
 import { BEDENLER } from "@/ui/katalog-bicim";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,10 @@ export default async function UrunDuzenle({
   params,
   searchParams,
 }: PageProps<"/yonetim/urunler/[slug]">) {
+  // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
+  // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
+  await yoneticiGerekli();
+
   const { slug } = await params;
   const { kayit, fhata, fkayit } = await searchParams;
 

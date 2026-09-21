@@ -3,6 +3,7 @@ import { db } from "@/server/veritabani";
 import { OLUMSUZ_PUAN } from "@/server/yorum";
 import { yorumuAc, yorumuGizle, yorumuYanitla } from "@/server/yorum-yonetim";
 import { Yildiz } from "@/ui/yildiz";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,10 @@ function tarihYaz(t: Date): string {
 }
 
 export default async function YorumEkrani({ searchParams }: PageProps<"/yonetim/yorumlar">) {
+  // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
+  // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
+  await yoneticiGerekli();
+
   const { durum, kayit, hata } = await searchParams;
   const secili = typeof durum === "string" ? durum : "yayinda";
 

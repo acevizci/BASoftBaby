@@ -26,6 +26,7 @@ import type { Prisma } from "@/db/uretilen/client";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
+import { istekOnbellegi } from "@/server/onbellek";
 import { sifreOzetle, sifreTutuyorMu } from "@/server/uyelik";
 
 export const YONETIM_CEREZI = "yonetim_oturum";
@@ -168,8 +169,13 @@ export async function oturumlariDusur(adminId: string): Promise<void> {
  * Kullanıcı kapatılmışsa oturumu da geçersiz: "kapat" düğmesine basılınca
  * kişi bir sonraki isteğinde dışarıda kalıyor, oturumu bitene kadar
  * beklemiyor.
+ *
+ * İstek önbelleğinde: düzen de sayfa da çağırıyor, veritabanına bir kez
+ * gidiliyor (K-51).
  */
-export async function yoneticiGetir(): Promise<Yonetici | undefined> {
+export const yoneticiGetir = istekOnbellegi(async function yoneticiGetir(): Promise<
+  Yonetici | undefined
+> {
   const kavanoz = await cookies();
   const jeton = kavanoz.get(YONETIM_CEREZI)?.value;
   if (!jeton) return undefined;
@@ -203,15 +209,19 @@ export async function yoneticiGetir(): Promise<Yonetici | undefined> {
 
   const { id, eposta, adSoyad, rol } = oturum.admin;
   return { id, eposta, adSoyad, rol: rolCoz(rol) };
-}
+});
 
 /**
- * Panelin her girişinde çağrılıyor: düzende ve her route handler'da.
+ * Panelin her girişinde çağrılıyor: düzende, **her sayfada** ve her route
+ * handler'da.
  *
- * Route handler'lar düzenden geçmiyor — Next.js yalnızca sayfaları düzenle
- * sarıyor. O yüzden `/yonetim` altındaki her `route.ts` bunu kendisi
- * çağırmak zorunda; unutulursa rapor CSV'si ya da şablon dosyası şifresiz
- * indirilebilir olurdu.
+ * **Düzende olması yetmiyor.** Next.js istemci tarafı gezinmede yalnızca
+ * değişen parçayı çiziyor; düzen yeniden çalışmıyor. Yani oturumu düşen
+ * biri menüden tıklayarak sayfaları görmeye devam ediyordu — yazma
+ * işlemleri engelleniyordu ama okuma sızıyordu. Route handler'lar da
+ * düzenden geçmiyor. O yüzden `/yonetim` altındaki her sayfa ve her
+ * `route.ts` bunu kendisi çağırıyor; `.deneme` taraması bütün yolları
+ * gezip doğruluyor (K-51).
  */
 export async function yoneticiGerekli(donus?: string): Promise<Yonetici> {
   const yonetici = await yoneticiGetir();

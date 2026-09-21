@@ -3,6 +3,7 @@ import KargoEtiketi from "@/ui/kargo-etiketi";
 import { gonderiGetir } from "@/server/kargo";
 import { siparisGetirPanel } from "@/server/siparis";
 import { kunyeGetir } from "@/server/yasal";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,10 @@ const EN_FAZLA = 50;
 export default async function TopluEtiket({
   searchParams,
 }: PageProps<"/yonetim/siparisler/etiketler">) {
+  // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
+  // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
+  await yoneticiGerekli();
+
   const { secili } = await searchParams;
 
   const numaralar = [

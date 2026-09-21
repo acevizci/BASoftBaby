@@ -11,6 +11,7 @@ import {
   type StokUrunu,
 } from "@/server/stok-ekrani";
 import { BEDENLER, RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,10 @@ const SUZGEC_ADLARI: Record<StokDurumu, string> = {
  * onlar gönderiliyor.
  */
 export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/stok">) {
+  // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
+  // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
+  await yoneticiGerekli();
+
   const parametreler = await searchParams;
   const suzgec = suzgeciCoz(parametreler);
   const { kayit } = parametreler;

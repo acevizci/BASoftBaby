@@ -96,7 +96,7 @@ app/
     sifremi-unuttum/      sıfırlama bağlantısı isteme
     sifre-sifirla/        bağlantıdan gelinen yeni şifre ekranı
     (panel)/              oturum gerektiren her şey (grup adı adrese girmez)
-      layout.tsx          oturum kontrolü + menü, rozetler, açık sayfa işareti
+      layout.tsx          sayaçlar + menü; oturum kontrolü her sayfada da (K-51)
       hesabim/            kendi şifresi ve oturumları
       kullanicilar/       panel kullanıcıları (yalnızca sahip)
       siparisler/ talepler/ yorumlar/ rapor/  Satış
@@ -154,10 +154,9 @@ db/
   migrations/             şema değişiklik geçmişi
   tohum.ts                başlangıç verisi
 
-middleware.ts             çerezsiz panel isteğini giriş sayfasına yollar ve
-                          açık sayfanın yolunu `x-yonetim-yol` başlığıyla
-                          düzene geçirir. Kimlik burada doğrulanmıyor: Edge
-                          ortamında veritabanı yok (K-45)
+middleware.ts             çerezsiz panel isteğini giriş sayfasına yollar.
+                          Kimlik burada doğrulanmıyor: Edge ortamında
+                          veritabanı yok (K-45)
 
 ui/                       ortak arayüz parçaları
   katalog-bicim.ts        Prisma'ya bulaşmayan saf görünüm sabitleri
@@ -166,6 +165,8 @@ ui/                       ortak arayüz parçaları
   duyuru-seridi.tsx       üstteki kayan yazı
   hero-banner.tsx         ana sayfadaki dönen banner
   katlanir.tsx            panelde katlanan bölüm (<details>, JavaScript'siz)
+  panel-menu.tsx          panel menüsü (usePathname ile açık sayfa işareti)
+  panel-menu-bicim.ts     menü tipleri ve "hangi madde açık" kuralı (saf)
   urun-galerisi.tsx       fotoğraf galerisi ve büyüteç (:target, JavaScript'siz)
   kargo-etiketi.tsx       tek ve toplu yazdırmanın ortak etiket düzeni
 public/marka/             logo dosyaları
