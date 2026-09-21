@@ -827,6 +827,68 @@ bırakınca geçti, oturum sağ kaldı. Adres dönüşümü dört durumda denend
 
 ---
 
+### K-26 · Toplu yükleme önce gösteriyor, sonra yazıyor
+**21 Eylül 2026**
+
+Elle ürün girmek mağazanın en çok vakit alan işi: her ürün için form, her
+beden-renk için ayrı varyant satırı. Tedarikçiden gelen liste zaten bir
+tabloda duruyor. Panele Excel (.xlsx) ve CSV yükleme eklendi.
+
+**Her satır bir varyant.** Aynı ürün adını taşıyan satırlar tek ürün olur,
+her satır o ürünün bir beden-renk varyantı olur; ürün bilgileri satırlarda
+tekrar eder. Ürün ve varyantı iki ayrı sayfaya bölmek veri modeline daha
+uygun olurdu ama insanın Excel'de kurması zor; tek sayfa kazandı.
+
+**Önce ne olacağı gösteriliyor.** Dosya okunuyor, "şu ürün yeni, şu
+güncellenecek, şu kadar beden-renk" listeleniyor, onaylanınca yazılıyor.
+Toplu yazma geri alınamaz; onaysız çalıştırmak, yanlış dosyayla bütün
+fiyatları değiştirmeye tek tık kalması demekti.
+
+Onay ekranı iki istek sürdüğü için çözülmüş satırlar arada bir yerde durmak
+zorunda. JavaScript kapalı tarayıcıda da çalışsın diye tarayıcı belleği
+değil, veritabanında bir kayıt (`ProductImport`) kullanıldı; günlük
+temizlikte siliniyor. Yan faydası: ne zaman ne yüklendiği kayıtlı kalıyor.
+
+**Ya hepsi ya hiçbiri.** Bir satırda hata varsa hiçbir şey yazılmıyor.
+Yarısı yazılmış bir katalogda neyin girip neyin girmediğini anlamak zor;
+dosyayı düzeltip yeniden yüklemek kolay. Hatalar satır numarası ve sütun
+adıyla listeleniyor — "5. satır · Renk: "Turuncu" tanınmadı. Kabul
+edilenler: …" gibi, insan neyi düzelteceğini bilsin diye.
+
+**Hiçbir şey silinmiyor.** Dosyada olmayan ürün ve varyant olduğu gibi
+kalıyor. Yükleme ekler ve günceller, temizlik yapmaz: yarım bir dosya bütün
+kataloğu süpürmesin.
+
+**Boş hücre "değiştirme" demek.** Var olan bir ürünü güncellerken boş
+bıraktığınız hücre eski değeri silmiyor. Böylece aynı düzen yalnızca stok
+güncellemek için de kullanılabiliyor: ürün adı, beden, renk, stok — gerisi
+boş. Yeni üründe ise fiyat, kumaş içeriği ve yıkama talimatı zorunlu; bebek
+tekstilinde ikincisi yasal zorunluluk.
+
+**Türkçe Excel'in huyları karşılandı.** CSV'yi noktalı virgülle yazıyor
+(ayraç ilk satıra bakılarak seçiliyor), UTF-8 BOM koyuyor, fiyatı
+"1.249,90" diye yazıyor (virgül varsa nokta binlik ayracı sayılıyor).
+Beden "0-3" ya da "0-3 ay", renk "mint" ya da "Nane" yazılabiliyor.
+
+Sütun adlarını elle yazmak hata kaynağı olduğu için panelde boş şablon
+indiriliyor: başlıklar, iki örnek satır (aynı ürünün iki bedeni, kural
+örnekten anlaşılsın diye) ve bir yardım sayfası.
+
+**Denendi** (33 madde, gerçek dosyalarla): geçerli xlsx yükleme ve vitrinde
+görünme, aynı dosyanın ikinci kez yüklenmesinde çoğalmama, yalnızca stok
+yazılı dosyanın öteki alanları silmemesi, yedi ayrı hata türünün satır
+numarasıyla yakalanması ve hiçbir şey yazılmaması, noktalı virgüllü CSV,
+şablon indirme, JavaScript kapalı tarayıcı.
+
+Deneme bir hata buldu: `upsert` kullanılınca, kayıt güncellenecek olsa bile
+create gövdesi kuruluyor ve yalnızca stok yazılı dosyada zorunlu alanlar boş
+kaldığı için patlıyordu. Güncelleme ile yaratma açıkça ayrıldı.
+
+**Nerede:** [`../server/toplu-urun.ts`](../server/toplu-urun.ts),
+[`../server/toplu-urun-islem.ts`](../server/toplu-urun-islem.ts),
+[`../app/yonetim/urunler/toplu`](../app/yonetim/urunler/toplu)
+
+---
 
 ## Açık sorular
 

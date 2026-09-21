@@ -60,7 +60,8 @@ kalmışsa temizleyip geçiyor (K-25).
 ## Yönetim paneli
 
 `/yonetim` adresinde. Siparişler, ürün ekleme ve düzenleme, beden-renk stokları,
-kategoriler (açma, adını değiştirme, sıralama, kapatma, silme), duyuru şeridi,
+kategoriler (açma, adını değiştirme, sıralama, kapatma, silme),
+Excel/CSV'den toplu ürün yükleme, duyuru şeridi,
 ana sayfa banner'ı, kampanyalar ve satış ayarları (kargo ücreti,
 bedava kargo eşiği, havale bilgisi). Açılabilmesi için `YONETIM_SIFRE` tanımlı olmalı; tanımlı değilse panel
 kendini tamamen kapatır (404 verir), yani ayar unutulursa açıkta kalmaz.

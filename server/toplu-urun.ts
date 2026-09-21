@@ -1,0 +1,599 @@
+/**
+ * Excel/CSV dosyasından toplu ürün yükleme.
+ *
+ * Elle ürün girmek mağazanın en çok vakit alan işi: her ürün için form, her
+ * beden-renk için ayrı varyant satırı. Tedarikçiden gelen liste zaten bir
+ * tabloda duruyor; buradaki iş o tabloyu okuyup kataloğa çevirmek.
+ *
+ * **Her satır bir varyant.** Aynı ürün adını taşıyan satırlar tek ürün olur,
+ * her satır o ürünün bir beden-renk varyantı olur. Tabloda ürün bilgileri
+ * tekrar eder; insanın kafasında kurması en kolay biçim bu.
+ *
+ * **Ya hepsi ya hiçbiri.** Bir satırda hata varsa hiçbir şey yazılmıyor.
+ * Yarısı yazılmış bir katalogda neyin girdiğini neyin girmediğini anlamak
+ * zor; dosyayı düzeltip yeniden yüklemek kolay.
+ *
+ * **Hiçbir şey silinmiyor.** Dosyada olmayan ürün ya da varyant olduğu gibi
+ * kalıyor. Yükleme ekleme ve güncelleme yapıyor, temizlik yapmıyor — yanlış
+ * dosyayla bütün katalog silinmesin.
+ */
+
+import ExcelJS from "exceljs";
+import { db } from "@/server/veritabani";
+import { slugYap } from "@/server/slug";
+import { BEDENLER, GORSEL_TIPLERI, RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
+
+/** Tablodaki bir satırın çözülmüş hâli. */
+export type Satir = {
+  satirNo: number;
+  ad: string;
+  kategori: string;
+  fiyatKurus: number | null;
+  eskiFiyatKurus: number | null;
+  ozet: string;
+  aciklama: string;
+  kumasIcerigi: string;
+  yikamaTalimati: string;
+  ureticiBilgisi: string;
+  ozellikler: string[];
+  beden: string;
+  renk: string;
+  stok: number;
+  sku: string;
+  gorsel: string;
+  palet: string;
+  aktif: boolean;
+};
+
+export type Hata = { satirNo: number; sutun: string; mesaj: string };
+
+export type UrunOzeti = {
+  ad: string;
+  slug: string;
+  yeniMi: boolean;
+  varyant: number;
+  yeniVaryant: number;
+};
+
+export type Plan = {
+  satirlar: Satir[];
+  hatalar: Hata[];
+  urunler: UrunOzeti[];
+};
+
+/** Tabloda beklenen sütunlar. İlk ad şablonda yazan ad; ötekiler kabul edilen yazımlar. */
+const SUTUNLAR = {
+  ad: ["urun adi", "urun", "ad", "urun ismi"],
+  kategori: ["kategori"],
+  fiyat: ["fiyat", "satis fiyati"],
+  eskiFiyat: ["eski fiyat", "liste fiyati"],
+  ozet: ["ozet", "kisa aciklama"],
+  aciklama: ["aciklama"],
+  kumasIcerigi: ["kumas icerigi", "kumas"],
+  yikamaTalimati: ["yikama talimati", "yikama"],
+  ureticiBilgisi: ["uretici", "uretici bilgisi"],
+  ozellikler: ["ozellikler"],
+  beden: ["beden"],
+  renk: ["renk"],
+  stok: ["stok", "adet"],
+  sku: ["sku", "stok kodu"],
+  gorsel: ["gorsel"],
+  palet: ["palet"],
+  aktif: ["aktif", "yayinda"],
+} as const;
+
+type SutunAdi = keyof typeof SUTUNLAR;
+
+/** Başlıkları karşılaştırırken büyük-küçük harf, Türkçe harf ve boşluk fark etmesin. */
+function anahtar(metin: string): string {
+  const harfler: Record<string, string> = {
+    ç: "c", ğ: "g", ı: "i", ö: "o", ş: "s", ü: "u", İ: "i", I: "i",
+  };
+  return metin
+    .trim()
+    .toLocaleLowerCase("tr")
+    .split("")
+    .map((h) => harfler[h] ?? h)
+    .join("")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/**
+ * "249,90" → 24990. Virgül varsa nokta binlik ayracıdır ("1.249,90"),
+ * yoksa nokta ondalıktır ("249.90"). İki yazım da Excel'den çıkıyor.
+ */
+export function kurusaCevir(ham: string): number | null {
+  const metin = ham.trim().replace(/[\s₺TL]/gi, "");
+  if (!metin) return null;
+  const sayi = Number(metin.includes(",") ? metin.replace(/\./g, "").replace(",", ".") : metin);
+  if (!Number.isFinite(sayi) || sayi < 0) return null;
+  return Math.round(sayi * 100);
+}
+
+function evetMi(ham: string, varsayilan: boolean): boolean {
+  const m = anahtar(ham);
+  if (!m) return varsayilan;
+  return ["evet", "e", "1", "x", "var", "true", "acik", "aktif", "yayinda"].includes(m);
+}
+
+/** Renk hem kodla ("mint") hem görünen adıyla ("Nane") yazılabiliyor. */
+function renkCoz(ham: string): RenkAdi | null {
+  const m = anahtar(ham);
+  if (!m) return null;
+  const kodlar = Object.keys(RENK_ADLARI) as RenkAdi[];
+  return kodlar.find((k) => k === m || anahtar(RENK_ADLARI[k]) === m) ?? null;
+}
+
+/** "0-3" ya da "0-3 ay" gibi yazımları listedeki bedene oturtur. */
+function bedenCoz(ham: string): string | null {
+  const m = anahtar(ham);
+  if (!m) return null;
+  return (
+    BEDENLER.find((b) => anahtar(b) === m) ??
+    BEDENLER.find((b) => anahtar(b) === `${m} ay`) ??
+    null
+  );
+}
+
+// ── Dosya okuma ────────────────────────────────────────────────────────────
+
+/** exceljs hücresi: sayı, tarih, formül sonucu, zengin metin — hepsi metne. */
+function hucreMetni(deger: unknown): string {
+  if (deger === null || deger === undefined) return "";
+  if (typeof deger === "string") return deger.trim();
+  if (typeof deger === "number" || typeof deger === "boolean") return String(deger);
+  if (deger instanceof Date) return deger.toISOString().slice(0, 10);
+  const n = deger as { result?: unknown; text?: string; richText?: { text: string }[] };
+  if (n.richText) return n.richText.map((p) => p.text).join("").trim();
+  if (n.text !== undefined) return String(n.text).trim();
+  if (n.result !== undefined) return hucreMetni(n.result);
+  return "";
+}
+
+/**
+ * CSV ayrıştırıcı.
+ *
+ * Türkçe Excel CSV'yi noktalı virgülle yazıyor, İngilizcesi virgülle; ayraç
+ * ilk satıra bakılarak seçiliyor. Tırnak içindeki ayraç ve satır sonu
+ * metindir; iki tırnak bir tırnak demektir.
+ */
+export function csvCoz(ham: string): string[][] {
+  const metin = ham.replace(/^﻿/, "");
+  const ilkSatir = metin.slice(0, metin.indexOf("\n") + 1 || undefined);
+  const ayrac = (ilkSatir.match(/;/g)?.length ?? 0) > (ilkSatir.match(/,/g)?.length ?? 0) ? ";" : ",";
+
+  const satirlar: string[][] = [];
+  let satir: string[] = [];
+  let hucre = "";
+  let tirnakta = false;
+
+  for (let i = 0; i < metin.length; i += 1) {
+    const h = metin[i];
+    if (tirnakta) {
+      if (h === '"') {
+        if (metin[i + 1] === '"') { hucre += '"'; i += 1; } else tirnakta = false;
+      } else hucre += h;
+      continue;
+    }
+    if (h === '"') { tirnakta = true; continue; }
+    if (h === ayrac) { satir.push(hucre); hucre = ""; continue; }
+    if (h === "\r") continue;
+    if (h === "\n") { satir.push(hucre); satirlar.push(satir); satir = []; hucre = ""; continue; }
+    hucre += h;
+  }
+  if (hucre !== "" || satir.length > 0) { satir.push(hucre); satirlar.push(satir); }
+
+  return satirlar.filter((s) => s.some((h) => h.trim() !== ""));
+}
+
+/** Dosyayı başlık + satırlara çevirir. Hangi biçim olduğu uzantıdan anlaşılıyor. */
+export async function tabloyuOku(
+  dosyaAdi: string,
+  icerik: ArrayBuffer,
+): Promise<{ basliklar: string[]; satirlar: string[][] }> {
+  const csvMi = dosyaAdi.toLowerCase().endsWith(".csv") || dosyaAdi.toLowerCase().endsWith(".txt");
+
+  let hepsi: string[][];
+  if (csvMi) {
+    hepsi = csvCoz(new TextDecoder("utf-8").decode(icerik));
+  } else {
+    const kitap = new ExcelJS.Workbook();
+    await kitap.xlsx.load(icerik);
+    const sayfa = kitap.worksheets[0];
+    if (!sayfa) throw new Error("Dosyada okunabilecek bir sayfa yok.");
+    hepsi = [];
+    sayfa.eachRow((satir) => {
+      const hucreler: string[] = [];
+      // `values` bire indeksli; sıfırıncı boş geliyor.
+      const degerler = satir.values as unknown[];
+      for (let i = 1; i < degerler.length; i += 1) hucreler.push(hucreMetni(degerler[i]));
+      if (hucreler.some((h) => h !== "")) hepsi.push(hucreler);
+    });
+  }
+
+  const [basliklar, ...geri] = hepsi;
+  if (!basliklar) throw new Error("Dosya boş görünüyor.");
+  return { basliklar, satirlar: geri };
+}
+
+// ── Satırları çözme ────────────────────────────────────────────────────────
+
+/** Başlık satırından "hangi sütun kaçıncı sırada" haritası. */
+function sutunHaritasi(basliklar: string[]): Partial<Record<SutunAdi, number>> {
+  const harita: Partial<Record<SutunAdi, number>> = {};
+  basliklar.forEach((b, i) => {
+    const a = anahtar(b);
+    for (const [ad, yazimlar] of Object.entries(SUTUNLAR) as [SutunAdi, readonly string[]][]) {
+      if (harita[ad] === undefined && yazimlar.includes(a)) harita[ad] = i;
+    }
+  });
+  return harita;
+}
+
+/**
+ * Ham tabloyu çözülmüş satırlara çevirir ve biçim hatalarını toplar.
+ *
+ * Burada yalnızca dosyanın kendi içinden görülebilen hatalar yakalanıyor
+ * (eksik sütun, okunamayan fiyat, listede olmayan beden). Veritabanına bağlı
+ * olanlar — kategori var mı, ürün yeni mi — `planYap` içinde.
+ */
+export function satirlariCoz(
+  basliklar: string[],
+  ham: string[][],
+): { satirlar: Satir[]; hatalar: Hata[] } {
+  const harita = sutunHaritasi(basliklar);
+  const hatalar: Hata[] = [];
+
+  for (const gerekli of ["ad", "kategori", "beden", "renk", "stok"] as SutunAdi[]) {
+    if (harita[gerekli] === undefined) {
+      hatalar.push({
+        satirNo: 1,
+        sutun: SUTUNLAR[gerekli][0],
+        mesaj: `Başlık satırında "${SUTUNLAR[gerekli][0]}" sütunu bulunamadı.`,
+      });
+    }
+  }
+  if (hatalar.length > 0) return { satirlar: [], hatalar };
+
+  const al = (satir: string[], ad: SutunAdi): string => {
+    const i = harita[ad];
+    return i === undefined ? "" : (satir[i] ?? "").trim();
+  };
+
+  const satirlar: Satir[] = [];
+  const gorulen = new Set<string>();
+
+  ham.forEach((h, sira) => {
+    // Başlık birinci satır; tabloda görünen numara bu.
+    const satirNo = sira + 2;
+    const ad = al(h, "ad");
+    if (!ad) return; // Tamamen boş satırlar zaten elenmişti; adı olmayan atlanıyor.
+
+    const fiyatHam = al(h, "fiyat");
+    const fiyatKurus = fiyatHam ? kurusaCevir(fiyatHam) : null;
+    if (fiyatHam && fiyatKurus === null) {
+      hatalar.push({ satirNo, sutun: "Fiyat", mesaj: `"${fiyatHam}" fiyat olarak okunamadı.` });
+    }
+
+    const eskiHam = al(h, "eskiFiyat");
+    const eskiFiyatKurus = eskiHam ? kurusaCevir(eskiHam) : null;
+    if (eskiHam && eskiFiyatKurus === null) {
+      hatalar.push({ satirNo, sutun: "Eski fiyat", mesaj: `"${eskiHam}" fiyat olarak okunamadı.` });
+    }
+
+    const bedenHam = al(h, "beden");
+    const beden = bedenCoz(bedenHam);
+    if (!beden) {
+      hatalar.push({
+        satirNo,
+        sutun: "Beden",
+        mesaj: `"${bedenHam}" tanınmadı. Kabul edilenler: ${BEDENLER.join(", ")}.`,
+      });
+    }
+
+    const renkHam = al(h, "renk");
+    const renk = renkCoz(renkHam);
+    if (!renk) {
+      const secenekler = Object.entries(RENK_ADLARI).map(([k, a]) => `${a} (${k})`);
+      hatalar.push({
+        satirNo,
+        sutun: "Renk",
+        mesaj: `"${renkHam}" tanınmadı. Kabul edilenler: ${secenekler.join(", ")}.`,
+      });
+    }
+
+    const stokHam = al(h, "stok");
+    const stok = Number(stokHam.replace(/[^\d-]/g, ""));
+    if (!Number.isInteger(stok) || stok < 0) {
+      hatalar.push({ satirNo, sutun: "Stok", mesaj: `"${stokHam}" adet olarak okunamadı.` });
+    }
+
+    const gorselHam = anahtar(al(h, "gorsel"));
+    const gorsel = gorselHam || "zibin";
+    if (!(GORSEL_TIPLERI as readonly string[]).includes(gorsel)) {
+      hatalar.push({
+        satirNo,
+        sutun: "Görsel",
+        mesaj: `"${gorselHam}" tanınmadı. Kabul edilenler: ${GORSEL_TIPLERI.join(", ")}.`,
+      });
+    }
+
+    const paletHam = al(h, "palet");
+    const palet = paletHam ? renkCoz(paletHam) : "mint";
+    if (!palet) {
+      hatalar.push({ satirNo, sutun: "Palet", mesaj: `"${paletHam}" tanınmadı.` });
+    }
+
+    if (beden && renk) {
+      const imza = `${anahtar(ad)}|${beden}|${renk}`;
+      if (gorulen.has(imza)) {
+        hatalar.push({
+          satirNo,
+          sutun: "Beden/Renk",
+          mesaj: `"${ad}" için ${beden} ${RENK_ADLARI[renk]} dosyada birden çok kez var.`,
+        });
+      }
+      gorulen.add(imza);
+    }
+
+    satirlar.push({
+      satirNo,
+      ad,
+      kategori: al(h, "kategori"),
+      fiyatKurus,
+      eskiFiyatKurus,
+      ozet: al(h, "ozet"),
+      aciklama: al(h, "aciklama"),
+      kumasIcerigi: al(h, "kumasIcerigi"),
+      yikamaTalimati: al(h, "yikamaTalimati"),
+      ureticiBilgisi: al(h, "ureticiBilgisi"),
+      ozellikler: al(h, "ozellikler").split(/[|\n]/).map((s) => s.trim()).filter(Boolean),
+      beden: beden ?? bedenHam,
+      renk: renk ?? renkHam,
+      stok: Number.isInteger(stok) && stok >= 0 ? stok : 0,
+      sku: al(h, "sku"),
+      gorsel,
+      palet: palet ?? "mint",
+      aktif: evetMi(al(h, "aktif"), true),
+    });
+  });
+
+  if (satirlar.length === 0 && hatalar.length === 0) {
+    hatalar.push({ satirNo: 1, sutun: "Ürün adı", mesaj: "Dosyada ürün satırı bulunamadı." });
+  }
+
+  return { satirlar, hatalar };
+}
+
+// ── Plan ───────────────────────────────────────────────────────────────────
+
+/** Aynı ürünün satırlarında ürün bilgisi çelişirse hangi alan olduğu yazılsın. */
+const URUN_ALANLARI = [
+  ["kategori", "Kategori"],
+  ["fiyatKurus", "Fiyat"],
+  ["ozet", "Özet"],
+  ["kumasIcerigi", "Kumaş içeriği"],
+  ["yikamaTalimati", "Yıkama talimatı"],
+] as const;
+
+/**
+ * Çözülmüş satırlardan "ne olacak" planını çıkarır.
+ *
+ * Veritabanına bakması gereken denetimler burada: kategori var mı, ürün yeni
+ * mi. Yeni üründe kumaş içeriği ve yıkama talimatı zorunlu (bebek tekstilinde
+ * yasal zorunluluk), ama var olan üründe boş bırakılabiliyor — böylece aynı
+ * dosya düzeni yalnızca stok güncellemek için de kullanılabiliyor.
+ */
+export async function planYap(satirlar: Satir[]): Promise<Plan> {
+  const hatalar: Hata[] = [];
+
+  const kategoriler = await db.category.findMany({ select: { id: true, slug: true, ad: true } });
+  const kategoriBul = (ham: string) =>
+    kategoriler.find((k) => anahtar(k.ad) === anahtar(ham) || k.slug === slugYap(ham));
+
+  // Ürün adına göre grupla; sıra dosyadaki sıra.
+  const gruplar = new Map<string, Satir[]>();
+  for (const s of satirlar) {
+    const k = slugYap(s.ad);
+    const liste = gruplar.get(k);
+    if (liste) liste.push(s);
+    else gruplar.set(k, [s]);
+  }
+
+  const sluglar = [...gruplar.keys()];
+  const varOlanlar = await db.product.findMany({
+    where: { slug: { in: sluglar } },
+    select: { id: true, slug: true, variants: { select: { beden: true, renk: true } } },
+  });
+  const varOlan = new Map(varOlanlar.map((u) => [u.slug, u]));
+
+  const urunler: UrunOzeti[] = [];
+
+  for (const [slug, grup] of gruplar) {
+    const ilk = grup[0];
+    const mevcut = varOlan.get(slug);
+    const yeniMi = !mevcut;
+
+    // Ürün bilgisi satırdan satıra değişiyorsa hangi değerin geçerli olduğu
+    // belirsiz kalır; dosya düzeltilsin diye hata sayılıyor.
+    for (const [alan, baslik] of URUN_ALANLARI) {
+      const degerler = new Set(grup.map((s) => String(s[alan] ?? "")).filter((d) => d !== ""));
+      if (degerler.size > 1) {
+        hatalar.push({
+          satirNo: grup[1]?.satirNo ?? ilk.satirNo,
+          sutun: baslik,
+          mesaj: `"${ilk.ad}" satırlarında ${baslik.toLocaleLowerCase("tr")} farklı yazılmış: ${[...degerler].join(" / ")}`,
+        });
+      }
+    }
+
+    const kategoriHam = grup.map((s) => s.kategori).find(Boolean) ?? "";
+    const kategori = kategoriBul(kategoriHam);
+    if (!kategori && (yeniMi || kategoriHam)) {
+      hatalar.push({
+        satirNo: ilk.satirNo,
+        sutun: "Kategori",
+        mesaj: kategoriHam
+          ? `"${kategoriHam}" diye bir kategori yok. Önce panelden açılmalı.`
+          : `"${ilk.ad}" yeni bir ürün, kategorisi yazılmalı.`,
+      });
+    }
+
+    if (yeniMi) {
+      const fiyat = grup.map((s) => s.fiyatKurus).find((f) => f !== null);
+      if (fiyat === undefined) {
+        hatalar.push({
+          satirNo: ilk.satirNo,
+          sutun: "Fiyat",
+          mesaj: `"${ilk.ad}" yeni bir ürün, fiyatı yazılmalı.`,
+        });
+      }
+      for (const [alan, baslik] of [
+        ["kumasIcerigi", "Kumaş içeriği"],
+        ["yikamaTalimati", "Yıkama talimatı"],
+      ] as const) {
+        if (!grup.some((s) => s[alan])) {
+          hatalar.push({
+            satirNo: ilk.satirNo,
+            sutun: baslik,
+            mesaj: `"${ilk.ad}" yeni bir ürün, ${baslik.toLocaleLowerCase("tr")} yazılmalı (bebek tekstilinde zorunlu).`,
+          });
+        }
+      }
+    }
+
+    const eskiVaryantlar = new Set(
+      (mevcut?.variants ?? []).map((v) => `${v.beden}|${v.renk}`),
+    );
+    const yeniVaryant = grup.filter((s) => !eskiVaryantlar.has(`${s.beden}|${s.renk}`)).length;
+
+    urunler.push({ ad: ilk.ad, slug, yeniMi, varyant: grup.length, yeniVaryant });
+  }
+
+  hatalar.sort((a, b) => a.satirNo - b.satirNo);
+  return { satirlar, hatalar, urunler };
+}
+
+// ── Uygulama ───────────────────────────────────────────────────────────────
+
+/**
+ * Planı veritabanına yazar. Tek işlem: bir yerde patlarsa hiçbiri yazılmıyor.
+ *
+ * Boş bırakılan alanlar var olan ürünün değerini silmiyor, olduğu gibi
+ * bırakıyor: yalnızca stok yazılmış bir dosya ürünün açıklamasını
+ * süpürmesin.
+ */
+export async function planiUygula(satirlar: Satir[]): Promise<{ urun: number; varyant: number }> {
+  const plan = await planYap(satirlar);
+  if (plan.hatalar.length > 0) {
+    throw new Error("Dosyada düzeltilmemiş hata var; hiçbir şey yazılmadı.");
+  }
+
+  const kategoriler = await db.category.findMany({ select: { id: true, slug: true, ad: true } });
+
+  const gruplar = new Map<string, Satir[]>();
+  for (const s of satirlar) {
+    const k = slugYap(s.ad);
+    const liste = gruplar.get(k);
+    if (liste) liste.push(s);
+    else gruplar.set(k, [s]);
+  }
+
+  let varyantSayisi = 0;
+
+  await db.$transaction(
+    async (islem) => {
+      for (const [slug, grup] of gruplar) {
+        const ilk = grup[0];
+        const ilkDolu = <A extends keyof Satir>(alan: A): Satir[A] | undefined =>
+          grup.map((s) => s[alan]).find((d) => d !== "" && d !== null && d !== undefined);
+
+        const kategoriHam = grup.map((s) => s.kategori).find(Boolean) ?? "";
+        const kategori = kategoriler.find(
+          (k) => anahtar(k.ad) === anahtar(kategoriHam) || k.slug === slugYap(kategoriHam),
+        );
+
+        const ozellikler = grup.map((s) => s.ozellikler).find((o) => o.length > 0);
+
+        // Boş hücre "değiştirme" demek; tanımsız alanlar update'e hiç girmiyor.
+        const alanlar = {
+          ad: ilk.ad,
+          categoryId: kategori?.id,
+          fiyatKurus: ilkDolu("fiyatKurus") ?? undefined,
+          eskiFiyatKurus: grup.map((s) => s.eskiFiyatKurus).find((f) => f !== null) ?? undefined,
+          ozet: ilkDolu("ozet"),
+          aciklama: ilkDolu("aciklama"),
+          kumasIcerigi: ilkDolu("kumasIcerigi"),
+          yikamaTalimati: ilkDolu("yikamaTalimati"),
+          ureticiBilgisi: ilkDolu("ureticiBilgisi"),
+          ozellikler,
+          gorsel: ilkDolu("gorsel"),
+          palet: ilkDolu("palet"),
+          aktif: ilk.aktif,
+        };
+
+        // Var olan ürün güncelleniyor, yenisi yaratılıyor. `upsert` burada
+        // işe yaramıyor: create gövdesi kullanılmayacak olsa bile kuruluyor
+        // ve yalnızca stok yazılı bir dosyada zorunlu alanlar boş kalıyor.
+        const eski = await islem.product.findUnique({ where: { slug }, select: { id: true } });
+
+        const urun = eski
+          ? await islem.product.update({
+              where: { id: eski.id },
+              data: Object.fromEntries(
+                Object.entries(alanlar).filter(([, d]) => d !== undefined),
+              ),
+              select: { id: true },
+            })
+          : await islem.product.create({
+              data: {
+                slug,
+                ad: ilk.ad,
+                categoryId: kategori!.id,
+                fiyatKurus: alanlar.fiyatKurus!,
+                eskiFiyatKurus: alanlar.eskiFiyatKurus ?? null,
+                ozet: alanlar.ozet ?? "",
+                aciklama: alanlar.aciklama || null,
+                kumasIcerigi: alanlar.kumasIcerigi!,
+                yikamaTalimati: alanlar.yikamaTalimati!,
+                ureticiBilgisi: alanlar.ureticiBilgisi || null,
+                ozellikler: ozellikler ?? [],
+                gorsel: alanlar.gorsel ?? "zibin",
+                palet: alanlar.palet ?? "mint",
+                aktif: ilk.aktif,
+              },
+              select: { id: true },
+            });
+
+        for (const s of grup) {
+          // SKU boşsa üretiliyor; var olan varyantın kendi kodu korunuyor.
+          const sku = s.sku || `${slug}-${s.beden.replace(/\s/g, "")}-${s.renk}`;
+          await islem.productVariant.upsert({
+            where: { productId_beden_renk: { productId: urun.id, beden: s.beden, renk: s.renk } },
+            update: s.sku ? { stok: s.stok, sku } : { stok: s.stok },
+            create: { productId: urun.id, beden: s.beden, renk: s.renk, stok: s.stok, sku },
+          });
+          varyantSayisi += 1;
+        }
+      }
+    },
+    { timeout: 120_000, maxWait: 20_000 },
+  );
+
+  return { urun: gruplar.size, varyant: varyantSayisi };
+}
+
+/**
+ * Eski yükleme kayıtlarını siler.
+ *
+ * Onaylanan kayıt da onaylanmadan unutulan da yalnızca onay ekranı için
+ * duruyor; bir günden eskisinin kimseye faydası yok.
+ */
+export async function eskiYuklemeleriTemizle(): Promise<number> {
+  const sinir = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const { count } = await db.productImport.deleteMany({
+    where: { olusturuldu: { lt: sinir } },
+  });
+  return count;
+}

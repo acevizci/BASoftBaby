@@ -17,6 +17,7 @@ import { BANNER_GORSELLERI, BANNER_PALETLERI } from "@/server/banner";
 import { GorselHatasi, gorselDosyalariniSil, gorselYukle } from "@/server/gorsel-depo";
 import { TASIYICILAR, takipAdresi, tasiyiciAdi } from "@/server/kargo";
 import { faturaOlustur } from "@/server/fatura";
+import { slugYap } from "@/server/slug";
 import { kargoyaVerildiEpostasi } from "@/server/eposta";
 
 /**
@@ -32,22 +33,6 @@ function vitriniYenile() {
   // yönlendirildiği sayfada kendi değişikliğini hemen görüyor.
   for (const etiket of TUM_ETIKETLER) updateTag(etiket);
   revalidatePath("/", "layout");
-}
-
-/** "Organik zıbın · 3'lü" → "organik-zibin-3lu" */
-function slugYap(metin: string): string {
-  const harfler: Record<string, string> = {
-    ç: "c", ğ: "g", ı: "i", ö: "o", ş: "s", ü: "u",
-    Ç: "c", Ğ: "g", İ: "i", I: "i", Ö: "o", Ş: "s", Ü: "u",
-  };
-  return metin
-    .split("")
-    .map((h) => harfler[h] ?? h)
-    .join("")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
 }
 
 function kurusaCevir(deger: FormDataEntryValue | null): number | null {

@@ -548,3 +548,24 @@ model Invoice {
   olusturuldu DateTime @default(now())
   guncellendi DateTime @updatedAt
 }
+
+/// Onay bekleyen toplu ürün yüklemesi.
+///
+/// Dosya yüklenince satırlar çözülüp buraya yazılıyor, mağaza sahibi ne
+/// olacağını görüp onaylıyor, sonra kataloğa işleniyor. Ara kayıt olmasının
+/// sebebi onay ekranı: JavaScript kapalı tarayıcıda da çalışsın diye çözülmüş
+/// satırlar iki istek arasında bir yerde durmak zorunda. Uygulanmış ve
+/// uygulanmadan unutulmuş kayıtlar günlük temizlikte siliniyor.
+model ProductImport {
+  id          String    @id @default(cuid())
+  dosyaAdi    String
+  satirlar    Json
+  /// Biçim hataları (satır no, sütun, mesaj). Onay ekranında gösteriliyor;
+  /// hata varsa uygulama düğmesi hiç çıkmıyor.
+  hatalar     Json
+  satirSayisi Int
+  uygulandi   DateTime?
+  olusturuldu DateTime  @default(now())
+
+  @@index([olusturuldu])
+}

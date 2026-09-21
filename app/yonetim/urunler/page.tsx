@@ -14,12 +14,20 @@ export default async function UrunListesi() {
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h1 className="text-2xl">Ürünler</h1>
-        <Link
-          href="/yonetim/urunler/yeni"
-          className="rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white"
-        >
-          Yeni ürün
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/yonetim/urunler/toplu"
+            className="rounded-full border border-cizgi bg-yuzey px-5 py-2.5 text-sm font-bold text-metin-2 transition hover:border-mercan hover:text-metin"
+          >
+            Excel&apos;den yükle
+          </Link>
+          <Link
+            href="/yonetim/urunler/yeni"
+            className="rounded-full bg-mercan px-5 py-2.5 text-sm font-bold text-white"
+          >
+            Yeni ürün
+          </Link>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-marka border border-cizgi bg-yuzey">
