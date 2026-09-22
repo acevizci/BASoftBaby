@@ -4335,6 +4335,27 @@ eklenmişti. O durum yalnızca ürünün hiç stoğu yokken geçerli:
 
 **Nerede:** [`../ui/fotograf-yonetimi.tsx`](../ui/fotograf-yonetimi.tsx)
 
+### K-93 · Banner sırası oklarla, fotoğraf kapağı tek tıkla
+
+**Banner sırası.** Sıra yalnızca formdaki sayıyla değişiyordu: iki banner'ın
+yerini değiştirmek için ikisini de açıp numara yazmak gerekiyordu. Listede
+her satırda ↑ ↓ var; taşıyınca numaralar baştan yazılıyor (elle girilmiş aynı
+ya da boşluklu numaralar da düzeliyor). Ana sayfa bu sırayla dönüyor.
+
+**Fotoğraf kapağı.** Kapak ilk sıradaki fotoğraf; başka birini kapak yapmak
+için onu teker teker yukarı taşımak gerekiyordu.
+
+- Listede her fotoğrafta **Kapak yap** (kapak olanda "Kapak" etiketi).
+- Yükleme formunda **Kapak fotoğrafı olsun**: yeni yüklenenler seçildikleri
+  sırayla başa geçiyor, eskiler arkalarında kalıyor. Üründe hiç fotoğraf
+  yokken seçenek çıkmıyor; ilk yüklenen zaten kapak.
+
+Renge göre gösterimde (K-88) o rengin fotoğrafları kendi aralarında aynı
+sırayla diziliyor; yani kapak yapılan fotoğraf kendi renginin de ilki oluyor.
+
+**Nerede:** [`../server/yonetim.ts`](../server/yonetim.ts) (`bannerTasi`, `fotografTasi`, `fotografEkle`),
+[`../ui/fotograf-yonetimi.tsx`](../ui/fotograf-yonetimi.tsx)
+
 ---
 
 ## Açık sorular

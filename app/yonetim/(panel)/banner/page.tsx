@@ -3,7 +3,13 @@ import HeroBanner from "@/ui/hero-banner";
 import Katlanir from "@/ui/katlanir";
 import { BANNER_GORSELLERI, BANNER_PALETLERI, bannerSaniyeGetir, tumBannerlar } from "@/server/banner";
 import { BANNER_PALET_ADLARI } from "@/ui/banner-bicim";
-import { bannerCevir, bannerKaydet, bannerSil, bannerSuresiKaydet } from "@/server/yonetim";
+import {
+  bannerCevir,
+  bannerKaydet,
+  bannerSil,
+  bannerSuresiKaydet,
+  bannerTasi,
+} from "@/server/yonetim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import PanelBildirim, { ORTAK_HATALAR } from "@/ui/panel-bildirim";
 import DosyaBirak from "@/ui/dosya-birak";
@@ -33,6 +39,7 @@ const BILDIRIMLER: Record<string, string> = {
   silindi: "Banner silindi. Ana sayfadan kalktı.",
   acildi: "Banner yayına alındı.",
   kapatildi: "Banner kapatıldı. Ana sayfada görünmüyor.",
+  sira: "Sıra değişti. Ana sayfada bu sırayla dönüyor.",
 };
 
 const HATALAR: Record<string, string> = {
@@ -132,13 +139,34 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
           <p className="mt-2 text-sm text-metin-3">Henüz banner yok.</p>
         ) : (
           <ul className="mt-3 flex flex-col divide-y divide-cizgi-soluk">
-            {sayfadakiler.map((b) => (
+            {sayfadakiler.map((b, j) => (
               <li
                 key={b.id}
                 id={`banner-${b.id}`}
                 className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3"
               >
-                <span className="rakam text-xs text-metin-3">{b.sira}</span>
+                {/* Sıra oklarla (K-93); ana sayfada bu sırayla dönüyor. */}
+                <span className="flex flex-none items-center gap-1">
+                  {(["yukari", "asagi"] as const).map((yon) => {
+                    const i = durum.atla + j;
+                    const kapali = yon === "yukari" ? i === 0 : i === bannerlar.length - 1;
+                    return (
+                      <form key={yon} action={bannerTasi}>
+                        <input type="hidden" name="id" value={b.id} />
+                        <input type="hidden" name="yon" value={yon} />
+                        <SayfaAlani sayfa={durum.sayfa} boy={LISTE_BOYU} />
+                        <button
+                          type="submit"
+                          disabled={kapali}
+                          aria-label={yon === "yukari" ? "Yukarı taşı" : "Aşağı taşı"}
+                          className="grid h-7 w-7 place-items-center rounded-full border border-cizgi text-xs font-bold text-metin-2 hover:border-metin-3 disabled:opacity-30"
+                        >
+                          {yon === "yukari" ? "↑" : "↓"}
+                        </button>
+                      </form>
+                    );
+                  })}
+                </span>
                 {b.resimYol && (
                   // Küçük önizleme: resimli banner'ın başlığı olmayabiliyor,
                   // hangisi olduğu resimden anlaşılsın.

@@ -178,6 +178,14 @@ export default function FotografYonetimi({
             className={GIRDI}
           />
         </label>
+        {/* Yüklerken kapak seçilebiliyor: yeni çekim çoğunlukla eskisinin
+            yerine geçecek fotoğraf (K-93). İlk fotoğrafta zaten kapak. */}
+        {fotograflar.length > 0 && (
+          <label className="flex items-center gap-2 self-center text-sm font-semibold text-metin-2">
+            <input type="checkbox" name="kapak" className="h-4 w-4 accent-[var(--mercan)]" />
+            Kapak fotoğrafı olsun
+          </label>
+        )}
         <GonderDugmesi
           bekleyen="Yükleniyor…"
           className="rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi transition hover:brightness-95"
@@ -289,6 +297,21 @@ export default function FotografYonetimi({
               </div>
 
               <div className="flex items-center gap-2">
+                {/* Kapak tek tıkla: teker teker yukarı taşımak gerekiyordu (K-93). */}
+                {i === 0 ? (
+                  <span className="rounded-full bg-nane-soluk px-2.5 py-1 text-xs font-bold text-nane-koyu">
+                    Kapak
+                  </span>
+                ) : (
+                  <form action={fotografTasi}>
+                    <input type="hidden" name="id" value={f.id} />
+                    <input type="hidden" name="slug" value={slug} />
+                    <input type="hidden" name="yon" value="kapak" />
+                    <button type="submit" className={DUGME}>
+                      Kapak yap
+                    </button>
+                  </form>
+                )}
                 <form action={fotografTasi}>
                   <input type="hidden" name="id" value={f.id} />
                   <input type="hidden" name="slug" value={slug} />

@@ -1260,6 +1260,37 @@ export async function bannerSil(veri: FormData): Promise<void> {
   redirect(`/yonetim/banner?kayit=silindi${formSayfaEki(veri)}`);
 }
 
+/**
+ * Banner'ı listede bir yukarı ya da aşağı taşır (K-93).
+ *
+ * Sıra yalnızca formdaki sayıyla değişiyordu: iki banner'ın yerini
+ * değiştirmek için ikisini de açıp numara yazmak gerekiyordu. Numaralar
+ * baştan yazılıyor; elle girilmiş aynı ya da boşluklu numaralar da düzeliyor.
+ */
+export async function bannerTasi(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
+  const id = String(veri.get("id") ?? "");
+  const yon = String(veri.get("yon") ?? "") === "yukari" ? -1 : 1;
+  if (!id) redirect("/yonetim/banner");
+
+  const hepsi = await db.heroBanner.findMany({
+    orderBy: [{ sira: "asc" }, { olusturuldu: "asc" }],
+    select: { id: true },
+  });
+  const yer = hepsi.findIndex((b) => b.id === id);
+  const hedef = yer + yon;
+  if (yer === -1 || hedef < 0 || hedef >= hepsi.length) redirect("/yonetim/banner");
+
+  [hepsi[yer], hepsi[hedef]] = [hepsi[hedef], hepsi[yer]];
+  await db.$transaction(
+    hepsi.map((b, i) => db.heroBanner.update({ where: { id: b.id }, data: { sira: i } })),
+  );
+
+  vitriniYenile();
+  redirect(`/yonetim/banner?kayit=sira${tasimaSayfaEki(veri, hedef)}`);
+}
+
 export async function bannerSuresiKaydet(veri: FormData): Promise<void> {
   await yoneticiGerekli();
 
@@ -1311,12 +1342,14 @@ export async function fotografEkle(veri: FormData): Promise<void> {
   const renk = renkGirdisi && (await renkKodlari()).includes(renkGirdisi) ? renkGirdisi : null;
   let sira = urun.images.reduce((e, g) => Math.max(e, g.sira), 0);
   const hatalar: string[] = [];
+  const eklenenler: string[] = [];
 
   for (const dosya of dosyalar) {
     try {
       const y = await gorselYukle(dosya);
       sira += 1;
-      await db.productImage.create({
+      const yeni = await db.productImage.create({
+        select: { id: true },
         data: {
           productId: urun.id,
           yol: y.yol,
@@ -1329,10 +1362,25 @@ export async function fotografEkle(veri: FormData): Promise<void> {
           sira,
         },
       });
+      eklenenler.push(yeni.id);
     } catch (hata) {
       hatalar.push(hata instanceof GorselHatasi ? hata.message : "Fotoğraf yüklenemedi.");
       console.error("Fotoğraf yüklenemedi:", hata);
     }
+  }
+
+  // "Kapak fotoğrafı olsun": yeni yüklenenler seçildikleri sırayla başa
+  // geçiyor, eskiler arkalarında kalıyor (K-93).
+  if (veri.get("kapak") === "on" && eklenenler.length > 0) {
+    const eskiler = await db.productImage.findMany({
+      where: { productId: urun.id, id: { notIn: eklenenler } },
+      orderBy: { sira: "asc" },
+      select: { id: true },
+    });
+    const yeniSira = [...eklenenler, ...eskiler.map((g) => g.id)];
+    await db.$transaction(
+      yeniSira.map((gid, i) => db.productImage.update({ where: { id: gid }, data: { sira: i + 1 } })),
+    );
   }
 
   vitriniYenile();
@@ -1370,7 +1418,8 @@ export async function fotografTasi(veri: FormData): Promise<void> {
 
   const id = String(veri.get("id") ?? "");
   const slug = String(veri.get("slug") ?? "");
-  const yon = String(veri.get("yon") ?? "") === "yukari" ? -1 : 1;
+  const yonGirdisi = String(veri.get("yon") ?? "");
+  const yon = yonGirdisi === "yukari" ? -1 : 1;
   if (!id) return;
 
   const kayit = await db.productImage.findUnique({
@@ -1386,12 +1435,18 @@ export async function fotografTasi(veri: FormData): Promise<void> {
   });
 
   const yer = hepsi.findIndex((g) => g.id === id);
-  const hedef = yer + yon;
-  if (yer === -1 || hedef < 0 || hedef >= hepsi.length) {
-    redirect(`/yonetim/urunler/${slug}#fotograflar`);
+  if (yonGirdisi === "kapak") {
+    // Tek tıkla başa: kapak için fotoğrafı teker teker yukarı taşımak
+    // gerekiyordu (K-93).
+    if (yer <= 0) redirect(`/yonetim/urunler/${slug}#fotograflar`);
+    hepsi.unshift(...hepsi.splice(yer, 1));
+  } else {
+    const hedef = yer + yon;
+    if (yer === -1 || hedef < 0 || hedef >= hepsi.length) {
+      redirect(`/yonetim/urunler/${slug}#fotograflar`);
+    }
+    [hepsi[yer], hepsi[hedef]] = [hepsi[hedef], hepsi[yer]];
   }
-
-  [hepsi[yer], hepsi[hedef]] = [hepsi[hedef], hepsi[yer]];
 
   // Sıra numaraları baştan yazılıyor: elle girilmiş boşluklu numaralar da
   // böylece düzeliyor.
