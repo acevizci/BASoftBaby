@@ -3141,6 +3141,68 @@ iki temada kontrast ölçümü.
 
 ---
 
+### K-63 · Kaydet düğmesi ve silme denetimi: üçüncü deneme
+
+Aynı iki şey için üçüncü kez geri bildirim geldi. İkisinde de kod "çalışıyordu"
+ve denemelerim geçiyordu; yanlış olan **ekranda ne göründüğüydü**. Ders şu:
+işlevsel deneme "düğme var ve çalışıyor" der, kullanıcının gördüğü şeyi
+söylemez. Ekran görüntüsüne bakınca ikisi de bir dakikada anlaşıldı.
+
+#### Kaydet düğmesi: yapışkanlık sorunun kendisiydi
+
+- **İlk hâl:** düğme formun içindeydi. Form sayfanın ortasında bitiyor
+  (altında "Bedenler ve stok", "Fotoğraflar", "Ürünü sil" var), düğme de
+  ortada kalıyordu.
+- **İkinci hâl (K-57):** `sticky` yapıldı. *Daha kötü oldu.* Düğme yüzen bir
+  çubuğa dönüşüp o an bakılan formun üstüne bindi, alttaki alanı kapattı.
+  Ekran görüntüsünde açıkça görülüyor: "Özellikler" girdisi çubuğun altında
+  kalmış. Kullanıcının "sayfanın ortasında görünüyor" dediği tam olarak buydu
+  — düğme artık *her zaman* ortadaydı.
+- **Üçüncü hâl:** ne yapışkan ne formun içinde. Sayfanın sonunda, kendi
+  yerinde duruyor; `form` niteliğiyle yukarıdaki forma bağlı olduğu için hâlâ
+  onu gönderiyor ve JavaScript gerekmiyor.
+
+İstenen şey baştan beri basitti: aşağı inince karşına çıkan bir kaydet
+düğmesi. "Stoktaki gibi olsun" sözünü yapışkanlık olarak okumak hataydı —
+stok ekranında form **bütün sayfayı** sardığı için orada yapışkanlık işe
+yarıyor; ürün sayfasında sarmıyor.
+
+#### Silme denetimi: vardı ama silme gibi durmuyordu
+
+K-61 onayları eklemişti ve denemeler geçiyordu. Ekrana bakınca iki ayrı sorun
+çıktı:
+
+1. **Ürünü olan kategoriler onay almamıştı.** K-61 yalnızca *boş* kategoriye
+   onay eklemişti; doluların hepsi eski satır içi dalda kalmıştı. Mağazadaki
+   bütün kategorilerin ürünü olduğu için **kullanıcı hiçbirinde onay
+   görmedi** — haklıydı. Üstelik o dal kategorinin kalıcı olarak sileceğini
+   hiç söylemiyor, yalnızca "ürünler nereye taşınsın?" diye soruyordu.
+2. **Onay düğmesi silme gibi durmuyordu.** Nötr gri bir kutu olarak
+   "Kapat"ın yanında kayboluyordu; biçimsiz bir bağlantı gibi. Artık mercan
+   çerçeveli ve mercan yazılı (beyaz üzerinde 5,85:1), yani ilk bakışta
+   yıkıcı bir eylem olduğu belli.
+
+Ürünü olan kategori artık aynı onay kutusunu kullanıyor: kırmızı uyarıda
+kategorinin kalıcı olarak gideceği, **ürünlerin silinmeyip taşınacağı** ve
+"yalnızca vitrinden kaldırmak istiyorsan Kapat yeter" yazıyor; hedef kategori
+seçimi de kutunun içinde.
+
+**Denenen:** düğmenin `static` olması, sayfa başındayken görüş alanında
+olmaması (yüzmemesi), sonunda görünmesi, fotoğraflardan sonra silmeden önce
+gelmesi ve gerçekten kaydetmesi; kategoride tek tıkla silme kalmaması,
+düğmenin kırmızı çerçeveli olması, uyarının "kalıcı olarak siliniyor",
+"taşınıyor" ve "Kapat" üçünü birden söylemesi, hedef kategorinin hâlâ
+sorulması; satılmamış üründe onay ve bildirim; fotoğraf ve toplu silmede tek
+tık kalmaması; JavaScript kapalı tarayıcıda onayın açılması ve düğmenin
+forma bağlı kalması. Ayrıca ekran görüntüleriyle göz kontrolü — bu turda
+asıl işi o yaptı.
+
+**Nerede:** [`../ui/urun-formu.tsx`](../ui/urun-formu.tsx),
+[`../ui/silme-onayi.tsx`](../ui/silme-onayi.tsx),
+[`../app/yonetim/(panel)/kategoriler/page.tsx`](../app/yonetim/(panel)/kategoriler/page.tsx)
+
+---
+
 ## Açık sorular
 
 ### A-02 · Alan adı

@@ -34,7 +34,10 @@ export default function SilmeOnayi({
 }) {
   return (
     <details className="group">
-      <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 rounded-full border border-cizgi bg-yuzey px-3 py-1.5 text-xs font-bold text-metin-2 transition hover:border-mercan hover:text-mercan-koyu [&::-webkit-details-marker]:hidden">
+      {/* Silme denetimi ilk bakışta silme gibi durmalı. Nötr gri bir
+          düğmeyken "Kapat"ın yanında fark edilmiyordu; kullanıcı denetim
+          olmadığını düşündü (K-63). Mercan yazı beyaz üzerinde 5,85:1. */}
+      <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 rounded-full border border-mercan bg-yuzey px-3 py-1.5 text-xs font-bold text-mercan-koyu transition hover:bg-mercan-soluk [&::-webkit-details-marker]:hidden">
         {etiket}
         <span aria-hidden="true" className="transition group-open:rotate-180">
           ▾

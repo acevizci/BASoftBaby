@@ -107,9 +107,10 @@ banner, duyuru ve müşteri adresi. Onay kutusu kapatılabilir şeylerde ikinci
 yolu da gösteriyor ("silmek yerine kapat") — çoğu zaman istenen şey silmek
 değil (K-57, K-61).
 
-Ürün formundaki **Değişiklikleri kaydet** düğmesi sayfanın sonunda ve
-yapışkan: form sayfanın ortasında bitiyor, düğme HTML'in `form` niteliğiyle
-dışarıdan bağlı olduğu için aşağı inince kaybolmuyor (K-61).
+Ürün formundaki **Değişiklikleri kaydet** düğmesi sayfanın sonunda: form
+sayfanın ortasında bitiyor ama düğme HTML'in `form` niteliğiyle dışarıdan
+bağlı. Yapışkan değil — yapışkan hâli içeriğin üstünde gezen bir çubuğa
+dönüşüyordu (K-61, K-63).
 
 **Bedenler panelden yönetiliyor** (`/yonetim/bedenler`): yeni beden ekleme,
 ad ve boy-kilo ölçülerini değiştirme, sıralama, kapatma ve silme. Ad

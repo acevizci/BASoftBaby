@@ -157,21 +157,30 @@ export default async function KategoriEkrani({
                     </form>
                   </SilmeOnayi>
                 ) : (
-                  <details className="group">
-                    <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 text-xs font-bold text-metin-2 hover:text-metin [&::-webkit-details-marker]:hidden">
-                      Sil
-                      <span aria-hidden="true" className="transition group-open:rotate-180">
-                        ▾
-                      </span>
-                    </summary>
+                  /* Ürünü olan kategori: silme aynı denetimden geçiyor ama
+                     ürünlerin nereye gideceği de soruluyor. Eskiden burası
+                     biçimsiz bir "Sil ▾" yazısıydı — "Kapat" düğmesinin
+                     yanında silme denetimi gibi durmuyordu ve kategorinin
+                     kalıcı olarak gideceğini hiç söylemiyordu (K-63). */
+                  <SilmeOnayi
+                    uyari={
+                      <>
+                        <strong>{k.ad}</strong> kalıcı olarak siliniyor; geri
+                        alınamıyor. İçindeki{" "}
+                        <span className="rakam font-bold">{k.urunAdedi}</span> ürün
+                        silinmiyor, seçtiğin kategoriye taşınıyor. Yalnızca vitrinden
+                        kaldırmak istiyorsan &quot;Kapat&quot; yeter.
+                      </>
+                    }
+                  >
                     <form
                       action={kategoriSil}
-                      className="mt-2 flex flex-wrap items-end gap-2 rounded-marka border border-cizgi bg-zemin p-3"
+                      className="flex flex-wrap items-end gap-2"
                     >
                       <input type="hidden" name="id" value={k.id} />
                       <label className="flex flex-col gap-1">
                         <span className="text-xs font-bold text-metin-2">
-                          <span className="rakam">{k.urunAdedi}</span> ürün nereye taşınsın?
+                          Ürünler nereye taşınsın?
                         </span>
                         <select
                           name="hedefKategori"
@@ -191,11 +200,11 @@ export default async function KategoriEkrani({
                             ))}
                         </select>
                       </label>
-                      <button type="submit" className={KUCUK_DUGME}>
+                      <button type="submit" className={SIL_DUGMESI}>
                         Taşı ve sil
                       </button>
                     </form>
-                  </details>
+                  </SilmeOnayi>
                 )}
 
                 <Link href={`/${k.slug}`} className="text-xs font-bold text-mavi-koyu hover:underline">

@@ -249,7 +249,7 @@ export default function UrunFormu({
 
         {/* Yeni üründe kaydet düğmesi formun içinde: altında başka bölüm
             yok, sayfa formdan ibaret. Var olan üründe düğme sayfanın en
-            sonuna taşındı — aşağıda `UrunKaydetDugmesi` (K-61). */}
+            sonuna taşındı — aşağıda `UrunKaydetDugmesi` (K-61, K-63). */}
         {yeni && (
           <button
             type="submit"
@@ -378,20 +378,26 @@ export default function UrunFormu({
 }
 
 /**
- * "Değişiklikleri kaydet" — sayfanın en sonunda.
+ * "Değişiklikleri kaydet" — sayfanın en sonunda, sabit.
  *
- * Düğme formun içindeyken sayfanın **ortasında** kalıyordu: altında
- * "Bedenler ve stok", "Fotoğraflar" ve "Ürünü sil" bölümleri var. Yapışkan
- * yapmak da çözmedi, çünkü `sticky` yalnızca kendi kapsayıcısı ekrandayken
- * çalışıyor — aşağı bölümlere inince düğme kayboluyordu.
+ * Üç deneme sürdü (K-63):
  *
- * Çözüm: düğme formun dışında, sayfanın sonunda; `form` niteliğiyle yukarıdaki
- * forma bağlı. Yapışkan da kaldı, ama artık sayfanın tamamı boyunca
- * görünüyor.
+ * 1. Düğme formun içindeydi; form sayfanın ortasında bittiği için düğme de
+ *    ortada kalıyordu — altında "Bedenler ve stok", "Fotoğraflar" ve
+ *    "Ürünü sil" var.
+ * 2. `sticky` yapıldı. Bu daha kötüsüydü: düğme **yüzen bir çubuğa** dönüşüp
+ *    o an bakılan formun üstüne biniyor, alttaki alanı kapatıyordu. Kullanıcı
+ *    da tam olarak bunu tarif etti — "sayfanın ortasında görünüyor".
+ * 3. Şimdi ne yapışkan ne formun içinde: sayfanın sonunda, kendi yerinde
+ *    duruyor. `form` niteliğiyle yukarıdaki forma bağlı olduğu için hâlâ onu
+ *    gönderiyor ve JavaScript gerekmiyor.
+ *
+ * İstenen şey buydu: aşağı inince karşına çıkan bir kaydet düğmesi, içeriğin
+ * üstünde gezen bir çubuk değil.
  */
 export function UrunKaydetDugmesi() {
   return (
-    <div className="sticky bottom-4 z-10 flex flex-wrap items-center gap-3 rounded-marka border border-cizgi bg-yuzey/95 p-3 shadow-md backdrop-blur">
+    <div className="flex flex-wrap items-center gap-3 rounded-marka border border-cizgi bg-yuzey p-3">
       <button
         type="submit"
         form={FORM_KIMLIGI}
