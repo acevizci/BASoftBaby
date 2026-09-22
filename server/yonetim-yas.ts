@@ -24,8 +24,14 @@ import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
 import { TUM_ETIKETLER } from "@/server/onbellek";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import { formSayfaEki, tasimaSayfaEki } from "@/ui/sayfalama-bicim";
 
 const SAYFA = "/yonetim/bedenler";
+
+/** İşlem bitince dönülecek adres; yaş grubu listesinin sayfası korunuyor (K-67). */
+function donus(veri: FormData, ek: string): string {
+  return `${SAYFA}?${ek}${formSayfaEki(veri, "yasSayfa")}`;
+}
 
 function vitriniYenile() {
   for (const etiket of TUM_ETIKETLER) updateTag(etiket);
@@ -65,11 +71,11 @@ export async function yasGrubuEkle(veri: FormData): Promise<void> {
   await yoneticiGerekli();
 
   const { kod, ad, aciklama } = alanlar(veri);
-  if (!kod) redirect(`${SAYFA}?hata=yaskod`);
-  if (!ad) redirect(`${SAYFA}?hata=yasad`);
+  if (!kod) redirect(donus(veri, "hata=yaskod"));
+  if (!ad) redirect(donus(veri, "hata=yasad"));
 
   const varMi = await db.ageGroup.findUnique({ where: { kod }, select: { id: true } });
-  if (varMi) redirect(`${SAYFA}?hata=yastekrar`);
+  if (varMi) redirect(donus(veri, "hata=yastekrar"));
 
   const son = await db.ageGroup.aggregate({ _max: { sira: true } });
   await db.ageGroup.create({
@@ -77,7 +83,7 @@ export async function yasGrubuEkle(veri: FormData): Promise<void> {
   });
 
   vitriniYenile();
-  redirect(`${SAYFA}?kayit=yaseklendi`);
+  redirect(donus(veri, "kayit=yaseklendi"));
 }
 
 /**
@@ -93,15 +99,15 @@ export async function yasGrubuKaydet(veri: FormData): Promise<void> {
   const id = String(veri.get("id") ?? "").trim();
   const { kod, ad, aciklama } = alanlar(veri);
   if (!id) redirect(SAYFA);
-  if (!kod) redirect(`${SAYFA}?hata=yaskod`);
-  if (!ad) redirect(`${SAYFA}?hata=yasad`);
+  if (!kod) redirect(donus(veri, "hata=yaskod"));
+  if (!ad) redirect(donus(veri, "hata=yasad"));
 
   const mevcut = await db.ageGroup.findUnique({ where: { id }, select: { kod: true } });
-  if (!mevcut) redirect(`${SAYFA}?hata=bulunamadi`);
+  if (!mevcut) redirect(donus(veri, "hata=bulunamadi"));
 
   if (mevcut.kod !== kod) {
     const cakisma = await db.ageGroup.findUnique({ where: { kod }, select: { id: true } });
-    if (cakisma) redirect(`${SAYFA}?hata=yastekrar`);
+    if (cakisma) redirect(donus(veri, "hata=yastekrar"));
   }
 
   await db.$transaction(async (islem) => {
@@ -115,7 +121,7 @@ export async function yasGrubuKaydet(veri: FormData): Promise<void> {
   });
 
   vitriniYenile();
-  redirect(`${SAYFA}?kayit=yaskaydedildi`);
+  redirect(donus(veri, "kayit=yaskaydedildi"));
 }
 
 export async function yasGrubuCevir(veri: FormData): Promise<void> {
@@ -125,12 +131,12 @@ export async function yasGrubuCevir(veri: FormData): Promise<void> {
   if (!id) redirect(SAYFA);
 
   const mevcut = await db.ageGroup.findUnique({ where: { id }, select: { aktif: true } });
-  if (!mevcut) redirect(`${SAYFA}?hata=bulunamadi`);
+  if (!mevcut) redirect(donus(veri, "hata=bulunamadi"));
 
   await db.ageGroup.update({ where: { id }, data: { aktif: !mevcut.aktif } });
 
   vitriniYenile();
-  redirect(`${SAYFA}?kayit=${mevcut.aktif ? "yaskapatildi" : "yasacildi"}`);
+  redirect(donus(veri, `kayit=${mevcut.aktif ? "yaskapatildi" : "yasacildi"}`));
 }
 
 /**
@@ -146,15 +152,15 @@ export async function yasGrubuSil(veri: FormData): Promise<void> {
   if (!id) redirect(SAYFA);
 
   const grup = await db.ageGroup.findUnique({ where: { id }, select: { kod: true } });
-  if (!grup) redirect(`${SAYFA}?hata=bulunamadi`);
+  if (!grup) redirect(donus(veri, "hata=bulunamadi"));
 
   const kullanim = await db.size.count({ where: { yasKodu: grup.kod } });
-  if (kullanim > 0) redirect(`${SAYFA}?hata=yaskullanimda&adet=${kullanim}`);
+  if (kullanim > 0) redirect(donus(veri, `hata=yaskullanimda&adet=${kullanim}`));
 
   await db.ageGroup.delete({ where: { id } });
 
   vitriniYenile();
-  redirect(`${SAYFA}?kayit=yassilindi`);
+  redirect(donus(veri, "kayit=yassilindi"));
 }
 
 /** Sıralama ok düğmeleriyle: JavaScript'siz çalışıyor. */
@@ -178,5 +184,5 @@ export async function yasGrubuTasi(veri: FormData): Promise<void> {
   );
 
   vitriniYenile();
-  redirect(`${SAYFA}?kayit=yassira`);
+  redirect(`${SAYFA}?kayit=yassira${tasimaSayfaEki(veri, hedef, "yasSayfa")}`);
 }

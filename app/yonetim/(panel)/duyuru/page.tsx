@@ -6,8 +6,13 @@ import { duyuruCevir, duyuruEkle, duyuruSil, seritAyariKaydet } from "@/server/y
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import PanelBildirim, { ORTAK_HATALAR } from "@/ui/panel-bildirim";
 import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
+import Sayfalama, { SayfaAlani } from "@/ui/sayfalama";
+import { dilimle, sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
 
 export const dynamic = "force-dynamic";
+
+/** Satırlar tek satırlık; sayfaya çok sayıda sığıyor. */
+const LISTE_BOYU = 15;
 
 const GIRDI =
   "rounded-[10px] border-[1.5px] border-cizgi bg-yuzey px-3 py-2 text-sm text-metin outline-none focus:border-mercan";
@@ -32,8 +37,12 @@ export default async function DuyuruEkrani({ searchParams }: PageProps<"/yonetim
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { kayit, hata, ac } = await searchParams;
+  const { kayit, hata, ac, sayfa } = await searchParams;
   const [duyurular, ayar] = await Promise.all([tumDuyurular(), seritAyariGetir()]);
+
+  const durum = sayfaCoz(sayfa, duyurular.length, LISTE_BOYU);
+  const sayfadakiler = dilimle(duyurular, durum);
+  const adres = (n: number) => sayfaAdresi("/yonetim/duyuru", n);
 
   const yayinda = duyurular.filter((d) => d.aktif).length;
 
@@ -73,7 +82,7 @@ export default async function DuyuruEkrani({ searchParams }: PageProps<"/yonetim
           <p className="mt-2 text-sm text-metin-3">Henüz mesaj yok.</p>
         ) : (
           <ul className="mt-3 flex flex-col divide-y divide-cizgi-soluk">
-            {duyurular.map((d) => (
+            {sayfadakiler.map((d) => (
               <li key={d.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3">
                 <span className="min-w-0 flex-1 text-sm">{d.metin}</span>
                 <span className="rakam text-xs text-metin-3">
@@ -90,6 +99,7 @@ export default async function DuyuruEkrani({ searchParams }: PageProps<"/yonetim
                 </span>
                 <form action={duyuruCevir}>
                   <input type="hidden" name="id" value={d.id} />
+                  <SayfaAlani sayfa={durum.sayfa} />
                   <button
                     type="submit"
                     className="rounded-full border border-cizgi px-3 py-1.5 text-xs font-bold text-metin-2 hover:border-metin-3"
@@ -100,6 +110,7 @@ export default async function DuyuruEkrani({ searchParams }: PageProps<"/yonetim
                 <SilmeOnayi uyari={UYARI}>
                   <form action={duyuruSil}>
                     <input type="hidden" name="id" value={d.id} />
+                    <SayfaAlani sayfa={durum.sayfa} />
                     <button type="submit" className={SIL_DUGMESI}>
                       Evet, sil
                     </button>
@@ -109,6 +120,10 @@ export default async function DuyuruEkrani({ searchParams }: PageProps<"/yonetim
             ))}
           </ul>
         )}
+
+        <div className="mt-4">
+          <Sayfalama durum={durum} birim="mesaj" adres={adres} />
+        </div>
       </section>
 
       <Katlanir

@@ -26,8 +26,20 @@ import { db } from "@/server/veritabani";
 import { TUM_ETIKETLER } from "@/server/onbellek";
 import { yasKodlari } from "@/server/yas-gruplari";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import { formSayfaEki, tasimaSayfaEki } from "@/ui/sayfalama-bicim";
 
 const SAYFA = "/yonetim/bedenler";
+
+/**
+ * İşlem bitince dönülecek adres, kaldığın sayfa korunarak.
+ *
+ * Listeler sayfalandıktan sonra (K-67) her kaydetme kullanıcıyı ilk sayfaya
+ * atıyordu; dördüncü sayfadaki bedeni düzelten kişi her seferinde oraya
+ * yeniden gitmek zorunda kalırdı.
+ */
+function donus(veri: FormData, ek: string): string {
+  return `${SAYFA}?${ek}${formSayfaEki(veri)}`;
+}
 
 function vitriniYenile() {
   for (const etiket of TUM_ETIKETLER) updateTag(etiket);
@@ -59,10 +71,10 @@ export async function bedenEkle(veri: FormData): Promise<void> {
   await yoneticiGerekli();
 
   const { ad, boy, kilo, yasKodu } = await alanlar(veri);
-  if (!ad) redirect(`${SAYFA}?hata=ad`);
+  if (!ad) redirect(donus(veri, "hata=ad"));
 
   const varMi = await db.size.findUnique({ where: { ad }, select: { id: true } });
-  if (varMi) redirect(`${SAYFA}?hata=tekrar`);
+  if (varMi) redirect(donus(veri, "hata=tekrar"));
 
   const son = await db.size.aggregate({ _max: { sira: true } });
   await db.size.create({
@@ -70,7 +82,7 @@ export async function bedenEkle(veri: FormData): Promise<void> {
   });
 
   vitriniYenile();
-  redirect(`${SAYFA}?kayit=eklendi`);
+  redirect(donus(veri, "kayit=eklendi"));
 }
 
 /**
@@ -86,14 +98,14 @@ export async function bedenKaydet(veri: FormData): Promise<void> {
   const id = String(veri.get("id") ?? "").trim();
   const { ad, boy, kilo, yasKodu } = await alanlar(veri);
   if (!id) redirect(SAYFA);
-  if (!ad) redirect(`${SAYFA}?hata=ad`);
+  if (!ad) redirect(donus(veri, "hata=ad"));
 
   const mevcut = await db.size.findUnique({ where: { id }, select: { ad: true } });
   if (!mevcut) redirect(SAYFA);
 
   if (mevcut.ad !== ad) {
     const cakisma = await db.size.findUnique({ where: { ad }, select: { id: true } });
-    if (cakisma) redirect(`${SAYFA}?hata=tekrar`);
+    if (cakisma) redirect(donus(veri, "hata=tekrar"));
   }
 
   await db.$transaction(async (islem) => {
@@ -109,7 +121,7 @@ export async function bedenKaydet(veri: FormData): Promise<void> {
   });
 
   vitriniYenile();
-  redirect(`${SAYFA}?kayit=kaydedildi`);
+  redirect(donus(veri, "kayit=kaydedildi"));
 }
 
 export async function bedenCevir(veri: FormData): Promise<void> {
@@ -124,13 +136,13 @@ export async function bedenCevir(veri: FormData): Promise<void> {
   // Son açık bedeni kapatmak mağazada satılabilir hiçbir ürün bırakmazdı.
   if (mevcut.aktif) {
     const acikSayisi = await db.size.count({ where: { aktif: true } });
-    if (acikSayisi <= 1) redirect(`${SAYFA}?hata=sonbeden`);
+    if (acikSayisi <= 1) redirect(donus(veri, "hata=sonbeden"));
   }
 
   await db.size.update({ where: { id }, data: { aktif: !mevcut.aktif } });
 
   vitriniYenile();
-  redirect(`${SAYFA}?kayit=${mevcut.aktif ? "kapatildi" : "acildi"}`);
+  redirect(donus(veri, `kayit=${mevcut.aktif ? "kapatildi" : "acildi"}`));
 }
 
 /**
@@ -150,12 +162,12 @@ export async function bedenSil(veri: FormData): Promise<void> {
   if (!beden) redirect(SAYFA);
 
   const kullanim = await db.productVariant.count({ where: { beden: beden.ad } });
-  if (kullanim > 0) redirect(`${SAYFA}?hata=kullanimda&adet=${kullanim}`);
+  if (kullanim > 0) redirect(donus(veri, `hata=kullanimda&adet=${kullanim}`));
 
   await db.size.delete({ where: { id } });
 
   vitriniYenile();
-  redirect(`${SAYFA}?kayit=silindi`);
+  redirect(donus(veri, "kayit=silindi"));
 }
 
 /** Sıralama ok düğmeleriyle: JavaScript'siz çalışıyor. */
@@ -179,5 +191,5 @@ export async function bedenTasi(veri: FormData): Promise<void> {
   );
 
   vitriniYenile();
-  redirect(`${SAYFA}?kayit=sira`);
+  redirect(`${SAYFA}?kayit=sira${tasimaSayfaEki(veri, hedef, "sayfa")}`);
 }

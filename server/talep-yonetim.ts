@@ -15,9 +15,19 @@ import { talebiSonuclandir } from "@/server/talep";
 import { talepCevabiEpostasi } from "@/server/eposta";
 import { talepDurumAdi, turAdi } from "@/ui/talep-bicim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import { formSayfaEki } from "@/ui/sayfalama-bicim";
 
 const SONUCLAR = ["onaylandi", "reddedildi", "tamamlandi"] as const;
 type Sonuc = (typeof SONUCLAR)[number];
+
+const SAYFA = "/yonetim/talepler";
+
+/** İşlem bitince dönülecek adres: seçili süzgeç ve kaldığın sayfa korunuyor (K-67). */
+function donus(form: FormData, ek: string): string {
+  const durum = String(form.get("durum") ?? "").trim();
+  const suzgec = /^[a-z]{1,20}$/.test(durum) ? `&durum=${durum}` : "";
+  return `${SAYFA}?${ek}${suzgec}${formSayfaEki(form)}`;
+}
 
 export async function talebiCevapla(form: FormData): Promise<void> {
   await yoneticiGerekli();
@@ -28,7 +38,7 @@ export async function talebiCevapla(form: FormData): Promise<void> {
   const yeniVaryantId = String(form.get("yeniVaryantId") ?? "").trim() || undefined;
 
   if (!id || !(SONUCLAR as readonly string[]).includes(sonuc)) {
-    redirect("/yonetim/talepler?hata=1");
+    redirect(donus(form, "hata=1"));
   }
 
   const kayit = await db.orderRequest.findUnique({
@@ -40,10 +50,10 @@ export async function talebiCevapla(form: FormData): Promise<void> {
       },
     },
   });
-  if (!kayit) redirect("/yonetim/talepler?hata=1");
+  if (!kayit) redirect(donus(form, "hata=1"));
 
   const sonuclanan = await talebiSonuclandir(id, sonuc as Sonuc, cevap, yeniVaryantId);
-  if (!sonuclanan) redirect("/yonetim/talepler?hata=1");
+  if (!sonuclanan) redirect(donus(form, "hata=1"));
 
   await talepCevabiEpostasi(kayit.order.eposta, {
     numara: kayit.order.numara,
@@ -60,5 +70,5 @@ export async function talebiCevapla(form: FormData): Promise<void> {
   for (const etiket of TUM_ETIKETLER) updateTag(etiket);
   revalidatePath("/", "layout");
 
-  redirect("/yonetim/talepler?kayit=1");
+  redirect(donus(form, "kayit=1"));
 }

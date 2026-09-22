@@ -137,6 +137,16 @@ siparişlerin kaydı değişmiyor. Kullanılan renk silinemiyor — kapatılıyo
 kapalı renk süzgeçten ve formdan düşüyor ama var olan ürünlerde adıyla
 görünmeye devam ediyor. Son açık renk kapatılamıyor (K-66).
 
+**Bütün listeler sayfalı** — panelde bedenler, renkler, yaş grupları,
+kategoriler, ürünler, yorumlar, talepler, iadeler, kampanyalar, kullanıcılar,
+duyurular, afişler, stok ve siparişler; mağazada ürün listesi, arama sonucu,
+ürün sayfasındaki değerlendirmeler ve müşterinin sipariş geçmişi. Sayfa adres
+satırında (`?sayfa=2`), yani JavaScript'siz çalışıyor, geri tuşu işliyor ve
+bağlantı paylaşılabiliyor. Sıralama ok düğmeleri listenin tamamına bakıyor,
+her işlem kaldığın sayfaya dönüyor, süzgeç değişince sayfa sıfırlanıyor.
+Günün işi ekranı kasten sayfasız: o bir liste değil, depoda dolaşırken
+kullanılan toplama listesi (K-67).
+
 **Ödemesi tamamlanmamış ya da iptal edilmiş siparişe kargo etiketi ve fatura
 basılmıyor** — etiket basmak "gönderiyorum" demek, fatura ise satışın
 belgesi. Kural tek modülde (`server/siparis-belge.ts`); bağlantılar

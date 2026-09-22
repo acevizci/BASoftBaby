@@ -22,6 +22,7 @@ import "server-only";
 import { db } from "@/server/veritabani";
 import { ETIKETLER } from "@/server/onbellek";
 import { updateTag } from "next/cache";
+import { sayfaCoz, type SayfaDurumu } from "@/ui/sayfalama-bicim";
 import { renkAdlari } from "@/server/renkler";
 
 export const EN_DUSUK_PUAN = 1;
@@ -44,7 +45,9 @@ export type YorumOzeti = {
   adet: number;
   /** Puan → kaç kişi. 1'den 5'e kadar hepsi var, sıfır olanlar da. */
   dagilim: Record<number, number>;
+  /** Yalnızca görünen sayfanın yorumları. */
   yorumlar: Yorum[];
+  durum: SayfaDurumu;
 };
 
 /** Değerlendirilebilecek bir sipariş satırı. */
@@ -71,11 +74,43 @@ export function adiKisalt(adSoyad: string): string {
 }
 
 /** Bir ürünün yayındaki değerlendirmeleri. */
-export async function urunYorumlari(productId: string): Promise<YorumOzeti> {
+/** Ürün sayfasında bir kerede görünen değerlendirme sayısı. */
+export const YORUM_SAYFA_BOYU = 10;
+
+/**
+ * Bir ürünün yayındaki değerlendirmeleri, sayfalı.
+ *
+ * **Ortalama ve dağılım ayrı sorgudan geliyor.** Eskiden ikisi de ekrana
+ * gelen ilk 50 yorumdan hesaplanıyordu: elli birinci yorumdan sonra
+ * "ortalama" gerçek ortalama olmaktan çıkıyor, dağılım çubukları eksik
+ * sayıyordu. Artık puan dağılımı bütün yorumlar üzerinden sayılıyor, listeye
+ * yalnızca o sayfanın yorumları giriyor (K-67).
+ */
+export async function urunYorumlari(productId: string, sayfa: unknown = 1): Promise<YorumOzeti> {
+  const kosul = { productId, durum: "yayinda" };
+
+  const gruplar = await db.review.groupBy({
+    by: ["puan"],
+    where: kosul,
+    _count: { _all: true },
+  });
+
+  const dagilim: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  let adet = 0;
+  let toplam = 0;
+  for (const g of gruplar) {
+    dagilim[g.puan] = g._count._all;
+    adet += g._count._all;
+    toplam += g.puan * g._count._all;
+  }
+
+  const durum = sayfaCoz(sayfa, adet, YORUM_SAYFA_BOYU);
+
   const yorumlar = await db.review.findMany({
-    where: { productId, durum: "yayinda" },
+    where: kosul,
     orderBy: { olusturuldu: "desc" },
-    take: 50,
+    skip: durum.atla,
+    take: durum.boy,
     select: {
       id: true,
       adSoyad: true,
@@ -86,16 +121,12 @@ export async function urunYorumlari(productId: string): Promise<YorumOzeti> {
     },
   });
 
-  const dagilim: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-  for (const y of yorumlar) dagilim[y.puan] = (dagilim[y.puan] ?? 0) + 1;
-
-  const toplam = yorumlar.reduce((t, y) => t + y.puan, 0);
-
   return {
-    ortalama: yorumlar.length > 0 ? toplam / yorumlar.length : 0,
-    adet: yorumlar.length,
+    ortalama: adet > 0 ? toplam / adet : 0,
+    adet,
     dagilim,
     yorumlar,
+    durum,
   };
 }
 

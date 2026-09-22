@@ -357,10 +357,21 @@ export async function buHesabaBagliMi(customerId: string, numara: string): Promi
   return kayit !== null;
 }
 
-export async function siparislerimiGetir(customerId: string): Promise<SiparisOzeti[]> {
+/** Müşterinin sipariş adedi; sayfalama için (K-67). */
+export async function siparisAdedim(customerId: string): Promise<number> {
+  return db.order.count({ where: { customerId } });
+}
+
+export async function siparislerimiGetir(
+  customerId: string,
+  atla = 0,
+  adet?: number,
+): Promise<SiparisOzeti[]> {
   const kayitlar = await db.order.findMany({
     where: { customerId },
     orderBy: { olusturuldu: "desc" },
+    skip: atla,
+    ...(adet === undefined ? {} : { take: adet }),
     select: {
       numara: true,
       durum: true,

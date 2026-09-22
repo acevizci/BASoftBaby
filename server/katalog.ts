@@ -20,6 +20,7 @@ import { bedenSirasi, sonSira, yasGrubununBedenleri } from "@/server/bedenler";
 import { tumRenkSecenekleri } from "@/server/renkler";
 import { ETIKETLER, paylasilanOnbellek, paylasilanOnbellekli } from "@/server/onbellek";
 import { kelimeler } from "@/server/arama-metin";
+import { dilimle, sayfaCoz, type SayfaDurumu } from "@/ui/sayfalama-bicim";
 
 export * from "@/ui/katalog-bicim";
 
@@ -202,6 +203,25 @@ export async function urunGetir(slug: string): Promise<Urun | undefined> {
   ]);
   if (!satir || !satir.aktif) return undefined;
   return urunYap(satir as SatirTipi, kampanyalar, sira, renkSecenekleri);
+}
+
+/**
+ * Sayfalanmış ürün listesi.
+ *
+ * **Dilimleme sorguda değil bellekte.** Sıralama kampanyalar uygulandıktan
+ * sonra yapılıyor (aşağıdaki `sirala`): "önce ucuz" listesinde müşterinin
+ * gördüğü indirimli fiyat geçerli. Veritabanına `skip`/`take` verilseydi
+ * sıralama liste fiyatına göre yapılmış olur, indirimli ürünler yanlış
+ * sayfaya düşerdi. Liste zaten önbellekte duruyor (K-67).
+ */
+export async function urunSayfasi(
+  suzgec: UrunSuzgeci = {},
+  sayfa: unknown = 1,
+  boy = 24,
+): Promise<{ urunler: Urun[]; durum: SayfaDurumu }> {
+  const hepsi = await urunleriGetir(suzgec);
+  const durum = sayfaCoz(sayfa, hepsi.length, boy);
+  return { urunler: dilimle(hepsi, durum), durum };
 }
 
 export type UrunSuzgeci = {

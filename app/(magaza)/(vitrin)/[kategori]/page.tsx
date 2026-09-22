@@ -6,11 +6,13 @@ import {
   SIRALAMALAR,
   SIRALAMA_ADLARI,
   kategoriGetir,
-  urunleriGetir,
+  urunSayfasi,
 } from "@/server/katalog";
 import { bedenler as bedenleriGetir } from "@/server/bedenler";
 import { yasGruplari } from "@/server/yas-gruplari";
 import { renkSecenekleri } from "@/server/renkler";
+import Sayfalama from "@/ui/sayfalama";
+import { sayfaAdresi, sayfaNo } from "@/ui/sayfalama-bicim";
 
 /** "urunler" gerçek bir kategori değil; tüm katalogu gösteren liste. */
 const TUMU = "urunler";
@@ -21,28 +23,58 @@ const FIYAT_ARALIKLARI = [
   { etiket: "700 ₺ altı", kurus: 70000 },
 ];
 
-type Aranan = { yas?: string; beden?: string; renk?: string; fiyat?: string; sirala?: string };
+type Aranan = {
+  yas?: string;
+  beden?: string;
+  renk?: string;
+  fiyat?: string;
+  sirala?: string;
+  sayfa?: string;
+};
+
+/** Izgara iki ya da üç sütun; 24 ürün her ikisinde de tam sıra yapıyor. */
+const IZGARA_BOYU = 24;
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: PageProps<"/[kategori]">): Promise<Metadata> {
   const { kategori } = await params;
+  const { sayfa } = (await searchParams) as Aranan;
+
   // Süzgeçler canonical adrese girmiyor: aynı listenin onlarca kopyası
-  // dizine girip birbirinin sırasını yemesin.
+  // dizine girip birbirinin sırasını yemesin. **Sayfa numarası giriyor**:
+  // ikinci sayfa başka ürünler gösteriyor, birincinin kopyası değil (K-67).
+  const n = sayfaNo(sayfa);
+  const ek = (yol: string) => sayfaAdresi(yol, n);
+
   if (kategori === TUMU) {
-    return { title: "Tüm ürünler", alternates: { canonical: `/${TUMU}` } };
+    return {
+      title: n > 1 ? `Tüm ürünler · sayfa ${n}` : "Tüm ürünler",
+      alternates: { canonical: ek(`/${TUMU}`) },
+    };
   }
   const k = await kategoriGetir(kategori);
   return k
-    ? { title: k.ad, description: k.aciklama, alternates: { canonical: `/${k.slug}` } }
+    ? {
+        title: n > 1 ? `${k.ad} · sayfa ${n}` : k.ad,
+        description: k.aciklama,
+        alternates: { canonical: ek(`/${k.slug}`) },
+      }
     : {};
 }
 
-/** Bir süzgeci açıp kapatan bağlantı adresini üretir. */
+/**
+ * Bir süzgeci açıp kapatan bağlantı adresini üretir.
+ *
+ * Sayfa numarası kasten taşınmıyor: süzgeci değiştiren kişi yeni bir liste
+ * istiyor, o listenin yedinci sayfasını değil — hem de çoğu zaman o kadar
+ * sayfa hiç olmuyor (K-67).
+ */
 function baglanti(kategori: string, aranan: Aranan, alan: keyof Aranan, deger: string): string {
   const yeni = new URLSearchParams();
   for (const [ad, d] of Object.entries(aranan)) {
-    if (d) yeni.set(ad, d);
+    if (d && ad !== "sayfa") yeni.set(ad, d);
   }
   if (yeni.get(alan) === deger) yeni.delete(alan);
   else yeni.set(alan, deger);
@@ -86,14 +118,29 @@ export default async function KategoriSayfasi({
   if (!tumu && !bilgi) notFound();
 
   const enFazlaKurus = aranan.fiyat ? Number(aranan.fiyat) : undefined;
-  const urunler = await urunleriGetir({
-    kategori: tumu ? undefined : kategori,
-    yas: aranan.yas,
-    beden: aranan.beden,
-    renk: aranan.renk,
-    enFazlaKurus: Number.isFinite(enFazlaKurus) ? enFazlaKurus : undefined,
-    sirala: aranan.sirala,
-  });
+  const { urunler, durum } = await urunSayfasi(
+    {
+      kategori: tumu ? undefined : kategori,
+      yas: aranan.yas,
+      beden: aranan.beden,
+      renk: aranan.renk,
+      enFazlaKurus: Number.isFinite(enFazlaKurus) ? enFazlaKurus : undefined,
+      sirala: aranan.sirala,
+    },
+    aranan.sayfa,
+    IZGARA_BOYU,
+  );
+
+  // Sayfa bağlantısı açık süzgeçleri koruyor: üçüncü sayfaya geçerken
+  // "mavi" seçimi düşmemeli.
+  const sayfaBaglantisi = (n: number) => {
+    const sorgu = new URLSearchParams();
+    for (const [ad, d] of Object.entries(aranan)) {
+      if (d && ad !== "sayfa") sorgu.set(ad, d);
+    }
+    const temel = `/${kategori}${sorgu.toString() ? `?${sorgu}` : ""}`;
+    return sayfaAdresi(temel, n);
+  };
 
   const suzgecVar = Boolean(aranan.yas || aranan.beden || aranan.renk || aranan.fiyat);
   const [bedenSecenekleri, yasSecenekleri, renkler] = await Promise.all([
@@ -214,7 +261,7 @@ export default async function KategoriSayfasi({
 
         <div>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="rakam text-sm text-metin-3">{urunler.length} ürün listeleniyor</p>
+            <p className="rakam text-sm text-metin-3">{durum.toplam} ürün listeleniyor</p>
 
             {/* Sıralama da bağlantı: süzgeçlerle aynı düzen, JavaScript
                 kapalıyken de çalışıyor. */}
@@ -240,7 +287,7 @@ export default async function KategoriSayfasi({
             </div>
           </div>
 
-          {urunler.length === 0 ? (
+          {durum.toplam === 0 ? (
             <div className="mt-4 rounded-marka border border-cizgi bg-yuzey p-8 text-center">
               <p className="font-baslik text-lg font-bold">Bu seçimle ürün bulunamadı</p>
               <p className="mt-2 text-sm text-metin-2">
@@ -260,6 +307,10 @@ export default async function KategoriSayfasi({
               ))}
             </div>
           )}
+
+          <div className="mt-8">
+            <Sayfalama durum={durum} birim="ürün" adres={sayfaBaglantisi} />
+          </div>
         </div>
       </div>
     </div>

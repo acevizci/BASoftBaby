@@ -2,7 +2,15 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import UrunKarti from "@/ui/urun-karti";
 import AramaKutusu from "@/ui/arama-kutusu";
-import { SIRALAMALAR, SIRALAMA_ADLARI, kategorileriGetir, urunleriGetir } from "@/server/katalog";
+import {
+  SIRALAMALAR,
+  SIRALAMA_ADLARI,
+  kategorileriGetir,
+  urunSayfasi,
+  urunleriGetir,
+} from "@/server/katalog";
+import Sayfalama from "@/ui/sayfalama";
+import { sayfaAdresi } from "@/ui/sayfalama-bicim";
 
 export const dynamic = "force-dynamic";
 
@@ -15,20 +23,33 @@ export const metadata: Metadata = {
 
 const ROZET = "rounded-full border px-3 py-1.5 text-xs font-bold transition";
 
+/** Sonuç ızgarası dört sütuna kadar çıkıyor; 24 her genişlikte tam sıra. */
+const IZGARA_BOYU = 24;
+
+/** Sonuç yokken sayfalama da olmamalı; boş bir durum nesnesi. */
+const BOS_DURUM = { sayfa: 1, sonSayfa: 1, atla: 0, boy: IZGARA_BOYU, toplam: 0 };
+
 export default async function AramaSayfasi({ searchParams }: PageProps<"/arama">) {
   const aranan = await searchParams;
   const q = typeof aranan.q === "string" ? aranan.q.slice(0, 100) : "";
   const kategori = typeof aranan.kategori === "string" ? aranan.kategori : undefined;
   const siralama = typeof aranan.sirala === "string" ? aranan.sirala : undefined;
 
-  const [sonuclar, kategoriler] = await Promise.all([
-    q ? urunleriGetir({ ara: q, kategori, sirala: siralama }) : Promise.resolve([]),
+  const [sayfali, kategoriler] = await Promise.all([
+    q
+      ? urunSayfasi({ ara: q, kategori, sirala: siralama }, aranan.sayfa, IZGARA_BOYU)
+      : Promise.resolve({ urunler: [], durum: BOS_DURUM }),
     kategorileriGetir(),
   ]);
+  const sonuclar = sayfali.urunler;
+  const durum = sayfali.durum;
 
   // Kategori rozetleri yalnızca sonucu olan kategorileri gösteriyor; boş bir
   // daraltmayı tıklatmanın anlamı yok.
-  const hepsi = q && kategori ? await urunleriGetir({ ara: q }) : sonuclar;
+  // Kategori rozetlerindeki sayılar bütün sonuçtan geliyor, sayfadakinden
+  // değil: "bu kategoride 3" yazarken ekrandaki üç kartı değil gerçek sayıyı
+  // söylemeli (K-67).
+  const hepsi = q ? await urunleriGetir({ ara: q }) : [];
   const sayilar = new Map<string, number>();
   for (const u of hepsi) sayilar.set(u.kategori, (sayilar.get(u.kategori) ?? 0) + 1);
 
@@ -58,10 +79,10 @@ export default async function AramaSayfasi({ searchParams }: PageProps<"/arama">
         <>
           <p className="mt-4 text-sm text-metin-2">
             <span className="rakam font-bold">{hepsi.length}</span> ürün bulundu
-            {kategori && sonuclar.length !== hepsi.length && (
+            {kategori && durum.toplam !== hepsi.length && (
               <span className="text-metin-3">
                 {" "}
-                · bu kategoride <span className="rakam">{sonuclar.length}</span>
+                · bu kategoride <span className="rakam">{durum.toplam}</span>
               </span>
             )}
           </p>
@@ -96,7 +117,7 @@ export default async function AramaSayfasi({ searchParams }: PageProps<"/arama">
             </div>
           )}
 
-          {sonuclar.length > 1 && (
+          {durum.toplam > 1 && (
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
               <span className="text-xs text-metin-3">Sırala:</span>
               {SIRALAMALAR.map((sr) => {
@@ -119,7 +140,7 @@ export default async function AramaSayfasi({ searchParams }: PageProps<"/arama">
             </div>
           )}
 
-          {sonuclar.length === 0 ? (
+          {durum.toplam === 0 ? (
             <div className="mt-6 rounded-marka border border-cizgi bg-yuzey p-6">
               <p className="text-sm font-bold">Bu aramaya uyan ürün bulunamadı.</p>
               <p className="mt-1 text-sm text-metin-2">
@@ -141,6 +162,14 @@ export default async function AramaSayfasi({ searchParams }: PageProps<"/arama">
               ))}
             </div>
           )}
+
+          <div className="mt-8">
+            <Sayfalama
+              durum={durum}
+              birim="ürün"
+              adres={(n) => sayfaAdresi(adres(kategori, siralama), n)}
+            />
+          </div>
         </>
       )}
     </div>

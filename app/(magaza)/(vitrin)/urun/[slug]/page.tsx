@@ -44,14 +44,14 @@ export default async function UrunSayfasi({
 }: PageProps<"/urun/[slug]">) {
   const { slug } = await params;
   // "Stoka girince haber ver" formunun sonucu adres satırında dönüyor.
-  const { bildirim, renk } = await searchParams;
+  const { bildirim, renk, yorumSayfa } = await searchParams;
   const urun = await urunGetir(slug);
   if (!urun) notFound();
 
   const [kategori, benzerler, yorumOzeti] = await Promise.all([
     kategoriGetir(urun.kategori),
     benzerUrunler(urun),
-    urunYorumlari(urun.id),
+    urunYorumlari(urun.id, yorumSayfa),
   ]);
   const bedenler = urununBedenleri(urun);
   // Boy-kilo bilgisi istemci bileşenine sunucudan geçiyor: bedenler artık
@@ -197,7 +197,7 @@ export default async function UrunSayfasi({
         </div>
       </div>
 
-      <YorumListesi ozet={yorumOzeti} />
+      <YorumListesi ozet={yorumOzeti} slug={urun.slug} renk={seciliRenk} />
 
       <section className="mt-14">
         <h2 className="text-xl">Bunlara da bakabilirsin</h2>

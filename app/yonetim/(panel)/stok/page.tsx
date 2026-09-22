@@ -12,6 +12,7 @@ import {
 } from "@/server/stok-ekrani";
 import { bedenSirasi, sonSira } from "@/server/bedenler";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import Sayfalama from "@/ui/sayfalama";
 
 export const dynamic = "force-dynamic";
 
@@ -154,26 +155,18 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
             </button>
           </form>
 
-          {sonSayfa > 1 && (
-            <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-              <p className="text-metin-3">
-                Sayfa <span className="rakam font-bold">{sayfa}</span> /{" "}
-                <span className="rakam">{sonSayfa}</span> · sayfada {SAYFA_BOYU} ürün
-              </p>
-              <div className="flex gap-2">
-                <Sayfa
-                  yazi="← Önceki"
-                  adres={stokAdresi({ ...suzgec, sayfa: sayfa - 1 })}
-                  acik={sayfa > 1}
-                />
-                <Sayfa
-                  yazi="Sonraki →"
-                  adres={stokAdresi({ ...suzgec, sayfa: sayfa + 1 })}
-                  acik={sayfa < sonSayfa}
-                />
-              </div>
-            </div>
-          )}
+          {/* Sayfa çubuğu ortak bileşen (K-67). */}
+          <Sayfalama
+            durum={{
+              sayfa,
+              sonSayfa,
+              atla: (sayfa - 1) * SAYFA_BOYU,
+              boy: SAYFA_BOYU,
+              toplam: toplamAdet,
+            }}
+            birim="ürün"
+            adres={(n) => stokAdresi({ ...suzgec, sayfa: n })}
+          />
         </>
       )}
     </div>
@@ -295,16 +288,3 @@ function Bedenler({ bedenler }: { bedenler: StokBedeni[] }) {
   );
 }
 
-function Sayfa({ yazi, adres, acik }: { yazi: string; adres: string; acik: boolean }) {
-  if (!acik) {
-    return <span className={`${ROZET} border-cizgi text-metin-3 opacity-40`}>{yazi}</span>;
-  }
-  return (
-    <Link
-      href={adres}
-      className={`${ROZET} border-cizgi text-metin-2 hover:border-mercan hover:text-metin`}
-    >
-      {yazi}
-    </Link>
-  );
-}

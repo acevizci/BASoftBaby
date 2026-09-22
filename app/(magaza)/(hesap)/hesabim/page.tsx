@@ -1,13 +1,18 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { girisYapan, siparislerimiGetir } from "@/server/uyelik";
+import { girisYapan, siparisAdedim, siparislerimiGetir } from "@/server/uyelik";
+import Sayfalama from "@/ui/sayfalama";
+import { sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import { durumAdi, durumRengi, odemeAdi } from "@/ui/siparis-bicim";
 import { BILDIRIMLER, IYI_KUTU, KART } from "../hesap-bicim";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Siparişlerim", robots: { index: false } };
+
+/** Sipariş satırı iki satırlık; sayfa başına bu kadarı rahat okunuyor. */
+const LISTE_BOYU = 10;
 
 function tarihYaz(t: Date): string {
   return t.toLocaleDateString("tr-TR", { dateStyle: "long" });
@@ -25,8 +30,11 @@ export default async function SiparislerimSayfasi({ searchParams }: PageProps<"/
   const musteri = await girisYapan();
   if (!musteri) redirect("/giris?hata=giris&nereye=%2Fhesabim");
 
-  const { kayit, baglanan } = await searchParams;
-  const siparisler = await siparislerimiGetir(musteri.id);
+  const { kayit, baglanan, sayfa } = await searchParams;
+  const toplamAdet = await siparisAdedim(musteri.id);
+  const durum = sayfaCoz(sayfa, toplamAdet, LISTE_BOYU);
+  const siparisler = await siparislerimiGetir(musteri.id, durum.atla, durum.boy);
+  const adres = (n: number) => sayfaAdresi("/hesabim", n);
 
   const bildirim = typeof kayit === "string" ? BILDIRIMLER[kayit] : undefined;
   // Doğrulamadan sonra kaç eski siparişin bağlandığını söylüyoruz; müşteri
@@ -48,7 +56,7 @@ export default async function SiparislerimSayfasi({ searchParams }: PageProps<"/
 
       <h2 className="mt-4 text-lg">Siparişlerim</h2>
 
-      {siparisler.length === 0 ? (
+      {toplamAdet === 0 ? (
         <div className={`mt-4 ${KART}`}>
           <p className="text-sm text-metin-2">
             Hesabınla verilmiş bir siparişin henüz yok.
@@ -107,6 +115,10 @@ export default async function SiparislerimSayfasi({ searchParams }: PageProps<"/
           ))}
         </ul>
       )}
+
+      <div className="mt-6">
+        <Sayfalama durum={durum} birim="sipariş" adres={adres} />
+      </div>
     </section>
   );
 }

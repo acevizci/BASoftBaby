@@ -30,8 +30,14 @@ import { iadeKaydiAc, iadeyiBasarisizIsaretle, iadeyiTamamla } from "@/server/ia
 import { kartIadesiYap } from "@/server/odeme-iade";
 import { iadeYapildiEpostasi } from "@/server/eposta";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import { formSayfaEki } from "@/ui/sayfalama-bicim";
 
 const SAYFA = "/yonetim/iadeler";
+
+/** İşlem bitince dönülecek adres; kaldığın sayfa korunuyor (K-67). */
+function donus(form: FormData, ek: string): string {
+  return `${SAYFA}?${ek}${formSayfaEki(form)}`;
+}
 
 function vitriniYenile() {
   for (const etiket of TUM_ETIKETLER) updateTag(etiket);
@@ -54,7 +60,7 @@ export async function iadeyiIsaretle(form: FormData): Promise<void> {
 
   const id = String(form.get("id") ?? "").trim();
   const ref = String(form.get("saglayiciRef") ?? "").trim().slice(0, 200);
-  if (!id) redirect(`${SAYFA}?hata=bulunamadi`);
+  if (!id) redirect(donus(form, "hata=bulunamadi"));
 
   const kayit = await db.refund.findUnique({
     where: { id },
@@ -69,12 +75,12 @@ export async function iadeyiIsaretle(form: FormData): Promise<void> {
     saglayiciRef: ref || undefined,
     yapanId: yonetici.id,
   });
-  if (!sonuc) redirect(`${SAYFA}?hata=bulunamadi`);
+  if (!sonuc) redirect(donus(form, "hata=bulunamadi"));
 
   if (kayit) await musteriyeBildir(kayit);
 
   vitriniYenile();
-  redirect(`${SAYFA}?kayit=tamamlandi`);
+  redirect(donus(form, "kayit=tamamlandi"));
 }
 
 /** Kart iadesi: iyzico'ya gönderiliyor. */
@@ -82,21 +88,21 @@ export async function karttanIadeEt(form: FormData): Promise<void> {
   const yonetici = await yoneticiGerekli();
 
   const id = String(form.get("id") ?? "").trim();
-  if (!id) redirect(`${SAYFA}?hata=bulunamadi`);
+  if (!id) redirect(donus(form, "hata=bulunamadi"));
 
   const kayit = await db.refund.findUnique({
     where: { id },
     select: { id: true, orderId: true, tutarKurus: true, durum: true },
   });
-  if (!kayit) redirect(`${SAYFA}?hata=bulunamadi`);
-  if (kayit.durum === "tamamlandi") redirect(`${SAYFA}?kayit=zaten`);
+  if (!kayit) redirect(donus(form, "hata=bulunamadi"));
+  if (kayit.durum === "tamamlandi") redirect(donus(form, "kayit=zaten"));
 
   const sonuc = await kartIadesiYap(kayit.orderId, kayit.tutarKurus, await istekAdresi());
 
   if (!sonuc.tamam) {
     await iadeyiBasarisizIsaretle(id, sonuc.hata);
     vitriniYenile();
-    redirect(`${SAYFA}?hata=saglayici`);
+    redirect(donus(form, "hata=saglayici"));
   }
 
   await iadeyiTamamla(id, { saglayiciRef: sonuc.saglayiciRef, yapanId: yonetici.id });
@@ -112,7 +118,7 @@ export async function karttanIadeEt(form: FormData): Promise<void> {
   if (bilgi) await musteriyeBildir(bilgi);
 
   vitriniYenile();
-  redirect(`${SAYFA}?kayit=kart`);
+  redirect(donus(form, "kayit=kart"));
 }
 
 /** Panelden elle iade kaydı: talepten doğmayan iadeler için. */
@@ -124,21 +130,21 @@ export async function elleIadeAc(form: FormData): Promise<void> {
   const aciklama = String(form.get("aciklama") ?? "").trim();
 
   const tutarKurus = Math.round(Number(lira) * 100);
-  if (!numara) redirect(`${SAYFA}?hata=numara`);
-  if (!Number.isFinite(tutarKurus) || tutarKurus <= 0) redirect(`${SAYFA}?hata=tutar`);
+  if (!numara) redirect(donus(form, "hata=numara"));
+  if (!Number.isFinite(tutarKurus) || tutarKurus <= 0) redirect(donus(form, "hata=tutar"));
 
   const siparis = await db.order.findUnique({
     where: { numara },
     select: { id: true, toplamKurus: true },
   });
-  if (!siparis) redirect(`${SAYFA}?hata=siparis-yok`);
-  if (tutarKurus > siparis.toplamKurus) redirect(`${SAYFA}?hata=fazla`);
+  if (!siparis) redirect(donus(form, "hata=siparis-yok"));
+  if (tutarKurus > siparis.toplamKurus) redirect(donus(form, "hata=fazla"));
 
   const kayit = await iadeKaydiAc(siparis.id, tutarKurus, { aciklama });
-  if (!kayit) redirect(`${SAYFA}?hata=odenmemis`);
+  if (!kayit) redirect(donus(form, "hata=odenmemis"));
 
   vitriniYenile();
-  redirect(`${SAYFA}?kayit=acildi`);
+  redirect(donus(form, "kayit=acildi"));
 }
 
 /**

@@ -4,11 +4,16 @@ import { topluUrunIslemi } from "@/server/yonetim";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
+import Sayfalama, { SayfaAlani } from "@/ui/sayfalama";
+import { sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
 import PanelBildirim, { ORTAK_HATALAR } from "@/ui/panel-bildirim";
 
 export const dynamic = "force-dynamic";
 
 const ROZET = "rounded-full border px-3 py-1.5 text-xs font-bold transition";
+
+/** Ürün satırı fotoğraflı ve yüksek; sayfada bu kadarı rahat okunuyor. */
+const LISTE_BOYU = 20;
 const ISLEM_DUGMESI =
   "rounded-full border border-cizgi bg-yuzey px-3 py-1.5 text-xs font-bold text-metin-2 transition hover:border-metin-3";
 
@@ -34,12 +39,19 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { eksik, toplu, adet, atlanan, kayit, hata } = await searchParams;
+  const { eksik, toplu, adet, atlanan, kayit, hata, sayfa } = await searchParams;
   const fotografsizSuzgeci = eksik === "fotograf";
+  const kosul = fotografsizSuzgeci ? { images: { none: {} } } : {};
+
+  // Liste eskiden bütün ürünleri varyantları ve fotoğraf sayılarıyla birlikte
+  // çekiyordu; katalog büyüdükçe bu sayfa en pahalı sorgu oluyordu. Artık
+  // yalnızca görünen sayfa okunuyor (K-67).
+  const toplamAdet = await db.product.count({ where: kosul });
+  const durum = sayfaCoz(sayfa, toplamAdet, LISTE_BOYU);
 
   const [urunler, fotografsizAdedi] = await Promise.all([
     db.product.findMany({
-      where: fotografsizSuzgeci ? { images: { none: {} } } : {},
+      where: kosul,
       include: {
         category: true,
         variants: true,
@@ -47,9 +59,14 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
         _count: { select: { images: true } },
       },
       orderBy: { olusturuldu: "asc" },
+      skip: durum.atla,
+      take: durum.boy,
     }),
     db.product.count({ where: { images: { none: {} } } }),
   ]);
+
+  const adres = (n: number) =>
+    sayfaAdresi(fotografsizSuzgeci ? "/yonetim/urunler?eksik=fotograf" : "/yonetim/urunler", n);
 
   return (
     <div className="flex flex-col gap-5">
@@ -126,6 +143,8 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
       {/* Toplu işlem formu; tablo da içinde. Düz HTML, JavaScript yok. */}
       <form action={topluUrunIslemi} className="flex flex-col gap-3">
         <input type="hidden" name="eksik" value={fotografsizSuzgeci ? "fotograf" : ""} />
+        {/* Toplu işlemden sonra kaldığın sayfaya dönülüyor. */}
+        <SayfaAlani sayfa={durum.sayfa} />
 
       <div className="overflow-x-auto rounded-marka border border-cizgi bg-yuzey">
         <table className="w-full min-w-[800px] text-sm">
@@ -253,8 +272,14 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
         )}
       </form>
 
-      {urunler.length === 0 && (
-        <p className="text-sm text-metin-2">Henüz ürün yok. Sağ üstten ekleyebilirsin.</p>
+      <Sayfalama durum={durum} birim="ürün" adres={adres} />
+
+      {toplamAdet === 0 && (
+        <p className="text-sm text-metin-2">
+          {fotografsizSuzgeci
+            ? "Fotoğrafsız ürün kalmadı."
+            : "Henüz ürün yok. Sağ üstten ekleyebilirsin."}
+        </p>
       )}
     </div>
   );

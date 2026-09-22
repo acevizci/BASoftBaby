@@ -22,8 +22,14 @@ import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
 import { TUM_ETIKETLER } from "@/server/onbellek";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import { formSayfaEki, tasimaSayfaEki } from "@/ui/sayfalama-bicim";
 
 const SAYFA = "/yonetim/renkler";
+
+/** İşlem bitince dönülecek adres; kaldığın sayfa korunuyor (K-67). */
+function donus(veri: FormData, ek: string): string {
+  return `${SAYFA}?${ek}${formSayfaEki(veri)}`;
+}
 
 function vitriniYenile() {
   for (const etiket of TUM_ETIKETLER) updateTag(etiket);
@@ -84,11 +90,11 @@ export async function renkEkle(veri: FormData): Promise<void> {
   await yoneticiGerekli();
 
   const { kod, ad, zemin, c1, c2, c3 } = alanlar(veri);
-  if (!kod) redirect(`${SAYFA}?hata=kod`);
-  if (!ad) redirect(`${SAYFA}?hata=ad`);
+  if (!kod) redirect(donus(veri, "hata=kod"));
+  if (!ad) redirect(donus(veri, "hata=ad"));
 
   const varMi = await db.color.findUnique({ where: { kod }, select: { id: true } });
-  if (varMi) redirect(`${SAYFA}?hata=tekrar`);
+  if (varMi) redirect(donus(veri, "hata=tekrar"));
 
   const son = await db.color.aggregate({ _max: { sira: true } });
   await db.color.create({
@@ -96,7 +102,7 @@ export async function renkEkle(veri: FormData): Promise<void> {
   });
 
   vitriniYenile();
-  redirect(`${SAYFA}?kayit=eklendi`);
+  redirect(donus(veri, "kayit=eklendi"));
 }
 
 /**
@@ -116,15 +122,15 @@ export async function renkKaydet(veri: FormData): Promise<void> {
     where: { id },
     select: { kod: true, zemin: true, c1: true, c2: true, c3: true },
   });
-  if (!mevcut) redirect(`${SAYFA}?hata=bulunamadi`);
+  if (!mevcut) redirect(donus(veri, "hata=bulunamadi"));
 
   const { kod, ad, zemin, c1, c2, c3 } = alanlar(veri, mevcut);
-  if (!kod) redirect(`${SAYFA}?hata=kod`);
-  if (!ad) redirect(`${SAYFA}?hata=ad`);
+  if (!kod) redirect(donus(veri, "hata=kod"));
+  if (!ad) redirect(donus(veri, "hata=ad"));
 
   if (mevcut.kod !== kod) {
     const cakisma = await db.color.findUnique({ where: { kod }, select: { id: true } });
-    if (cakisma) redirect(`${SAYFA}?hata=tekrar`);
+    if (cakisma) redirect(donus(veri, "hata=tekrar"));
   }
 
   await db.$transaction(async (islem) => {
@@ -150,7 +156,7 @@ export async function renkKaydet(veri: FormData): Promise<void> {
   });
 
   vitriniYenile();
-  redirect(`${SAYFA}?kayit=kaydedildi`);
+  redirect(donus(veri, "kayit=kaydedildi"));
 }
 
 export async function renkCevir(veri: FormData): Promise<void> {
@@ -160,18 +166,18 @@ export async function renkCevir(veri: FormData): Promise<void> {
   if (!id) redirect(SAYFA);
 
   const mevcut = await db.color.findUnique({ where: { id }, select: { aktif: true } });
-  if (!mevcut) redirect(`${SAYFA}?hata=bulunamadi`);
+  if (!mevcut) redirect(donus(veri, "hata=bulunamadi"));
 
   // Son açık rengi kapatmak ürüne varyant eklenemez hâle getirirdi.
   if (mevcut.aktif) {
     const acikSayisi = await db.color.count({ where: { aktif: true } });
-    if (acikSayisi <= 1) redirect(`${SAYFA}?hata=sonrenk`);
+    if (acikSayisi <= 1) redirect(donus(veri, "hata=sonrenk"));
   }
 
   await db.color.update({ where: { id }, data: { aktif: !mevcut.aktif } });
 
   vitriniYenile();
-  redirect(`${SAYFA}?kayit=${mevcut.aktif ? "kapatildi" : "acildi"}`);
+  redirect(donus(veri, `kayit=${mevcut.aktif ? "kapatildi" : "acildi"}`));
 }
 
 /**
@@ -187,7 +193,7 @@ export async function renkSil(veri: FormData): Promise<void> {
   if (!id) redirect(SAYFA);
 
   const renk = await db.color.findUnique({ where: { id }, select: { kod: true } });
-  if (!renk) redirect(`${SAYFA}?hata=bulunamadi`);
+  if (!renk) redirect(donus(veri, "hata=bulunamadi"));
 
   const [varyant, fotograf, urun, afis] = await Promise.all([
     db.productVariant.count({ where: { renk: renk.kod } }),
@@ -196,12 +202,12 @@ export async function renkSil(veri: FormData): Promise<void> {
     db.heroBanner.count({ where: { palet: renk.kod } }),
   ]);
   const kullanim = varyant + fotograf + urun + afis;
-  if (kullanim > 0) redirect(`${SAYFA}?hata=kullanimda&adet=${kullanim}`);
+  if (kullanim > 0) redirect(donus(veri, `hata=kullanimda&adet=${kullanim}`));
 
   await db.color.delete({ where: { id } });
 
   vitriniYenile();
-  redirect(`${SAYFA}?kayit=silindi`);
+  redirect(donus(veri, "kayit=silindi"));
 }
 
 /** Sıralama ok düğmeleriyle: JavaScript'siz çalışıyor. */
@@ -225,5 +231,5 @@ export async function renkTasi(veri: FormData): Promise<void> {
   );
 
   vitriniYenile();
-  redirect(`${SAYFA}?kayit=sira`);
+  redirect(`${SAYFA}?kayit=sira${tasimaSayfaEki(veri, hedef)}`);
 }

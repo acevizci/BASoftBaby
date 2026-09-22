@@ -10,10 +10,15 @@ import {
   turAdi,
 } from "@/ui/talep-bicim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import Sayfalama, { SayfaAlani } from "@/ui/sayfalama";
+import { sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
 
 export const dynamic = "force-dynamic";
 
 const KART = "rounded-marka border border-cizgi bg-yuzey p-5";
+
+/** Talep kartı yüksek: sipariş bilgisi, satırlar ve yanıt formu taşıyor. */
+const LISTE_BOYU = 15;
 const GIRDI =
   "rounded-[10px] border-[1.5px] border-cizgi bg-yuzey px-3 py-2 text-sm text-metin outline-none focus:border-mercan";
 const ROZET = "rounded-full border px-3 py-1.5 text-xs font-bold transition";
@@ -28,7 +33,7 @@ export default async function TalepEkrani({ searchParams }: PageProps<"/yonetim/
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { durum, kayit, hata } = await searchParams;
+  const { durum, kayit, hata, sayfa } = await searchParams;
   const secili = typeof durum === "string" ? durum : "acik";
   const adlar = await renkAdlari();
 
@@ -39,10 +44,17 @@ export default async function TalepEkrani({ searchParams }: PageProps<"/yonetim/
         ? { durum: { in: ["yeni", "onaylandi"] } }
         : { durum: secili };
 
+  // Liste eskiden ilk 100 talepte kesiliyor, gerisi hiçbir yerden
+  // görünmüyordu (K-67).
+  const toplamAdet = await db.orderRequest.count({ where: kosul });
+  const sayfaDurumu = sayfaCoz(sayfa, toplamAdet, LISTE_BOYU);
+  const adres = (n: number) => sayfaAdresi(`/yonetim/talepler?durum=${secili}`, n);
+
   const talepler = await db.orderRequest.findMany({
     where: kosul,
     orderBy: [{ durum: "asc" }, { olusturuldu: "desc" }],
-    take: 100,
+    skip: sayfaDurumu.atla,
+    take: sayfaDurumu.boy,
     select: {
       id: true,
       tur: true,
@@ -144,7 +156,7 @@ export default async function TalepEkrani({ searchParams }: PageProps<"/yonetim/
         ))}
       </div>
 
-      {talepler.length === 0 ? (
+      {toplamAdet === 0 ? (
         <p className={`${KART} text-center text-sm text-metin-2`}>
           {secili === "acik" ? "Bekleyen talep yok." : "Bu durumda talep yok."}
         </p>
@@ -217,6 +229,8 @@ export default async function TalepEkrani({ searchParams }: PageProps<"/yonetim/
 
             <form action={talebiCevapla} className="mt-4 flex flex-col gap-3">
               <input type="hidden" name="id" value={t.id} />
+              <input type="hidden" name="durum" value={secili} />
+              <SayfaAlani sayfa={sayfaDurumu.sayfa} />
               <label className="flex flex-col gap-1.5">
                 <span className="text-xs font-bold text-metin-2">
                   Müşteriye yazılacak yanıt
@@ -277,6 +291,8 @@ export default async function TalepEkrani({ searchParams }: PageProps<"/yonetim/
           </article>
         ))
       )}
+
+      <Sayfalama durum={sayfaDurumu} birim="talep" adres={adres} />
     </div>
   );
 }

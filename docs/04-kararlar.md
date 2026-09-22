@@ -3413,6 +3413,95 @@ kapalıyken düz metin kutusuna düşüyor ve `#rrggbb` yazılabiliyor.
 
 ---
 
+### K-67 · Bütün listelerde sayfalama
+
+Sayfalama yalnızca iki ekranda vardı: stok ve siparişler. Geri kalan her
+liste **hepsini birden çiziyordu** — bedenler, renkler, kategoriler, ürünler,
+kullanıcılar, duyurular, afişler — ya da sessizce kesiyordu: yorumlar ve
+talepler ilk 100 kayıtta duruyor, yüz birinci hiçbir yerden görünmüyordu.
+Mağaza tarafında da ürün listesi, arama sonucu ve ürün sayfasının
+değerlendirmeleri sınırsızdı.
+
+Artık hepsi sayfalı, tek bir ortak parçayla:
+[`../ui/sayfalama-bicim.ts`](../ui/sayfalama-bicim.ts) (hesap) ve
+[`../ui/sayfalama.tsx`](../ui/sayfalama.tsx) (çubuk). Stok ve siparişler de
+kendi kopyalarını bırakıp bu bileşene geçti — iki ayrı `Sayfa` bileşeni
+vardı, ikisi de aynı işi yapıyordu.
+
+**Sayfa adres satırında.** Panelin geri kalanı gibi JavaScript'siz çalışıyor:
+geri tuşu işliyor, bağlantı paylaşılabiliyor, yenilenince aynı yerde kalıyor.
+
+**Sayfa boyu ekran başına.** Tek bir sabit hem 24'lük ürün ızgarasına hem de
+tek satırlık beden listesine uymuyordu. Ürün ızgarası 24 (iki ve üç sütunda
+da tam sıra), panel listeleri 15-20, ürün sayfasındaki değerlendirmeler 10.
+
+**Ok düğmeleri listenin tamamına bakıyor.** Sıralama yapılan ekranlarda
+(beden, renk, kategori) "yukarı" düğmesi sayfadaki değil listedeki sıraya
+göre kapanıyor; yoksa her sayfanın ilk kaydı listenin başıymış gibi
+görünürdü. Taşıma sayfa sınırını aşınca dönüş adresi **kaydın yeni yerine**
+bakıyor: sayfanın ilk kaydını yukarı taşıyan kişi onu bir önceki sayfada
+buluyor, "ok çalışmadı" sanmıyor.
+
+**Her işlem kaldığın sayfaya dönüyor.** Kaydetme, kapatma, silme ve toplu
+işlem formları sayfa numarasını gizli alanda taşıyor; yorumlar ve taleplerde
+seçili süzgeç de. Yoksa dördüncü sayfadaki kaydı düzelten kişi her seferinde
+listenin başına atılırdı.
+
+**Süzgeç değişince sayfa sıfırlanıyor.** Mağazadaki renk/beden/yaş
+bağlantıları sayfa numarasını kasten taşımıyor: süzgeci değiştiren kişi yeni
+bir liste istiyor, o listenin yedinci sayfasını değil — hem de çoğu zaman o
+kadar sayfa hiç olmuyor.
+
+**Sınır aşılırsa son sayfa, boş ekran değil.** Üçüncü sayfadayken kayıt
+silinince sayfa sayısı ikiye düşebiliyor; adreste kalan `?sayfa=3` boş liste
+yerine son sayfayı açıyor. Geçersiz değer (`?sayfa=abc`) birinci sayfa.
+
+**Birinci sayfanın adresi sade.** `?sayfa=1` yazılmıyor: aynı listenin iki
+farklı adresi olmasın. Mağaza tarafında sayfa numarası **canonical adrese
+giriyor** — süzgeçler girmiyor (K-16) ama ikinci sayfa başka ürünler
+gösteriyor, birincinin kopyası değil.
+
+**Toplamlar sayfadan değil bütünden.** Sayfalama iki yeri sessizce
+bozabilirdi ve ikisi de düzeltildi: bekleyen iadelerin toplam tutarı
+(mağazanın müşteriye borcu, ilk sayfanın borcu değil) ve ürün sayfasındaki
+puan ortalaması ile yıldız dağılımı. İkincisi **zaten bozuktu**: ortalama ve
+dağılım çekilen ilk 50 yorumdan hesaplanıyordu, elli birinci yorumdan sonra
+gerçek ortalama olmaktan çıkıyordu. Artık ikisi de ayrı bir toplama
+sorgusundan geliyor.
+
+**Ürün listesi artık yalnızca görünen sayfayı okuyor.** Panel ürün ekranı
+bütün ürünleri varyantları ve fotoğraf sayılarıyla birlikte çekiyordu;
+katalog büyüdükçe panelin en pahalı sorgusu oluyordu.
+
+**Mağaza listesinde dilimleme bellekte, sorguda değil.** Sıralama kampanyalar
+uygulandıktan sonra yapılıyor (K-10): "önce ucuz" listesinde müşterinin
+gördüğü indirimli fiyat geçerli. Veritabanına `skip`/`take` verilseydi
+sıralama liste fiyatına göre yapılmış olur, indirimli ürünler yanlış sayfaya
+düşerdi. Liste zaten önbellekte duruyor.
+
+**Günün işi ekranı kasten sayfalanmadı.** O bir liste değil iş emri: depoda
+dolaşırken elinde "1/3" yazan bir toplama listesi olması, üç turda toplamak
+ya da bir sayfayı atlamak demek. Liste zaten kendiliğinden sınırlı — kargoya
+verilmemiş ödenmiş siparişler kadar.
+
+**Nasıl denendi.** Üretim derlemesinde gerçek tarayıcıyla, listeleri iki
+sayfaya taşıracak kadar deneme kaydı üretilerek: her ekranın çubuğu, ileri
+düğmesinin gerçekten başka kayıtlar getirdiği (sayfalar arası kesişim sıfır),
+beden ve yaş grubu listelerinin birbirinin sayfasını bozmadığı, toplu işlemin
+sayfayı koruduğu, ikinci sayfanın ilk kaydı yukarı taşınınca birinci sayfada
+göründüğü, `?sayfa=999` ve `?sayfa=abc`, ikinci sayfanın canonical adresi,
+değerlendirme ortalamasının bütün yorumlardan geldiği. İleri-geri bir de
+JavaScript kapalı tarayıcıda.
+
+**Nerede:** [`../ui/sayfalama-bicim.ts`](../ui/sayfalama-bicim.ts),
+[`../ui/sayfalama.tsx`](../ui/sayfalama.tsx),
+[`../server/katalog.ts`](../server/katalog.ts),
+[`../server/yorum.ts`](../server/yorum.ts),
+[`../server/iade.ts`](../server/iade.ts),
+[`../server/gunluk.ts`](../server/gunluk.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

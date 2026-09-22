@@ -21,6 +21,7 @@ import { belgeBasilabilirMi } from "@/server/siparis-belge";
 import { irsaliyeOlustur, irsaliyeSevkiniYaz } from "@/server/irsaliye";
 import { slugYap } from "@/server/slug";
 import { renkKodlari } from "@/server/renkler";
+import { formSayfaEki, tasimaSayfaEki } from "@/ui/sayfalama-bicim";
 import { aramaMetniniTazele } from "@/server/arama";
 import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
 import { stokAdresi, suzgeciCoz as stokSuzgeciniCoz } from "@/server/stok-ekrani";
@@ -187,7 +188,10 @@ export async function topluUrunIslemi(form: FormData): Promise<void> {
   const islem = metin(form, "islem");
   const eksik = metin(form, "eksik");
   const liste = eksik === "fotograf" ? "/yonetim/urunler?eksik=fotograf" : "/yonetim/urunler";
-  const donus = (ek: string) => `${liste}${liste.includes("?") ? "&" : "?"}${ek}`;
+  // Kaldığın sayfa korunuyor: toplu işlemden sonra listenin başına
+  // atılmak, kaldığın yeri yeniden bulmak demekti (K-67).
+  const donus = (ek: string) =>
+    `${liste}${liste.includes("?") ? "&" : "?"}${ek}${formSayfaEki(form)}`;
 
   const sluglar = form
     .getAll("secili")
@@ -327,30 +331,30 @@ export async function duyuruCevir(form: FormData): Promise<void> {
   await yoneticiGerekli();
 
   const id = metin(form, "id");
-  if (!id) redirect("/yonetim/duyuru?hata=bulunamadi");
+  if (!id) redirect(`/yonetim/duyuru?hata=bulunamadi${formSayfaEki(form)}`);
 
   const mevcut = await db.announcement.findUnique({ where: { id }, select: { aktif: true } });
-  if (!mevcut) redirect("/yonetim/duyuru?hata=bulunamadi");
+  if (!mevcut) redirect(`/yonetim/duyuru?hata=bulunamadi${formSayfaEki(form)}`);
 
   await db.announcement.update({ where: { id }, data: { aktif: !mevcut.aktif } });
   vitriniYenile();
-  redirect(`/yonetim/duyuru?kayit=${mevcut.aktif ? "kapatildi" : "acildi"}`);
+  redirect(`/yonetim/duyuru?kayit=${mevcut.aktif ? "kapatildi" : "acildi"}${formSayfaEki(form)}`);
 }
 
 export async function duyuruSil(form: FormData): Promise<void> {
   await yoneticiGerekli();
 
   const id = metin(form, "id");
-  if (!id) redirect("/yonetim/duyuru?hata=bulunamadi");
+  if (!id) redirect(`/yonetim/duyuru?hata=bulunamadi${formSayfaEki(form)}`);
 
   // Kayıt önce aranıyor: olmayan bir kimlikle gelen istek sessizce değil,
   // "bulunamadı" diyerek dönüyor (K-57).
   const mevcut = await db.announcement.findUnique({ where: { id }, select: { id: true } });
-  if (!mevcut) redirect("/yonetim/duyuru?hata=bulunamadi");
+  if (!mevcut) redirect(`/yonetim/duyuru?hata=bulunamadi${formSayfaEki(form)}`);
 
   await db.announcement.delete({ where: { id } });
   vitriniYenile();
-  redirect(`/yonetim/duyuru?kayit=silindi`);
+  redirect(`/yonetim/duyuru?kayit=silindi${formSayfaEki(form)}`);
 }
 
 export async function seritAyariKaydet(form: FormData): Promise<void> {
@@ -559,22 +563,23 @@ export async function kategoriSil(veri: FormData): Promise<void> {
   if (urunAdedi > 0) {
     const hedefId = String(veri.get("hedefKategori") ?? "").trim();
     if (!hedefId || hedefId === id) {
-      redirect(`/yonetim/kategoriler?hata=hedef-yok&duzenle=${id}`);
+      redirect(`/yonetim/kategoriler?hata=hedef-yok&duzenle=${id}${formSayfaEki(veri)}`);
     }
     const hedef = await db.category.count({ where: { id: hedefId } });
-    if (hedef === 0) redirect(`/yonetim/kategoriler?hata=hedef-yok&duzenle=${id}`);
+    if (hedef === 0)
+      redirect(`/yonetim/kategoriler?hata=hedef-yok&duzenle=${id}${formSayfaEki(veri)}`);
 
     await db.$transaction([
       db.product.updateMany({ where: { categoryId: id }, data: { categoryId: hedefId } }),
       db.category.delete({ where: { id } }),
     ]);
     vitriniYenile();
-    redirect(`/yonetim/kategoriler?kayit=tasindi&adet=${urunAdedi}`);
+    redirect(`/yonetim/kategoriler?kayit=tasindi&adet=${urunAdedi}${formSayfaEki(veri)}`);
   }
 
   await db.category.delete({ where: { id } });
   vitriniYenile();
-  redirect("/yonetim/kategoriler?kayit=silindi");
+  redirect(`/yonetim/kategoriler?kayit=silindi${formSayfaEki(veri)}`);
 }
 
 /** Kategoriyi açar/kapatır; kapalı kategori vitrinde görünmüyor. */
@@ -594,7 +599,7 @@ export async function kategoriCevir(veri: FormData): Promise<void> {
 
   vitriniYenile();
   redirect(
-    `/yonetim/kategoriler?kayit=${mevcut.aktif ? "kapatildi" : "acildi"}`,
+    `/yonetim/kategoriler?kayit=${mevcut.aktif ? "kapatildi" : "acildi"}${formSayfaEki(veri)}`,
   );
 }
 
@@ -624,7 +629,9 @@ export async function kategoriTasi(veri: FormData): Promise<void> {
   );
 
   vitriniYenile();
-  redirect("/yonetim/kategoriler?kayit=sira");
+  // Sayfanın ilk kaydı yukarı taşınınca bir önceki sayfaya geçiyor;
+  // dönüş adresi kaydın yeni yerine bakıyor, gözden kaybolmasın (K-67).
+  redirect(`/yonetim/kategoriler?kayit=sira${tasimaSayfaEki(veri, hedef)}`);
 }
 
 /* ── Kargo ve fatura ────────────────────────────────────────────────────── */
@@ -989,15 +996,15 @@ export async function kampanyaCevir(veri: FormData): Promise<void> {
   await yoneticiGerekli();
 
   const id = String(veri.get("id") ?? "");
-  if (!id) redirect("/yonetim/kampanyalar?hata=bulunamadi");
+  if (!id) redirect(`/yonetim/kampanyalar?hata=bulunamadi${formSayfaEki(veri)}`);
 
   const k = await db.campaign.findUnique({ where: { id }, select: { aktif: true } });
-  if (!k) redirect("/yonetim/kampanyalar?hata=bulunamadi");
+  if (!k) redirect(`/yonetim/kampanyalar?hata=bulunamadi${formSayfaEki(veri)}`);
 
   await db.campaign.update({ where: { id }, data: { aktif: !k.aktif } });
   vitriniYenile();
   redirect(
-    `/yonetim/kampanyalar?kayit=${k.aktif ? "kapatildi" : "acildi"}`,
+    `/yonetim/kampanyalar?kayit=${k.aktif ? "kapatildi" : "acildi"}${formSayfaEki(veri)}`,
   );
 }
 
@@ -1005,14 +1012,14 @@ export async function kampanyaSil(veri: FormData): Promise<void> {
   await yoneticiGerekli();
 
   const id = String(veri.get("id") ?? "");
-  if (!id) redirect("/yonetim/kampanyalar?hata=bulunamadi");
+  if (!id) redirect(`/yonetim/kampanyalar?hata=bulunamadi${formSayfaEki(veri)}`);
 
   const k = await db.campaign.findUnique({ where: { id }, select: { id: true } });
-  if (!k) redirect("/yonetim/kampanyalar?hata=bulunamadi");
+  if (!k) redirect(`/yonetim/kampanyalar?hata=bulunamadi${formSayfaEki(veri)}`);
 
   await db.campaign.delete({ where: { id } });
   vitriniYenile();
-  redirect(`/yonetim/kampanyalar?kayit=silindi`);
+  redirect(`/yonetim/kampanyalar?kayit=silindi${formSayfaEki(veri)}`);
 }
 
 /* ── Ana sayfa banner'ı ─────────────────────────────────────────────────── */
@@ -1058,15 +1065,15 @@ export async function bannerCevir(veri: FormData): Promise<void> {
   await yoneticiGerekli();
 
   const id = String(veri.get("id") ?? "");
-  if (!id) redirect("/yonetim/banner?hata=bulunamadi");
+  if (!id) redirect(`/yonetim/banner?hata=bulunamadi${formSayfaEki(veri)}`);
 
   const b = await db.heroBanner.findUnique({ where: { id }, select: { aktif: true } });
-  if (!b) redirect("/yonetim/banner?hata=bulunamadi");
+  if (!b) redirect(`/yonetim/banner?hata=bulunamadi${formSayfaEki(veri)}`);
 
   await db.heroBanner.update({ where: { id }, data: { aktif: !b.aktif } });
   vitriniYenile();
   redirect(
-    `/yonetim/banner?kayit=${b.aktif ? "kapatildi" : "acildi"}`,
+    `/yonetim/banner?kayit=${b.aktif ? "kapatildi" : "acildi"}${formSayfaEki(veri)}`,
   );
 }
 
@@ -1074,14 +1081,14 @@ export async function bannerSil(veri: FormData): Promise<void> {
   await yoneticiGerekli();
 
   const id = String(veri.get("id") ?? "");
-  if (!id) redirect("/yonetim/banner?hata=bulunamadi");
+  if (!id) redirect(`/yonetim/banner?hata=bulunamadi${formSayfaEki(veri)}`);
 
   const b = await db.heroBanner.findUnique({ where: { id }, select: { id: true } });
-  if (!b) redirect("/yonetim/banner?hata=bulunamadi");
+  if (!b) redirect(`/yonetim/banner?hata=bulunamadi${formSayfaEki(veri)}`);
 
   await db.heroBanner.delete({ where: { id } });
   vitriniYenile();
-  redirect(`/yonetim/banner?kayit=silindi`);
+  redirect(`/yonetim/banner?kayit=silindi${formSayfaEki(veri)}`);
 }
 
 export async function bannerSuresiKaydet(veri: FormData): Promise<void> {

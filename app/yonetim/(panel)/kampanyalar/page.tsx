@@ -4,12 +4,17 @@ import { fiyatYaz } from "@/ui/katalog-bicim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import PanelBildirim, { ORTAK_HATALAR } from "@/ui/panel-bildirim";
 import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
+import Sayfalama, { SayfaAlani } from "@/ui/sayfalama";
+import { sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
 
 export const dynamic = "force-dynamic";
 
 const GIRDI =
   "rounded-[10px] border-[1.5px] border-cizgi bg-yuzey px-3 py-2 text-sm text-metin outline-none focus:border-mercan";
 const ETIKET = "text-xs font-bold text-metin-2";
+
+/** Kampanya satırı tablo satırı; sayfaya çok sayıda sığıyor. */
+const LISTE_BOYU = 20;
 
 function tarihYaz(t: Date | null): string {
   return t ? t.toLocaleDateString("tr-TR") : "—";
@@ -41,12 +46,20 @@ export default async function KampanyaEkrani({
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { kayit, hata } = await searchParams;
+  const { kayit, hata, sayfa } = await searchParams;
+
+  // Kategori ve ürün listeleri kampanya formunun açılır menüleri; onlar
+  // sayfalanmıyor, yalnızca kampanya tablosu (K-67).
+  const toplamAdet = await db.campaign.count();
+  const durum = sayfaCoz(sayfa, toplamAdet, LISTE_BOYU);
+  const adres = (n: number) => sayfaAdresi("/yonetim/kampanyalar", n);
 
   const [kampanyalar, kategoriler, urunler] = await Promise.all([
     db.campaign.findMany({
       orderBy: { olusturuldu: "desc" },
       include: { category: { select: { ad: true } }, product: { select: { ad: true } } },
+      skip: durum.atla,
+      take: durum.boy,
     }),
     db.category.findMany({ orderBy: { sira: "asc" }, select: { id: true, ad: true } }),
     db.product.findMany({ orderBy: { ad: "asc" }, select: { id: true, ad: true } }),
@@ -64,7 +77,7 @@ export default async function KampanyaEkrani({
 
       <section className="rounded-marka border border-cizgi bg-yuzey p-5">
         <h2 className="text-lg">Tanımlı kampanyalar</h2>
-        {kampanyalar.length === 0 ? (
+        {toplamAdet === 0 ? (
           <p className="mt-2 text-sm text-metin-3">Henüz kampanya yok.</p>
         ) : (
           <div className="mt-3 overflow-x-auto">
@@ -116,6 +129,7 @@ export default async function KampanyaEkrani({
                     <td className="py-2">
                       <div className="flex justify-end gap-2">
                         <form action={kampanyaCevir}>
+                          <SayfaAlani sayfa={durum.sayfa} />
                           <input type="hidden" name="id" value={k.id} />
                           <button
                             type="submit"
@@ -126,6 +140,7 @@ export default async function KampanyaEkrani({
                         </form>
                         <SilmeOnayi uyari={UYARI}>
                           <form action={kampanyaSil}>
+                            <SayfaAlani sayfa={durum.sayfa} />
                             <input type="hidden" name="id" value={k.id} />
                             <button type="submit" className={SIL_DUGMESI}>
                               Evet, sil
@@ -140,6 +155,10 @@ export default async function KampanyaEkrani({
             </table>
           </div>
         )}
+
+        <div className="mt-4">
+          <Sayfalama durum={durum} birim="kampanya" adres={adres} />
+        </div>
       </section>
 
       <section className="rounded-marka border border-cizgi bg-yuzey p-5">

@@ -1,5 +1,7 @@
 import { Yildiz } from "@/ui/yildiz";
 import type { YorumOzeti } from "@/server/yorum";
+import Sayfalama from "@/ui/sayfalama";
+import { sayfaAdresi } from "@/ui/sayfalama-bicim";
 
 function tarihYaz(t: Date): string {
   return t.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
@@ -12,9 +14,25 @@ function tarihYaz(t: Date): string {
  * Dağılım çubukları, kaç kişinin kaç verdiğini gösteriyor — ortalama tek
  * başına "4,2" ne demek belli etmiyor, beşte üç mü yoksa hep dört mü.
  */
-export default function YorumListesi({ ozet }: { ozet: YorumOzeti }) {
+export default function YorumListesi({
+  ozet,
+  slug,
+  renk,
+}: {
+  ozet: YorumOzeti;
+  slug: string;
+  /** Seçili renk sayfa değişirken düşmesin: galeri ona bakıyor (K-48). */
+  renk?: string;
+}) {
+  // Sayfa bağlantısı bölüme çıpalanıyor: sayfayı değiştiren kişi en üste
+  // değil, okuduğu yere dönüyor.
+  const adres = (n: number) => {
+    const temel = renk ? `/urun/${slug}?renk=${encodeURIComponent(renk)}` : `/urun/${slug}`;
+    return `${sayfaAdresi(temel, n, "yorumSayfa")}#degerlendirmeler`;
+  };
+
   return (
-    <section className="mt-10">
+    <section id="degerlendirmeler" className="mt-10">
       <h2 className="text-xl">Değerlendirmeler</h2>
 
       {ozet.adet === 0 ? (
@@ -77,6 +95,10 @@ export default function YorumListesi({ ozet }: { ozet: YorumOzeti }) {
               </li>
             ))}
           </ul>
+
+          <div className="mt-4">
+            <Sayfalama durum={ozet.durum} birim="değerlendirme" adres={adres} />
+          </div>
         </>
       )}
     </section>

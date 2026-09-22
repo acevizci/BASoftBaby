@@ -23,6 +23,12 @@ import { belgeBasilabilirMi } from "@/server/siparis-belge";
  * dün gelen siparişin parası bugün onaylanmış olabiliyor. O yüzden ölçüt
  * "bugün ödendi" değil, "şu an ödenmiş ve henüz kargoya verilmemiş" —
  * yapılacak iş bu.
+ *
+ * **Bu ekran kasten sayfalanmıyor** (K-67). Panelin bütün listeleri sayfalı
+ * ama burası liste değil, iş emri: depoda dolaşırken elinde "1/3" yazan bir
+ * toplama listesi olması, üç turda toplamak ya da bir sayfayı atlamak demek.
+ * Liste zaten kendiliğinden sınırlı — kargoya verilmemiş ödenmiş siparişler
+ * kadar. Uzarsa sorun sayfalama değil, siparişlerin hazırlanmamış olması.
  */
 
 export type GunlukSatir = {

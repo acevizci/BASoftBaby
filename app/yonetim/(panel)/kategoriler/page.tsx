@@ -9,6 +9,8 @@ import {
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import PanelBildirim, { ORTAK_HATALAR } from "@/ui/panel-bildirim";
 import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
+import Sayfalama, { SayfaAlani } from "@/ui/sayfalama";
+import { dilimle, sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +21,9 @@ const KUCUK_DUGME =
   "rounded-full border border-cizgi bg-yuzey px-3 py-1.5 text-xs font-bold text-metin-2 transition hover:border-mercan hover:text-metin disabled:opacity-40";
 const ANA_DUGME =
   "rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi transition hover:brightness-95";
+
+/** Kategori satırı tek satırlık; sayfaya çok sayıda sığıyor. */
+const LISTE_BOYU = 15;
 
 /**
  * Kategori yönetimi.
@@ -49,8 +54,12 @@ export default async function KategoriEkrani({
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { duzenle, kayit, hata, adet } = await searchParams;
+  const { duzenle, kayit, hata, adet, sayfa } = await searchParams;
   const kategoriler = await tumKategoriler();
+
+  const durum = sayfaCoz(sayfa, kategoriler.length, LISTE_BOYU);
+  const sayfadakiler = dilimle(kategoriler, durum);
+  const adres = (n: number) => sayfaAdresi("/yonetim/kategoriler", n);
 
   const duzenlenen =
     typeof duzenle === "string" ? kategoriler.find((k) => k.id === duzenle) : undefined;
@@ -79,7 +88,11 @@ export default async function KategoriEkrani({
         </p>
 
         <ul className="mt-4 flex flex-col divide-y divide-cizgi-soluk">
-          {kategoriler.map((k, sira) => (
+          {sayfadakiler.map((k, yer) => {
+            // Ok düğmeleri listenin tamamına göre: sayfanın son kaydı
+            // listenin sonu değil (K-67).
+            const sira = durum.atla + yer;
+            return (
             <li key={k.id} className="flex flex-wrap items-center gap-3 py-3">
               <div className="min-w-[180px] flex-1">
                 <p className="font-bold">
@@ -99,6 +112,7 @@ export default async function KategoriEkrani({
                 <form action={kategoriTasi}>
                   <input type="hidden" name="id" value={k.id} />
                   <input type="hidden" name="yon" value="yukari" />
+                  <SayfaAlani sayfa={durum.sayfa} boy={LISTE_BOYU} />
                   <button
                     type="submit"
                     className={KUCUK_DUGME}
@@ -112,6 +126,7 @@ export default async function KategoriEkrani({
                 <form action={kategoriTasi}>
                   <input type="hidden" name="id" value={k.id} />
                   <input type="hidden" name="yon" value="asagi" />
+                  <SayfaAlani sayfa={durum.sayfa} boy={LISTE_BOYU} />
                   <button
                     type="submit"
                     className={KUCUK_DUGME}
@@ -123,12 +138,16 @@ export default async function KategoriEkrani({
                   </button>
                 </form>
 
-                <Link href={`/yonetim/kategoriler?duzenle=${k.id}`} className={KUCUK_DUGME}>
+                <Link
+                  href={sayfaAdresi(`/yonetim/kategoriler?duzenle=${k.id}`, durum.sayfa)}
+                  className={KUCUK_DUGME}
+                >
                   Düzenle
                 </Link>
 
                 <form action={kategoriCevir}>
                   <input type="hidden" name="id" value={k.id} />
+                  <SayfaAlani sayfa={durum.sayfa} />
                   <button type="submit" className={KUCUK_DUGME}>
                     {k.aktif ? "Kapat" : "Aç"}
                   </button>
@@ -151,6 +170,7 @@ export default async function KategoriEkrani({
                   >
                     <form action={kategoriSil}>
                       <input type="hidden" name="id" value={k.id} />
+                      <SayfaAlani sayfa={durum.sayfa} />
                       <button type="submit" className={SIL_DUGMESI}>
                         Evet, sil
                       </button>
@@ -178,6 +198,7 @@ export default async function KategoriEkrani({
                       className="flex flex-wrap items-end gap-2"
                     >
                       <input type="hidden" name="id" value={k.id} />
+                      <SayfaAlani sayfa={durum.sayfa} />
                       <label className="flex flex-col gap-1">
                         <span className="text-xs font-bold text-metin-2">
                           Ürünler nereye taşınsın?
@@ -212,12 +233,17 @@ export default async function KategoriEkrani({
                 </Link>
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
 
         {kategoriler.length === 0 && (
           <p className="mt-4 text-sm text-metin-2">Henüz kategori yok.</p>
         )}
+
+        <div className="mt-4">
+          <Sayfalama durum={durum} birim="kategori" adres={adres} />
+        </div>
       </section>
 
       <form

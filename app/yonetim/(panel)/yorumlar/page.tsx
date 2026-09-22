@@ -4,10 +4,15 @@ import { OLUMSUZ_PUAN } from "@/server/yorum";
 import { yorumuAc, yorumuGizle, yorumuYanitla } from "@/server/yorum-yonetim";
 import { Yildiz } from "@/ui/yildiz";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import Sayfalama, { SayfaAlani } from "@/ui/sayfalama";
+import { sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
 
 export const dynamic = "force-dynamic";
 
 const KART = "rounded-marka border border-cizgi bg-yuzey p-5";
+
+/** Yorum kartı yüksek: metin, yanıt kutusu ve düğmeler taşıyor. */
+const LISTE_BOYU = 15;
 const GIRDI =
   "rounded-[10px] border-[1.5px] border-cizgi bg-yuzey px-3 py-2 text-sm text-metin outline-none focus:border-mercan";
 const ROZET = "rounded-full border px-3 py-1.5 text-xs font-bold transition";
@@ -21,7 +26,7 @@ export default async function YorumEkrani({ searchParams }: PageProps<"/yonetim/
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { durum, kayit, hata } = await searchParams;
+  const { durum, kayit, hata, sayfa } = await searchParams;
   const secili = typeof durum === "string" ? durum : "yayinda";
 
   const kosul =
@@ -31,10 +36,17 @@ export default async function YorumEkrani({ searchParams }: PageProps<"/yonetim/
         ? { durum: "yayinda", puan: { lte: OLUMSUZ_PUAN } }
         : { durum: secili };
 
+  // Liste eskiden ilk 100 yorumda kesiliyor, gerisi hiçbir yerden
+  // görünmüyordu (K-67).
+  const toplamAdet = await db.review.count({ where: kosul });
+  const sayfaDurumu = sayfaCoz(sayfa, toplamAdet, LISTE_BOYU);
+  const adres = (n: number) => sayfaAdresi(`/yonetim/yorumlar?durum=${secili}`, n);
+
   const yorumlar = await db.review.findMany({
     where: kosul,
     orderBy: { olusturuldu: "desc" },
-    take: 100,
+    skip: sayfaDurumu.atla,
+    take: sayfaDurumu.boy,
     select: {
       id: true,
       adSoyad: true,
@@ -101,7 +113,7 @@ export default async function YorumEkrani({ searchParams }: PageProps<"/yonetim/
         ))}
       </div>
 
-      {yorumlar.length === 0 ? (
+      {toplamAdet === 0 ? (
         <p className={`${KART} text-center text-sm text-metin-2`}>Bu listede yorum yok.</p>
       ) : (
         yorumlar.map((y) => (
@@ -139,6 +151,8 @@ export default async function YorumEkrani({ searchParams }: PageProps<"/yonetim/
 
             <form action={yorumuYanitla} className="mt-4 flex flex-col gap-2">
               <input type="hidden" name="id" value={y.id} />
+              <input type="hidden" name="durum" value={secili} />
+                <SayfaAlani sayfa={sayfaDurumu.sayfa} />
               <label className="flex flex-col gap-1.5">
                 <span className="text-xs font-bold text-metin-2">Yanıtın (yorumun altında görünür)</span>
                 <textarea
@@ -161,6 +175,8 @@ export default async function YorumEkrani({ searchParams }: PageProps<"/yonetim/
             {y.durum === "yayinda" ? (
               <form action={yorumuGizle} className="mt-3 flex flex-wrap items-end gap-2">
                 <input type="hidden" name="id" value={y.id} />
+                <input type="hidden" name="durum" value={secili} />
+                <SayfaAlani sayfa={sayfaDurumu.sayfa} />
                 <label className="flex min-w-[220px] flex-1 flex-col gap-1.5">
                   <span className="text-xs font-bold text-metin-2">
                     Gizleme sebebi (zorunlu)
@@ -183,6 +199,8 @@ export default async function YorumEkrani({ searchParams }: PageProps<"/yonetim/
             ) : (
               <form action={yorumuAc} className="mt-3">
                 <input type="hidden" name="id" value={y.id} />
+                <input type="hidden" name="durum" value={secili} />
+                <SayfaAlani sayfa={sayfaDurumu.sayfa} />
                 <button
                   type="submit"
                   className="rounded-full border border-cizgi px-5 py-2 text-sm font-bold text-metin-2 transition hover:border-mercan hover:text-metin"
@@ -194,6 +212,8 @@ export default async function YorumEkrani({ searchParams }: PageProps<"/yonetim/
           </article>
         ))
       )}
+
+      <Sayfalama durum={sayfaDurumu} birim="yorum" adres={adres} />
     </div>
   );
 }

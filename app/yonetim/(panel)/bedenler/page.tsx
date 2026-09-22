@@ -19,6 +19,8 @@ import {
 } from "@/server/yonetim-yas";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
+import Sayfalama, { SayfaAlani } from "@/ui/sayfalama";
+import { dilimle, sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +31,9 @@ const KUCUK_DUGME =
   "rounded-full border border-cizgi bg-yuzey px-3 py-1.5 text-xs font-bold text-metin-2 transition hover:border-mercan hover:text-metin disabled:opacity-40";
 const ANA_DUGME =
   "rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi transition hover:brightness-95";
+
+/** Beden ve yaş grubu satırları tek satırlık; sayfaya çok sayıda sığıyor. */
+const LISTE_BOYU = 15;
 
 /** Ekran metinleri koddan; adres satırından gelen yazı basılmıyor. */
 const BILDIRIMLER: Record<string, string> = {
@@ -80,8 +85,20 @@ export default async function BedenEkrani({
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { duzenle, duzenleYas, kayit, hata, adet } = await searchParams;
+  const { duzenle, duzenleYas, kayit, hata, adet, sayfa, yasSayfa } = await searchParams;
   const [bedenler, gruplar] = await Promise.all([tumBedenler(), tumYasGruplari()]);
+
+  // İki liste, iki ayrı sayfa numarası: yaş gruplarında gezinirken beden
+  // listesinin başına atılmak istemiyoruz (K-67).
+  const bDurum = sayfaCoz(sayfa, bedenler.length, LISTE_BOYU);
+  const yDurum = sayfaCoz(yasSayfa, gruplar.length, LISTE_BOYU);
+  const sayfadakiBedenler = dilimle(bedenler, bDurum);
+  const sayfadakiGruplar = dilimle(gruplar, yDurum);
+
+  // Düzenlenen kayıt başka bir sayfadaysa formu açmanın anlamı yok; bağlantı
+  // zaten o sayfaya gidiyor, burada yalnızca görünürlük kontrolü.
+  const bAdres = (n: number) => sayfaAdresi("/yonetim/bedenler", n);
+  const yAdres = (n: number) => sayfaAdresi("/yonetim/bedenler", n, "yasSayfa");
 
   // Beden satırındaki grup adı: `yasGrubuYaz` artık veritabanına gidiyor,
   // liste içinde beden başına bir sorgu olmasın diye tek harita kuruluyor.
@@ -157,7 +174,10 @@ export default async function BedenEkrani({
           </p>
         ) : (
           <ul className="mt-3 flex flex-col divide-y divide-cizgi-soluk">
-            {bedenler.map((b, i) => {
+            {sayfadakiBedenler.map((b, yer) => {
+              // Ok düğmeleri listenin tamamına göre: sayfanın son kaydı
+              // listenin sonu değil.
+              const i = bDurum.atla + yer;
               const k = kullanimHaritasi.get(b.ad);
               const silinebilir = !k || k.varyant === 0;
               return (
@@ -193,6 +213,7 @@ export default async function BedenEkrani({
                     <form action={bedenTasi}>
                       <input type="hidden" name="id" value={b.id} />
                       <input type="hidden" name="yon" value="yukari" />
+                      <SayfaAlani sayfa={bDurum.sayfa} boy={LISTE_BOYU} />
                       <button type="submit" className={KUCUK_DUGME} disabled={i === 0}>
                         ↑ yukarı
                       </button>
@@ -200,6 +221,7 @@ export default async function BedenEkrani({
                     <form action={bedenTasi}>
                       <input type="hidden" name="id" value={b.id} />
                       <input type="hidden" name="yon" value="asagi" />
+                      <SayfaAlani sayfa={bDurum.sayfa} boy={LISTE_BOYU} />
                       <button
                         type="submit"
                         className={KUCUK_DUGME}
@@ -209,12 +231,16 @@ export default async function BedenEkrani({
                       </button>
                     </form>
 
-                    <Link href={`/yonetim/bedenler?duzenle=${b.id}`} className={KUCUK_DUGME}>
+                    <Link
+                      href={sayfaAdresi(`/yonetim/bedenler?duzenle=${b.id}`, bDurum.sayfa)}
+                      className={KUCUK_DUGME}
+                    >
                       Düzenle
                     </Link>
 
                     <form action={bedenCevir}>
                       <input type="hidden" name="id" value={b.id} />
+                      <SayfaAlani sayfa={bDurum.sayfa} />
                       <button type="submit" className={KUCUK_DUGME}>
                         {b.aktif ? "Kapat" : "Aç"}
                       </button>
@@ -235,6 +261,7 @@ export default async function BedenEkrani({
                       >
                         <form action={bedenSil}>
                           <input type="hidden" name="id" value={b.id} />
+                          <SayfaAlani sayfa={bDurum.sayfa} />
                           <button type="submit" className={SIL_DUGMESI}>
                             Evet, sil
                           </button>
@@ -253,6 +280,7 @@ export default async function BedenEkrani({
                       className="rounded-marka border border-cizgi-soluk bg-yuzey-sicak p-4"
                     >
                       <input type="hidden" name="id" value={b.id} />
+                      <SayfaAlani sayfa={bDurum.sayfa} />
                       <Alanlar
                         gruplar={gruplar}
                         ad={b.ad}
@@ -268,7 +296,7 @@ export default async function BedenEkrani({
                         <button type="submit" className={ANA_DUGME}>
                           Kaydet
                         </button>
-                        <Link href="/yonetim/bedenler" className={KUCUK_DUGME}>
+                        <Link href={bAdres(bDurum.sayfa)} className={KUCUK_DUGME}>
                           Vazgeç
                         </Link>
                       </div>
@@ -279,6 +307,10 @@ export default async function BedenEkrani({
             })}
           </ul>
         )}
+
+        <div className="mt-4">
+          <Sayfalama durum={bDurum} birim="beden" adres={bAdres} />
+        </div>
       </section>
 
       <section className="rounded-marka border border-cizgi bg-yuzey p-5">
@@ -301,7 +333,8 @@ export default async function BedenEkrani({
           </p>
         ) : (
           <ul className="mt-3 flex flex-col divide-y divide-cizgi-soluk">
-            {gruplar.map((g, i) => {
+            {sayfadakiGruplar.map((g, yer) => {
+              const i = yDurum.atla + yer;
               const bagliBeden = grupKullanimi.get(g.kod) ?? 0;
               return (
                 <li key={g.id} className="flex flex-col gap-3 py-4">
@@ -337,6 +370,7 @@ export default async function BedenEkrani({
                     <form action={yasGrubuTasi}>
                       <input type="hidden" name="id" value={g.id} />
                       <input type="hidden" name="yon" value="yukari" />
+                      <SayfaAlani sayfa={yDurum.sayfa} boy={LISTE_BOYU} ad="yasSayfa" />
                       <button type="submit" className={KUCUK_DUGME} disabled={i === 0}>
                         ↑ yukarı
                       </button>
@@ -344,6 +378,7 @@ export default async function BedenEkrani({
                     <form action={yasGrubuTasi}>
                       <input type="hidden" name="id" value={g.id} />
                       <input type="hidden" name="yon" value="asagi" />
+                      <SayfaAlani sayfa={yDurum.sayfa} boy={LISTE_BOYU} ad="yasSayfa" />
                       <button
                         type="submit"
                         className={KUCUK_DUGME}
@@ -354,7 +389,11 @@ export default async function BedenEkrani({
                     </form>
 
                     <Link
-                      href={`/yonetim/bedenler?duzenleYas=${g.id}`}
+                      href={sayfaAdresi(
+                        `/yonetim/bedenler?duzenleYas=${g.id}`,
+                        yDurum.sayfa,
+                        "yasSayfa",
+                      )}
                       className={KUCUK_DUGME}
                     >
                       Düzenle
@@ -362,6 +401,7 @@ export default async function BedenEkrani({
 
                     <form action={yasGrubuCevir}>
                       <input type="hidden" name="id" value={g.id} />
+                      <SayfaAlani sayfa={yDurum.sayfa} ad="yasSayfa" />
                       <button type="submit" className={KUCUK_DUGME}>
                         {g.aktif ? "Kapat" : "Aç"}
                       </button>
@@ -381,6 +421,7 @@ export default async function BedenEkrani({
                       >
                         <form action={yasGrubuSil}>
                           <input type="hidden" name="id" value={g.id} />
+                          <SayfaAlani sayfa={yDurum.sayfa} ad="yasSayfa" />
                           <button type="submit" className={SIL_DUGMESI}>
                             Evet, sil
                           </button>
@@ -399,6 +440,7 @@ export default async function BedenEkrani({
                       className="rounded-marka border border-cizgi-soluk bg-yuzey-sicak p-4"
                     >
                       <input type="hidden" name="id" value={g.id} />
+                      <SayfaAlani sayfa={yDurum.sayfa} ad="yasSayfa" />
                       <YasAlanlari kod={g.kod} ad={g.ad} aciklama={g.aciklama} />
                       <p className="mt-3 text-xs text-metin-3">
                         Kodu değiştirirsen bu gruba bağlı bedenler de yeni koda geçer;
@@ -409,7 +451,7 @@ export default async function BedenEkrani({
                         <button type="submit" className={ANA_DUGME}>
                           Kaydet
                         </button>
-                        <Link href="/yonetim/bedenler" className={KUCUK_DUGME}>
+                        <Link href={yAdres(yDurum.sayfa)} className={KUCUK_DUGME}>
                           Vazgeç
                         </Link>
                       </div>
@@ -420,6 +462,10 @@ export default async function BedenEkrani({
             })}
           </ul>
         )}
+
+        <div className="mt-4">
+          <Sayfalama durum={yDurum} birim="yaş grubu" adres={yAdres} />
+        </div>
       </section>
 
       <Katlanir

@@ -28,6 +28,7 @@ import {
 } from "@/server/kargo-bekleme";
 import { odemeSonTarihi } from "@/server/odeme-suresi";
 import { ayarlariGetir } from "@/server/sepet";
+import Sayfalama from "@/ui/sayfalama";
 
 export const dynamic = "force-dynamic";
 
@@ -389,39 +390,22 @@ export default async function SiparisListesi({ searchParams }: PageProps<"/yonet
           </div>
           </form>
 
-          {sonuc.sonSayfa > 1 && (
-            <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-              <p className="text-metin-3">
-                Sayfa <span className="rakam font-bold">{sonuc.sayfa}</span> /{" "}
-                <span className="rakam">{sonuc.sonSayfa}</span> · sayfada {SAYFA_BOYU} kayıt
-              </p>
-              <div className="flex gap-2">
-                <Sayfa
-                  yazi="← Önceki"
-                  adres={suzgecAdresi({ ...suzgec, sayfa: sonuc.sayfa - 1 })}
-                  acik={sonuc.sayfa > 1}
-                />
-                <Sayfa
-                  yazi="Sonraki →"
-                  adres={suzgecAdresi({ ...suzgec, sayfa: sonuc.sayfa + 1 })}
-                  acik={sonuc.sayfa < sonuc.sonSayfa}
-                />
-              </div>
-            </div>
-          )}
+          {/* Sayfa çubuğu artık ortak bileşen; stok, ürünler ve öteki
+              listelerle aynı görünüyor (K-67). */}
+          <Sayfalama
+            durum={{
+              sayfa: sonuc.sayfa,
+              sonSayfa: sonuc.sonSayfa,
+              atla: (sonuc.sayfa - 1) * SAYFA_BOYU,
+              boy: SAYFA_BOYU,
+              toplam: sonuc.toplamAdet,
+            }}
+            birim="sipariş"
+            adres={(n) => suzgecAdresi({ ...suzgec, sayfa: n })}
+          />
         </>
       )}
     </div>
   );
 }
 
-function Sayfa({ yazi, adres, acik }: { yazi: string; adres: string; acik: boolean }) {
-  if (!acik) {
-    return <span className={`${ROZET} border-cizgi text-metin-3 opacity-40`}>{yazi}</span>;
-  }
-  return (
-    <Link href={adres} className={`${ROZET} border-cizgi text-metin-2 hover:border-mercan hover:text-metin`}>
-      {yazi}
-    </Link>
-  );
-}

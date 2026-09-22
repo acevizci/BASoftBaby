@@ -1,12 +1,14 @@
 import Link from "next/link";
 import Katlanir from "@/ui/katlanir";
 import PanelBildirim, { ORTAK_HATALAR } from "@/ui/panel-bildirim";
-import { bekleyenIadeler } from "@/server/iade";
+import { bekleyenIadeOzeti, bekleyenIadeler } from "@/server/iade";
 import { odemeAcikMi } from "@/server/odeme";
 import { elleIadeAc, iadeyiIsaretle, karttanIadeEt } from "@/server/iade-islem";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import { yontemAdi } from "@/ui/siparis-bicim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import Sayfalama, { SayfaAlani } from "@/ui/sayfalama";
+import { sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +19,9 @@ const KUCUK_DUGME =
   "rounded-full border border-cizgi bg-yuzey px-3 py-1.5 text-xs font-bold text-metin-2 transition hover:border-mercan hover:text-metin";
 const ANA_DUGME =
   "rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi transition hover:brightness-95";
+
+/** İade kartı yüksek: tutar, sebep, hata metni ve iki düğme taşıyor. */
+const LISTE_BOYU = 15;
 
 const BILDIRIMLER: Record<string, string> = {
   tamamlandi: "İade işaretlendi. Sipariş kaydında da göründü.",
@@ -56,11 +61,14 @@ export default async function IadeEkrani({ searchParams }: PageProps<"/yonetim/i
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { kayit, hata } = await searchParams;
-  const iadeler = await bekleyenIadeler();
+  const { kayit, hata, sayfa } = await searchParams;
+
+  const ozet = await bekleyenIadeOzeti();
+  const durum = sayfaCoz(sayfa, ozet.adet, LISTE_BOYU);
+  const iadeler = await bekleyenIadeler(durum.atla, durum.boy);
+  const adres = (n: number) => sayfaAdresi("/yonetim/iadeler", n);
   const kartAcik = odemeAcikMi();
 
-  const toplamKurus = iadeler.reduce((t, i) => t + i.tutarKurus, 0);
 
   return (
     <div className="flex flex-col gap-5">
@@ -76,11 +84,11 @@ export default async function IadeEkrani({ searchParams }: PageProps<"/yonetim/i
         <h2 className="flex flex-wrap items-baseline gap-x-3 text-lg">
           Bekleyen iadeler
           <span className="rakam text-xs font-semibold text-metin-3">
-            {iadeler.length} kayıt · {fiyatYaz(toplamKurus)}
+            {ozet.adet} kayıt · {fiyatYaz(ozet.toplamKurus)}
           </span>
         </h2>
 
-        {iadeler.length === 0 ? (
+        {ozet.adet === 0 ? (
           <p className="mt-3 text-sm text-metin-2">
             Bekleyen iade yok. Müşteriye borcun görünmüyor.
           </p>
@@ -122,6 +130,7 @@ export default async function IadeEkrani({ searchParams }: PageProps<"/yonetim/i
                   {i.yontem === "kart" && kartAcik && (
                     <form action={karttanIadeEt}>
                       <input type="hidden" name="id" value={i.id} />
+                      <SayfaAlani sayfa={durum.sayfa} />
                       <button type="submit" className={ANA_DUGME}>
                         iyzico ile iade et
                       </button>
@@ -130,6 +139,7 @@ export default async function IadeEkrani({ searchParams }: PageProps<"/yonetim/i
 
                   <form action={iadeyiIsaretle} className="flex flex-wrap items-end gap-2">
                     <input type="hidden" name="id" value={i.id} />
+                    <SayfaAlani sayfa={durum.sayfa} />
                     <label className="flex flex-col gap-1.5">
                       <span className={ETIKET}>Dekont / açıklama</span>
                       <input
@@ -147,6 +157,10 @@ export default async function IadeEkrani({ searchParams }: PageProps<"/yonetim/i
             ))}
           </ul>
         )}
+
+        <div className="mt-4">
+          <Sayfalama durum={durum} birim="iade" adres={adres} />
+        </div>
       </section>
 
       {/* Kart kapalıyken "iyzico ile iade et" düğmesi hiç çıkmıyor; sebebini

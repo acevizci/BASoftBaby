@@ -14,6 +14,22 @@ import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
 import { puaniTazele } from "@/server/yorum";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import { formSayfaEki } from "@/ui/sayfalama-bicim";
+
+const SAYFA = "/yonetim/yorumlar";
+
+/**
+ * İşlem bitince dönülecek adres: seçili süzgeç ve kaldığın sayfa korunuyor.
+ *
+ * Liste sayfalandıktan sonra (K-67) her işlem kullanıcıyı ilk sayfanın
+ * varsayılan süzgecine atıyordu; onuncu yorumu yanıtlayan kişi listeyi
+ * her seferinde yeniden bulmak zorunda kalırdı.
+ */
+function donus(form: FormData, ek: string): string {
+  const durum = String(form.get("durum") ?? "").trim();
+  const suzgec = /^[a-z]{1,20}$/.test(durum) ? `&durum=${durum}` : "";
+  return `${SAYFA}?${ek}${suzgec}${formSayfaEki(form)}`;
+}
 
 export async function yorumuGizle(form: FormData): Promise<void> {
   await yoneticiGerekli();
@@ -21,8 +37,8 @@ export async function yorumuGizle(form: FormData): Promise<void> {
   const id = String(form.get("id") ?? "").trim();
   const sebep = String(form.get("sebep") ?? "").trim();
 
-  if (!id) redirect("/yonetim/yorumlar");
-  if (sebep.length < 5) redirect("/yonetim/yorumlar?hata=sebep");
+  if (!id) redirect(SAYFA);
+  if (sebep.length < 5) redirect(donus(form, "hata=sebep"));
 
   const yorum = await db.review.update({
     where: { id },
@@ -32,14 +48,14 @@ export async function yorumuGizle(form: FormData): Promise<void> {
 
   await puaniTazele(yorum.productId);
   revalidatePath("/", "layout");
-  redirect("/yonetim/yorumlar?kayit=gizlendi");
+  redirect(donus(form, "kayit=gizlendi"));
 }
 
 export async function yorumuAc(form: FormData): Promise<void> {
   await yoneticiGerekli();
 
   const id = String(form.get("id") ?? "").trim();
-  if (!id) redirect("/yonetim/yorumlar");
+  if (!id) redirect(SAYFA);
 
   const yorum = await db.review.update({
     where: { id },
@@ -49,7 +65,7 @@ export async function yorumuAc(form: FormData): Promise<void> {
 
   await puaniTazele(yorum.productId);
   revalidatePath("/", "layout");
-  redirect("/yonetim/yorumlar?kayit=acildi");
+  redirect(donus(form, "kayit=acildi"));
 }
 
 export async function yorumuYanitla(form: FormData): Promise<void> {
@@ -57,9 +73,9 @@ export async function yorumuYanitla(form: FormData): Promise<void> {
 
   const id = String(form.get("id") ?? "").trim();
   const yanit = String(form.get("yanit") ?? "").trim();
-  if (!id) redirect("/yonetim/yorumlar");
+  if (!id) redirect(SAYFA);
 
   await db.review.update({ where: { id }, data: { yanit: yanit.slice(0, 1000) } });
   revalidatePath("/", "layout");
-  redirect("/yonetim/yorumlar?kayit=yanit");
+  redirect(donus(form, "kayit=yanit"));
 }

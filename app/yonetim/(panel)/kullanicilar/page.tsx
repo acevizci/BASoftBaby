@@ -27,11 +27,16 @@ import {
   KULLANICI_HATALARI,
 } from "../../panel-bicim";
 import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
+import Sayfalama from "@/ui/sayfalama";
+import { dilimle, sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
 
 export const dynamic = "force-dynamic";
 
 const KUCUK_DUGME =
   "rounded-full border border-cizgi bg-yuzey px-3 py-1.5 text-xs font-bold text-metin-2 transition hover:border-metin-3";
+
+/** Kullanıcı satırı açılır formlar taşıyor; sayfa başına bu kadarı yeterli. */
+const LISTE_BOYU = 15;
 
 function tarihYaz(t: Date | null): string {
   return t ? t.toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" }) : "—";
@@ -49,8 +54,12 @@ export default async function KullanicilarSayfasi({
   searchParams,
 }: PageProps<"/yonetim/kullanicilar">) {
   const ben = await sahipGerekli();
-  const { kayit, hata } = await searchParams;
+  const { kayit, hata, sayfa } = await searchParams;
   const kullanicilar = await kullanicilariGetir();
+
+  const durum = sayfaCoz(sayfa, kullanicilar.length, LISTE_BOYU);
+  const sayfadakiler = dilimle(kullanicilar, durum);
+  const adres = (n: number) => sayfaAdresi("/yonetim/kullanicilar", n);
 
   const bildirim = typeof kayit === "string" ? KULLANICI_BILDIRIMLERI[kayit] : undefined;
   const hataMetni = typeof hata === "string" ? KULLANICI_HATALARI[hata] : undefined;
@@ -97,10 +106,14 @@ export default async function KullanicilarSayfasi({
         </h2>
 
         <ul className="mt-3 flex flex-col divide-y divide-cizgi-soluk">
-          {kullanicilar.map((k) => (
+          {sayfadakiler.map((k) => (
             <Kullanici key={k.id} kullanici={k} benimId={ben.id} tekSahibim={tekSahibim} />
           ))}
         </ul>
+
+        <div className="mt-4">
+          <Sayfalama durum={durum} birim="kişi" adres={adres} />
+        </div>
       </section>
 
       <Katlanir

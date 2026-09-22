@@ -239,10 +239,29 @@ export type BekleyenIade = {
 };
 
 /** Ödenmeyi bekleyen ve reddedilmiş iadeler; panelin iş listesi. */
-export async function bekleyenIadeler(): Promise<BekleyenIade[]> {
+const BEKLEYEN_KOSULU = { durum: { in: ["bekliyor", "basarisiz"] } };
+
+/**
+ * Bekleyen iadelerin adedi ve toplam tutarı.
+ *
+ * Liste sayfalandığı için (K-67) toplam artık ekrandaki satırlardan
+ * toplanamıyor: "mağazanın müşteriye borcu" ilk sayfanın borcu değil, hepsi.
+ */
+export async function bekleyenIadeOzeti(): Promise<{ adet: number; toplamKurus: number }> {
+  const ozet = await db.refund.aggregate({
+    where: BEKLEYEN_KOSULU,
+    _count: { _all: true },
+    _sum: { tutarKurus: true },
+  });
+  return { adet: ozet._count._all, toplamKurus: ozet._sum.tutarKurus ?? 0 };
+}
+
+export async function bekleyenIadeler(atla = 0, adet?: number): Promise<BekleyenIade[]> {
   const kayitlar = await db.refund.findMany({
-    where: { durum: { in: ["bekliyor", "basarisiz"] } },
+    where: BEKLEYEN_KOSULU,
     orderBy: { olusturuldu: "asc" },
+    skip: atla,
+    ...(adet === undefined ? {} : { take: adet }),
     select: {
       id: true,
       tutarKurus: true,
