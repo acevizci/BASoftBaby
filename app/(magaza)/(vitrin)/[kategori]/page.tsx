@@ -7,6 +7,7 @@ import {
   yasEtiketleri as yasEtiketleriYap,
   SIRALAMA_ADLARI,
   kategoriGetir,
+  kategorileriGetir,
   suzgecKapsami,
   urunleriGetir,
   urunSayfasi,
@@ -86,6 +87,15 @@ function baglanti(kategori: string, aranan: Aranan, alan: keyof Aranan, deger: s
   return `/${kategori}${sorgu ? `?${sorgu}` : ""}`;
 }
 
+/** Başka bir kategoriye geçen adres; açık süzgeçler korunuyor, sayfa düşüyor. */
+function kategoriBaglantisi(hedef: string, aranan: Aranan): string {
+  const sorgu = new URLSearchParams();
+  for (const [ad, d] of Object.entries(aranan)) {
+    if (d && ad !== "sayfa") sorgu.set(ad, d);
+  }
+  return `/${hedef}${sorgu.toString() ? `?${sorgu}` : ""}`;
+}
+
 function SuzgecDugmesi({
   secili,
   href,
@@ -150,13 +160,15 @@ export default async function KategoriSayfasi({
     Boolean,
   ).length;
   const suzgecVar = acikSuzgecAdedi > 0;
-  const [tumBedenler, tumYaslar, renkler, kapsamdakiler] = await Promise.all([
+  const [tumBedenler, tumYaslar, renkler, kapsamdakiler, kategoriler] = await Promise.all([
     bedenleriGetir(),
     yasGruplari(),
     renkSecenekleri(),
     // Süzgeç seçenekleri bu kategorinin yayındaki ürünlerinden çıkıyor
     // (K-78). Liste önbellekte; aynı sorgu zaten sayfalama için yapıldı.
     urunleriGetir({ kategori: tumu ? undefined : kategori }),
+    // Yalnızca içinde yayında ürün olan kategoriler (K-73).
+    kategorileriGetir(),
   ]);
 
   // Karşılığı olmayan seçenek gösterilmiyor: "Aksesuar"da 0-3 ay bedeni
@@ -284,6 +296,7 @@ export default async function KategoriSayfasi({
                 renkler={gorunenRenkler}
                 fiyatSecenekleri={fiyatSecenekleri}
                 yasEtiketleri={yasEtiketleri}
+                kategoriler={kategoriler}
               />
               {suzgecVar && (
                 <Link
@@ -305,6 +318,7 @@ export default async function KategoriSayfasi({
               renkler={gorunenRenkler}
               fiyatSecenekleri={fiyatSecenekleri}
               yasEtiketleri={yasEtiketleri}
+              kategoriler={kategoriler}
             />
             {suzgecVar && (
               <Link
@@ -421,7 +435,7 @@ export default async function KategoriSayfasi({
 }
 
 /**
- * Süzgeç blokları: yaş, beden, renk, fiyat.
+ * Süzgeç blokları: kategori, yaş, beden, renk, fiyat.
  *
  * Telefondaki açılır panel ve masaüstündeki yan sütun aynı bileşeni
  * çiziyor; ikisinden yalnızca biri görünür oluyor (K-72).
@@ -434,6 +448,7 @@ function Suzgecler({
   renkler,
   fiyatSecenekleri,
   yasEtiketleri,
+  kategoriler,
 }: {
   kategori: string;
   aranan: Aranan;
@@ -443,9 +458,36 @@ function Suzgecler({
   fiyatSecenekleri: typeof FIYAT_ARALIKLARI;
   /** Yaş grubu kodu → etiket; aynı açıklamalı gruplar ayrışsın diye (K-72). */
   yasEtiketleri: Map<string, string>;
+  kategoriler: { slug: string; ad: string }[];
 }) {
   return (
     <>
+          {/* Kategori süzgeci: "Tüm ürünler"de kategori seçmenin yolu yoktu,
+              müşteri üst çubuğa dönmek zorundaydı. Kategori bir sorgu
+              değeri değil, adresin kendisi (`/kiz-cocuk`); öteki süzgeçler
+              geçişte korunuyor, sayfa numarası düşüyor (K-81). */}
+          {kategoriler.length > 1 && (
+          <div>
+            <p className="text-sm font-bold">Kategori</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <SuzgecDugmesi
+                secili={kategori === TUMU}
+                href={kategoriBaglantisi(TUMU, aranan)}
+              >
+                Tümü
+              </SuzgecDugmesi>
+              {kategoriler.map((k) => (
+                <SuzgecDugmesi
+                  key={k.slug}
+                  secili={kategori === k.slug}
+                  href={kategoriBaglantisi(k.slug, aranan)}
+                >
+                  {k.ad}
+                </SuzgecDugmesi>
+              ))}
+            </div>
+          </div>
+          )}
 
           {/* Hiç yaş grubu tanımlı değilse başlık da çizilmiyor: boş bir
               süzgeç bölümü müşteriye seçenek varmış gibi görünür (K-65). */}

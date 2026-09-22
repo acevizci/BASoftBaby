@@ -4065,6 +4065,19 @@ Bağ yabancı anahtar, `SetNull` ile: kategori silinirse grup durur, bağ kalkar
 [`../server/yonetim-yas.ts`](../server/yonetim-yas.ts),
 [`../testler/yas-suzgeci-db.test.ts`](../testler/yas-suzgeci-db.test.ts)
 
+### K-81 · Süzgeç sütununda kategori
+
+"Tüm ürünler" sayfasında kategori seçmenin yolu yoktu: yan sütunda yaş, beden,
+renk ve fiyat vardı, kategori için müşteri üst çubuğa dönmek zorundaydı.
+Sütunun başına kategori düğmeleri eklendi ("Tümü" + vitrindeki kategoriler);
+kategori sayfalarında da aynı liste duruyor, açık olan işaretli.
+
+Kategori bir sorgu değeri değil, adresin kendisi (`/kiz-cocuk`): canonical
+adres, site haritası ve üst çubuk zaten bunu kullanıyor. Düğme o adrese
+gidiyor; açık süzgeçler geçişte korunuyor, sayfa numarası düşüyor.
+
+**Nerede:** [`../app/(magaza)/(vitrin)/[kategori]/page.tsx`](../app/(magaza)/(vitrin)/[kategori]/page.tsx)
+
 ---
 
 ## Açık sorular
