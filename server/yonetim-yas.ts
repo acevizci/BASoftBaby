@@ -142,6 +142,27 @@ export async function yasGrubuKaydet(veri: FormData): Promise<void> {
   redirect(donus(veri, "kayit=yaskaydedildi"));
 }
 
+/**
+ * Yalnızca kategori bağını değiştirir; listedeki satırdan.
+ *
+ * Seçim eskiden yalnızca "Düzenle" ile açılan formdaydı ve orada kimse
+ * aramadı: Kız/Erkek Çocuk gruplarını ayırmanın tek yolu buydu (K-80).
+ */
+export async function yasGrubuKategorisi(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
+  const id = String(veri.get("id") ?? "").trim();
+  if (!id) redirect(SAYFA);
+  const categoryId = await kategoriCoz(veri);
+  if (categoryId === undefined) redirect(donus(veri, "hata=yaskategori"));
+
+  const sonuc = await db.ageGroup.updateMany({ where: { id }, data: { categoryId } });
+  if (sonuc.count === 0) redirect(donus(veri, "hata=bulunamadi"));
+
+  vitriniYenile();
+  redirect(donus(veri, "kayit=yaskategori"));
+}
+
 export async function yasGrubuCevir(veri: FormData): Promise<void> {
   await yoneticiGerekli();
 

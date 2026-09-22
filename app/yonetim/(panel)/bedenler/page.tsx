@@ -13,6 +13,7 @@ import {
 import {
   yasGrubuCevir,
   yasGrubuEkle,
+  yasGrubuKategorisi,
   yasGrubuKaydet,
   yasGrubuSil,
   yasGrubuTasi,
@@ -47,6 +48,7 @@ const BILDIRIMLER: Record<string, string> = {
   sira: "Sıra değişti. Ürün sayfasında ve stok ekranında bu sırayla görünüyor.",
   yaseklendi: "Yaş grubu eklendi. Bedenlere artık bu grup seçilebiliyor.",
   yaskaydedildi: "Yaş grubu kaydedildi.",
+  yaskategori: "Yaş grubunun kategorisi kaydedildi. Süzgeç artık yalnızca o kategorinin ürünlerini getiriyor.",
   yaskapatildi: "Yaş grubu kapatıldı. Ana sayfada ve süzgeçte görünmüyor, bedenlere dokunulmadı.",
   yasacildi: "Yaş grubu yeniden açıldı.",
   yassilindi: "Yaş grubu silindi.",
@@ -476,6 +478,38 @@ export default async function BedenEkrani({
                       </span>
                     )}
                   </div>
+
+                  {/* Kategori bağı satırın kendisinde: "Düzenle" formunun içinde
+                      kimse bulamıyordu (K-80). */}
+                  {duzenlenenGrup?.id !== g.id && (
+                    <form
+                      action={yasGrubuKategorisi}
+                      className="flex flex-wrap items-center gap-2"
+                    >
+                      <input type="hidden" name="id" value={g.id} />
+                      <SayfaAlani sayfa={yDurum.sayfa} ara={yArama} ad="yasSayfa" />
+                      <label className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-bold text-metin-2">
+                          Yalnızca bu kategori:
+                        </span>
+                        <select
+                          name="kategori"
+                          defaultValue={g.kategori ?? ""}
+                          className={GIRDI}
+                        >
+                          <option value="">Bütün kategoriler</option>
+                          {kategoriler.map((k) => (
+                            <option key={k.slug} value={k.slug}>
+                              {k.ad}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <button type="submit" className={KUCUK_DUGME}>
+                        Kaydet
+                      </button>
+                    </form>
+                  )}
 
                   {duzenlenenGrup?.id === g.id && (
                     <form
