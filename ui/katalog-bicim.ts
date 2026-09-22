@@ -98,34 +98,13 @@ export const SIRALAMA_ADLARI: Record<Siralama, string> = {
 };
 
 /**
- * Yaş grupları: bir gruba birden çok beden giriyor.
+ * Yaş grupları artık kodda değil: `AgeGroup` tablosunda ve panelden
+ * yönetiliyor (K-65). Okumak için `server/yas-gruplari.ts`.
  *
- * Hediye alan müşteri genelde bedeni değil bebeğin kaç aylık olduğunu
- * biliyor. "6-12 ay" diyen biri hem 6-9 hem 9-12 bedenindeki ürünleri
- * görmeli; tek bedene bağlamak ürünlerin yarısını gizliyordu.
- *
- * Grupların kendisi burada, **hangi bedenin hangi gruba girdiği ise beden
- * kaydında** (`Size.yasKodu`). Gruplar mağazanın vitrin diliyle ilgili — ana
- * sayfadaki dört kutu ve süzgeçteki etiketler; bedenler ise stok verisi ve
- * panelden değişiyor (K-56). Bedenler listesi burada kalsaydı panelden
- * eklenen bir beden hiçbir gruba giremezdi.
+ * Grup ile beden arasındaki bağ beden kaydında (`Size.yasKodu`): gruplar
+ * mağazanın vitrin dili — ana sayfadaki kutular ve süzgeçteki etiketler —
+ * bedenler ise stok verisi.
  */
-export const YAS_GRUPLARI = [
-  { kod: "0-3", ad: "Yenidoğan", aciklama: "0-3 ay" },
-  { kod: "3-6", ad: "Bebek", aciklama: "3-6 ay" },
-  { kod: "6-12", ad: "Bebek", aciklama: "6-12 ay" },
-  { kod: "12-24", ad: "Yürüyen", aciklama: "12-24 ay" },
-] as const satisfies readonly { kod: string; ad: string; aciklama: string }[];
-
-export type YasKodu = (typeof YAS_GRUPLARI)[number]["kod"];
-
-export const YAS_KODLARI: readonly string[] = YAS_GRUPLARI.map((y) => y.kod);
-
-/** Yaş grubunun ekranda görünen adı: "Bebek · 6-12 ay". */
-export function yasGrubuYaz(kod: string | null): string {
-  const y = YAS_GRUPLARI.find((g) => g.kod === kod);
-  return y ? `${y.ad} · ${y.aciklama}` : "—";
-}
 
 export const RENK_ADLARI: Record<RenkAdi, string> = {
   mint: "Nane",

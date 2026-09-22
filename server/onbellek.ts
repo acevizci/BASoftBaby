@@ -28,6 +28,7 @@ import { unstable_cache } from "next/cache";
 export const ETIKETLER = {
   katalog: "katalog",
   beden: "beden",
+  yasGrubu: "yas-grubu",
   ayarlar: "ayarlar",
   duyuru: "duyuru",
   banner: "banner",

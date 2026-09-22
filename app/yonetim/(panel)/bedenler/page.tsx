@@ -2,7 +2,7 @@ import Link from "next/link";
 import Katlanir from "@/ui/katlanir";
 import { db } from "@/server/veritabani";
 import { tumBedenler } from "@/server/bedenler";
-import { YAS_GRUPLARI, yasGrubuYaz } from "@/ui/katalog-bicim";
+import { tumYasGruplari, type YasGrubuKaydi } from "@/server/yas-gruplari";
 import {
   bedenCevir,
   bedenEkle,
@@ -10,6 +10,13 @@ import {
   bedenSil,
   bedenTasi,
 } from "@/server/yonetim-beden";
+import {
+  yasGrubuCevir,
+  yasGrubuEkle,
+  yasGrubuKaydet,
+  yasGrubuSil,
+  yasGrubuTasi,
+} from "@/server/yonetim-yas";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
 
@@ -31,6 +38,12 @@ const BILDIRIMLER: Record<string, string> = {
   acildi: "Beden yeniden açıldı.",
   silindi: "Beden silindi.",
   sira: "Sıra değişti. Ürün sayfasında ve stok ekranında bu sırayla görünüyor.",
+  yaseklendi: "Yaş grubu eklendi. Bedenlere artık bu grup seçilebiliyor.",
+  yaskaydedildi: "Yaş grubu kaydedildi.",
+  yaskapatildi: "Yaş grubu kapatıldı. Ana sayfada ve süzgeçte görünmüyor, bedenlere dokunulmadı.",
+  yasacildi: "Yaş grubu yeniden açıldı.",
+  yassilindi: "Yaş grubu silindi.",
+  yassira: "Yaş grubu sırası değişti. Ana sayfadaki kutular bu sırayla diziliyor.",
 };
 
 const HATALAR: Record<string, string> = {
@@ -39,6 +52,11 @@ const HATALAR: Record<string, string> = {
   sonbeden: "Son açık beden kapatılamıyor — mağazada satılabilir beden kalmazdı.",
   kullanimda: "Bu beden üründe kullanılıyor, silinemiyor. Bunun yerine kapatabilirsin.",
   bulunamadi: "Kayıt bulunamadı — başka biri silmiş olabilir. Liste yenilendi.",
+  yaskod: "Yaş grubu kodu boş olamaz. Adres satırında görünen kısım bu: 6-12 gibi.",
+  yasad: "Yaş grubu adı boş olamaz.",
+  yastekrar: "Bu kodda bir yaş grubu zaten var.",
+  yaskullanimda:
+    "Bu yaş grubu bedenlere bağlı, silinemiyor. Bunun yerine kapatabilirsin — bedenler yerinde kalır.",
 };
 
 /**
@@ -62,8 +80,12 @@ export default async function BedenEkrani({
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { duzenle, kayit, hata, adet } = await searchParams;
-  const bedenler = await tumBedenler();
+  const { duzenle, duzenleYas, kayit, hata, adet } = await searchParams;
+  const [bedenler, gruplar] = await Promise.all([tumBedenler(), tumYasGruplari()]);
+
+  // Beden satırındaki grup adı: `yasGrubuYaz` artık veritabanına gidiyor,
+  // liste içinde beden başına bir sorgu olmasın diye tek harita kuruluyor.
+  const grupAdlari = new Map(gruplar.map((g) => [g.kod, `${g.ad} · ${g.aciklama}`]));
 
   // Hangi beden kaç üründe ve kaç adet stokla kullanılıyor: silinebilir mi
   // sorusunun cevabı bu. Tek sorguda, beden başına ayrı sorgu olmadan.
@@ -78,12 +100,21 @@ export default async function BedenEkrani({
 
   const duzenlenen =
     typeof duzenle === "string" ? bedenler.find((b) => b.id === duzenle) : undefined;
+  const duzenlenenGrup =
+    typeof duzenleYas === "string" ? gruplar.find((g) => g.id === duzenleYas) : undefined;
 
   const bildirim = typeof kayit === "string" ? BILDIRIMLER[kayit] : undefined;
   const hataMetni = typeof hata === "string" ? HATALAR[hata] : undefined;
   const kullanimAdedi = typeof adet === "string" ? Number(adet) : undefined;
 
   const acikSayisi = bedenler.filter((b) => b.aktif).length;
+  const acikGrupSayisi = gruplar.filter((g) => g.aktif).length;
+
+  // Hangi grup kaç bedene bağlı: silinebilir mi sorusunun cevabı.
+  const grupKullanimi = new Map<string, number>();
+  for (const b of bedenler) {
+    if (b.yasKodu) grupKullanimi.set(b.yasKodu, (grupKullanimi.get(b.yasKodu) ?? 0) + 1);
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -139,7 +170,9 @@ export default async function BedenEkrani({
                       </span>
                     </span>
 
-                    <span className="text-xs text-metin-3">{yasGrubuYaz(b.yasKodu)}</span>
+                    <span className="text-xs text-metin-3">
+                      {(b.yasKodu && grupAdlari.get(b.yasKodu)) || "—"}
+                    </span>
 
                     <span className="rakam text-xs text-metin-3">
                       {k ? `${k.varyant} varyant · ${k.stok} adet` : "kullanılmıyor"}
@@ -221,6 +254,7 @@ export default async function BedenEkrani({
                     >
                       <input type="hidden" name="id" value={b.id} />
                       <Alanlar
+                        gruplar={gruplar}
                         ad={b.ad}
                         boy={b.boy}
                         kilo={b.kilo}
@@ -247,14 +281,173 @@ export default async function BedenEkrani({
         )}
       </section>
 
+      <section className="rounded-marka border border-cizgi bg-yuzey p-5">
+        <h2 className="flex flex-wrap items-baseline gap-x-3 text-lg">
+          Yaş grupları
+          <span className="rakam text-xs font-semibold text-metin-3">
+            {gruplar.length} grup · {acikGrupSayisi} açık
+          </span>
+        </h2>
+        <p className="mt-1 text-sm text-metin-2">
+          Ana sayfadaki &quot;Yaşa göre&quot; kutuları ve süzgeçteki yaş etiketleri.
+          Bir gruba birden çok beden girebiliyor; hangi bedenin hangi gruba girdiğini
+          yukarıdaki beden listesinden seçiyorsun.
+        </p>
+
+        {gruplar.length === 0 ? (
+          <p className="mt-3 text-sm text-metin-2">
+            Hiç yaş grubu yok. Ana sayfadaki &quot;Yaşa göre&quot; bölümü ve süzgeçteki
+            yaş başlığı şu an görünmüyor; aşağıdan ekleyince geri geliyor.
+          </p>
+        ) : (
+          <ul className="mt-3 flex flex-col divide-y divide-cizgi-soluk">
+            {gruplar.map((g, i) => {
+              const bagliBeden = grupKullanimi.get(g.kod) ?? 0;
+              return (
+                <li key={g.id} className="flex flex-col gap-3 py-4">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <span className="min-w-0 flex-1">
+                      <span className="font-semibold">
+                        {g.ad} · {g.aciklama}
+                      </span>
+                      {/* Kod adresin parçası: /urunler?yas=6-12. Ekranda
+                          görünmesi gerekiyor, değiştirmenin bağlantıyı da
+                          değiştirdiği buradan anlaşılsın. */}
+                      <span className="rakam block text-xs text-metin-3">
+                        adres kodu: {g.kod}
+                      </span>
+                    </span>
+
+                    <span className="rakam text-xs text-metin-3">
+                      {bagliBeden > 0 ? `${bagliBeden} beden bağlı` : "bedene bağlı değil"}
+                    </span>
+
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-bold ${
+                        g.aktif
+                          ? "bg-nane-soluk text-nane-koyu"
+                          : "bg-cizgi-soluk text-metin-2"
+                      }`}
+                    >
+                      {g.aktif ? "Açık" : "Kapalı"}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <form action={yasGrubuTasi}>
+                      <input type="hidden" name="id" value={g.id} />
+                      <input type="hidden" name="yon" value="yukari" />
+                      <button type="submit" className={KUCUK_DUGME} disabled={i === 0}>
+                        ↑ yukarı
+                      </button>
+                    </form>
+                    <form action={yasGrubuTasi}>
+                      <input type="hidden" name="id" value={g.id} />
+                      <input type="hidden" name="yon" value="asagi" />
+                      <button
+                        type="submit"
+                        className={KUCUK_DUGME}
+                        disabled={i === gruplar.length - 1}
+                      >
+                        ↓ aşağı
+                      </button>
+                    </form>
+
+                    <Link
+                      href={`/yonetim/bedenler?duzenleYas=${g.id}`}
+                      className={KUCUK_DUGME}
+                    >
+                      Düzenle
+                    </Link>
+
+                    <form action={yasGrubuCevir}>
+                      <input type="hidden" name="id" value={g.id} />
+                      <button type="submit" className={KUCUK_DUGME}>
+                        {g.aktif ? "Kapat" : "Aç"}
+                      </button>
+                    </form>
+
+                    {bagliBeden === 0 ? (
+                      <SilmeOnayi
+                        uyari={
+                          <>
+                            Yaş grubu kalıcı olarak siliniyor; geri alınamıyor. Hiçbir
+                            bedene bağlı olmadığı için beden kaybı olmuyor, ama bu gruba
+                            giden <span className="rakam">?yas={g.kod}</span> bağlantısı
+                            artık sonuç getirmez. Yalnızca vitrinden kaldırmak istiyorsan
+                            &quot;Kapat&quot; yeter.
+                          </>
+                        }
+                      >
+                        <form action={yasGrubuSil}>
+                          <input type="hidden" name="id" value={g.id} />
+                          <button type="submit" className={SIL_DUGMESI}>
+                            Evet, sil
+                          </button>
+                        </form>
+                      </SilmeOnayi>
+                    ) : (
+                      <span className="text-xs text-metin-3">
+                        Bedenlere bağlı — silmek yerine kapat.
+                      </span>
+                    )}
+                  </div>
+
+                  {duzenlenenGrup?.id === g.id && (
+                    <form
+                      action={yasGrubuKaydet}
+                      className="rounded-marka border border-cizgi-soluk bg-yuzey-sicak p-4"
+                    >
+                      <input type="hidden" name="id" value={g.id} />
+                      <YasAlanlari kod={g.kod} ad={g.ad} aciklama={g.aciklama} />
+                      <p className="mt-3 text-xs text-metin-3">
+                        Kodu değiştirirsen bu gruba bağlı bedenler de yeni koda geçer;
+                        ama eski <span className="rakam">?yas={g.kod}</span> bağlantısı
+                        artık sonuç getirmez.
+                      </p>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <button type="submit" className={ANA_DUGME}>
+                          Kaydet
+                        </button>
+                        <Link href="/yonetim/bedenler" className={KUCUK_DUGME}>
+                          Vazgeç
+                        </Link>
+                      </div>
+                    </form>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
+      <Katlanir
+        id="yeni-yas-grubu"
+        baslik="Yeni yaş grubu ekle"
+        eylem
+        acik={duzenleYas === undefined && typeof hata === "string" && hata.startsWith("yas")}
+      >
+        <form action={yasGrubuEkle} className="flex flex-col gap-4">
+          <YasAlanlari />
+          <button type="submit" className={`${ANA_DUGME} self-start`}>
+            Yaş grubunu ekle
+          </button>
+        </form>
+      </Katlanir>
+
       <Katlanir
         id="yeni-beden"
         baslik="Yeni beden ekle"
         eylem
-        acik={hata !== undefined && duzenle === undefined}
+        acik={
+          duzenle === undefined &&
+          typeof hata === "string" &&
+          !hata.startsWith("yas")
+        }
       >
         <form action={bedenEkle} className="flex flex-col gap-4">
-          <Alanlar />
+          <Alanlar gruplar={gruplar} />
           <button type="submit" className={`${ANA_DUGME} self-start`}>
             Bedeni ekle
           </button>
@@ -273,16 +466,21 @@ export default async function BedenEkrani({
 
 /** Ekleme ve düzenleme formu aynı alanları kullanıyor. */
 function Alanlar({
+  gruplar,
   ad = "",
   boy = "",
   kilo = "",
   yasKodu = null,
 }: {
+  gruplar: YasGrubuKaydi[];
   ad?: string;
   boy?: string;
   kilo?: string;
   yasKodu?: string | null;
 }) {
+  // Kapalı gruplar listede yok ama bedene bağlıysa seçenek olarak duruyor:
+  // yoksa bedeni kaydetmek sessizce grubunu düşürürdü.
+  const secenekler = gruplar.filter((g) => g.aktif || g.kod === yasKodu);
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <label className="flex flex-col gap-1.5">
@@ -294,9 +492,10 @@ function Alanlar({
         <span className={ETIKET}>Yaş grubu</span>
         <select name="yasKodu" defaultValue={yasKodu ?? ""} className={GIRDI}>
           <option value="">— hiçbiri —</option>
-          {YAS_GRUPLARI.map((y) => (
+          {secenekler.map((y) => (
             <option key={y.kod} value={y.kod}>
               {y.ad} · {y.aciklama}
+              {y.aktif ? "" : " (kapalı)"}
             </option>
           ))}
         </select>
@@ -310,6 +509,51 @@ function Alanlar({
       <label className="flex flex-col gap-1.5">
         <span className={ETIKET}>Kilo</span>
         <input name="kilo" defaultValue={kilo} placeholder="12,5 - 14 kg" className={GIRDI} />
+      </label>
+    </div>
+  );
+}
+
+/**
+ * Yaş grubu formu; ekleme ve düzenlemede aynı.
+ *
+ * Kod alanı serbest metin ama sunucu onu adres güvenli hâle getiriyor
+ * ("6-12 Ay" → "6-12-ay"). Bunu yazıyoruz: kullanıcı kaydettikten sonra
+ * kodun değişmiş olmasına şaşırmasın.
+ */
+function YasAlanlari({
+  kod = "",
+  ad = "",
+  aciklama = "",
+}: {
+  kod?: string;
+  ad?: string;
+  aciklama?: string;
+}) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-3">
+      <label className="flex flex-col gap-1.5">
+        <span className={ETIKET}>Grup adı</span>
+        <input name="ad" defaultValue={ad} required placeholder="Yürüyen" className={GIRDI} />
+      </label>
+
+      <label className="flex flex-col gap-1.5">
+        <span className={ETIKET}>Yaş aralığı</span>
+        <input
+          name="aciklama"
+          defaultValue={aciklama}
+          placeholder="2-4 yaş"
+          className={GIRDI}
+        />
+      </label>
+
+      <label className="flex flex-col gap-1.5">
+        <span className={ETIKET}>Adres kodu</span>
+        <input name="kod" defaultValue={kod} required placeholder="24-48" className={GIRDI} />
+        <span className="text-xs text-metin-3">
+          Bağlantıda görünür: /urunler?yas=<span className="rakam">24-48</span>. Türkçe
+          harf ve boşluk kullanırsan sade hâline çevrilir.
+        </span>
       </label>
     </div>
   );

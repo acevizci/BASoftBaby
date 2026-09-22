@@ -3299,6 +3299,55 @@ satın alma akışının bozulmadığı.
 
 ---
 
+### K-65 · Yaş grupları panelden
+
+Beden listesi K-56'da tabloya taşınmıştı; **yaş grubu taşınmamıştı.** Sonuç
+yarım bir çözümdü: panelden yeni bir beden ekleniyor, ama o bedene
+seçilebilecek yaş grubu hâlâ koddaki dört satırdan geliyordu. "24-36 ay"
+bedenini ekleyen kişi onu hiçbir gruba bağlayamıyordu — açılır listede
+karşılığı yoktu.
+
+Gruplar artık `AgeGroup` tablosunda, beden ekranının altındaki kendi
+bölümünde yönetiliyor: ekle, düzenle, sırala, kapat, sil.
+
+**Kod adresin parçası, o yüzden serbest metin değil.** Grup kodu ekranda
+görünen bir şey değil ama `/urunler?yas=6-12` bağlantısında duruyor:
+paylaşılıyor, yer imine ekleniyor, arama motorunda kalıyor. Kullanıcı ne
+yazarsa yazsın kod adres güvenli hâline çevriliyor ("6-12 Ay" → `6-12-ay`),
+ekranda da bu hâliyle gösteriliyor — kaydettikten sonra kodun değişmiş
+olmasına şaşırmasın.
+
+**Kod değişince bedenler aynı işlemde taşınıyor.** Beden kaydı grubun kodunu
+metin olarak tutuyor (`Size.yasKodu`). İki iş ayrı yapılsaydı arada düşen bir
+istek o bedenleri olmayan bir gruba bağlı bırakır, yaş süzgeci onları hiç
+getirmezdi. Bedenlerdeki ad değişikliğinin (K-56) aynısı.
+
+**Kullanılan grup silinmiyor, kapatılıyor** — bedenlerdeki kuralın aynısı.
+Silme düğmesi yine de duruyor ve sebebini yazıyor: gizlenseydi "silme nerede"
+diye aranırdı (K-52).
+
+**Son grup kapatılabiliyor — bedenlerden farkı bu.** Bedeni olmayan bir
+mağazada hiçbir ürün satılamaz, o yüzden son açık beden kapatılamıyor. Yaş
+grubu ise yalnızca vitrin dili: hiç grup yoksa ana sayfadaki "Yaşa göre"
+bölümü ve süzgeçteki yaş başlığı **çizilmiyor**, satın alma yolunda hiçbir şey
+kırılmıyor. Boş bir başlık bırakmak mağazayı eksik gösterirdi.
+
+**Kapalı grup, bağlı olduğu bedenin formunda seçenek olarak kalıyor.** Yoksa
+o bedeni başka bir sebeple kaydetmek grubunu sessizce düşürürdü.
+
+**Nasıl denendi.** Üretim derlemesinde gerçek tarayıcıyla: Türkçe harfli ve
+boşluklu kod girip sadeleştiğini, yeni grubun aynı anda beden formunun açılır
+listesinde + ana sayfa kutularında + süzgeçte çıktığını, kod değişince
+bedenlerin taşındığını, bağlı grubun silme yerine "kapat" dediğini, bağlı
+olmayanın silindiğini. Hepsi bir de JavaScript kapalı tarayıcıda.
+
+**Nerede:** [`../server/yas-gruplari.ts`](../server/yas-gruplari.ts),
+[`../server/yonetim-yas.ts`](../server/yonetim-yas.ts),
+[`../app/yonetim/(panel)/bedenler/page.tsx`](../app/yonetim/(panel)/bedenler/page.tsx),
+[`../db/schema.prisma`](../db/schema.prisma)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

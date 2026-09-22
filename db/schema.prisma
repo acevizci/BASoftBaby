@@ -47,6 +47,19 @@ model Size {
   @@index([aktif, sira])
 }
 
+/// Vitrindeki yaş grubu: ana sayfadaki kutular ve süzgeçteki yaş etiketleri.
+/// Hangi bedenin hangi gruba girdiği beden kaydında duruyor (Size.yasKodu).
+model AgeGroup {
+  id       String  @id @default(cuid())
+  kod      String  @unique
+  ad       String
+  aciklama String
+  sira     Int     @default(0)
+  aktif    Boolean @default(true)
+
+  @@index([aktif, sira])
+}
+
 model Product {
   id         String   @id @default(cuid())
   slug       String   @unique

@@ -7,12 +7,12 @@ import {
   PALET,
   SIRALAMALAR,
   SIRALAMA_ADLARI,
-  YAS_GRUPLARI,
   kategoriGetir,
   urunleriGetir,
   type RenkAdi,
 } from "@/server/katalog";
 import { bedenler as bedenleriGetir } from "@/server/bedenler";
+import { yasGruplari } from "@/server/yas-gruplari";
 
 /** "urunler" gerçek bir kategori değil; tüm katalogu gösteren liste. */
 const TUMU = "urunler";
@@ -99,7 +99,10 @@ export default async function KategoriSayfasi({
 
   const suzgecVar = Boolean(aranan.yas || aranan.beden || aranan.renk || aranan.fiyat);
   const renkler = Object.keys(RENK_ADLARI) as RenkAdi[];
-  const bedenSecenekleri = await bedenleriGetir();
+  const [bedenSecenekleri, yasSecenekleri] = await Promise.all([
+    bedenleriGetir(),
+    yasGruplari(),
+  ]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -117,13 +120,16 @@ export default async function KategoriSayfasi({
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[210px_1fr]">
         <aside className="flex flex-col gap-6">
+          {/* Hiç yaş grubu tanımlı değilse başlık da çizilmiyor: boş bir
+              süzgeç bölümü müşteriye seçenek varmış gibi görünür (K-65). */}
+          {yasSecenekleri.length > 0 && (
           <div>
             <p className="text-sm font-bold">Yaş</p>
             <p className="mt-1 text-xs text-metin-3">
               Bebeğin kaç aylık olduğunu biliyorsan buradan seç.
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
-              {YAS_GRUPLARI.map((y) => (
+              {yasSecenekleri.map((y) => (
                 <SuzgecDugmesi
                   key={y.kod}
                   secili={aranan.yas === y.kod}
@@ -134,6 +140,7 @@ export default async function KategoriSayfasi({
               ))}
             </div>
           </div>
+          )}
 
           <div>
             <div className="flex flex-wrap items-baseline justify-between gap-2">

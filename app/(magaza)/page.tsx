@@ -7,16 +7,17 @@ import { kunyeGetir } from "@/server/yasal";
 import { siteAdresi, tamAdres } from "@/server/site";
 import { kategorileriGetir, oneCikanUrunler } from "@/server/katalog";
 import { ayarlariGetir, type SatisAyari } from "@/server/sepet";
-import { fiyatYaz, YAS_GRUPLARI } from "@/ui/katalog-bicim";
+import { fiyatYaz } from "@/ui/katalog-bicim";
+import { yasGruplari } from "@/server/yas-gruplari";
 import { tonSiniflari } from "@/ui/kategori-tonu";
 import { CAYMA_GUN } from "@/ui/talep-bicim";
 
 /**
- * Ana sayfadaki yaş kutuları. Önceden tek bir bedene bağlıydı: "6-12 ay"
- * kutusu yalnızca 6-9 beden ürünleri getiriyor, 9-12 bedendekiler
- * görünmüyordu. Artık yaş grubuna gidiyor, grup birden çok bedeni kapsıyor.
+ * Ana sayfadaki yaş kutuları yaş grubuna gidiyor, tek bedene değil: "6-12 ay"
+ * kutusu önceden yalnızca 6-9 beden ürünleri getiriyor, 9-12 bedendekiler
+ * görünmüyordu. Grup listesi artık panelden geliyor (K-65); hiç grup yoksa
+ * bölüm çizilmiyor — boş bir "Yaşa göre" başlığı mağazayı eksik gösterir.
  */
-const YAS_KUTULARI = YAS_GRUPLARI;
 
 /**
  * Kargo sınırı panelden değişebildiği için sabit yazılmıyor: ayarla sepetin
@@ -37,11 +38,12 @@ function guvenSatirlari(ayar: SatisAyari): string[] {
 export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 export default async function AnaSayfa() {
-  const [urunler, kategoriler, ayar, kunye] = await Promise.all([
+  const [urunler, kategoriler, ayar, kunye, yasKutulari] = await Promise.all([
     oneCikanUrunler(8),
     kategorileriGetir(),
     ayarlariGetir(),
     kunyeGetir(),
+    yasGruplari(),
   ]);
   const guven = guvenSatirlari(ayar);
 
@@ -73,10 +75,11 @@ export default async function AnaSayfa() {
 
       <HeroBanner />
 
+      {yasKutulari.length > 0 && (
       <section className="mx-auto max-w-6xl px-4 py-12">
         <h2 className="text-xl">Yaşa göre</h2>
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {YAS_KUTULARI.map((y, i) => {
+          {yasKutulari.map((y, i) => {
             const ton = tonSiniflari(i);
             return (
               <Link
@@ -97,6 +100,7 @@ export default async function AnaSayfa() {
           })}
         </div>
       </section>
+      )}
 
       <section className="mx-auto max-w-6xl px-4 pb-12">
         <div className="flex items-baseline justify-between gap-3">

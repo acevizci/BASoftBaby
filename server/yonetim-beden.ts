@@ -24,7 +24,7 @@ import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
 import { TUM_ETIKETLER } from "@/server/onbellek";
-import { YAS_KODLARI } from "@/ui/katalog-bicim";
+import { yasKodlari } from "@/server/yas-gruplari";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 const SAYFA = "/yonetim/bedenler";
@@ -34,25 +34,31 @@ function vitriniYenile() {
   revalidatePath("/", "layout");
 }
 
-/** Boş ya da tanınmayan yaş kodu "hiçbiri" demek. */
-function yasKoduCoz(ham: string): string | null {
+/**
+ * Boş ya da tanınmayan yaş kodu "hiçbiri" demek.
+ *
+ * Kod listesi artık veritabanından geliyor (K-65): silinmiş bir gruba ait
+ * kod forma elle yazılsa bile bedene yazılmıyor.
+ */
+async function yasKoduCoz(ham: string): Promise<string | null> {
   const k = ham.trim();
-  return YAS_KODLARI.includes(k) ? k : null;
+  if (!k) return null;
+  return (await yasKodlari()).includes(k) ? k : null;
 }
 
-function alanlar(veri: FormData) {
+async function alanlar(veri: FormData) {
   return {
     ad: String(veri.get("ad") ?? "").trim().slice(0, 40),
     boy: String(veri.get("boy") ?? "").trim().slice(0, 40),
     kilo: String(veri.get("kilo") ?? "").trim().slice(0, 40),
-    yasKodu: yasKoduCoz(String(veri.get("yasKodu") ?? "")),
+    yasKodu: await yasKoduCoz(String(veri.get("yasKodu") ?? "")),
   };
 }
 
 export async function bedenEkle(veri: FormData): Promise<void> {
   await yoneticiGerekli();
 
-  const { ad, boy, kilo, yasKodu } = alanlar(veri);
+  const { ad, boy, kilo, yasKodu } = await alanlar(veri);
   if (!ad) redirect(`${SAYFA}?hata=ad`);
 
   const varMi = await db.size.findUnique({ where: { ad }, select: { id: true } });
@@ -78,7 +84,7 @@ export async function bedenKaydet(veri: FormData): Promise<void> {
   await yoneticiGerekli();
 
   const id = String(veri.get("id") ?? "").trim();
-  const { ad, boy, kilo, yasKodu } = alanlar(veri);
+  const { ad, boy, kilo, yasKodu } = await alanlar(veri);
   if (!id) redirect(SAYFA);
   if (!ad) redirect(`${SAYFA}?hata=ad`);
 

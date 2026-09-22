@@ -202,6 +202,12 @@ bağlı değil, adı metin olarak tutuyor: sipariş satırındaki kopya sonradan
 değişmemeli. Ad değişince açık varyantlar aynı işlemde güncelleniyor,
 sipariş geçmişi değişmiyor.
 
+**AgeGroup** — `kod` (tekil), `ad`, `aciklama`, `sira`, `aktif`. Vitrindeki
+yaş grupları: ana sayfadaki kutular ve süzgeçteki etiketler, panelden
+yönetiliyor (K-65). `Size.yasKodu` buraya da yabancı anahtarla bağlı değil,
+kodu metin olarak tutuyor — kod adresin parçası (`/urunler?yas=6-12`), o
+yüzden değişince bedenler aynı işlemde taşınıyor.
+
 ### Müşteri ve sipariş
 
 **Customer** *(kuruldu)* — `eposta` (tekil), `adSoyad`, `telefon`,

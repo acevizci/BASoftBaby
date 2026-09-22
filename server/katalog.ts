@@ -185,7 +185,7 @@ export async function urunGetir(slug: string): Promise<Urun | undefined> {
 export type UrunSuzgeci = {
   kategori?: string;
   beden?: string;
-  /** Yaş grubu kodu: bir gruba birden çok beden giriyor (bkz. YAS_GRUPLARI). */
+  /** Yaş grubu kodu: bir gruba birden çok beden giriyor (bkz. server/yas-gruplari.ts). */
   yas?: string;
   renk?: string;
   /** Kuruş cinsinden üst sınır */
