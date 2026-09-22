@@ -331,6 +331,36 @@ Bu isteği sen yapmadıysan bu e-postayı yok sayabilirsin; şifren değişmez.$
  * Müşteri sıfırlamasından ayrı: adresi panelin içine gidiyor ve metni
  * mağazanın değil yönetimin dilinde (K-47).
  */
+/**
+ * Panele davet: şifreyi yeni kullanıcı kendisi belirliyor (K-87).
+ *
+ * Bağlantıya tıklayıp şifre koymak adresin o kişiye ait olduğunu
+ * kanıtlıyor; o zamana kadar hesap giriş yapamıyor.
+ */
+export async function panelDavetEpostasi(
+  kime: string,
+  adSoyad: string,
+  davetEden: string,
+  jeton: string,
+  saat: number,
+): Promise<EpostaSonucu> {
+  const adres = `${siteAdresi()}/yonetim/sifre-sifirla?jeton=${encodeURIComponent(jeton)}&davet=1`;
+
+  return gonder(
+    kime,
+    "BASoftBaby yönetim paneline davet edildin",
+    `Merhaba ${adSoyad},
+
+${davetEden} seni BASoftBaby yönetim paneline ekledi. Hesabını etkinleştirmek için aşağıdaki bağlantıya tıklayıp şifreni belirle. Bağlantı ${saat} saat geçerli ve bir kez kullanılabiliyor:
+
+${adres}
+
+Şifreni belirledikten sonra panele bu e-posta adresi ve şifrenle giriş yapabilirsin.
+
+Böyle bir daveti beklemiyorsan bu e-postayı yok sayabilirsin; bağlantıya tıklanmadıkça hesap açılmaz.${await altBilgi()}`,
+  );
+}
+
 export async function panelSifreSifirlamaEpostasi(
   kime: string,
   adSoyad: string,

@@ -217,6 +217,11 @@ Her kişinin kendi e-postası ve şifresi var. Rol yok: her panel kullanıcısı
 her şeyi yapabiliyor, kullanıcı ekleyip çıkarmak dahil (K-79). Kendini
 kapatmak ya da silmek engelli.
 
+Yeni kullanıcı **davetle** ekleniyor: şifre sorulmuyor, kişiye 48 saat geçerli
+bir davet bağlantısı gidiyor ve şifresini kendisi belirliyor. Bu, e-postanın o
+kişiye ait olduğunu kanıtlıyor; o zamana kadar hesap "Davet bekliyor" ve giriş
+yapamıyor. Davet listeden yeniden gönderilebiliyor (K-87).
+
 İlk kurulum: hiç kullanıcı yokken giriş sayfası "ilk kullanıcıyı oluştur"
 hâline geçiyor ve `YONETIM_SIFRE` ile korunuyor. Hesap açıldıktan sonra o
 şifreyle kimse giriş yapamıyor ve değişken silinebilir. Ortam değişkeni hiç

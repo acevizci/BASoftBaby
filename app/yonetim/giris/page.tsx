@@ -34,7 +34,7 @@ export const metadata: Metadata = {
  * yok: ayar unutulursa panel açıkta kalmasın — eski davranışın korunan yanı.
  */
 export default async function YonetimGirisi({ searchParams }: PageProps<"/yonetim/giris">) {
-  const { hata, nereye, dk, cikis, sifirlandi } = await searchParams;
+  const { hata, nereye, dk, cikis, sifirlandi, etkin } = await searchParams;
 
   if (await yoneticiGetir()) redirect("/yonetim");
 
@@ -73,6 +73,11 @@ export default async function YonetimGirisi({ searchParams }: PageProps<"/yoneti
       </p>
 
       {cikis === "1" && <p className={`mt-5 ${IYI_KUTU}`}>Çıkış yapıldı.</p>}
+      {etkin === "1" && (
+        <p className={`mt-5 ${IYI_KUTU}`}>
+          Hesabın etkinleşti. E-posta adresin ve belirlediğin şifreyle giriş yapabilirsin.
+        </p>
+      )}
       {sifirlandi === "1" && (
         <p className={`mt-5 ${IYI_KUTU}`}>
           Şifren değiştirildi. Yeni şifrenle giriş yapabilirsin.

@@ -104,7 +104,7 @@ export async function ilkKullaniciyiOlustur(girdi: {
     const id = await db.$transaction(async (islem) => {
       if ((await islem.adminUser.count()) > 0) throw new Error("zaten-var");
       const olusan = await islem.adminUser.create({
-        data: { eposta, adSoyad: girdi.adSoyad.trim(), sifreOzeti: ozet },
+        data: { eposta, adSoyad: girdi.adSoyad.trim(), sifreOzeti: ozet, epostaDogrulandi: new Date() },
         select: { id: true },
       });
       return olusan.id;
@@ -243,11 +243,20 @@ export async function kimlikDogrula(
 
   const kayit = await db.adminUser.findUnique({
     where: { eposta },
-    select: { id: true, eposta: true, adSoyad: true, sifreOzeti: true, aktif: true },
+    select: {
+      id: true,
+      eposta: true,
+      adSoyad: true,
+      sifreOzeti: true,
+      aktif: true,
+      epostaDogrulandi: true,
+    },
   });
 
   const tutuyor = await sifreTutuyorMu(sifre, kayit?.sifreOzeti ?? SAHTE_OZET);
-  if (!kayit || !kayit.aktif || !tutuyor) return undefined;
+  // Daveti kabul etmemiş hesap giremiyor: e-postanın o kişiye ait olduğu
+  // henüz kanıtlanmadı (K-87).
+  if (!kayit || !kayit.aktif || !kayit.epostaDogrulandi || !tutuyor) return undefined;
 
   return { id: kayit.id, eposta: kayit.eposta, adSoyad: kayit.adSoyad };
 }
@@ -264,7 +273,10 @@ const SIFIRLAMA_SAAT = 1;
  * görebilen biri kimsenin şifresini sıfırlayamasın. Yeni bağlantı istenince
  * eskisi siliniyor — yalnızca en son gönderilen çalışsın (K-47).
  */
-export async function sifirlamaJetonuUret(adminId: string): Promise<string> {
+export async function sifirlamaJetonuUret(
+  adminId: string,
+  saat: number = SIFIRLAMA_SAAT,
+): Promise<string> {
   const jeton = randomBytes(32).toString("base64url");
 
   await db.$transaction([
@@ -273,7 +285,7 @@ export async function sifirlamaJetonuUret(adminId: string): Promise<string> {
       data: {
         id: jetonOzeti(jeton),
         adminId,
-        biter: new Date(Date.now() + SIFIRLAMA_SAAT * 60 * 60 * 1000),
+        biter: new Date(Date.now() + saat * 60 * 60 * 1000),
       },
     }),
   ]);
@@ -281,7 +293,13 @@ export async function sifirlamaJetonuUret(adminId: string): Promise<string> {
   return jeton;
 }
 
-export { SIFIRLAMA_SAAT };
+/**
+ * Davet bağlantısı iki gün geçerli: sıfırlama bağlantısını isteyen kişi
+ * ekranın başında bekliyor, davet edilen ise e-postasına ertesi gün bakabilir.
+ */
+const DAVET_SAAT = 48;
+
+export { DAVET_SAAT, SIFIRLAMA_SAAT };
 
 /**
  * Jetonu harcar: geçerliyse kullanıcıyı döndürür ve jetonu kullanılmış
@@ -339,6 +357,12 @@ export async function sifirlanabilirKullanici(
 export async function sifreyiYaz(adminId: string, ozet: string): Promise<void> {
   await db.$transaction([
     db.adminUser.update({ where: { id: adminId }, data: { sifreOzeti: ozet } }),
+    // E-postaya giden bağlantıyla şifre koymak, adresin bu kişiye ait
+    // olduğunu kanıtlıyor: davet de sıfırlama da hesabı doğruluyor (K-87).
+    db.adminUser.updateMany({
+      where: { id: adminId, epostaDogrulandi: null },
+      data: { epostaDogrulandi: new Date() },
+    }),
     db.adminSession.deleteMany({ where: { adminId } }),
   ]);
 }
@@ -371,6 +395,8 @@ export type KullaniciSatiri = Yonetici & {
   olusturuldu: Date;
   sonGiris: Date | null;
   acikOturum: number;
+  /** Davet bekliyorsa boş: şifresini belirlememiş, giriş yapamıyor (K-87). */
+  epostaDogrulandi: Date | null;
 };
 
 export async function kullanicilariGetir(): Promise<KullaniciSatiri[]> {
@@ -383,6 +409,7 @@ export async function kullanicilariGetir(): Promise<KullaniciSatiri[]> {
       aktif: true,
       olusturuldu: true,
       sonGiris: true,
+      epostaDogrulandi: true,
       _count: { select: { oturumlar: { where: { biter: { gt: new Date() } } } } },
     },
   });
@@ -395,6 +422,7 @@ export async function kullanicilariGetir(): Promise<KullaniciSatiri[]> {
     olusturuldu: s.olusturuldu,
     sonGiris: s.sonGiris,
     acikOturum: s._count.oturumlar,
+    epostaDogrulandi: s.epostaDogrulandi,
   }));
 }
 
@@ -414,9 +442,12 @@ export async function sonAcikKullaniciMi(adminId: string): Promise<boolean> {
 }
 
 export async function acikKullaniciSayisi(secenek: { haric?: string } = {}): Promise<number> {
+  // Davet bekleyen hesap sayılmıyor: açık ama giremiyor, paneli tek başına
+  // ayakta tutamaz (K-87).
   return db.adminUser.count({
     where: {
       aktif: true,
+      epostaDogrulandi: { not: null },
       ...(secenek.haric ? { id: { not: secenek.haric } } : {}),
     },
   });
@@ -444,7 +475,9 @@ export async function acikKullaniciKalsinDiye(
     await db.$transaction(
       async (islem) => {
         await degistir(islem);
-        const kalan = await islem.adminUser.count({ where: { aktif: true } });
+        const kalan = await islem.adminUser.count({
+          where: { aktif: true, epostaDogrulandi: { not: null } },
+        });
         if (kalan === 0) throw new Error("acik-hesap-kalmaz");
       },
       { isolationLevel: "Serializable" },

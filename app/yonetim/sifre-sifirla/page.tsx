@@ -31,7 +31,10 @@ export const metadata: Metadata = {
 export default async function PanelSifreSifirla({
   searchParams,
 }: PageProps<"/yonetim/sifre-sifirla">) {
-  const { jeton, hata } = await searchParams;
+  const { jeton, hata, davet } = await searchParams;
+  // Davet bağlantısı da bu sayfaya geliyor: yeni kullanıcı şifresini burada
+  // ilk kez belirliyor (K-87).
+  const davetMi = davet === "1";
 
   if (await yoneticiGetir()) redirect("/yonetim");
 
@@ -51,11 +54,21 @@ export default async function PanelSifreSifirla({
         />
       </Link>
 
-      <h1 className="mt-8 text-center text-2xl">Yeni şifre</h1>
+      <h1 className="mt-8 text-center text-2xl">
+        {davetMi ? "Panel hesabını etkinleştir" : "Yeni şifre"}
+      </h1>
+      {davetMi && (
+        <p className="mt-2 text-center text-sm text-metin-2">
+          Şifreni belirle; sonra bu e-posta adresi ve şifrenle giriş yapacaksın.
+        </p>
+      )}
 
       {hataMetni && <p className={`mt-5 ${HATA_KUTUSU}`}>{hataMetni}</p>}
 
       {jetonMetni === "" ? (
+        // Davette "yeni bağlantı iste" yanlış yol: bağlantıyı ekleyen kişi
+        // yeniliyor; üstteki hata kutusu bunu söylüyor.
+        davetMi ? null : (
         <p className="mt-5 text-center text-sm text-metin-2">
           Bağlantı eksik ya da bozuk.{" "}
           <Link href="/yonetim/sifremi-unuttum" className="font-bold text-mavi-koyu hover:underline">
@@ -63,9 +76,11 @@ export default async function PanelSifreSifirla({
           </Link>
           .
         </p>
+        )
       ) : (
         <form action={sifreyiSifirla} className={`mt-6 flex flex-col gap-4 ${KART}`}>
           <input type="hidden" name="jeton" value={jetonMetni} />
+          {davetMi && <input type="hidden" name="davet" value="1" />}
 
           <label className="flex flex-col gap-1.5">
             <span className={ETIKET}>Yeni şifre</span>

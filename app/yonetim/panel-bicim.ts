@@ -43,6 +43,8 @@ export const SIFIRLAMA_HATALARI: Record<string, string> = {
   "gecersiz-jeton":
     "Bağlantı geçersiz, süresi dolmuş ya da zaten kullanılmış. Yeni bir bağlantı iste.",
   kilit: "Çok fazla deneme yapıldı.",
+  "gecersiz-davet":
+    "Davet bağlantısı geçersiz, süresi dolmuş ya da zaten kullanılmış. Seni panele ekleyen kişiden daveti yeniden göndermesini iste.",
 };
 
 export const KULLANICI_HATALARI: Record<string, string> = {
@@ -55,11 +57,22 @@ export const KULLANICI_HATALARI: Record<string, string> = {
   "kendini-silemez": "Kendi hesabını silemezsin.",
   "son-kullanici": "Son açık hesap kapanırsa panele kimse giremez.",
   "eski-sifre": "Mevcut şifren tutmuyor.",
+  "eposta-kapali":
+    "E-posta servisi bağlı değil; davet gönderilemiyor. Satışa hazırlık ekranından e-postayı dene.",
+  "davet-gitmedi":
+    "Kullanıcı eklendi ama davet e-postası gönderilemedi. Satışa hazırlık ekranından e-postayı dene, sonra \"Daveti yeniden gönder\"e bas.",
+  "davet-bekliyor":
+    "Bu kişi davetini henüz kabul etmedi; şifresini davet bağlantısıyla kendisi belirleyecek. Gerekirse daveti yeniden gönder.",
+  "zaten-dogrulandi": "Bu kişi davetini zaten kabul etmiş.",
+  "kapali-hesap": "Kapalı hesaba davet gönderilmiyor; önce hesabı aç.",
 };
 
 export const KULLANICI_BILDIRIMLERI: Record<string, string> = {
   ilk: "İlk kullanıcı oluşturuldu ve giriş yapıldı. Bundan sonra panele bu e-posta ve şifreyle giriliyor.",
   eklendi: "Kullanıcı eklendi.",
+  davet:
+    "Davet gönderildi. Kişi e-postadaki bağlantıyla şifresini belirleyince panele girebilecek; o zamana kadar listede \"Davet bekliyor\" yazıyor.",
+  "davet-yeniden": "Davet yeniden gönderildi. Eski bağlantı artık çalışmıyor.",
   kapatildi: "Kullanıcı kapatıldı ve açık oturumları sonlandırıldı.",
   acildi: "Kullanıcı yeniden açıldı.",
   silindi: "Kullanıcı silindi.",

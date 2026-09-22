@@ -926,6 +926,10 @@ model AdminUser {
   aktif       Boolean   @default(true)
   olusturuldu DateTime  @default(now())
   sonGiris    DateTime?
+  /// Davet bağlantısıyla şifresini belirlediği an. Boşsa hesap "davet
+  /// bekliyor": e-postanın o kişiye ait olduğu kanıtlanmadı, giriş yapamıyor
+  /// (K-87).
+  epostaDogrulandi DateTime?
 
   oturumlar AdminSession[]
   jetonlar  AdminToken[]

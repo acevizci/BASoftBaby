@@ -4190,6 +4190,37 @@ bunu da yazıyor.
 
 **Nerede:** [`../server/eposta.ts`](../server/eposta.ts) (`resendAnahtari`, `anahtarOzeti`)
 
+### K-87 · Panel kullanıcısı davetle ekleniyor, e-postası doğrulanıyor
+
+Yeni kullanıcı eklenirken e-posta ve şifre formda yazılıyordu. Adres yanlış
+yazılsa da hesap açılıyordu; şifre kişiye başka bir yoldan (mesaj, telefon)
+iletilmek zorundaydı ve ekleyen kişi başkasının şifresini biliyordu.
+
+Artık şifre sorulmuyor. Kişiye 48 saat geçerli, tek kullanımlık bir **davet
+bağlantısı** gidiyor; şifresini kendisi belirliyor. Bağlantıya tıklayıp şifre
+koymak e-postanın o kişiye ait olduğunu kanıtlıyor (`AdminUser.epostaDogrulandi`).
+
+- **Davet bekleyen hesap giremiyor.** Şifresi rastgele, kimse bilmiyor; giriş
+  kontrolü ayrıca doğrulanmamış hesabı reddediyor.
+- **Davet bekleyen hesaba şifre atanmıyor**, "Daveti yeniden gönder" var.
+  Yeni bağlantı eskisini geçersiz kılıyor. Süresi dolmuş davet bağlantısı
+  "yeni bağlantı iste" değil "seni ekleyen kişiden yeniden göndermesini iste"
+  diyor.
+- **"Son açık hesap" sayımına davet bekleyen girmiyor** (K-46): açık ama
+  giremeyen bir hesap paneli tek başına ayakta tutamaz.
+- **Şifre sıfırlama da doğruluyor:** e-postaya giden bağlantıyla şifre koymak
+  aynı kanıt. Davet bağlantısı sıfırlama altyapısını (tek kullanımlık jeton,
+  K-47) kullanıyor; yalnızca süresi ve sayfanın başlığı farklı.
+- **E-posta servisi yoksa kullanıcı açılmıyor:** davetsiz hesap kimsenin
+  kullanamayacağı bir satır olurdu. Hesap açılıp davet gönderilemezse hesap
+  kalıyor, hata ve "yeniden gönder" çıkıyor.
+- Var olan hesaplar göçle doğrulanmış sayıldı. İlk kurulum hesabı da doğrulanmış
+  açılıyor: `YONETIM_SIFRE` ile korunuyor ve o anda e-posta servisi olmayabilir.
+
+**Nerede:** [`../server/yonetim-kimlik-islem.ts`](../server/yonetim-kimlik-islem.ts) (`kullaniciEkle`, `davetiYenidenGonder`),
+[`../server/yonetim-kimlik.ts`](../server/yonetim-kimlik.ts),
+[`../testler/panel-davet-db.test.ts`](../testler/panel-davet-db.test.ts)
+
 ---
 
 ## Açık sorular

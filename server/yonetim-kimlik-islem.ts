@@ -7,12 +7,18 @@
  * çalışıyor, sitenin geri kalanı gibi.
  */
 
+import { randomBytes } from "node:crypto";
 import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
 import { sifreKisaMi, sifreOzetle, sifreTutuyorMu } from "@/server/uyelik";
 import { basariliGiris, basarisizDeneme, girisDenenebilirMi } from "@/server/giris-sinir";
-import { epostaAcikMi, panelSifreSifirlamaEpostasi } from "@/server/eposta";
 import {
+  epostaAcikMi,
+  panelDavetEpostasi,
+  panelSifreSifirlamaEpostasi,
+} from "@/server/eposta";
+import {
+  DAVET_SAAT,
   acikKullaniciKalsinDiye,
   epostaNormalle,
   ilkKullaniciyiOlustur,
@@ -118,19 +124,25 @@ export async function sifirlamaIste(form: FormData): Promise<void> {
 export async function sifreyiSifirla(form: FormData): Promise<void> {
   const jeton = metin(form, "jeton");
   const sifre = String(form.get("sifre") ?? "");
+  const davet = metin(form, "davet") === "1";
   const geri = (ek: Record<string, string>) =>
     redirect(
-      `/yonetim/sifre-sifirla?${new URLSearchParams({ jeton, ...ek }).toString()}`,
+      `/yonetim/sifre-sifirla?${new URLSearchParams({ jeton, ...(davet ? { davet: "1" } : {}), ...ek }).toString()}`,
     );
 
   if (sifreKisaMi(sifre)) geri({ hata: "kisa-sifre" });
 
   const kullanici = await sifirlamaJetonuHarca(jeton);
-  if (!kullanici) redirect("/yonetim/sifre-sifirla?hata=gecersiz-jeton");
+  if (!kullanici) {
+    redirect(`/yonetim/sifre-sifirla?hata=${davet ? "gecersiz-davet&davet=1" : "gecersiz-jeton"}`);
+  }
 
   await sifreyiYaz(kullanici.id, await sifreOzetle(sifre));
   await basariliGiris(`sifirlama:${kullanici.eposta}`);
   await basariliGiris(kullanici.eposta);
+
+  // Davet bağlantısından geldiyse giriş ekranı "hesabın etkin" diyor (K-87).
+  if (davet) redirect("/yonetim/giris?etkin=1");
 
   // Doğrudan içeri alınmıyor: yeni şifreyi bir kez yazmak, gerçekten
   // hatırlandığını gösteriyor ve tarayıcının şifreyi kaydetmesine fırsat
@@ -188,24 +200,80 @@ function listeye(anahtar: string, deger: string): never {
   redirect(`${LISTE}?${anahtar}=${deger}`);
 }
 
+/**
+ * Yeni panel kullanıcısını davet eder.
+ *
+ * Şifreyi ekleyen kişi belirlemiyor: kişiye bir davet bağlantısı gidiyor,
+ * şifresini kendisi koyuyor. Bağlantıya tıklayıp şifre koymak e-postanın o
+ * kişiye ait olduğunu kanıtlıyor; o zamana kadar hesap "davet bekliyor" ve
+ * giriş yapamıyor. Eskiden şifre formda yazılıyordu: adres yanlış yazılsa da
+ * hesap açılıyor, şifre de kişiye başka bir yoldan iletilmek zorundaydı
+ * (K-87).
+ *
+ * E-posta servisi bağlı değilse kullanıcı hiç açılmıyor: davetsiz hesap
+ * kimsenin kullanamayacağı bir satır olurdu.
+ */
 export async function kullaniciEkle(form: FormData): Promise<void> {
-  await yoneticiGerekli();
+  const ben = await yoneticiGerekli();
 
   const eposta = epostaNormalle(metin(form, "eposta"));
   const adSoyad = metin(form, "adSoyad");
-  const sifre = String(form.get("sifre") ?? "");
 
   if (!eposta.includes("@")) listeye("hata", "gecersiz-eposta");
   if (!adSoyad) listeye("hata", "eksik");
-  if (sifreKisaMi(sifre)) listeye("hata", "kisa-sifre");
+  if (!epostaAcikMi()) listeye("hata", "eposta-kapali");
 
-  const ozet = await sifreOzetle(sifre);
+  // Şifre alanı dolu olmak zorunda; kimsenin bilmediği rastgele bir değerin
+  // özeti yazılıyor. Hesap zaten davet kabul edilene kadar giremiyor.
+  const ozet = await sifreOzetle(randomBytes(32).toString("base64url"));
+  let id: string;
   try {
-    await db.adminUser.create({ data: { eposta, adSoyad, sifreOzeti: ozet } });
+    ({ id } = await db.adminUser.create({
+      data: { eposta, adSoyad, sifreOzeti: ozet },
+      select: { id: true },
+    }));
   } catch {
     listeye("hata", "eposta-kullanimda");
   }
-  listeye("kayit", "eklendi");
+
+  const gitti = await davetGonder(id, eposta, adSoyad, ben.adSoyad);
+  listeye(gitti ? "kayit" : "hata", gitti ? "davet" : "davet-gitmedi");
+}
+
+async function davetGonder(
+  id: string,
+  eposta: string,
+  adSoyad: string,
+  davetEden: string,
+): Promise<boolean> {
+  const jeton = await sifirlamaJetonuUret(id, DAVET_SAAT);
+  const sonuc = await panelDavetEpostasi(eposta, adSoyad, davetEden, jeton, DAVET_SAAT);
+  return sonuc.gonderildi;
+}
+
+/**
+ * Daveti yeniden gönderir: süresi dolduysa, e-posta gelmediyse.
+ *
+ * Yeni bağlantı eskisini geçersiz kılıyor (sıfırlama jetonuyla aynı kural,
+ * K-47). Davetini kabul etmiş hesaba gönderilmiyor.
+ */
+export async function davetiYenidenGonder(form: FormData): Promise<void> {
+  const ben = await yoneticiGerekli();
+  const id = metin(form, "id");
+  if (!epostaAcikMi()) listeye("hata", "eposta-kapali");
+
+  const kayit = id
+    ? await db.adminUser.findUnique({
+        where: { id },
+        select: { eposta: true, adSoyad: true, aktif: true, epostaDogrulandi: true },
+      })
+    : null;
+  if (!kayit) listeye("hata", "bulunamadi");
+  if (kayit.epostaDogrulandi) listeye("hata", "zaten-dogrulandi");
+  if (!kayit.aktif) listeye("hata", "kapali-hesap");
+
+  const gitti = await davetGonder(id, kayit.eposta, kayit.adSoyad, ben.adSoyad);
+  listeye(gitti ? "kayit" : "hata", gitti ? "davet-yeniden" : "davet-gitmedi");
 }
 
 /**
@@ -276,6 +344,15 @@ export async function sifreAta(form: FormData): Promise<void> {
   // değiştirmek bu oturumu da düşürürdü.
   if (id === ben.id) redirect("/yonetim/hesabim");
   if (sifreKisaMi(sifre)) listeye("hata", "kisa-sifre");
+
+  // Davet bekleyen hesaba şifre atanmıyor: e-posta doğrulanmadan başkasının
+  // koyduğu şifreyle giriş, davetin korumasını delerdi (K-87).
+  const hedef = await db.adminUser.findUnique({
+    where: { id },
+    select: { epostaDogrulandi: true },
+  });
+  if (!hedef) listeye("hata", "bulunamadi");
+  if (!hedef.epostaDogrulandi) listeye("hata", "davet-bekliyor");
 
   const ozet = await sifreOzetle(sifre);
   try {

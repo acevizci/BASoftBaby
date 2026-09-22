@@ -11,6 +11,7 @@ import {
   kullaniciCevir,
   kullaniciEkle,
   kullaniciSil,
+  davetiYenidenGonder,
   sifreAta,
 } from "@/server/yonetim-kimlik-islem";
 import {
@@ -72,7 +73,8 @@ export default async function KullanicilarSayfasi({
   // Bu yüzden durum ekranda yazıyor — kod bunu zaten koruyor ama kişinin
   // bilmesi lazım (K-46). Sayfayı yalnızca açık bir hesap açabildiği için
   // "tek hesap" hep buradaki kişi oluyor.
-  const tekHesapBenim = tumListe.filter((k) => k.aktif).length === 1;
+  // Davet bekleyen hesap sayılmıyor: açık ama giremiyor (K-87).
+  const tekHesapBenim = tumListe.filter((k) => k.aktif && k.epostaDogrulandi).length === 1;
 
   return (
     <div className="flex flex-col gap-5">
@@ -140,25 +142,20 @@ export default async function KullanicilarSayfasi({
               <input name="eposta" type="email" required className={GIRDI} />
             </label>
 
-            <label className="flex flex-col gap-1.5">
-              <span className={ETIKET}>Şifre</span>
-              <input
-                name="sifre"
-                type="password"
-                required
-                minLength={EN_KISA_SIFRE}
-                autoComplete="new-password"
-                className={GIRDI}
-              />
-              <span className="text-xs text-metin-3">
-                En az {EN_KISA_SIFRE} karakter. Kişiye kendin ilet; kaydettikten sonra
-                okunamıyor.
-              </span>
-            </label>
           </div>
 
-          <GonderDugmesi bekleyen="Ekleniyor…" className={`${ANA_DUGME} self-start`}>
-            Kullanıcı ekle
+          {/* Şifre burada sorulmuyor: kişiye davet gidiyor, şifresini kendisi
+              belirliyor. Bu, e-postanın gerçekten ona ait olduğunu da
+              kanıtlıyor (K-87). */}
+          <p className="text-sm text-metin-2">
+            Bu adrese bir <strong>davet bağlantısı</strong> gidecek. Kişi bağlantıya
+            tıklayıp şifresini kendisi belirleyince panele girebilir; bağlantı 48 saat
+            geçerli. O zamana kadar hesap listede &quot;Davet bekliyor&quot; olarak durur ve
+            giriş yapamaz.
+          </p>
+
+          <GonderDugmesi bekleyen="Davet gönderiliyor…" className={`${ANA_DUGME} self-start`}>
+            Davet gönder
           </GonderDugmesi>
         </form>
       </Katlanir>
@@ -182,6 +179,7 @@ function Kullanici({
   benimId: string;
 }) {
   const benMiyim = k.id === benimId;
+  const davetBekliyor = !k.epostaDogrulandi;
 
   return (
     <li className="flex flex-col gap-3 py-4">
@@ -203,10 +201,14 @@ function Kullanici({
 
         <span
           className={`rounded-full px-2.5 py-1 text-xs font-bold ${
-            k.aktif ? "bg-nane-soluk text-nane-koyu" : "bg-cizgi-soluk text-metin-2"
+            !k.aktif
+              ? "bg-cizgi-soluk text-metin-2"
+              : davetBekliyor
+                ? "bg-sari-soluk text-sari-koyu"
+                : "bg-nane-soluk text-nane-koyu"
           }`}
         >
-          {k.aktif ? "Açık" : "Kapalı"}
+          {!k.aktif ? "Kapalı" : davetBekliyor ? "Davet bekliyor" : "Açık"}
         </span>
       </div>
 
@@ -242,6 +244,17 @@ function Kullanici({
               </form>
             </SilmeOnayi>
 
+            {/* Davet bekleyen hesaba şifre atanmıyor; daveti yenilemek var (K-87). */}
+            {davetBekliyor && k.aktif && (
+              <form action={davetiYenidenGonder}>
+                <input type="hidden" name="id" value={k.id} />
+                <GonderDugmesi bekleyen="Gönderiliyor…" className={KUCUK_DUGME}>
+                  Daveti yeniden gönder
+                </GonderDugmesi>
+              </form>
+            )}
+
+            {!davetBekliyor && (
             <details className="group">
               <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 text-xs font-bold text-metin-2 hover:text-metin [&::-webkit-details-marker]:hidden">
                 Şifre ata
@@ -265,6 +278,7 @@ function Kullanici({
                 </button>
               </form>
             </details>
+            )}
           </>
         )}
 
