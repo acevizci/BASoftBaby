@@ -28,6 +28,14 @@ export type YasGrubuKaydi = {
   aciklama: string;
   sira: number;
   aktif: boolean;
+  /**
+   * Bağlı kategorinin slug'ı; boşsa grup yalnızca bedenlerle süzüyor.
+   *
+   * Beden cinsiyet taşımıyor: "Kız Çocuk" ile "Erkek Çocuk" aynı 2-14 yaş
+   * bedenlerini kullanıyor ve bir beden tek bir gruba bağlanabiliyor. Erkek
+   * grubunu seçen müşteri kız ürünlerini de görüyordu (K-80).
+   */
+  kategori: string | null;
 };
 
 const SECIM = {
@@ -37,12 +45,15 @@ const SECIM = {
   aciklama: true,
   sira: true,
   aktif: true,
+  category: { select: { slug: true } },
 } as const;
 
 /** Kapalılar dahil hepsi: panel listesi bunu kullanıyor. */
 export const tumYasGruplari = paylasilanOnbellek(
-  async (): Promise<YasGrubuKaydi[]> =>
-    db.ageGroup.findMany({ select: SECIM, orderBy: { sira: "asc" } }),
+  async (): Promise<YasGrubuKaydi[]> => {
+    const satirlar = await db.ageGroup.findMany({ select: SECIM, orderBy: { sira: "asc" } });
+    return satirlar.map(({ category, ...g }) => ({ ...g, kategori: category?.slug ?? null }));
+  },
   ["yas-gruplari-hepsi"],
   [ETIKETLER.yasGrubu],
 );

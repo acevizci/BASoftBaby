@@ -166,11 +166,22 @@ export default async function KategoriSayfasi({
   const bedenSecenekleri = tumBedenler.filter(
     (b) => kapsam.bedenler.has(b.ad) || aranan.beden === b.ad,
   );
-  const yasSecenekleri = tumYaslar.filter(
-    (y) =>
-      aranan.yas === y.kod ||
-      tumBedenler.some((b) => b.yasKodu === y.kod && kapsam.bedenler.has(b.ad)),
-  );
+  // Yaş grubu, seçilince en az bir ürün getirecekse görünüyor: grubun
+  // kategorisi (varsa) ve stokta bedeni (varsa) aynı üründe tutmalı. Başka
+  // kategoriye bağlı grup bu sayfada çıkmıyor (K-80).
+  const yasSecenekleri = tumYaslar.filter((y) => {
+    if (aranan.yas === y.kod) return true;
+    const grupBedenleri = new Set(
+      tumBedenler.filter((b) => b.yasKodu === y.kod).map((b) => b.ad),
+    );
+    if (grupBedenleri.size === 0 && !y.kategori) return false;
+    return kapsamdakiler.some(
+      (u) =>
+        (!y.kategori || u.kategori === y.kategori) &&
+        (grupBedenleri.size === 0 ||
+          u.varyantlar.some((v) => v.stok > 0 && grupBedenleri.has(v.beden))),
+    );
+  });
   const gorunenRenkler = renkler.filter(
     (r) => kapsam.renkler.has(r.kod) || aranan.renk === r.kod,
   );

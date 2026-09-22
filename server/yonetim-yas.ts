@@ -68,19 +68,34 @@ function alanlar(veri: FormData) {
   };
 }
 
+/**
+ * Formdaki kategori slug'ı → kategori kimliği; boşsa bağ yok.
+ *
+ * Bilinmeyen bir slug sessizce "bağ yok"a dönmüyor: grup bütün kategorilerde
+ * süzmeye başlar, müşteri yine yanlış ürünleri görürdü (K-80).
+ */
+async function kategoriCoz(veri: FormData): Promise<string | null | undefined> {
+  const slug = String(veri.get("kategori") ?? "").trim();
+  if (!slug) return null;
+  const k = await db.category.findUnique({ where: { slug }, select: { id: true } });
+  return k?.id;
+}
+
 export async function yasGrubuEkle(veri: FormData): Promise<void> {
   await yoneticiGerekli();
 
   const { kod, ad, aciklama } = alanlar(veri);
   if (!kod) redirect(donus(veri, "hata=yaskod"));
   if (!ad) redirect(donus(veri, "hata=yasad"));
+  const categoryId = await kategoriCoz(veri);
+  if (categoryId === undefined) redirect(donus(veri, "hata=yaskategori"));
 
   const varMi = await db.ageGroup.findUnique({ where: { kod }, select: { id: true } });
   if (varMi) redirect(donus(veri, "hata=yastekrar"));
 
   const son = await db.ageGroup.aggregate({ _max: { sira: true } });
   await db.ageGroup.create({
-    data: { kod, ad, aciklama, sira: (son._max.sira ?? 0) + 1 },
+    data: { kod, ad, aciklama, categoryId, sira: (son._max.sira ?? 0) + 1 },
   });
 
   vitriniYenile();
@@ -102,6 +117,8 @@ export async function yasGrubuKaydet(veri: FormData): Promise<void> {
   if (!id) redirect(SAYFA);
   if (!kod) redirect(donus(veri, "hata=yaskod"));
   if (!ad) redirect(donus(veri, "hata=yasad"));
+  const categoryId = await kategoriCoz(veri);
+  if (categoryId === undefined) redirect(donus(veri, "hata=yaskategori"));
 
   const mevcut = await db.ageGroup.findUnique({ where: { id }, select: { kod: true } });
   if (!mevcut) redirect(donus(veri, "hata=bulunamadi"));
@@ -112,7 +129,7 @@ export async function yasGrubuKaydet(veri: FormData): Promise<void> {
   }
 
   await db.$transaction(async (islem) => {
-    await islem.ageGroup.update({ where: { id }, data: { kod, ad, aciklama } });
+    await islem.ageGroup.update({ where: { id }, data: { kod, ad, aciklama, categoryId } });
     if (mevcut.kod !== kod) {
       await islem.size.updateMany({
         where: { yasKodu: mevcut.kod },

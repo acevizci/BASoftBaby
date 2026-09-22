@@ -62,6 +62,7 @@ const HATALAR: Record<string, string> = {
   yaskod: "Yaş grubu kodu boş olamaz. Adres satırında görünen kısım bu: 6-12 gibi.",
   yasad: "Yaş grubu adı boş olamaz.",
   yastekrar: "Bu kodda bir yaş grubu zaten var.",
+  yaskategori: "Seçilen kategori bulunamadı; silinmiş olabilir. Listeden yeniden seç.",
   yaskullanimda:
     "Bu yaş grubu bedenlere bağlı, silinemiyor. Bunun yerine kapatabilirsin — bedenler yerinde kalır.",
 };
@@ -89,7 +90,12 @@ export default async function BedenEkrani({
 
   const { duzenle, duzenleYas, kayit, hata, adet, sayfa, yasSayfa, ara, yasAra } =
     await searchParams;
-  const [tumBedenListesi, tumGrupListesi] = await Promise.all([tumBedenler(), tumYasGruplari()]);
+  const [tumBedenListesi, tumGrupListesi, kategoriler] = await Promise.all([
+    tumBedenler(),
+    tumYasGruplari(),
+    db.category.findMany({ orderBy: { sira: "asc" }, select: { slug: true, ad: true } }),
+  ]);
+  const kategoriAdlari = new Map(kategoriler.map((k) => [k.slug, k.ad]));
 
   // İki liste, iki ayrı arama: yaş gruplarında arama yaparken beden
   // listesinin süzülmesi şaşırtıcı olurdu (K-69).
@@ -391,6 +397,9 @@ export default async function BedenEkrani({
 
                     <span className="rakam text-xs text-metin-3">
                       {bagliBeden > 0 ? `${bagliBeden} beden bağlı` : "bedene bağlı değil"}
+                      {g.kategori && (
+                        <> · yalnızca {kategoriAdlari.get(g.kategori) ?? g.kategori}</>
+                      )}
                     </span>
 
                     <span
@@ -475,7 +484,13 @@ export default async function BedenEkrani({
                     >
                       <input type="hidden" name="id" value={g.id} />
                       <SayfaAlani sayfa={yDurum.sayfa} ara={yArama} ad="yasSayfa" />
-                      <YasAlanlari kod={g.kod} ad={g.ad} aciklama={g.aciklama} />
+                      <YasAlanlari
+                        kod={g.kod}
+                        ad={g.ad}
+                        aciklama={g.aciklama}
+                        kategori={g.kategori}
+                        kategoriler={kategoriler}
+                      />
                       <p className="mt-3 text-xs text-metin-3">
                         Kodu değiştirirsen bu gruba bağlı bedenler de yeni koda geçer;
                         ama eski <span className="rakam">?yas={g.kod}</span> bağlantısı
@@ -509,7 +524,7 @@ export default async function BedenEkrani({
         acik={duzenleYas === undefined && typeof hata === "string" && hata.startsWith("yas")}
       >
         <form action={yasGrubuEkle} className="flex flex-col gap-4">
-          <YasAlanlari />
+          <YasAlanlari kategoriler={kategoriler} />
           <button type="submit" className={`${ANA_DUGME} self-start`}>
             Yaş grubunu ekle
           </button>
@@ -605,13 +620,17 @@ function YasAlanlari({
   kod = "",
   ad = "",
   aciklama = "",
+  kategori = null,
+  kategoriler,
 }: {
   kod?: string;
   ad?: string;
   aciklama?: string;
+  kategori?: string | null;
+  kategoriler: { slug: string; ad: string }[];
 }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2">
       <label className="flex flex-col gap-1.5">
         <span className={ETIKET}>Grup adı</span>
         <input name="ad" defaultValue={ad} required placeholder="Yürüyen" className={GIRDI} />
@@ -633,6 +652,26 @@ function YasAlanlari({
         <span className="text-xs text-metin-3">
           Bağlantıda görünür: /urunler?yas=<span className="rakam">24-48</span>. Türkçe
           harf ve boşluk kullanırsan sade hâline çevrilir.
+        </span>
+      </label>
+
+      {/* Beden cinsiyet taşımıyor: kız ve erkek ürünleri aynı bedenlerde.
+          Grup "Kız Çocuk" gibi bir bölümse kategorisi seçilmeli, yoksa
+          süzgeç öteki bölümün ürünlerini de getirir (K-80). */}
+      <label className="flex flex-col gap-1.5">
+        <span className={ETIKET}>Yalnızca bu kategori</span>
+        <select name="kategori" defaultValue={kategori ?? ""} className={GIRDI}>
+          <option value="">Bütün kategoriler</option>
+          {kategoriler.map((k) => (
+            <option key={k.slug} value={k.slug}>
+              {k.ad}
+            </option>
+          ))}
+        </select>
+        <span className="text-xs text-metin-3">
+          Grup &quot;Kız Çocuk&quot; gibi bir bölümse onun kategorisini seç: bedenler
+          kız ve erkek ürünlerinde aynı, tek başlarına ayıramıyorlar. Bedeni olmayan
+          grup yalnızca kategoriye göre süzer.
         </span>
       </label>
     </div>

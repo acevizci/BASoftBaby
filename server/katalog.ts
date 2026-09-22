@@ -17,6 +17,8 @@ import {
   type Kategori,
 } from "@/ui/katalog-bicim";
 import { bedenSirasi, sonSira, yasGrubununBedenleri } from "@/server/bedenler";
+import { tumYasGruplari } from "@/server/yas-gruplari";
+import type { Prisma } from "@/db/uretilen/client";
 import { tumRenkSecenekleri } from "@/server/renkler";
 import { ETIKETLER, paylasilanOnbellek, paylasilanOnbellekli } from "@/server/onbellek";
 import { kelimeler } from "@/server/arama-metin";
@@ -274,6 +276,9 @@ export const urunleriGetir = paylasilanOnbellekli(
  * Beden ve yaş birlikte verilirse beden kazanıyor: daha dar olan seçim.
  * Renk tek başına verildiğinde stok aranmıyor; ürün o renkte üretiliyorsa
  * listede kalıyor.
+ *
+ * Yaş grubunun kategori bağı burada değil, `yasKosulu` içinde: o ürünün
+ * kendisine bakıyor, varyantına değil.
  */
 function varyantKosulu(suzgec: UrunSuzgeci, yasBedenleri: readonly string[]) {
   const kosul: {
@@ -295,8 +300,29 @@ function varyantKosulu(suzgec: UrunSuzgeci, yasBedenleri: readonly string[]) {
   return Object.keys(kosul).length > 0 ? { variants: { some: kosul } } : {};
 }
 
+/**
+ * Yaş grubunun süzgeci: bedenleri ve varsa bağlı kategorisi.
+ *
+ * Grup bir kategoriye bağlıysa yalnızca o kategorinin ürünleri geliyor;
+ * bedeni yoksa süzgeç yalnızca kategori (K-80). Ne bedeni ne kategorisi
+ * olan ya da bilinmeyen bir grup **hiçbir şey** getirmiyor: eskiden koşul
+ * boş kalıyor ve bütün katalog listeleniyordu.
+ */
+async function yasKosulu(kod: string): Promise<{
+  bedenler: string[];
+  kosul: Prisma.ProductWhereInput;
+}> {
+  const grup = (await tumYasGruplari()).find((g) => g.kod === kod);
+  const bedenler = grup ? await yasGrubununBedenleri(kod) : [];
+  if (!grup || (bedenler.length === 0 && !grup.kategori)) {
+    return { bedenler, kosul: { id: { in: [] } } };
+  }
+  return { bedenler, kosul: grup.kategori ? { category: { slug: grup.kategori } } : {} };
+}
+
 async function urunleriSorgula(suzgec: UrunSuzgeci = {}): Promise<Urun[]> {
-  const yasBedenleri = suzgec.yas ? await yasGrubununBedenleri(suzgec.yas) : [];
+  const yas = suzgec.yas ? await yasKosulu(suzgec.yas) : undefined;
+  const yasBedenleri = yas?.bedenler ?? [];
   const aranan = suzgec.ara ? kelimeler(suzgec.ara) : [];
 
   const [satirlar, kampanyalar, sira, renkSecenekleri] = await Promise.all([
@@ -307,10 +333,13 @@ async function urunleriSorgula(suzgec: UrunSuzgeci = {}): Promise<Urun[]> {
         ...(suzgec.enFazlaKurus ? { fiyatKurus: { lte: suzgec.enFazlaKurus } } : {}),
         ...varyantKosulu(suzgec, yasBedenleri),
         // Her kelime ayrı aranıyor ve hepsi bulunmak zorunda: "mavi tulum"
-        // yazan kişi mavi VE tulum arıyor (K-35).
-        ...(aranan.length > 0
-          ? { AND: aranan.map((k) => ({ aramaMetni: { contains: k } })) }
-          : {}),
+        // yazan kişi mavi VE tulum arıyor (K-35). Yaş grubunun kategori
+        // koşulu da buraya giriyor: `category` anahtarı yukarıda sayfanın
+        // kendi kategorisi için kullanılıyor, ikisi birlikte geçerli olmalı.
+        AND: [
+          ...aranan.map((k) => ({ aramaMetni: { contains: k } })),
+          ...(yas ? [yas.kosul] : []),
+        ],
       },
       include: URUN_ICEREN,
       orderBy: { olusturuldu: "asc" },

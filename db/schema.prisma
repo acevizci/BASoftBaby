@@ -22,6 +22,7 @@ model Category {
   aktif     Boolean    @default(true)
   products  Product[]
   campaigns Campaign[]
+  ageGroups AgeGroup[]
 
   @@index([aktif, sira])
 }
@@ -49,13 +50,20 @@ model Size {
 
 /// Vitrindeki yaş grubu: ana sayfadaki kutular ve süzgeçteki yaş etiketleri.
 /// Hangi bedenin hangi gruba girdiği beden kaydında duruyor (Size.yasKodu).
+///
+/// Grup isteğe bağlı olarak bir kategoriye bağlanabiliyor: "Kız Çocuk" ile
+/// "Erkek Çocuk" aynı bedenleri paylaşıyor, beden tek başına ikisini
+/// ayıramıyor (K-80). Bağlıysa süzgeç yalnızca o kategorinin ürünlerini
+/// getiriyor; kategori silinirse bağ kalkıyor, grup duruyor.
 model AgeGroup {
-  id       String  @id @default(cuid())
-  kod      String  @unique
-  ad       String
-  aciklama String
-  sira     Int     @default(0)
-  aktif    Boolean @default(true)
+  id         String    @id @default(cuid())
+  kod        String    @unique
+  ad         String
+  aciklama   String
+  sira       Int       @default(0)
+  aktif      Boolean   @default(true)
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   @@index([aktif, sira])
 }

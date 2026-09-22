@@ -4039,6 +4039,32 @@ değişiklikle aynı `Serializable` işlemde.
 [`../server/yonetim-kimlik-islem.ts`](../server/yonetim-kimlik-islem.ts),
 [`../server/panel-menu.ts`](../server/panel-menu.ts)
 
+### K-80 · Yaş grubu bir kategoriye bağlanabiliyor
+
+Mağazada yaş grupları bölüm olarak kullanılıyor: "Kız Çocuk · 2-14 Yaş",
+"Erkek Çocuk · 2-14 Yaş". Yaş süzgeci ise yalnızca bedene bakıyordu ve bir
+beden tek bir gruba bağlanabiliyor. 2-14 yaş bedenlerinin hepsi erkek grubuna
+bağlıydı; o yüzden **"Erkek Çocuk" süzgeci kız ürünlerini de getiriyor**, kız
+grubunun hiç bedeni kalmadığı için "Kız Çocuk" süzgeci boş dönüyordu.
+
+Bedeni birden çok gruba bağlamak çözmüyordu: iki grup yine aynı ürünleri
+getirirdi, çünkü kız ve erkek ürünleri aynı bedenlerde. Ayrımı taşıyan şey
+kategori. Yaş grubuna isteğe bağlı bir kategori eklendi:
+
+- Kategori seçilirse süzgeç yalnızca o kategorinin ürünlerini getiriyor;
+  grubun bedenleri de varsa ikisi birlikte geçerli.
+- Bedeni olmayan grup yalnızca kategoriye göre süzüyor.
+- Ne bedeni ne kategorisi olan ya da bilinmeyen bir grup **hiçbir şey**
+  getirmiyor. Eskiden koşul boş kalıyor, bütün katalog listeleniyordu.
+- Kategori sayfasında bir yaş grubu, seçilince en az bir ürün getirecekse
+  görünüyor (K-78'in kuralı); başka kategoriye bağlı grup orada çıkmıyor.
+
+Bağ yabancı anahtar, `SetNull` ile: kategori silinirse grup durur, bağ kalkar.
+
+**Nerede:** [`../server/katalog.ts`](../server/katalog.ts) (`yasKosulu`),
+[`../server/yonetim-yas.ts`](../server/yonetim-yas.ts),
+[`../testler/yas-suzgeci-db.test.ts`](../testler/yas-suzgeci-db.test.ts)
+
 ---
 
 ## Açık sorular

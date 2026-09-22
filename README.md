@@ -597,6 +597,12 @@ Kategori sayfalarında **yaş** ve **beden** ayrı iki süzgeç. Yaş grubu bird
 çok bedeni kapsar: "6-12 ay" hem 6-9 hem 9-12 bedenindeki ürünleri getirir.
 Ana sayfadaki yaş kutuları da bu gruplara gider.
 
+Yaş grubu isteğe bağlı olarak **bir kategoriye bağlanabilir** (Panel →
+Bedenler → yaş grubu → "Yalnızca bu kategori"). "Kız Çocuk" ve "Erkek Çocuk"
+gibi bölümler aynı bedenleri kullandığı için beden tek başına onları
+ayıramaz; kategori seçilince süzgeç yalnızca o kategorinin ürünlerini getirir.
+Bedeni olmayan grup yalnızca kategoriye göre süzer (K-80).
+
 Her bedenin **boy karşılığı** süzgecin içinde yazar; ürün sayfasında seçili
 bedenin boy ve kilo aralığı görünür ve iki yerde de beden rehberine bağlantı
 vardır. Ölçü tablosu tek yerde (`ui/katalog-bicim.ts`) durur; beden rehberi
