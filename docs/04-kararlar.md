@@ -4174,6 +4174,22 @@ Sahte bir Resend sunucusuyla (`EPOSTA_TABAN_ADRES`) iki yol da denendi.
 [`../server/eposta-deneme.ts`](../server/eposta-deneme.ts),
 [`../app/yonetim/(panel)/hazirlik/page.tsx`](../app/yonetim/(panel)/hazirlik/page.tsx)
 
+### K-86 · Resend anahtarı temizlenerek kullanılıyor, özeti panelde
+
+Canlıdaki ilk deneme `401 API key is invalid` döndü. Anahtar ortam
+değişkeninden olduğu gibi okunuyordu: Vercel'e yapıştırırken sona kaçan satır
+sonu ya da `.env` alışkanlığıyla yazılan tırnaklar anahtarın parçası sayılıyor,
+Resend geçerli bir anahtarı bile reddediyordu. Artık baştaki/sondaki boşluk ve
+tırnak atılıyor.
+
+Temizlik yetmediyse (anahtar eksik kopyalanmış, silinmiş, başka hesabın) ilk
+soru "Vercel'deki anahtar Resend'deki mi". Deneme kutusu anahtarın ilk beş
+karakterini ve uzunluğunu gösteriyor — anahtarın kendisi hiçbir yerde
+gösterilmiyor. "re_" ile başlamıyorsa ya da temizlik bir şey değiştirdiyse
+bunu da yazıyor.
+
+**Nerede:** [`../server/eposta.ts`](../server/eposta.ts) (`resendAnahtari`, `anahtarOzeti`)
+
 ---
 
 ## Açık sorular

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { hazirlikRaporu, type Agirlik, type Kontrol } from "@/server/hazirlik";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
-import { epostaAcikMi, gonderenAdresi } from "@/server/eposta";
+import { anahtarOzeti, epostaAcikMi, gonderenAdresi } from "@/server/eposta";
 import { denemeEpostasiGonder } from "@/server/eposta-deneme";
 import GonderDugmesi from "@/ui/gonder-dugmesi";
 
@@ -160,7 +160,7 @@ function epostaHataIpucu(sebep: string | undefined, mesaj: string | undefined): 
     return "Resend şu an yalnızca kendi hesap adresine deneme gönderimine izin veriyor: alan adı doğrulanmamış. Resend → Domains'te alan adını doğrula.";
   }
   if (m.includes("api key") || sebep === "http-401") {
-    return "Resend anahtarı geçersiz ya da yetkisi yetmiyor. Resend → API Keys'te \"Sending access\" ya da \"Full access\" yetkili yeni bir anahtar oluşturup Vercel'de RESEND_ANAHTARI'na yaz ve yeniden dağıt.";
+    return "Resend bu anahtarı tanımıyor. Çoğunlukla anahtar eksik kopyalanmış, silinmiş ya da başka bir Resend hesabına ait. Resend → API Keys'te yeni bir anahtar oluştur (oluşturulduğu an bir kez gösteriliyor, tamamını kopyala), Vercel'de RESEND_ANAHTARI değerini tırnaksız olarak onunla değiştir ve yeniden dağıt (Redeploy). Aşağıdaki \"Anahtar\" satırında baş harfleri ve uzunluğu Resend'dekiyle karşılaştırabilirsin.";
   }
   if (sebep === "http-422") {
     return "Resend isteği reddetti; çoğunlukla gönderen adresin biçimi hatalı. EPOSTA_GONDEREN şu biçimde olmalı: BASoftBaby <siparis@alanadin.com>.";
@@ -196,6 +196,7 @@ function EpostaDenemesi({
         Gönderen: <span className="font-semibold text-metin-2">{gonderenAdresi()}</span>
         {!epostaAcikMi() && " · anahtar tanımlı değil"}
       </p>
+      <AnahtarSatiri />
 
       {sonuc === "gitti" && (
         <p className="mt-3 rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">
@@ -222,5 +223,32 @@ function EpostaDenemesi({
         </GonderDugmesi>
       </form>
     </section>
+  );
+}
+
+/**
+ * Bu dağıtımın gördüğü anahtarın özeti — anahtarın kendisi değil.
+ *
+ * "API key is invalid" cevabında ilk soru "Vercel'deki anahtar Resend'deki
+ * mi". Baştaki beş karakter ve uzunluk bunu anahtarı açık etmeden
+ * cevaplıyor (K-86).
+ */
+function AnahtarSatiri() {
+  if (!epostaAcikMi()) return null;
+  const a = anahtarOzeti();
+  return (
+    <p className="mt-1 text-sm text-metin-3">
+      Anahtar: <span className="rakam font-semibold text-metin-2">{a.onEk}…</span> ·{" "}
+      <span className="rakam">{a.uzunluk}</span> karakter
+      {!a.bicimDogru && (
+        <span className="text-mercan-koyu">
+          {" "}· Resend anahtarı &quot;re_&quot; ile başlar ve harf, rakam ve alt çizgiden
+          oluşur; bu değer öyle görünmüyor
+        </span>
+      )}
+      {a.temizlendi && (
+        <span> · Vercel&apos;deki değerde boşluk ya da tırnak vardı, temizlenerek kullanılıyor</span>
+      )}
+    </p>
   );
 }

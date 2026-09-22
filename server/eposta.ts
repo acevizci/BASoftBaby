@@ -26,8 +26,35 @@ export type EpostaSonucu = {
   mesaj?: string;
 };
 
+/**
+ * Ortam değişkenindeki anahtar, temizlenmiş hâliyle.
+ *
+ * Vercel'e yapıştırılırken sona satır sonu ya da boşluk, başa sona tırnak
+ * kaçabiliyor (`.env` alışkanlığıyla `"re_…"` yazmak). Resend bunları
+ * anahtarın parçası sayıp "API key is invalid" diyordu (K-86).
+ */
+export function resendAnahtari(): string {
+  return (process.env.RESEND_ANAHTARI ?? "").trim().replace(/^["']+|["']+$/g, "").trim();
+}
+
+/**
+ * Anahtarın ekranda gösterilebilecek özeti: baştaki birkaç karakter ve
+ * uzunluk. Anahtarın kendisi hiçbir zaman gösterilmiyor; bu kadarı "doğru
+ * anahtar mı, eksik mi kopyalandı" sorusuna yetiyor (K-86).
+ */
+export function anahtarOzeti(): { onEk: string; uzunluk: number; bicimDogru: boolean; temizlendi: boolean } {
+  const ham = process.env.RESEND_ANAHTARI ?? "";
+  const temiz = resendAnahtari();
+  return {
+    onEk: temiz.slice(0, 5),
+    uzunluk: temiz.length,
+    bicimDogru: /^re_[A-Za-z0-9_]{20,}$/.test(temiz),
+    temizlendi: ham !== temiz,
+  };
+}
+
 export function epostaAcikMi(): boolean {
-  return Boolean(process.env.RESEND_ANAHTARI);
+  return resendAnahtari() !== "";
 }
 
 /** Gönderen adres; panelde gösteriliyor, alan adı Resend'dekiyle aynı olmalı. */
@@ -77,7 +104,7 @@ async function gonder(
     const cevap = await fetch(taban ? `${taban.replace(/\/$/, "")}/emails` : UC, {
       method: "POST",
       headers: {
-        authorization: `Bearer ${process.env.RESEND_ANAHTARI}`,
+        authorization: `Bearer ${resendAnahtari()}`,
         "content-type": "application/json",
       },
       body: JSON.stringify({
