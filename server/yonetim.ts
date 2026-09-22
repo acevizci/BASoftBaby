@@ -544,6 +544,14 @@ export async function kategoriKaydet(veri: FormData): Promise<void> {
 
   if (!ad) redirect(`/yonetim/kategoriler?hata=ad${id ? `&duzenle=${id}` : ""}`);
 
+  // Aynı ad ikinci kez verilemiyor: iki "Kız Çocuk" alt alta durunca hangisinin
+  // dolu olduğu anlaşılmıyor, yaş grubu da boş olana bağlanıyordu (K-82).
+  const anahtar = (m: string) => m.trim().toLocaleLowerCase("tr");
+  const adlar = await db.category.findMany({ select: { id: true, ad: true } });
+  if (adlar.some((k) => k.id !== id && anahtar(k.ad) === anahtar(ad))) {
+    redirect(`/yonetim/kategoriler?hata=ad-tekrar${id ? `&duzenle=${id}` : ""}`);
+  }
+
   if (id) {
     await db.category.update({ where: { id }, data: { ad, aciklama, aktif } });
     vitriniYenile();

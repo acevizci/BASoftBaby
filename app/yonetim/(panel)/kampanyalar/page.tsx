@@ -8,6 +8,7 @@ import Sayfalama, { SayfaAlani } from "@/ui/sayfalama";
 import { sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
 import PanelArama from "@/ui/panel-arama";
 import { alanAramasi, aramaCoz } from "@/ui/panel-arama-bicim";
+import { kategoriEtiketleri } from "@/ui/kategori-etiketi";
 
 export const dynamic = "force-dynamic";
 
@@ -69,7 +70,10 @@ export default async function KampanyaEkrani({
       skip: durum.atla,
       take: durum.boy,
     }),
-    db.category.findMany({ orderBy: { sira: "asc" }, select: { id: true, ad: true } }),
+    db.category.findMany({
+      orderBy: { sira: "asc" },
+      select: { id: true, slug: true, ad: true, aktif: true },
+    }),
     db.product.findMany({ orderBy: { ad: "asc" }, select: { id: true, ad: true } }),
   ]);
 
@@ -219,7 +223,7 @@ export default async function KampanyaEkrani({
                 <option value="">seçilmedi</option>
                 {kategoriler.map((k) => (
                   <option key={k.id} value={k.id}>
-                    {k.ad}
+                    {kategoriEtiketleri(kategoriler).get(k.slug) ?? k.ad}
                   </option>
                 ))}
               </select>

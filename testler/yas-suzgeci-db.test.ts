@@ -82,4 +82,21 @@ describe("yaş grubu süzgeci (veritabanı)", { skip: atlamaSebebi }, () => {
     assert.deepEqual(await sluglar(k.bosGrup), []);
     assert.deepEqual(await sluglar("boyle-bir-grup-yok"), []);
   });
+
+  it("kapalı kategorinin ürünü listelerde çıkmıyor", async () => {
+    // Panel "kapalı kategori listelerde çıkmaz" diyordu ama ürünleri Tüm
+    // ürünler'de ve yaş süzgecinde görünmeye devam ediyordu (K-82).
+    const db = testDb();
+    const urun = await db.product.findFirstOrThrow({
+      where: { slug: k.kizUrun },
+      select: { categoryId: true },
+    });
+    await db.category.update({ where: { id: urun.categoryId }, data: { aktif: false } });
+    try {
+      assert.ok(!(await urunleriGetir({})).some((u) => u.slug === k.kizUrun));
+      assert.deepEqual(await sluglar(k.kizGrup), []);
+    } finally {
+      await db.category.update({ where: { id: urun.categoryId }, data: { aktif: true } });
+    }
+  });
 });

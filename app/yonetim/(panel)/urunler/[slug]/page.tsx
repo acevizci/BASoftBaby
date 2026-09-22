@@ -6,6 +6,7 @@ import { bedenSirasi, sonSira, bedenler as bedenleriGetir } from "@/server/beden
 import { renkSecenekleri, tumRenkSecenekleri } from "@/server/renkler";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import UrunSilme from "@/ui/urun-silme";
+import { kategoriEtiketleri } from "@/ui/kategori-etiketi";
 
 export const dynamic = "force-dynamic";
 
@@ -75,7 +76,10 @@ export default async function UrunDuzenle({
     <div className="flex flex-col gap-6">
       <UrunFormu
         kaydedildi={kayit === "1"}
-        kategoriler={kategoriler.map((k) => ({ slug: k.slug, ad: k.ad }))}
+        kategoriler={kategoriler.map((k) => ({
+          slug: k.slug,
+          ad: kategoriEtiketleri(kategoriler).get(k.slug) ?? k.ad,
+        }))}
         bedenler={secilebilirBedenler.map((b) => ({ id: b.id, ad: b.ad }))}
         renkler={secilebilirRenkler}
         fotografVar={urun.images.length > 0}

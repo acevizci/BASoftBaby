@@ -9,6 +9,7 @@ import PanelArama from "@/ui/panel-arama";
 import { aramaCoz, aramaKosulu } from "@/ui/panel-arama-bicim";
 import { sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
 import PanelBildirim, { ORTAK_HATALAR } from "@/ui/panel-bildirim";
+import { kategoriEtiketleri } from "@/ui/kategori-etiketi";
 
 export const dynamic = "force-dynamic";
 
@@ -356,8 +357,7 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
                 <option value="">Kategori seç</option>
                 {tumKategoriler.map((k) => (
                   <option key={k.slug} value={k.slug}>
-                    {k.ad}
-                    {k.aktif ? "" : " (kapalı)"}
+                    {kategoriEtiketleri(tumKategoriler).get(k.slug) ?? k.ad}
                   </option>
                 ))}
               </select>

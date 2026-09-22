@@ -13,6 +13,7 @@ import Sayfalama, { SayfaAlani } from "@/ui/sayfalama";
 import { dilimle, sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
 import PanelArama from "@/ui/panel-arama";
 import { aramaCoz, aramayaGoreSuz } from "@/ui/panel-arama-bicim";
+import { kategoriEtiketleri } from "@/ui/kategori-etiketi";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,8 @@ const BILDIRIMLER: Record<string, string> = {
 const HATALAR: Record<string, string> = {
   ...ORTAK_HATALAR,
   ad: "Kategori adı boş bırakılamaz.",
+  "ad-tekrar":
+    "Bu adda başka bir kategori var. İkisini birleştirmek için birini sil ve \"Ürünler nereye taşınsın?\" bölümünde ötekini seç.",
   "hedef-yok": "Ürünlerin taşınacağı kategoriyi seç.",
 };
 
@@ -253,7 +256,7 @@ export default async function KategoriEkrani({
                             .filter((d) => d.id !== k.id)
                             .map((d) => (
                               <option key={d.id} value={d.id}>
-                                {d.ad}
+                                {kategoriEtiketleri(tumListe).get(d.slug) ?? d.ad}
                               </option>
                             ))}
                         </select>

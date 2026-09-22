@@ -202,9 +202,10 @@ export async function tumKategoriler(): Promise<PanelKategorisi[]> {
   }));
 }
 
+/** Vitrin için: kapalı kategori yokmuş gibi davranıyor, sayfası 404 veriyor (K-82). */
 export async function kategoriGetir(slug: string): Promise<Kategori | undefined> {
   const k = await db.category.findUnique({ where: { slug } });
-  if (!k) return undefined;
+  if (!k || !k.aktif) return undefined;
   return { slug: k.slug, ad: k.ad, aciklama: k.aciklama ?? "", sira: k.sira };
 }
 
@@ -329,7 +330,11 @@ async function urunleriSorgula(suzgec: UrunSuzgeci = {}): Promise<Urun[]> {
     db.product.findMany({
       where: {
         aktif: true,
-        ...(suzgec.kategori ? { category: { slug: suzgec.kategori } } : {}),
+        // Kapalı kategorinin ürünü listelerde çıkmıyor: panel "kapalı kategori
+        // menüde ve listelerde çıkmaz" diyordu ama ürünleri Tüm ürünler'de,
+        // aramada ve yaş süzgecinde görünmeye devam ediyordu (K-82). Ürün
+        // sayfası doğrudan adresle açılmaya devam ediyor.
+        category: { aktif: true, ...(suzgec.kategori ? { slug: suzgec.kategori } : {}) },
         ...(suzgec.enFazlaKurus ? { fiyatKurus: { lte: suzgec.enFazlaKurus } } : {}),
         ...varyantKosulu(suzgec, yasBedenleri),
         // Her kelime ayrı aranıyor ve hepsi bulunmak zorunda: "mavi tulum"
@@ -396,7 +401,7 @@ export const oneCikanUrunler = paylasilanOnbellekli(
 async function oneCikanlariSorgula(adet = 8): Promise<Urun[]> {
   const [satirlar, kampanyalar, sira, renkSecenekleri] = await Promise.all([
     db.product.findMany({
-      where: { aktif: true },
+      where: { aktif: true, category: { aktif: true } },
       include: URUN_ICEREN,
       orderBy: { yorumSayisi: "desc" },
       take: adet,
@@ -422,7 +427,11 @@ const benzerleriSorgula = paylasilanOnbellekli(
     const urun = { slug, kategori };
     const [ayni, kampanyalar, sira, renkSecenekleri] = await Promise.all([
     db.product.findMany({
-      where: { aktif: true, slug: { not: urun.slug }, category: { slug: urun.kategori } },
+      where: {
+        aktif: true,
+        slug: { not: urun.slug },
+        category: { aktif: true, slug: urun.kategori },
+      },
       include: URUN_ICEREN,
       take: adet,
     }),
@@ -436,7 +445,7 @@ const benzerleriSorgula = paylasilanOnbellekli(
     where: {
       aktif: true,
       slug: { not: urun.slug },
-      category: { slug: { not: urun.kategori } },
+      category: { aktif: true, slug: { not: urun.kategori } },
     },
     include: URUN_ICEREN,
     take: adet - ayni.length,

@@ -24,6 +24,7 @@ import Sayfalama, { SayfaAlani } from "@/ui/sayfalama";
 import { dilimle, sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
 import PanelArama from "@/ui/panel-arama";
 import { aramaCoz, aramayaGoreSuz } from "@/ui/panel-arama-bicim";
+import { kategoriEtiketleri } from "@/ui/kategori-etiketi";
 
 export const dynamic = "force-dynamic";
 
@@ -95,9 +96,17 @@ export default async function BedenEkrani({
   const [tumBedenListesi, tumGrupListesi, kategoriler] = await Promise.all([
     tumBedenler(),
     tumYasGruplari(),
-    db.category.findMany({ orderBy: { sira: "asc" }, select: { slug: true, ad: true } }),
+    db.category.findMany({
+      orderBy: { sira: "asc" },
+      select: { slug: true, ad: true, aktif: true },
+    }),
   ]);
-  const kategoriAdlari = new Map(kategoriler.map((k) => [k.slug, k.ad]));
+  // Aynı adlı iki kategori seçimde ayırt edilsin: adres ve "kapalı" ekleniyor (K-82).
+  const kategoriAdlari = kategoriEtiketleri(kategoriler);
+  const secimKategorileri = kategoriler.map((k) => ({
+    slug: k.slug,
+    ad: kategoriAdlari.get(k.slug) ?? k.ad,
+  }));
 
   // İki liste, iki ayrı arama: yaş gruplarında arama yaparken beden
   // listesinin süzülmesi şaşırtıcı olurdu (K-69).
@@ -498,7 +507,7 @@ export default async function BedenEkrani({
                           className={GIRDI}
                         >
                           <option value="">Bütün kategoriler</option>
-                          {kategoriler.map((k) => (
+                          {secimKategorileri.map((k) => (
                             <option key={k.slug} value={k.slug}>
                               {k.ad}
                             </option>
@@ -523,7 +532,7 @@ export default async function BedenEkrani({
                         ad={g.ad}
                         aciklama={g.aciklama}
                         kategori={g.kategori}
-                        kategoriler={kategoriler}
+                        kategoriler={secimKategorileri}
                       />
                       <p className="mt-3 text-xs text-metin-3">
                         Kodu değiştirirsen bu gruba bağlı bedenler de yeni koda geçer;
@@ -558,7 +567,7 @@ export default async function BedenEkrani({
         acik={duzenleYas === undefined && typeof hata === "string" && hata.startsWith("yas")}
       >
         <form action={yasGrubuEkle} className="flex flex-col gap-4">
-          <YasAlanlari kategoriler={kategoriler} />
+          <YasAlanlari kategoriler={secimKategorileri} />
           <button type="submit" className={`${ANA_DUGME} self-start`}>
             Yaş grubunu ekle
           </button>

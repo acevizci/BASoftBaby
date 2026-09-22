@@ -4078,6 +4078,36 @@ gidiyor; açık süzgeçler geçişte korunuyor, sayfa numarası düşüyor.
 
 **Nerede:** [`../app/(magaza)/(vitrin)/[kategori]/page.tsx`](../app/(magaza)/(vitrin)/[kategori]/page.tsx)
 
+### K-82 · Kapalı kategori gerçekten kapalı, aynı adlı kategori açılmıyor
+
+Canlıda kategori süzgeci ve üst çubuktaki "Kız Çocuk" / "Erkek Çocuk" görünmüyor,
+"Erkek Çocuk" yaş süzgeci sıfır ürün getiriyordu. Sebep veriydi, ama veriyi bu
+hâle getiren üç kod kusuru vardı:
+
+- Eski "Uyku" (`/uyku`) ve "Aksesuar" (`/aksesuar`) kategorileri "Kız Çocuk" ve
+  "Erkek Çocuk" diye yeniden adlandırılıp **kapatılmış**, ürünler onlarda
+  kalmıştı. Aynı adlarla açılan yeni kategoriler (`/kiz-cocuk`,
+  `/erkek-cocuk`) boştu. Vitrin kapalıyı ve boşu göstermediği için menüde
+  ikisi de yoktu.
+- **Aynı adla ikinci kategori açılabiliyordu.** Artık açılmıyor; yeniden
+  adlandırmada da aynı kural.
+- **Seçim listelerinde yalnızca ad yazıyordu:** iki "Kız Çocuk" alt alta,
+  hangisinin dolu olduğu belirsiz. Yaş grubu boş olana bağlandı. Artık ad
+  çakışırsa adres ekleniyor ("Kız Çocuk · /uyku"), kapalı olan işaretli —
+  ürün formu, toplu taşıma, kategori silme, kampanya ve yaş grubu seçimlerinde.
+- **Kapalı kategorinin ürünleri listelerde çıkmaya devam ediyordu.** Panel
+  "kapalı kategori menüde ve listelerde çıkmaz" diyordu; ürünleri Tüm
+  ürünler'de, aramada, yaş süzgecinde ve öne çıkanlarda görünüyordu. Artık
+  çıkmıyor, kapalı kategorinin sayfası 404. Ürün sayfası doğrudan adresle
+  açılmaya devam ediyor: paylaşılmış bağlantı kırılmasın.
+
+Verinin düzeltilmesi panelden: eski kategori silinirken "Ürünler nereye
+taşınsın?" bölümünde yenisi seçiliyor (K-74'ün taşıyarak silmesi).
+
+**Nerede:** [`../ui/kategori-etiketi.ts`](../ui/kategori-etiketi.ts),
+[`../server/katalog.ts`](../server/katalog.ts),
+[`../server/yonetim.ts`](../server/yonetim.ts) (`kategoriKaydet`)
+
 ---
 
 ## Açık sorular

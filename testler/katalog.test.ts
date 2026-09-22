@@ -20,6 +20,7 @@ import { adresAyrilmisMi, slugYap } from "@/server/slug";
 import { kelimeler } from "@/server/arama-metin";
 import { adiKisalt } from "@/server/yorum";
 import { tonSec, TONLAR } from "@/ui/kategori-tonu";
+import { kategoriEtiketleri } from "@/ui/kategori-etiketi";
 import { odemeSonTarihi } from "@/server/odeme-suresi";
 
 /** Katalog biçimi, arama metni ve ödeme süresi — hepsi veritabanısız. */
@@ -277,5 +278,27 @@ describe("adresAyrilmisMi", () => {
   it("sıradan kategori adları serbest", () => {
     assert.equal(adresAyrilmisMi(slugYap("Zıbın & Body")), false);
     assert.equal(adresAyrilmisMi(slugYap("Ürünler 2")), false);
+  });
+});
+
+describe("kategoriEtiketleri", () => {
+  it("aynı adlı kategoriler adresiyle ayrışıyor, kapalı olan işaretli", () => {
+    // İki "Kız Çocuk" seçimde ayırt edilemiyordu; yaş grubu boş olana bağlandı (K-82).
+    const e = kategoriEtiketleri([
+      { slug: "uyku", ad: "Kız Çocuk", aktif: false },
+      { slug: "kiz-cocuk", ad: "Kız Çocuk", aktif: true },
+      { slug: "yenidogan", ad: "Yenidoğan", aktif: true },
+    ]);
+    assert.equal(e.get("uyku"), "Kız Çocuk · /uyku (kapalı)");
+    assert.equal(e.get("kiz-cocuk"), "Kız Çocuk · /kiz-cocuk");
+    assert.equal(e.get("yenidogan"), "Yenidoğan");
+  });
+
+  it("büyük-küçük harf farkı çakışma sayılıyor", () => {
+    const e = kategoriEtiketleri([
+      { slug: "a", ad: "KIZ ÇOCUK" },
+      { slug: "b", ad: "kız çocuk" },
+    ]);
+    assert.equal(e.get("a"), "KIZ ÇOCUK · /a");
   });
 });
