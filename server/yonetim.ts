@@ -22,6 +22,7 @@ import { irsaliyeOlustur, irsaliyeSevkiniYaz } from "@/server/irsaliye";
 import { slugYap } from "@/server/slug";
 import { renkKodlari } from "@/server/renkler";
 import { formSayfaEki, tasimaSayfaEki } from "@/ui/sayfalama-bicim";
+import { formAramaEki } from "@/ui/panel-arama-bicim";
 import { aramaMetniniTazele } from "@/server/arama";
 import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
 import { stokAdresi, suzgeciCoz as stokSuzgeciniCoz } from "@/server/stok-ekrani";
@@ -187,7 +188,14 @@ export async function topluUrunIslemi(form: FormData): Promise<void> {
 
   const islem = metin(form, "islem");
   const eksik = metin(form, "eksik");
-  const liste = eksik === "fotograf" ? "/yonetim/urunler?eksik=fotograf" : "/yonetim/urunler";
+  const ara = metin(form, "ara").slice(0, 100);
+
+  // Süzgeç ve arama dönüş adresinde korunuyor: toplu işlemden sonra aradığın
+  // listeye geri dönmek istiyorsun, tam listeye değil (K-69).
+  const sorgu = new URLSearchParams();
+  if (eksik === "fotograf") sorgu.set("eksik", "fotograf");
+  if (ara) sorgu.set("ara", ara);
+  const liste = sorgu.toString() ? `/yonetim/urunler?${sorgu}` : "/yonetim/urunler";
   // Kaldığın sayfa korunuyor: toplu işlemden sonra listenin başına
   // atılmak, kaldığın yeri yeniden bulmak demekti (K-67).
   const donus = (ek: string) =>
@@ -574,12 +582,14 @@ export async function kategoriSil(veri: FormData): Promise<void> {
       db.category.delete({ where: { id } }),
     ]);
     vitriniYenile();
-    redirect(`/yonetim/kategoriler?kayit=tasindi&adet=${urunAdedi}${formSayfaEki(veri)}`);
+    redirect(
+      `/yonetim/kategoriler?kayit=tasindi&adet=${urunAdedi}${formSayfaEki(veri)}${formAramaEki(veri)}`,
+    );
   }
 
   await db.category.delete({ where: { id } });
   vitriniYenile();
-  redirect(`/yonetim/kategoriler?kayit=silindi${formSayfaEki(veri)}`);
+  redirect(`/yonetim/kategoriler?kayit=silindi${formSayfaEki(veri)}${formAramaEki(veri)}`);
 }
 
 /** Kategoriyi açar/kapatır; kapalı kategori vitrinde görünmüyor. */
@@ -599,7 +609,7 @@ export async function kategoriCevir(veri: FormData): Promise<void> {
 
   vitriniYenile();
   redirect(
-    `/yonetim/kategoriler?kayit=${mevcut.aktif ? "kapatildi" : "acildi"}${formSayfaEki(veri)}`,
+    `/yonetim/kategoriler?kayit=${mevcut.aktif ? "kapatildi" : "acildi"}${formSayfaEki(veri)}${formAramaEki(veri)}`,
   );
 }
 
@@ -631,7 +641,7 @@ export async function kategoriTasi(veri: FormData): Promise<void> {
   vitriniYenile();
   // Sayfanın ilk kaydı yukarı taşınınca bir önceki sayfaya geçiyor;
   // dönüş adresi kaydın yeni yerine bakıyor, gözden kaybolmasın (K-67).
-  redirect(`/yonetim/kategoriler?kayit=sira${tasimaSayfaEki(veri, hedef)}`);
+  redirect(`/yonetim/kategoriler?kayit=sira${tasimaSayfaEki(veri, hedef)}${formAramaEki(veri)}`);
 }
 
 /* ── Kargo ve fatura ────────────────────────────────────────────────────── */

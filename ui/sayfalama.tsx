@@ -87,26 +87,33 @@ function Adim({
 }
 
 /**
- * Formun içine sayfa numarasını gizli alan olarak koyar.
+ * Formun içine listedeki yerini gizli alan olarak koyar: sayfa ve arama.
  *
  * Sıra değiştirme, kapatma ve silme birer form gönderimi; sunucu işi bitince
- * nereye döneceğini böyle biliyor. İlk sayfada hiç yazılmıyor — adres sade
- * kalsın.
+ * nereye döneceğini böyle biliyor. Aradığın listede bir kaydı kapatınca tam
+ * listenin ilk sayfasına atılmak, hem sayfayı hem aramayı yeniden yazmak
+ * demekti (K-67, K-69).
+ *
+ * Boş değerler hiç yazılmıyor — adres sade kalsın.
  */
 export function SayfaAlani({
   sayfa,
   boy,
+  ara,
   ad = "sayfa",
 }: {
   sayfa: number;
   /** Sıra değiştiren formlarda: kaydın yeni sayfası buradan hesaplanıyor. */
   boy?: number;
+  /** Açık arama metni; varsa dönüş adresinde korunuyor. */
+  ara?: string;
   ad?: string;
 }) {
   return (
     <>
       {sayfa > 1 && <input type="hidden" name={ad} value={String(sayfa)} />}
       {boy !== undefined && <input type="hidden" name="boy" value={String(boy)} />}
+      {ara ? <input type="hidden" name="ara" value={ara} /> : null}
     </>
   );
 }

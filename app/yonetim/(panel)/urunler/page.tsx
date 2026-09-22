@@ -5,6 +5,8 @@ import { fiyatYaz } from "@/ui/katalog-bicim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
 import Sayfalama, { SayfaAlani } from "@/ui/sayfalama";
+import PanelArama from "@/ui/panel-arama";
+import { aramaCoz, aramaKosulu } from "@/ui/panel-arama-bicim";
 import { sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
 import PanelBildirim, { ORTAK_HATALAR } from "@/ui/panel-bildirim";
 
@@ -39,9 +41,17 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { eksik, toplu, adet, atlanan, kayit, hata, sayfa } = await searchParams;
+  const { eksik, toplu, adet, atlanan, kayit, hata, sayfa, ara } = await searchParams;
   const fotografsizSuzgeci = eksik === "fotograf";
-  const kosul = fotografsizSuzgeci ? { images: { none: {} } } : {};
+  const arama = aramaCoz(ara);
+
+  // Arama koşulu stok ekranındakiyle birebir aynı: ürünün `aramaMetni`
+  // sütunu her kayıtta tazeleniyor ve Türkçe harf katlamasını içeriyor
+  // (K-35, K-69).
+  const kosul = {
+    ...(fotografsizSuzgeci ? { images: { none: {} } } : {}),
+    ...aramaKosulu(arama),
+  };
 
   // Liste eskiden bütün ürünleri varyantları ve fotoğraf sayılarıyla birlikte
   // çekiyordu; katalog büyüdükçe bu sayfa en pahalı sorgu oluyordu. Artık
@@ -65,8 +75,11 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
     db.product.count({ where: { images: { none: {} } } }),
   ]);
 
-  const adres = (n: number) =>
-    sayfaAdresi(fotografsizSuzgeci ? "/yonetim/urunler?eksik=fotograf" : "/yonetim/urunler", n);
+  const sorgu = new URLSearchParams();
+  if (fotografsizSuzgeci) sorgu.set("eksik", "fotograf");
+  if (arama) sorgu.set("ara", arama);
+  const temelAdres = sorgu.toString() ? `/yonetim/urunler?${sorgu}` : "/yonetim/urunler";
+  const adres = (n: number) => sayfaAdresi(temelAdres, n);
 
   return (
     <div className="flex flex-col gap-5">
@@ -140,9 +153,17 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
           yazmıyordu (K-61). */}
       <PanelBildirim kayit={kayit} hata={hata} bildirimler={BILDIRIMLER} hatalar={HATALAR} />
 
+      <PanelArama
+        yol="/yonetim/urunler"
+        ara={arama}
+        yerTutucu="Ürün ara: ad, özet, kategori"
+        gizli={{ eksik: fotografsizSuzgeci ? "fotograf" : undefined }}
+      />
+
       {/* Toplu işlem formu; tablo da içinde. Düz HTML, JavaScript yok. */}
       <form action={topluUrunIslemi} className="flex flex-col gap-3">
         <input type="hidden" name="eksik" value={fotografsizSuzgeci ? "fotograf" : ""} />
+        <input type="hidden" name="ara" value={arama} />
         {/* Toplu işlemden sonra kaldığın sayfaya dönülüyor. */}
         <SayfaAlani sayfa={durum.sayfa} />
 
@@ -276,9 +297,11 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
 
       {toplamAdet === 0 && (
         <p className="text-sm text-metin-2">
-          {fotografsizSuzgeci
-            ? "Fotoğrafsız ürün kalmadı."
-            : "Henüz ürün yok. Sağ üstten ekleyebilirsin."}
+          {arama
+            ? `"${arama}" aramasına uyan ürün yok.`
+            : fotografsizSuzgeci
+              ? "Fotoğrafsız ürün kalmadı."
+              : "Henüz ürün yok. Sağ üstten ekleyebilirsin."}
         </p>
       )}
     </div>

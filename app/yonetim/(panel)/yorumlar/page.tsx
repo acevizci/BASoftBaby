@@ -6,6 +6,8 @@ import { Yildiz } from "@/ui/yildiz";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import Sayfalama, { SayfaAlani } from "@/ui/sayfalama";
 import { sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
+import PanelArama from "@/ui/panel-arama";
+import { alanAramasi, aramaCoz } from "@/ui/panel-arama-bicim";
 
 export const dynamic = "force-dynamic";
 
@@ -26,21 +28,39 @@ export default async function YorumEkrani({ searchParams }: PageProps<"/yonetim/
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { durum, kayit, hata, sayfa } = await searchParams;
+  const { durum, kayit, hata, sayfa, ara } = await searchParams;
   const secili = typeof durum === "string" ? durum : "yayinda";
+  const arama = aramaCoz(ara);
 
-  const kosul =
+  const suzgec =
     secili === "hepsi"
       ? {}
       : secili === "olumsuz"
         ? { durum: "yayinda", puan: { lte: OLUMSUZ_PUAN } }
         : { durum: secili };
 
+  // Yorumda `aramaMetni` sütunu yok; arama doğrudan metnin, yazanın ve
+  // ürünün adının üstünde yapılıyor (K-69).
+  const kosul = {
+    ...suzgec,
+    ...alanAramasi(arama, ["yorum", "adSoyad", "yanit", "product.ad"]),
+  };
+
   // Liste eskiden ilk 100 yorumda kesiliyor, gerisi hiçbir yerden
   // görünmüyordu (K-67).
   const toplamAdet = await db.review.count({ where: kosul });
   const sayfaDurumu = sayfaCoz(sayfa, toplamAdet, LISTE_BOYU);
-  const adres = (n: number) => sayfaAdresi(`/yonetim/yorumlar?durum=${secili}`, n);
+  const temel = arama
+    ? `/yonetim/yorumlar?durum=${secili}&ara=${encodeURIComponent(arama)}`
+    : `/yonetim/yorumlar?durum=${secili}`;
+  const adres = (n: number) => sayfaAdresi(temel, n);
+
+  // Süzgeç değişince arama korunuyor: "bekleyenler içinde 'iade' ara"
+  // makul bir istek. Sayfa numarası korunmuyor — yeni süzgeç yeni liste.
+  const suzgecAdresi = (kod: string) =>
+    arama
+      ? `/yonetim/yorumlar?durum=${kod}&ara=${encodeURIComponent(arama)}`
+      : `/yonetim/yorumlar?durum=${kod}`;
 
   const yorumlar = await db.review.findMany({
     where: kosul,
@@ -101,7 +121,7 @@ export default async function YorumEkrani({ searchParams }: PageProps<"/yonetim/
         {suzgecler.map(([kod, ad]) => (
           <Link
             key={kod}
-            href={`/yonetim/yorumlar?durum=${kod}`}
+            href={suzgecAdresi(kod)}
             className={`${ROZET} ${
               secili === kod
                 ? "border-mercan bg-mercan-soluk text-mercan-koyu"
@@ -113,8 +133,17 @@ export default async function YorumEkrani({ searchParams }: PageProps<"/yonetim/
         ))}
       </div>
 
+      <PanelArama
+        yol="/yonetim/yorumlar"
+        ara={arama}
+        yerTutucu="Yorum ara: metin, yazan ya da ürün"
+        gizli={{ durum: secili }}
+      />
+
       {toplamAdet === 0 ? (
-        <p className={`${KART} text-center text-sm text-metin-2`}>Bu listede yorum yok.</p>
+        <p className={`${KART} text-center text-sm text-metin-2`}>
+          {arama ? `"${arama}" aramasına uyan yorum yok.` : "Bu listede yorum yok."}
+        </p>
       ) : (
         yorumlar.map((y) => (
           <article key={y.id} className={KART}>

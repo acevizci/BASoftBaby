@@ -6,6 +6,8 @@ import PanelBildirim, { ORTAK_HATALAR } from "@/ui/panel-bildirim";
 import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
 import Sayfalama, { SayfaAlani } from "@/ui/sayfalama";
 import { sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
+import PanelArama from "@/ui/panel-arama";
+import { alanAramasi, aramaCoz } from "@/ui/panel-arama-bicim";
 
 export const dynamic = "force-dynamic";
 
@@ -46,16 +48,22 @@ export default async function KampanyaEkrani({
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { kayit, hata, sayfa } = await searchParams;
+  const { kayit, hata, sayfa, ara } = await searchParams;
+  const arama = aramaCoz(ara);
+  const kosul = alanAramasi(arama, ["ad", "kuponKodu"]);
 
   // Kategori ve ürün listeleri kampanya formunun açılır menüleri; onlar
   // sayfalanmıyor, yalnızca kampanya tablosu (K-67).
-  const toplamAdet = await db.campaign.count();
+  const toplamAdet = await db.campaign.count({ where: kosul });
   const durum = sayfaCoz(sayfa, toplamAdet, LISTE_BOYU);
-  const adres = (n: number) => sayfaAdresi("/yonetim/kampanyalar", n);
+  const temel = arama
+    ? `/yonetim/kampanyalar?ara=${encodeURIComponent(arama)}`
+    : "/yonetim/kampanyalar";
+  const adres = (n: number) => sayfaAdresi(temel, n);
 
   const [kampanyalar, kategoriler, urunler] = await Promise.all([
     db.campaign.findMany({
+      where: kosul,
       orderBy: { olusturuldu: "desc" },
       include: { category: { select: { ad: true } }, product: { select: { ad: true } } },
       skip: durum.atla,
@@ -75,10 +83,18 @@ export default async function KampanyaEkrani({
 
       <PanelBildirim kayit={kayit} hata={hata} bildirimler={BILDIRIMLER} hatalar={HATALAR} />
 
+      <PanelArama
+        yol="/yonetim/kampanyalar"
+        ara={arama}
+        yerTutucu="Kampanya ara: ad ya da kupon kodu"
+      />
+
       <section className="rounded-marka border border-cizgi bg-yuzey p-5">
         <h2 className="text-lg">Tanımlı kampanyalar</h2>
         {toplamAdet === 0 ? (
-          <p className="mt-2 text-sm text-metin-3">Henüz kampanya yok.</p>
+          <p className="mt-2 text-sm text-metin-3">
+            {arama ? `"${arama}" aramasına uyan kampanya yok.` : "Henüz kampanya yok."}
+          </p>
         ) : (
           <div className="mt-3 overflow-x-auto">
             <table className="w-full min-w-[760px] text-sm">

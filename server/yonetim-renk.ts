@@ -23,12 +23,13 @@ import { db } from "@/server/veritabani";
 import { TUM_ETIKETLER } from "@/server/onbellek";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { formSayfaEki, tasimaSayfaEki } from "@/ui/sayfalama-bicim";
+import { formAramaEki } from "@/ui/panel-arama-bicim";
 
 const SAYFA = "/yonetim/renkler";
 
 /** İşlem bitince dönülecek adres; kaldığın sayfa korunuyor (K-67). */
 function donus(veri: FormData, ek: string): string {
-  return `${SAYFA}?${ek}${formSayfaEki(veri)}`;
+  return `${SAYFA}?${ek}${formSayfaEki(veri)}${formAramaEki(veri)}`;
 }
 
 function vitriniYenile() {
@@ -231,5 +232,5 @@ export async function renkTasi(veri: FormData): Promise<void> {
   );
 
   vitriniYenile();
-  redirect(`${SAYFA}?kayit=sira${tasimaSayfaEki(veri, hedef)}`);
+  redirect(`${SAYFA}?kayit=sira${tasimaSayfaEki(veri, hedef)}${formAramaEki(veri)}`);
 }

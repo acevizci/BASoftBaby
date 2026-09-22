@@ -145,6 +145,13 @@ arama metni, ödeme süresi ve toplu yükleme süzgeci. Veritabanı gerekmiyor �
 `npm run build` testleri göçlerden **önce** çalıştırıyor: bozuk bir hesap
 veritabanına dokunmadan, dağıtıma çıkmadan duruyor (K-68).
 
+**Panel listelerinde arama** — ürünler, bedenler, yaş grupları, renkler,
+kategoriler, kullanıcılar, yorumlar, talepler, iadeler ve kampanyalar. Düz
+GET formu: JavaScript'siz çalışıyor, adres paylaşılabiliyor. Türkçe klavyeye
+takılmıyor ("zibin" yazan "Zıbın"ı buluyor) ve her kelimenin bulunması
+gerekiyor. Arama açıkken sıralama okları tam listeye bakıyor; kaydetme,
+kapatma ve silme aramaya geri dönüyor (K-69).
+
 **Bütün listeler sayfalı** — panelde bedenler, renkler, yaş grupları,
 kategoriler, ürünler, yorumlar, talepler, iadeler, kampanyalar, kullanıcılar,
 duyurular, afişler, stok ve siparişler; mağazada ürün listesi, arama sonucu,

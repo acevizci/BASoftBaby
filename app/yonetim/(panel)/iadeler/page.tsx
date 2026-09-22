@@ -9,6 +9,8 @@ import { yontemAdi } from "@/ui/siparis-bicim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import Sayfalama, { SayfaAlani } from "@/ui/sayfalama";
 import { sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
+import PanelArama from "@/ui/panel-arama";
+import { aramaCoz } from "@/ui/panel-arama-bicim";
 
 export const dynamic = "force-dynamic";
 
@@ -61,12 +63,14 @@ export default async function IadeEkrani({ searchParams }: PageProps<"/yonetim/i
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { kayit, hata, sayfa } = await searchParams;
+  const { kayit, hata, sayfa, ara } = await searchParams;
+  const arama = aramaCoz(ara);
 
-  const ozet = await bekleyenIadeOzeti();
+  const ozet = await bekleyenIadeOzeti(arama);
   const durum = sayfaCoz(sayfa, ozet.adet, LISTE_BOYU);
-  const iadeler = await bekleyenIadeler(durum.atla, durum.boy);
-  const adres = (n: number) => sayfaAdresi("/yonetim/iadeler", n);
+  const iadeler = await bekleyenIadeler(durum.atla, durum.boy, arama);
+  const temel = arama ? `/yonetim/iadeler?ara=${encodeURIComponent(arama)}` : "/yonetim/iadeler";
+  const adres = (n: number) => sayfaAdresi(temel, n);
   const kartAcik = odemeAcikMi();
 
 
@@ -80,6 +84,12 @@ export default async function IadeEkrani({ searchParams }: PageProps<"/yonetim/i
 
       <PanelBildirim kayit={kayit} hata={hata} bildirimler={BILDIRIMLER} hatalar={HATALAR} />
 
+      <PanelArama
+        yol="/yonetim/iadeler"
+        ara={arama}
+        yerTutucu="İade ara: sipariş no, müşteri ya da açıklama"
+      />
+
       <section className="rounded-marka border border-cizgi bg-yuzey p-5">
         <h2 className="flex flex-wrap items-baseline gap-x-3 text-lg">
           Bekleyen iadeler
@@ -90,7 +100,9 @@ export default async function IadeEkrani({ searchParams }: PageProps<"/yonetim/i
 
         {ozet.adet === 0 ? (
           <p className="mt-3 text-sm text-metin-2">
-            Bekleyen iade yok. Müşteriye borcun görünmüyor.
+            {arama
+              ? `"${arama}" aramasına uyan bekleyen iade yok.`
+              : "Bekleyen iade yok. Müşteriye borcun görünmüyor."}
           </p>
         ) : (
           <ul className="mt-3 flex flex-col divide-y divide-cizgi-soluk">

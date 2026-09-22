@@ -3546,6 +3546,62 @@ edilmiyor — Türkçede virgül ondalık demek ve yarım zıbın diye bir şey 
 
 ---
 
+### K-69 · Panel listelerinde arama
+
+Arama kutusu yalnızca stok (K-44) ve siparişlerde (K-31) vardı. Listeler
+sayfalandıktan sonra (K-67) geri kalanında bir kaydı bulmak **sayfa çevirmek**
+demeye başladı: yüz ürünün içinden "fitilli tulum"u aramak beş sayfa gezmek
+oluyordu. Artık on ekranda arama var: ürünler, bedenler, yaş grupları,
+renkler, kategoriler, kullanıcılar, yorumlar, talepler, iadeler, kampanyalar.
+
+Kutu ortak parça ([`../ui/panel-arama.tsx`](../ui/panel-arama.tsx)); stok ve
+sipariş ekranlarındaki kutunun aynısı. Düz GET formu, yani JavaScript'siz
+çalışıyor, sonuç adresi paylaşılabiliyor ve geri tuşu işliyor.
+
+**Üç farklı arama yolu, üçü de aynı yerden.** Listenin nereden geldiğine göre:
+
+- **Bellekteki listeler** (beden, yaş grubu, renk, kategori, kullanıcı) zaten
+  önbellekte ve küçük; süzme bellekte yapılıyor, fazladan sorgu açmanın
+  anlamı yok.
+- **`aramaMetni` sütunu olan tablo** (ürün) stok ekranının koşulunun aynısını
+  kullanıyor: sütun her kayıtta tazeleniyor ve Türkçe harf katlamasını
+  içeriyor (K-35).
+- **Sütunu olmayan tablolar** (yorum, talep, iade, kampanya) alanların
+  üstünde aranıyor. Türkçe katlama burada yok — Postgres `ı` ile `i`yi ayrı
+  harf sayıyor — ama aranan şeyler sipariş numarası, ad ve kupon kodu gibi
+  çoğunlukla ASCII.
+
+**Kısa kod araması listeyi sessizce açıyordu.** `kelimeler` tek harflik
+parçaları atıyor (neredeyse her kayda uyuyorlar) ve `"0-3"` iki tek harfe
+bölünüyordu: geriye kelime kalmayınca arama **tüm listeyi** döndürüyordu.
+Kullanıcı süzdüğünü sanıp tam listeye bakıyordu. Beden ve renk kodlarının
+çoğu böyle kısa, yani bu ekranların en doğal araması işe yaramıyordu. Artık
+geriye kelime kalmadığında metnin kendisi aranıyor.
+
+**Arama açıkken ok düğmeleri tam listeye bakıyor.** Süzülmüş listenin ilk
+kaydı listenin başı olmayabilir; taşıma zaten sunucuda tam liste üzerinde
+yapılıyor. Sıra sayfadaki değil, kaydın gerçek sırası.
+
+**Her işlem aramaya geri dönüyor.** Sayfa numarası gibi arama metni de
+formlarda gizli alanla taşınıyor: aradığın listede bir rengi kapatınca tam
+listeye atılmak, hem sayfayı hem aramayı yeniden yazmak demekti. Süzgeç
+değiştirmek de aramayı düşürmüyor — "bekleyenler içinde 'iade' ara" makul bir
+istek. Sayfa numarası ise düşüyor: yeni arama yeni liste.
+
+**Nasıl denendi.** Otomatik sınavlar (Türkçe katlama, her kelimenin bulunma
+zorunluluğu, kısa kod yedeği, Prisma koşullarının biçimi) ve üretim
+derlemesinde gerçek tarayıcıyla: on ekranın kutusu, "zibin" yazınca
+"Zıbın"ın bulunması, beden ve yaş listelerinin birbirinin aramasını
+bozmaması, süzülmüş listede ok düğmesinin açık kalması, kapatma sonrası
+aramanın adreste durması. Arama ve temizleme bir de JavaScript kapalı
+tarayıcıda.
+
+**Nerede:** [`../ui/panel-arama.tsx`](../ui/panel-arama.tsx),
+[`../ui/panel-arama-bicim.ts`](../ui/panel-arama-bicim.ts),
+[`../testler/panel-arama.test.ts`](../testler/panel-arama.test.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

@@ -29,6 +29,8 @@ import {
 import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
 import Sayfalama from "@/ui/sayfalama";
 import { dilimle, sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
+import PanelArama from "@/ui/panel-arama";
+import { aramaCoz, aramayaGoreSuz } from "@/ui/panel-arama-bicim";
 
 export const dynamic = "force-dynamic";
 
@@ -54,12 +56,18 @@ export default async function KullanicilarSayfasi({
   searchParams,
 }: PageProps<"/yonetim/kullanicilar">) {
   const ben = await sahipGerekli();
-  const { kayit, hata, sayfa } = await searchParams;
-  const kullanicilar = await kullanicilariGetir();
+  const { kayit, hata, sayfa, ara } = await searchParams;
+  const tumListe = await kullanicilariGetir();
+
+  const arama = aramaCoz(ara);
+  const kullanicilar = aramayaGoreSuz(tumListe, arama, (k) => [k.eposta, k.adSoyad, k.rol]);
 
   const durum = sayfaCoz(sayfa, kullanicilar.length, LISTE_BOYU);
   const sayfadakiler = dilimle(kullanicilar, durum);
-  const adres = (n: number) => sayfaAdresi("/yonetim/kullanicilar", n);
+  const temel = arama
+    ? `/yonetim/kullanicilar?ara=${encodeURIComponent(arama)}`
+    : "/yonetim/kullanicilar";
+  const adres = (n: number) => sayfaAdresi(temel, n);
 
   const bildirim = typeof kayit === "string" ? KULLANICI_BILDIRIMLERI[kayit] : undefined;
   const hataMetni = typeof hata === "string" ? KULLANICI_HATALARI[hata] : undefined;
@@ -70,7 +78,7 @@ export default async function KullanicilarSayfasi({
   // bilmesi lazım (K-46).
   // Sayfayı yalnızca açık bir sahip açabildiği için "tek sahip" hep
   // buradaki kişi oluyor.
-  const acikSahipSayisi = kullanicilar.filter((k) => k.aktif && k.rol === "sahip").length;
+  const acikSahipSayisi = tumListe.filter((k) => k.aktif && k.rol === "sahip").length;
   const tekSahibim = acikSahipSayisi === 1;
 
   return (
@@ -97,11 +105,17 @@ export default async function KullanicilarSayfasi({
         </div>
       )}
 
+      <PanelArama
+        yol="/yonetim/kullanicilar"
+        ara={arama}
+        yerTutucu="Kişi ara: e-posta, ad ya da rol"
+      />
+
       <section className="rounded-marka border border-cizgi bg-yuzey p-5">
         <h2 className="flex flex-wrap items-baseline gap-x-3 text-lg">
           Panel kullanıcıları
           <span className="rakam text-xs font-semibold text-metin-3">
-            {kullanicilar.length} kişi · {kullanicilar.filter((k) => k.aktif).length} açık
+            {tumListe.length} kişi · {tumListe.filter((k) => k.aktif).length} açık
           </span>
         </h2>
 

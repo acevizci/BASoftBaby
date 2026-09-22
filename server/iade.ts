@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "@/server/veritabani";
+import { alanAramasi } from "@/ui/panel-arama-bicim";
 import type { Prisma } from "@/db/uretilen/client";
 
 /**
@@ -241,24 +242,38 @@ export type BekleyenIade = {
 /** Ödenmeyi bekleyen ve reddedilmiş iadeler; panelin iş listesi. */
 const BEKLEYEN_KOSULU = { durum: { in: ["bekliyor", "basarisiz"] } };
 
+/** Bekleyen iade koşulu, arama metniyle birlikte (K-69). */
+function bekleyenKosulu(ara = ""): Record<string, unknown> {
+  return {
+    ...BEKLEYEN_KOSULU,
+    ...alanAramasi(ara, ["aciklama", "hata", "order.numara", "order.adSoyad"]),
+  };
+}
+
 /**
  * Bekleyen iadelerin adedi ve toplam tutarı.
  *
  * Liste sayfalandığı için (K-67) toplam artık ekrandaki satırlardan
  * toplanamıyor: "mağazanın müşteriye borcu" ilk sayfanın borcu değil, hepsi.
  */
-export async function bekleyenIadeOzeti(): Promise<{ adet: number; toplamKurus: number }> {
+export async function bekleyenIadeOzeti(
+  ara = "",
+): Promise<{ adet: number; toplamKurus: number }> {
   const ozet = await db.refund.aggregate({
-    where: BEKLEYEN_KOSULU,
+    where: bekleyenKosulu(ara),
     _count: { _all: true },
     _sum: { tutarKurus: true },
   });
   return { adet: ozet._count._all, toplamKurus: ozet._sum.tutarKurus ?? 0 };
 }
 
-export async function bekleyenIadeler(atla = 0, adet?: number): Promise<BekleyenIade[]> {
+export async function bekleyenIadeler(
+  atla = 0,
+  adet?: number,
+  ara = "",
+): Promise<BekleyenIade[]> {
   const kayitlar = await db.refund.findMany({
-    where: BEKLEYEN_KOSULU,
+    where: bekleyenKosulu(ara),
     orderBy: { olusturuldu: "asc" },
     skip: atla,
     ...(adet === undefined ? {} : { take: adet }),

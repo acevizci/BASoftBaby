@@ -25,12 +25,13 @@ import { db } from "@/server/veritabani";
 import { TUM_ETIKETLER } from "@/server/onbellek";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { formSayfaEki, tasimaSayfaEki } from "@/ui/sayfalama-bicim";
+import { formAramaEki } from "@/ui/panel-arama-bicim";
 
 const SAYFA = "/yonetim/bedenler";
 
 /** İşlem bitince dönülecek adres; yaş grubu listesinin sayfası korunuyor (K-67). */
 function donus(veri: FormData, ek: string): string {
-  return `${SAYFA}?${ek}${formSayfaEki(veri, "yasSayfa")}`;
+  return `${SAYFA}?${ek}${formSayfaEki(veri, "yasSayfa")}${formAramaEki(veri, "yasAra")}`;
 }
 
 function vitriniYenile() {
@@ -184,5 +185,7 @@ export async function yasGrubuTasi(veri: FormData): Promise<void> {
   );
 
   vitriniYenile();
-  redirect(`${SAYFA}?kayit=yassira${tasimaSayfaEki(veri, hedef, "yasSayfa")}`);
+  redirect(
+    `${SAYFA}?kayit=yassira${tasimaSayfaEki(veri, hedef, "yasSayfa")}${formAramaEki(veri, "yasAra")}`,
+  );
 }

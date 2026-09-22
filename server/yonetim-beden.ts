@@ -27,6 +27,7 @@ import { TUM_ETIKETLER } from "@/server/onbellek";
 import { yasKodlari } from "@/server/yas-gruplari";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { formSayfaEki, tasimaSayfaEki } from "@/ui/sayfalama-bicim";
+import { formAramaEki } from "@/ui/panel-arama-bicim";
 
 const SAYFA = "/yonetim/bedenler";
 
@@ -38,7 +39,7 @@ const SAYFA = "/yonetim/bedenler";
  * yeniden gitmek zorunda kalırdı.
  */
 function donus(veri: FormData, ek: string): string {
-  return `${SAYFA}?${ek}${formSayfaEki(veri)}`;
+  return `${SAYFA}?${ek}${formSayfaEki(veri)}${formAramaEki(veri)}`;
 }
 
 function vitriniYenile() {

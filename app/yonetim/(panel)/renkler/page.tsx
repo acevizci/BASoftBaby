@@ -8,6 +8,8 @@ import UrunGorseli from "@/ui/urun-gorseli";
 import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
 import Sayfalama, { SayfaAlani } from "@/ui/sayfalama";
 import { dilimle, sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
+import PanelArama from "@/ui/panel-arama";
+import { aramaCoz, aramayaGoreSuz } from "@/ui/panel-arama-bicim";
 
 export const dynamic = "force-dynamic";
 
@@ -55,12 +57,20 @@ export default async function RenkEkrani({ searchParams }: PageProps<"/yonetim/r
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { duzenle, kayit, hata, adet, sayfa } = await searchParams;
-  const renkler = await tumRenkler();
+  const { duzenle, kayit, hata, adet, sayfa, ara } = await searchParams;
+  const tumListe = await tumRenkler();
+
+  const arama = aramaCoz(ara);
+  const renkler = aramayaGoreSuz(tumListe, arama, (r) => [r.kod, r.ad]);
+
+  // Ok düğmeleri tam listedeki sıraya bakıyor: arama açıkken ilk sonuç
+  // listenin başı olmayabilir (K-69).
+  const sira = new Map(tumListe.map((r, i) => [r.id, i]));
 
   const durum = sayfaCoz(sayfa, renkler.length, LISTE_BOYU);
   const sayfadakiler = dilimle(renkler, durum);
-  const adres = (n: number) => sayfaAdresi("/yonetim/renkler", n);
+  const temel = arama ? `/yonetim/renkler?ara=${encodeURIComponent(arama)}` : "/yonetim/renkler";
+  const adres = (n: number) => sayfaAdresi(temel, n);
 
   // Hangi renk nerede kullanılıyor: silinebilir mi sorusunun cevabı. Dört
   // yerde geçiyor, dördü de tek sorguda toplanıyor.
@@ -86,13 +96,13 @@ export default async function RenkEkrani({ searchParams }: PageProps<"/yonetim/r
   }
 
   const duzenlenen =
-    typeof duzenle === "string" ? renkler.find((r) => r.id === duzenle) : undefined;
+    typeof duzenle === "string" ? tumListe.find((r) => r.id === duzenle) : undefined;
 
   const bildirim = typeof kayit === "string" ? BILDIRIMLER[kayit] : undefined;
   const hataMetni = typeof hata === "string" ? HATALAR[hata] : undefined;
   const kullanimAdedi = typeof adet === "string" ? Number(adet) : undefined;
 
-  const acikSayisi = renkler.filter((r) => r.aktif).length;
+  const acikSayisi = tumListe.filter((r) => r.aktif).length;
 
   return (
     <div className="flex flex-col gap-5">
@@ -117,24 +127,26 @@ export default async function RenkEkrani({ searchParams }: PageProps<"/yonetim/r
         </p>
       )}
 
+      <PanelArama yol="/yonetim/renkler" ara={arama} yerTutucu="Renk ara: ad ya da kod" />
+
       <section className="rounded-marka border border-cizgi bg-yuzey p-5">
         <h2 className="flex flex-wrap items-baseline gap-x-3 text-lg">
           Renk listesi
           <span className="rakam text-xs font-semibold text-metin-3">
-            {renkler.length} renk · {acikSayisi} açık
+            {tumListe.length} renk · {acikSayisi} açık
           </span>
         </h2>
 
         {renkler.length === 0 ? (
           <p className="mt-3 text-sm text-metin-2">
-            Hiç renk yok. Aşağıdan ekleyerek başla; renk olmadan ürüne varyant eklenemiyor.
+            {arama
+              ? `"${arama}" aramasına uyan renk yok.`
+              : "Hiç renk yok. Aşağıdan ekleyerek başla; renk olmadan ürüne varyant eklenemiyor."}
           </p>
         ) : (
           <ul className="mt-3 flex flex-col divide-y divide-cizgi-soluk">
-            {sayfadakiler.map((r, yer) => {
-              // Ok düğmeleri listenin tamamına göre: sayfanın son kaydı
-              // listenin sonu değil (K-67).
-              const i = durum.atla + yer;
+            {sayfadakiler.map((r) => {
+              const i = sira.get(r.id) ?? 0;
               const k = kullanim.get(r.kod);
               const toplam = k ? k.varyant + k.foto + k.cizim : 0;
               return (
@@ -180,7 +192,7 @@ export default async function RenkEkrani({ searchParams }: PageProps<"/yonetim/r
                     <form action={renkTasi}>
                       <input type="hidden" name="id" value={r.id} />
                       <input type="hidden" name="yon" value="yukari" />
-                      <SayfaAlani sayfa={durum.sayfa} boy={LISTE_BOYU} />
+                      <SayfaAlani sayfa={durum.sayfa} boy={LISTE_BOYU} ara={arama} />
                       <button type="submit" className={KUCUK_DUGME} disabled={i === 0}>
                         ↑ yukarı
                       </button>
@@ -188,18 +200,18 @@ export default async function RenkEkrani({ searchParams }: PageProps<"/yonetim/r
                     <form action={renkTasi}>
                       <input type="hidden" name="id" value={r.id} />
                       <input type="hidden" name="yon" value="asagi" />
-                      <SayfaAlani sayfa={durum.sayfa} boy={LISTE_BOYU} />
+                      <SayfaAlani sayfa={durum.sayfa} boy={LISTE_BOYU} ara={arama} />
                       <button
                         type="submit"
                         className={KUCUK_DUGME}
-                        disabled={i === renkler.length - 1}
+                        disabled={i === tumListe.length - 1}
                       >
                         ↓ aşağı
                       </button>
                     </form>
 
                     <Link
-                      href={sayfaAdresi(`/yonetim/renkler?duzenle=${r.id}`, durum.sayfa)}
+                      href={sayfaAdresi(`${temel}${temel.includes("?") ? "&" : "?"}duzenle=${r.id}`, durum.sayfa)}
                       className={KUCUK_DUGME}
                     >
                       Düzenle
@@ -207,7 +219,7 @@ export default async function RenkEkrani({ searchParams }: PageProps<"/yonetim/r
 
                     <form action={renkCevir}>
                       <input type="hidden" name="id" value={r.id} />
-                      <SayfaAlani sayfa={durum.sayfa} />
+                      <SayfaAlani sayfa={durum.sayfa} ara={arama} />
                       <button type="submit" className={KUCUK_DUGME}>
                         {r.aktif ? "Kapat" : "Aç"}
                       </button>
@@ -230,7 +242,7 @@ export default async function RenkEkrani({ searchParams }: PageProps<"/yonetim/r
                       >
                         <form action={renkSil}>
                           <input type="hidden" name="id" value={r.id} />
-                          <SayfaAlani sayfa={durum.sayfa} />
+                          <SayfaAlani sayfa={durum.sayfa} ara={arama} />
                           <button type="submit" className={SIL_DUGMESI}>
                             Evet, sil
                           </button>
@@ -249,7 +261,7 @@ export default async function RenkEkrani({ searchParams }: PageProps<"/yonetim/r
                       className="rounded-marka border border-cizgi-soluk bg-yuzey-sicak p-4"
                     >
                       <input type="hidden" name="id" value={r.id} />
-                      <SayfaAlani sayfa={durum.sayfa} />
+                      <SayfaAlani sayfa={durum.sayfa} ara={arama} />
                       <Alanlar
                         kod={r.kod}
                         ad={r.ad}

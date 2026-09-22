@@ -12,6 +12,8 @@ import {
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import Sayfalama, { SayfaAlani } from "@/ui/sayfalama";
 import { sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
+import PanelArama from "@/ui/panel-arama";
+import { alanAramasi, aramaCoz } from "@/ui/panel-arama-bicim";
 
 export const dynamic = "force-dynamic";
 
@@ -33,22 +35,39 @@ export default async function TalepEkrani({ searchParams }: PageProps<"/yonetim/
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { durum, kayit, hata, sayfa } = await searchParams;
+  const { durum, kayit, hata, sayfa, ara } = await searchParams;
   const secili = typeof durum === "string" ? durum : "acik";
+  const arama = aramaCoz(ara);
   const adlar = await renkAdlari();
 
-  const kosul =
+  const suzgec =
     secili === "hepsi"
       ? {}
       : secili === "acik"
         ? { durum: { in: ["yeni", "onaylandi"] } }
         : { durum: secili };
 
+  // Arama sipariş numarası, müşteri adı ve açıklama üzerinde (K-69).
+  const kosul = {
+    ...suzgec,
+    ...alanAramasi(arama, ["aciklama", "cevap", "order.numara", "order.adSoyad", "order.eposta"]),
+  };
+
   // Liste eskiden ilk 100 talepte kesiliyor, gerisi hiçbir yerden
   // görünmüyordu (K-67).
   const toplamAdet = await db.orderRequest.count({ where: kosul });
   const sayfaDurumu = sayfaCoz(sayfa, toplamAdet, LISTE_BOYU);
-  const adres = (n: number) => sayfaAdresi(`/yonetim/talepler?durum=${secili}`, n);
+  const temel = arama
+    ? `/yonetim/talepler?durum=${secili}&ara=${encodeURIComponent(arama)}`
+    : `/yonetim/talepler?durum=${secili}`;
+  const adres = (n: number) => sayfaAdresi(temel, n);
+
+  // Süzgeç değişince arama korunuyor: "bekleyenler içinde 'iade' ara"
+  // makul bir istek. Sayfa numarası korunmuyor — yeni süzgeç yeni liste.
+  const suzgecAdresi = (kod: string) =>
+    arama
+      ? `/yonetim/talepler?durum=${kod}&ara=${encodeURIComponent(arama)}`
+      : `/yonetim/talepler?durum=${kod}`;
 
   const talepler = await db.orderRequest.findMany({
     where: kosul,
@@ -144,7 +163,7 @@ export default async function TalepEkrani({ searchParams }: PageProps<"/yonetim/
         {suzgecler.map(([kod, ad]) => (
           <Link
             key={kod}
-            href={`/yonetim/talepler?durum=${kod}`}
+            href={suzgecAdresi(kod)}
             className={`${ROZET} ${
               secili === kod
                 ? "border-mercan bg-mercan-soluk text-mercan-koyu"
@@ -156,9 +175,20 @@ export default async function TalepEkrani({ searchParams }: PageProps<"/yonetim/
         ))}
       </div>
 
+      <PanelArama
+        yol="/yonetim/talepler"
+        ara={arama}
+        yerTutucu="Talep ara: sipariş no, müşteri ya da açıklama"
+        gizli={{ durum: secili }}
+      />
+
       {toplamAdet === 0 ? (
         <p className={`${KART} text-center text-sm text-metin-2`}>
-          {secili === "acik" ? "Bekleyen talep yok." : "Bu durumda talep yok."}
+          {arama
+            ? `"${arama}" aramasına uyan talep yok.`
+            : secili === "acik"
+              ? "Bekleyen talep yok."
+              : "Bu durumda talep yok."}
         </p>
       ) : (
         talepler.map((t) => (
