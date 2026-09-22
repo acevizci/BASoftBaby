@@ -78,6 +78,16 @@ export default async function KategoriEkrani({
   return (
     <div className="flex flex-col gap-5">
       <h1 className="text-2xl">Kategoriler</h1>
+      <p className="text-sm text-metin-2">
+        İçinde yayında ürün olmayan kategori mağazanın menüsünde{" "}
+        <strong>görünmüyor</strong> — müşteri boş bir sayfaya düşmesin diye (K-73). Bir
+        kategoriye ürün eklemenin iki yolu var: ürünü açıp{" "}
+        <strong>Temel bilgiler → Kategori</strong> alanını değiştirmek, ya da{" "}
+        <Link href="/yonetim/urunler" className="font-bold text-mavi-koyu hover:underline">
+          ürün listesinden
+        </Link>{" "}
+        birkaçını işaretleyip <strong>&quot;Kategoriye taşı&quot;</strong> demek.
+      </p>
 
       <PanelBildirim kayit={kayit} hata={hata} bildirimler={BILDIRIMLER} hatalar={HATALAR} />
 
@@ -119,7 +129,19 @@ export default async function KategoriEkrani({
                   )}
                 </p>
                 <p className="text-xs text-metin-3">
-                  <span className="rakam">/{k.slug}</span> · {k.urunAdedi} ürün
+                  <span className="rakam">/{k.slug}</span> ·{" "}
+                  {/* Ürün adedi bağlantı: "bu kategoride ne var" ve "buraya
+                      nasıl ürün eklerim" sorularının ikisinin de cevabı ürün
+                      listesinde (K-74). */}
+                  <Link
+                    href={`/yonetim/urunler?kategori=${k.slug}`}
+                    className="font-bold text-mavi-koyu hover:underline"
+                  >
+                    <span className="rakam">{k.urunAdedi}</span> ürün
+                  </Link>
+                  {k.urunAdedi === 0 && (
+                    <span className="text-sari-koyu"> · mağazada görünmüyor</span>
+                  )}
                 </p>
               </div>
 

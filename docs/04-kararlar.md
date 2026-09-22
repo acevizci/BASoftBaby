@@ -3815,6 +3815,47 @@ kapalı tarayıcıda.
 
 ---
 
+### K-74 · Ürünü kategoriye atamanın yolu görünmüyordu
+
+"Ürünü kategoriye nasıl ekleyeceğim, eksiklik var gibi" diye soruldu. Alan
+aslında **vardı**: ürün ekranında "Temel bilgiler → Kategori", ürün adının
+hemen altında. Eksik olan alan değil, ona giden yoldu — ve kataloğu yeniden
+düzenlerken asıl gereken şey zaten başka bir şeydi.
+
+**Kategori ekranından ürüne giden bir yol yoktu.** Kategoriyi açan kişi
+sonraki adımı orada arıyor: "kategoriyi kurdum, şimdi içine ürün koyayım."
+Ekran yalnızca "3 ürün" yazıyordu, bağlantı değildi. Artık bağlantı ve ürün
+listesini o kategoriye süzülmüş açıyor; boş kategorilerin yanında
+**"mağazada görünmüyor"** uyarısı var (K-73'ün sonucu artık sebebiyle
+birlikte görünüyor). Ekranın başında da iki yolu anlatan bir satır duruyor.
+
+**Ürün listesinde kategori süzgeci yoktu.** "Bu kategoride ne var"
+sorusunun panelde karşılığı yoktu; kataloğu düzenlerken en çok sorulan şey
+buydu. Artık üstte kategori rozetleri, her birinde ürün adedi; kapalı
+kategoriler de listede, çünkü ürün oraya da taşınabilmeli.
+
+**Toplu taşıma yoktu.** Yayına alma, pasife alma ve silme toplu
+yapılabiliyordu ama taşıma yapılamıyordu: her ürünü aç, açılır listeyi
+değiştir, sayfanın sonundaki kaydete bas — yirmi ürün için altmış tıklama.
+Toplu çubuğa **"Kategoriye taşı"** eklendi. Hedef seçilmeden basılırsa
+sessizce hiçbir şey yapmıyor, "Ürünlerin taşınacağı kategoriyi seç" diyor.
+
+Süzgeç ve arama taşımadan sonra korunuyor (K-69): taşıdığın listeye geri
+dönüyorsun, tam listeye değil.
+
+**Nasıl denendi.** Üretim derlemesinde gerçek tarayıcıyla, iki yol da uçtan
+uca: ürün ekranından kategori değiştirip kaydetmek, listeden iki ürün
+işaretleyip taşımak, kategori süzgecinin doğru sayıda ürün getirmesi,
+kategori ekranındaki bağlantıların doğru süzgece gitmesi, hedefsiz taşımanın
+hata vermesi. Sonunda mağaza menüsünde kategorinin belirdiği ve sayfasının
+ürünleri gösterdiği de doğrulandı.
+
+**Nerede:** [`../app/yonetim/(panel)/urunler/page.tsx`](../app/yonetim/(panel)/urunler/page.tsx),
+[`../app/yonetim/(panel)/kategoriler/page.tsx`](../app/yonetim/(panel)/kategoriler/page.tsx),
+[`../server/yonetim.ts`](../server/yonetim.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

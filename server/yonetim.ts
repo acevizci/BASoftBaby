@@ -189,12 +189,14 @@ export async function topluUrunIslemi(form: FormData): Promise<void> {
   const islem = metin(form, "islem");
   const eksik = metin(form, "eksik");
   const ara = metin(form, "ara").slice(0, 100);
+  const kategoriSuzgeci = metin(form, "kategori");
 
   // Süzgeç ve arama dönüş adresinde korunuyor: toplu işlemden sonra aradığın
   // listeye geri dönmek istiyorsun, tam listeye değil (K-69).
   const sorgu = new URLSearchParams();
   if (eksik === "fotograf") sorgu.set("eksik", "fotograf");
   if (ara) sorgu.set("ara", ara);
+  if (kategoriSuzgeci) sorgu.set("kategori", kategoriSuzgeci);
   const liste = sorgu.toString() ? `/yonetim/urunler?${sorgu}` : "/yonetim/urunler";
   // Kaldığın sayfa korunuyor: toplu işlemden sonra listenin başına
   // atılmak, kaldığın yeri yeniden bulmak demekti (K-67).
@@ -215,6 +217,29 @@ export async function topluUrunIslemi(form: FormData): Promise<void> {
     });
     vitriniYenile();
     redirect(donus(`toplu=${islem}&adet=${sonuc.count}`));
+  }
+
+  /**
+   * Seçilenleri başka bir kategoriye taşır.
+   *
+   * Kataloğu yeniden düzenlerken tek tek gerekiyordu: her ürünü aç, açılır
+   * listeyi değiştir, sayfanın sonundaki kaydete bas. Yirmi ürün için
+   * altmış tıklama (K-74). Yayına alma ve pasife alma zaten toplu
+   * yapılabiliyordu; taşımanın olmaması bir eksiklikti.
+   */
+  if (islem === "kategori") {
+    const hedefSlug = metin(form, "hedefKategori");
+    const hedef = hedefSlug
+      ? await db.category.findUnique({ where: { slug: hedefSlug }, select: { id: true, ad: true } })
+      : null;
+    if (!hedef) redirect(donus("hata=hedef-yok"));
+
+    const sonuc = await db.product.updateMany({
+      where: { slug: { in: sluglar } },
+      data: { categoryId: hedef.id },
+    });
+    vitriniYenile();
+    redirect(donus(`toplu=kategori&adet=${sonuc.count}&ad=${encodeURIComponent(hedef.ad)}`));
   }
 
   if (islem !== "sil") redirect(liste);

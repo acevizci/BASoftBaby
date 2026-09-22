@@ -153,6 +153,12 @@ gelen başvurular için. Silme kuralları üyenin kendi yaptığıyla aynı yerd
 geliyor: siparişler yasal saklama süresince kalıyor, hesapla bağları kopuyor
 (K-70).
 
+**Ürünü kategoriye atamanın iki yolu var**: ürün ekranında **Temel bilgiler →
+Kategori**, ya da ürün listesinden birkaçını işaretleyip **"Kategoriye taşı"**.
+Ürün listesinde kategori süzgeci (her rozette ürün adedi), kategori ekranında
+her satırdan kendi ürünlerine giden bağlantı ve boş olanlarda "mağazada
+görünmüyor" uyarısı var (K-74).
+
 **Vitrinde boş kategori görünmüyor**: içinde yayında ürün olmayan kategori
 menüde, ana sayfada, arama rozetlerinde ve site haritasında çıkmıyor — menüde
 boş sayfaya giden bağlantı olmasın diye. Panelde duruyor, ürün atanır atanmaz

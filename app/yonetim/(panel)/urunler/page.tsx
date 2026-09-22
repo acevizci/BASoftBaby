@@ -34,6 +34,7 @@ const BILDIRIMLER: Record<string, string> = {
 const HATALAR: Record<string, string> = {
   ...ORTAK_HATALAR,
   "secim-yok": "Önce listeden ürün seç.",
+  "hedef-yok": "Ürünlerin taşınacağı kategoriyi seç.",
 };
 
 export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/urunler">) {
@@ -41,15 +42,18 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { eksik, toplu, adet, atlanan, kayit, hata, sayfa, ara } = await searchParams;
+  const { eksik, toplu, adet, atlanan, kayit, hata, sayfa, ara, kategori, ad } =
+    await searchParams;
   const fotografsizSuzgeci = eksik === "fotograf";
   const arama = aramaCoz(ara);
+  const kategoriSuzgeci = typeof kategori === "string" ? kategori : "";
 
   // Arama koşulu stok ekranındakiyle birebir aynı: ürünün `aramaMetni`
   // sütunu her kayıtta tazeleniyor ve Türkçe harf katlamasını içeriyor
   // (K-35, K-69).
   const kosul = {
     ...(fotografsizSuzgeci ? { images: { none: {} } } : {}),
+    ...(kategoriSuzgeci ? { category: { slug: kategoriSuzgeci } } : {}),
     ...aramaKosulu(arama),
   };
 
@@ -75,11 +79,29 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
     db.product.count({ where: { images: { none: {} } } }),
   ]);
 
+  // Kategori süzgeci ve toplu taşıma için: kapalı kategoriler de listede,
+  // ürün oraya da taşınabilmeli (K-74).
+  const tumKategoriler = await db.category.findMany({
+    orderBy: { sira: "asc" },
+    select: { slug: true, ad: true, aktif: true, _count: { select: { products: true } } },
+  });
+  const seciliKategori = tumKategoriler.find((k) => k.slug === kategoriSuzgeci);
+
   const sorgu = new URLSearchParams();
   if (fotografsizSuzgeci) sorgu.set("eksik", "fotograf");
   if (arama) sorgu.set("ara", arama);
+  if (kategoriSuzgeci) sorgu.set("kategori", kategoriSuzgeci);
   const temelAdres = sorgu.toString() ? `/yonetim/urunler?${sorgu}` : "/yonetim/urunler";
   const adres = (n: number) => sayfaAdresi(temelAdres, n);
+
+  /** Kategori süzgecini açıp kapatan adres; arama ve fotoğraf süzgeci korunuyor. */
+  const kategoriAdresi = (slug: string) => {
+    const p = new URLSearchParams();
+    if (fotografsizSuzgeci) p.set("eksik", "fotograf");
+    if (arama) p.set("ara", arama);
+    if (slug && slug !== kategoriSuzgeci) p.set("kategori", slug);
+    return p.toString() ? `/yonetim/urunler?${p}` : "/yonetim/urunler";
+  };
 
   return (
     <div className="flex flex-col gap-5">
@@ -136,6 +158,12 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
           <span className="rakam">{String(adet ?? "")}</span> ürün yayına alındı.
         </p>
       )}
+      {toplu === "kategori" && (
+        <p className="rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">
+          <span className="rakam">{String(adet ?? "")}</span> ürün{" "}
+          <strong>{typeof ad === "string" ? ad : ""}</strong> kategorisine taşındı.
+        </p>
+      )}
       {toplu === "sil" && (
         <p className="rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">
           <span className="rakam">{String(adet ?? "")}</span> ürün silindi.
@@ -157,13 +185,62 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
         yol="/yonetim/urunler"
         ara={arama}
         yerTutucu="Ürün ara: ad, özet, kategori"
-        gizli={{ eksik: fotografsizSuzgeci ? "fotograf" : undefined }}
+        gizli={{
+          eksik: fotografsizSuzgeci ? "fotograf" : undefined,
+          kategori: kategoriSuzgeci || undefined,
+        }}
       />
+
+      {/* Kategoriye göre süzgeç: "bu kategoride ne var" sorusunun panelde
+          karşılığı yoktu, kataloğu düzenlerken en çok sorulan şey buydu
+          (K-74). Boş kategoriler de listede — ürün oraya taşınacak. */}
+      {tumKategoriler.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-bold text-metin-3">Kategori:</span>
+          <Link
+            href={kategoriAdresi("")}
+            className={`${ROZET} ${
+              kategoriSuzgeci
+                ? "border-cizgi text-metin-2 hover:border-metin-3"
+                : "border-mercan bg-mercan-soluk text-mercan-koyu"
+            }`}
+          >
+            Hepsi
+          </Link>
+          {tumKategoriler.map((k) => (
+            <Link
+              key={k.slug}
+              href={kategoriAdresi(k.slug)}
+              className={`${ROZET} ${
+                kategoriSuzgeci === k.slug
+                  ? "border-mercan bg-mercan-soluk text-mercan-koyu"
+                  : "border-cizgi text-metin-2 hover:border-metin-3"
+              }`}
+            >
+              {k.ad}
+              <span className="rakam ml-1.5 font-normal text-metin-3">
+                {k._count.products}
+              </span>
+              {!k.aktif && <span className="ml-1 text-metin-3">· kapalı</span>}
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {seciliKategori && seciliKategori._count.products === 0 && (
+        <p className="rounded-marka bg-sari-soluk px-4 py-3 text-sm text-sari-koyu">
+          <strong>{seciliKategori.ad}</strong> kategorisinde hiç ürün yok, bu yüzden
+          mağazanın menüsünde de görünmüyor. Ürün eklemek için: aşağıdaki listeden
+          süzgeci kaldır, taşımak istediğin ürünleri işaretle ve &quot;Seçilenleri
+          kategoriye taşı&quot; ile bu kategoriyi seç.
+        </p>
+      )}
 
       {/* Toplu işlem formu; tablo da içinde. Düz HTML, JavaScript yok. */}
       <form action={topluUrunIslemi} className="flex flex-col gap-3">
         <input type="hidden" name="eksik" value={fotografsizSuzgeci ? "fotograf" : ""} />
         <input type="hidden" name="ara" value={arama} />
+        <input type="hidden" name="kategori" value={kategoriSuzgeci} />
         {/* Toplu işlemden sonra kaldığın sayfaya dönülüyor. */}
         <SayfaAlani sayfa={durum.sayfa} />
 
@@ -266,6 +343,28 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
             <button type="submit" name="islem" value="yayin" className={ISLEM_DUGMESI}>
               Yayına al
             </button>
+
+            {/* Taşıma tek tek yapılıyordu: her ürünü aç, açılır listeyi
+                değiştir, sayfanın sonundaki kaydete bas (K-74). */}
+            <label className="flex items-center gap-2">
+              <span className="text-sm font-bold text-metin-2">Kategoriye taşı:</span>
+              <select
+                name="hedefKategori"
+                defaultValue=""
+                className="rounded-[10px] border-[1.5px] border-cizgi bg-yuzey px-3 py-1.5 text-sm outline-none focus:border-mercan"
+              >
+                <option value="">Kategori seç</option>
+                {tumKategoriler.map((k) => (
+                  <option key={k.slug} value={k.slug}>
+                    {k.ad}
+                    {k.aktif ? "" : " (kapalı)"}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button type="submit" name="islem" value="kategori" className={ISLEM_DUGMESI}>
+              Taşı
+            </button>
             {/* Toplu silme bir tıkla onlarca ürünü götürebiliyor; tek
                 düğme olmamalı (K-61). */}
             <SilmeOnayi
@@ -299,9 +398,11 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
         <p className="text-sm text-metin-2">
           {arama
             ? `"${arama}" aramasına uyan ürün yok.`
-            : fotografsizSuzgeci
-              ? "Fotoğrafsız ürün kalmadı."
-              : "Henüz ürün yok. Sağ üstten ekleyebilirsin."}
+            : seciliKategori
+              ? `"${seciliKategori.ad}" kategorisinde ürün yok.`
+              : fotografsizSuzgeci
+                ? "Fotoğrafsız ürün kalmadı."
+                : "Henüz ürün yok. Sağ üstten ekleyebilirsin."}
         </p>
       )}
     </div>
