@@ -11,6 +11,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/veritabani";
 import { yorumYaz } from "@/server/yorum";
+import { islemSinirla } from "@/server/istek-siniri";
 
 export async function degerlendirmeGonder(form: FormData): Promise<void> {
   const numara = String(form.get("numara") ?? "").trim().toUpperCase();
@@ -29,6 +30,11 @@ export async function degerlendirmeGonder(form: FormData): Promise<void> {
     nereye.startsWith("/") && !nereye.startsWith("//") && !nereye.includes("?")
       ? `${nereye}?${ek}`
       : `/siparis-takip?${new URLSearchParams({ numara, eposta }).toString()}&${ek}`;
+
+  // Hız sınırı: kimlik istemeyen bir form, betikle tekrar tekrar
+  // çağrılabiliyordu (K-64).
+  const sinir = await islemSinirla("yorum");
+  if (!sinir.izin) redirect(geri(`yorum=cok-istek&dk=${sinir.kalanDk}`));
 
   const siparis = await db.order.findUnique({
     where: { numara },

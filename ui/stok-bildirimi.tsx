@@ -14,10 +14,20 @@ import GonderDugmesi from "@/ui/gonder-dugmesi";
 export default function StokBildirimi({
   variantId,
   slug,
+  renk,
   durum,
 }: {
   variantId?: string;
   slug: string;
+  /**
+   * Seçili renk.
+   *
+   * Dönüş adresinde taşınması şart: eskiden yalnızca `?bildirim=` ile
+   * dönülüyordu ve sayfa varsayılan renge sıçrıyordu. Varsayılan renk
+   * stoktaysa bu form hiç çizilmiyor, yani müşteri ne onay ne hata
+   * mesajını görüyordu (K-64).
+   */
+  renk?: string;
   durum?: string;
 }) {
   if (durum === "alindi") {
@@ -36,6 +46,7 @@ export default function StokBildirimi({
     >
       <input type="hidden" name="variantId" value={variantId ?? ""} />
       <input type="hidden" name="slug" value={slug} />
+      <input type="hidden" name="renk" value={renk ?? ""} />
 
       <p className="text-sm font-bold">Gelince haber verelim mi?</p>
       <p className="text-xs text-metin-3">
@@ -46,6 +57,11 @@ export default function StokBildirimi({
       {durum === "eposta" && (
         <p className="text-xs font-bold text-mercan-koyu">
           E-posta adresi geçerli görünmüyor.
+        </p>
+      )}
+      {durum === "cok-istek" && (
+        <p className="mt-2 text-sm font-semibold text-sari-koyu">
+          Kısa sürede çok fazla istek geldi. Biraz bekleyip tekrar dene.
         </p>
       )}
       {durum === "stokta" && (

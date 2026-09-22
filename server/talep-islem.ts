@@ -16,6 +16,7 @@ import { db } from "@/server/veritabani";
 import { talepAc } from "@/server/talep";
 import { talepAlindiEpostasi, talepBildirimiEpostasi } from "@/server/eposta";
 import { turAdi } from "@/ui/talep-bicim";
+import { islemSinirla } from "@/server/istek-siniri";
 
 /**
  * Formun döneceği adres.
@@ -42,6 +43,12 @@ export async function talepGonder(form: FormData): Promise<void> {
   const nereye = String(form.get("nereye") ?? "").trim();
 
   if (!numara || !eposta) redirect("/siparis-takip");
+
+  // Hız sınırı (K-64).
+  const sinir = await islemSinirla("talep");
+  if (!sinir.izin) {
+    redirect(geri(numara, eposta, `talep=cok-istek&dk=${sinir.kalanDk}`, nereye));
+  }
 
   const siparis = await db.order.findUnique({
     where: { numara },

@@ -191,6 +191,41 @@ Bir sorun olursa bu e-postayı yanıtlaman yeterli.${await altBilgi()}`,
   );
 }
 
+/**
+ * Havale siparişinin süresi dolmadan önce hatırlatma.
+ *
+ * Bekleyen sipariş stoğu tutuyor; süresi dolunca kendiliğinden iptal olup
+ * stok geri veriliyor (K-64). Müşteri bunu bilmeden kalmamalı: parayı
+ * yatırmayı unuttuysa hatırlasın, vazgeçtiyse de bir sürprizle
+ * karşılaşmasın. Bir kez gönderiliyor.
+ */
+export async function havaleHatirlatmaEpostasi(
+  alici: string,
+  bilgi: { numara: string; adSoyad: string; toplamKurus: number; sonTarih: Date },
+): Promise<EpostaSonucu> {
+  const takip = `${siteAdresi()}/siparis-takip?numara=${encodeURIComponent(bilgi.numara)}&eposta=${encodeURIComponent(alici)}`;
+  const gun = bilgi.sonTarih.toLocaleString("tr-TR", { dateStyle: "long", timeStyle: "short" });
+
+  return gonder(
+    alici,
+    `Siparişin ödeme bekliyor · ${bilgi.numara}`,
+    `Merhaba ${bilgi.adSoyad},
+
+${bilgi.numara} numaralı siparişinin ödemesi henüz hesabımıza geçmedi.
+Tutar: ${tutar(bilgi.toplamKurus)}
+
+Havaleni yaptıysan bu e-postayı yok sayabilirsin; hesaba geçmesi bankalar
+arası aktarımda bir iş gününü bulabiliyor.
+
+Yapmadıysan ${gun} tarihine kadar zamanın var. O saate kadar ödeme
+görünmezse sipariş kendiliğinden iptal oluyor ve ürünler yeniden satışa
+açılıyor — sonra istersen yeniden sipariş verebilirsin.
+
+Siparişinin durumu ve hesap bilgileri:
+${takip}${await altBilgi()}`,
+  );
+}
+
 /** Kargoya verildiğinde: takip numarası ve taşıyıcının sorgulama adresi. */
 export async function kargoyaVerildiEpostasi(
   siparis: SiparisEpostasi,

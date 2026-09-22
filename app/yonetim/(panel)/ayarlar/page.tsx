@@ -124,6 +124,58 @@ export default async function AyarEkrani({ searchParams }: PageProps<"/yonetim/a
               className={GIRDI}
             />
           </label>
+
+          {/* Bekleyen havale siparişi stoğu tutuyor. Süre olmadan, parayı
+              hiç göndermeyen bir sipariş o stoğu süresiz kilitliyordu
+              (K-64). */}
+          <div className="mt-5 grid gap-4 border-t border-cizgi-soluk pt-4 sm:grid-cols-2">
+            <label className="flex flex-col gap-1.5">
+              <span className={ETIKET}>Ödeme süresi (saat)</span>
+              <input
+                name="havaleSaat"
+                type="number"
+                min={0}
+                max={720}
+                defaultValue={ayar.havaleSaat}
+                className={`${GIRDI} rakam`}
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={ETIKET}>Hatırlatma (bitmesine kaç saat kala)</span>
+              <input
+                name="havaleHatirlatmaSaat"
+                type="number"
+                min={0}
+                max={720}
+                defaultValue={ayar.havaleHatirlatmaSaat}
+                className={`${GIRDI} rakam`}
+              />
+            </label>
+          </div>
+          <p className="mt-3 text-xs text-metin-3">
+            {ayar.havaleSaat > 0 ? (
+              <>
+                Havale siparişi{" "}
+                <span className="rakam font-bold">{ayar.havaleSaat}</span> saat içinde
+                ödenmezse kendiliğinden iptal oluyor ve ürünler yeniden satışa açılıyor.
+                {ayar.havaleHatirlatmaSaat > 0 && (
+                  <>
+                    {" "}
+                    Bitmesine{" "}
+                    <span className="rakam font-bold">{ayar.havaleHatirlatmaSaat}</span> saat
+                    kala müşteriye bir hatırlatma e-postası gidiyor.
+                  </>
+                )}{" "}
+                Bekleyen sipariş stoğu tuttuğu için süre koymak önemli: ödemeyen bir
+                sipariş, o bedeni başkasına satılamaz hâlde bırakıyor.
+              </>
+            ) : (
+              <>
+                Otomatik iptal <strong>kapalı</strong>. Ödenmeyen havale siparişleri stoğu
+                sen elle iptal edene kadar tutmaya devam eder.
+              </>
+            )}
+          </p>
         </section>
 
         <button

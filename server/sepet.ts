@@ -249,6 +249,10 @@ export type SatisAyari = {
   kargoKurus: number;
   bedavaKargoEsigi: number;
   havaleBilgisi: string;
+  /** Havale siparişine tanınan ödeme süresi (saat); 0 ise otomatik iptal kapalı (K-64). */
+  havaleSaat: number;
+  /** Süre bitmesine kaç saat kala hatırlatma gönderileceği; 0 ise gönderilmiyor. */
+  havaleHatirlatmaSaat: number;
   /** Faturada kullanılan KDV oranı (yüzde). */
   kdvOrani: number;
   /** Panelde kargo alanına önceden seçili gelen taşıyıcı. */
@@ -261,6 +265,8 @@ export const ayarlariGetir = paylasilanOnbellek(async function ayarlariGetir(): 
     kargoKurus: ayar?.kargoKurus ?? 4990,
     bedavaKargoEsigi: ayar?.bedavaKargoEsigi ?? 75000,
     havaleBilgisi: ayar?.havaleBilgisi ?? "",
+    havaleSaat: ayar?.havaleSaat ?? 72,
+    havaleHatirlatmaSaat: ayar?.havaleHatirlatmaSaat ?? 24,
     kdvOrani: ayar?.kdvOrani ?? 10,
     varsayilanTasiyici: ayar?.varsayilanTasiyici ?? "yurtici",
   };

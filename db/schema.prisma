@@ -185,6 +185,14 @@ model StoreSetting {
   /// yöntemi müşteriye hiç sunulmaz.
   havaleBilgisi String @default("")
 
+  /// Havale siparişine tanınan ödeme süresi (saat). Süre dolunca sipariş
+  /// kendiliğinden iptal oluyor ve stok geri veriliyor (K-64). Sıfır
+  /// verilirse otomatik iptal kapanıyor.
+  havaleSaat    Int    @default(72)
+  /// Süre dolmadan bu kadar saat önce hatırlatma e-postası. Sıfırsa
+  /// hatırlatma gönderilmiyor.
+  havaleHatirlatmaSaat Int @default(24)
+
   /// Ana sayfadaki banner kaç saniyede bir değişsin
   bannerSaniye Int @default(6)
 
@@ -284,6 +292,10 @@ model Order {
 
   /// Kargo firması takip numarası; 05. adımda kargo entegrasyonu dolduracak.
   kargoTakipNo String?
+
+  /// Havale hatırlatması gönderildiği an. Bir kez gönderiliyor; ikinci
+  /// e-posta ısrar olurdu (K-64).
+  hatirlatildi DateTime?
 
   /// Teslim edildiği an. Cayma hakkının 14 günü buradan sayılıyor (K-33);
   /// `guncellendi` kullanılamaz, o her panel dokunuşunda değişiyor.

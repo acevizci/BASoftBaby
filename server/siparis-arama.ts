@@ -49,6 +49,8 @@ export type SiparisSatiri = {
   durum: string;
   odemeDurumu: string;
   odemeYontemi: string;
+  /** Havale hatırlatması gönderildi mi (K-64). */
+  hatirlatildi: Date | null;
   /**
    * Kargoya verildiği an — gönderi kaydının açıldığı tarih.
    *
@@ -185,6 +187,7 @@ export async function siparisleriAra(s: SiparisSuzgeci): Promise<AramaSonucu> {
         durum: true,
         odemeDurumu: true,
         odemeYontemi: true,
+        hatirlatildi: true,
         gonderiler: {
           orderBy: { olusturuldu: "asc" },
           take: 1,

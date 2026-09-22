@@ -55,6 +55,11 @@ export default function DegerlendirmeFormu({
           Sipariş numarası ve e-posta eşleşmedi.
         </p>
       )}
+      {sonuc === "cok-istek" && (
+        <p className="mt-3 rounded-marka bg-sari-soluk px-4 py-3 text-sm font-semibold text-sari-koyu">
+          Kısa sürede çok fazla istek geldi. Biraz bekleyip tekrar dener misin?
+        </p>
+      )}
 
       {satirlar.length === 0 ? (
         <p className="mt-3 text-sm text-metin-2">

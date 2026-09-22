@@ -26,6 +26,8 @@ import {
   beklemeRozeti,
   kargoBeklemesi,
 } from "@/server/kargo-bekleme";
+import { odemeSonTarihi } from "@/server/odeme-suresi";
+import { ayarlariGetir } from "@/server/sepet";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +63,7 @@ export default async function SiparisListesi({ searchParams }: PageProps<"/yonet
   const suzgec = suzgeciCoz(parametreler);
   const { toplu, hata: topluHata } = parametreler;
   const sonuc = await siparisleriAra(suzgec);
+  const ayar = await ayarlariGetir();
 
   // Bu sayfadaki siparişlerden kaçı uzun süredir yolda. Sayfalama yüzünden
   // sayfa başına hesaplanıyor; amaç toplam istatistik değil, gözden kaçmasın.
@@ -330,6 +333,24 @@ export default async function SiparisListesi({ searchParams }: PageProps<"/yonet
                       <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${durumRengi(s.odemeDurumu)}`}>
                         {odemeAdi(s.odemeDurumu)}
                       </span>
+                      {/* Bekleyen havale siparişi stoğu tutuyor; ne zaman
+                          düşeceği listede görünmeli (K-64). */}
+                      {(() => {
+                        const son = odemeSonTarihi(s, ayar.havaleSaat);
+                        if (!son) return null;
+                        const kalanSaat = Math.round((son.getTime() - Date.now()) / 3_600_000);
+                        return (
+                          <span
+                            className={`rakam mt-0.5 block w-fit rounded-full px-2 py-0.5 text-xs font-bold ${
+                              kalanSaat <= 12
+                                ? "bg-mercan-soluk text-mercan-koyu"
+                                : "bg-yuzey-sicak text-metin-2"
+                            }`}
+                          >
+                            {kalanSaat > 0 ? `${kalanSaat} saat kaldı` : "süresi doldu"}
+                          </span>
+                        );
+                      })()}
                       <span className="mt-0.5 block text-xs text-metin-3">
                         {yontemAdi(s.odemeYontemi)}
                       </span>

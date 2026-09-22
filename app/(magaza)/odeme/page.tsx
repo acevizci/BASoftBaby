@@ -25,6 +25,8 @@ const HATALAR: Record<string, string> = {
     "Bu e-posta ile bir hesap zaten var. Giriş yapıp devam edebilir ya da şifre alanını boş bırakıp üyeliksiz sipariş verebilirsin.",
   sozlesme:
     "Siparişi tamamlamak için ön bilgilendirme formunu ve mesafeli satış sözleşmesini onaylaman gerekiyor.",
+  "cok-istek":
+    "Kısa sürede çok fazla sipariş denemesi geldi. Birkaç dakika bekleyip tekrar dene; sepetin duruyor.",
   "odeme-baslatilamadi":
     "Ödeme sayfası açılamadı ve siparişin oluşturulmadı; kartından bir tahsilat yapılmadı. Tekrar deneyebilir ya da havale/EFT ile ödeyebilirsin.",
 };

@@ -389,6 +389,25 @@ kullanılmıyor; birincil düğme kendi belirtecini kullanıyor ve iki temada ay
 çözülüyor — açık temada koyu zemin + beyaz yazı, koyu temada açık zemin +
 koyu yazı (K-62).
 
+## Bekleyen siparişler ve kötüye kullanım
+
+Sipariş açılırken stok hemen düşülüyor, yoksa son adedi iki kişi alabilirdi.
+Bunun karşılığı: **bekleyen bir sipariş stoğu tutuyor.** Havale siparişine
+panelden ayarlanan bir ödeme süresi tanınıyor (varsayılan 72 saat); süre
+dolunca sipariş kendiliğinden iptal oluyor ve ürünler yeniden satışa
+açılıyor. Bitmesine 24 saat kala müşteriye bir hatırlatma gidiyor. Süreye 0
+yazılırsa otomatik iptal kapanıyor. Panelde sipariş listesinde kalan süre
+rozetle görünüyor (K-64).
+
+Temizlik hem günlük zamanlı işte hem de **sipariş verilmeden hemen önce**
+çalışıyor: zamanlı iş günde bir kez çalıştığı için son adet bedenler onu
+bekleyemez.
+
+Kimlik istemeyen işlemlerde hız sınırı var: sipariş oluşturma, değerlendirme,
+iade talebi ve "gelince haber ver". Sayaç giriş sınırıyla aynı tabloyu
+kullanıyor; sınır aşılınca sebebi ekranda yazıyor. Sayaç çalışmazsa işlem
+engellenmiyor — sınır bir koruma, satışın önkoşulu değil.
+
 ## Yasal metinler ve künye
 
 Mesafeli satış sözleşmesi, ön bilgilendirme formu, KVKK aydınlatma metni ve
@@ -547,20 +566,42 @@ fatura e-arşiv, yayın Vercel üzerinde.
 
 ## Durum
 
-- [x] Kuruluş planı
-- [x] Sistem mimarisi
-- [x] Marka ve tasarım sistemi
-- [x] Logo (vektör olarak yeniden çizildi)
-- [x] 28 ekranlık tasarım mokapı
-- [x] 01. adım: proje iskeleti ve marka sistemi
-- [x] 02. adım: katalog vitrini (ana sayfa, kategori, süzgeç, ürün detayı)
+Liste iki bölümde: **kodda biten** işler ve **dışarıdan bir şey bekleyenler.**
+Ayrım önemli, çünkü bekleyenlerin çoğunda kod hazır ve denendi — eksik olan
+bir hesap, bir anahtar ya da bir onay (ayrıntısı `docs/04-kararlar.md`
+içindeki "Açık sorular").
+
+### Kodda biten
+
+- [x] Kuruluş planı, sistem mimarisi, marka ve tasarım sistemi
+- [x] Logo (vektör olarak yeniden çizildi), 28 ekranlık tasarım mokapı
+- [x] Proje iskeleti, katalog vitrini (ana sayfa, kategori, süzgeç, arama, ürün detayı)
 - [x] Veritabanı (Neon Postgres) ve yönetim paneli
-- [x] Sepet, sipariş ve sipariş takibi (havale/EFT ile)
+- [x] Sepet, sipariş, sipariş takibi ve havale/EFT akışı
+- [x] Üyelik: kayıt, giriş, e-posta doğrulama, adres defteri, siparişlerim
+- [x] KVKK: veri indirme ve hesap silme
+- [x] Kredi kartıyla ödeme (iyzico) — kod yazıldı ve denendi, anahtar bekliyor
+- [x] Kargo: gönderi kaydı, barkodlu etiket, takip bağlantısı, durum ucu
+- [x] Fatura ve sevk irsaliyesi (panelden yazdırılıyor)
+- [x] İptal, iade ve değişim akışı; para iadesi kaydı ve takibi
 - [x] Kampanya ve kupon motoru
-- [x] Panelden yönetilen, dönen ana sayfa banner'ı
-- [x] Yardım sayfaları (beden, kargo, iade, SSS)
-- [x] Panelden ürün fotoğrafı yükleme
-- [ ] Gerçek ürünlerin girilmesi
-- [ ] Havale hesabının panele girilmesi
-- [ ] Üyelik (alan adı ve e-posta servisi gelince)
-- [ ] 04. adım: kredi kartıyla ödeme (iyzico)
+- [x] Panelden yönetilen dönen ana sayfa banner'ı ve duyuru şeridi
+- [x] Ürün, kategori, beden ve stok yönetimi; Excel/CSV ile toplu ürün yükleme
+- [x] Değerlendirmeler, "gelince haber ver", bırakılan sepet hatırlatması
+- [x] Satış raporu (dönem, grafik, kırılımlar, CSV) ve günün işi ekranı
+- [x] Panel kullanıcıları, roller, şifre sıfırlama, giriş denemesi sınırı
+- [x] Yardım sayfaları (beden, kargo, iade, SSS) ve yasal metin altyapısı
+- [x] SEO: sitemap, robots, yapısal veri, canonical adresler
+- [x] Erişilebilirlik: iki temada WCAG AA kontrast denetimi
+- [x] JavaScript kapalı tarayıcıda çalışan tam satın alma akışı
+
+### Dışarıdan bir şey bekleyenler
+
+- [ ] **Gerçek ürünlerin ve fotoğraflarının girilmesi** — ürün görselleri hâlâ çizim
+- [ ] **Havale hesabının panele girilmesi** (A-07) — doldurulana kadar müşteri parayı nereye yatıracağını göremiyor
+- [ ] **Alan adı** (A-02) — `SITE_URL` buna bağlı
+- [ ] **E-posta servisi anahtarı** (A-09) — alan adına bağlı; anahtar yokken e-postalar gönderilmiyor, akışlar çalışıyor
+- [ ] **Şirket kuruluşu** (A-03) — iyzico sanal POS, künye ve vergi bilgileri buna bağlı
+- [ ] **Yasal metinlerin avukat onayı** (A-05) — dördü de taslak işaretli, arama motorlarına kapalı
+- [ ] **Kargo toplayıcısı ve fatura sağlayıcısı hesapları** (A-11) — ikisi de şirkete bağlı
+- [ ] **Uyanık tutma servisi** (A-12) — `/api/canli` hazır, dışarıdan beş dakikalık kontrol tanımlanacak

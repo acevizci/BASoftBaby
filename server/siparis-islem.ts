@@ -31,6 +31,7 @@ import {
 } from "@/server/odeme-akis";
 import { girisYapan, jetonUret, oturumAc, sifreKisaMi, sifreOzetle } from "@/server/uyelik";
 import { dogrulamaEpostasi, siparisAlindiEpostasi } from "@/server/eposta";
+import { islemSinirla } from "@/server/istek-siniri";
 
 function temiz(veri: FormData, alan: string): string {
   return String(veri.get(alan) ?? "").trim();
@@ -55,6 +56,11 @@ function eksikMi(g: {
 }
 
 export async function siparisiTamamla(veri: FormData): Promise<void> {
+  // Sipariş açılırken stok hemen düşülüyor; sınırsız çağrı bütün stoğu
+  // kilitleyebilirdi (K-64).
+  const sinir = await islemSinirla("siparis");
+  if (!sinir.izin) redirect(`/odeme?hata=cok-istek&dk=${sinir.kalanDk}`);
+
   // Mesafeli satışta ön bilgilendirme formu ile sözleşmenin onaylanması
   // zorunlu: kutu işaretli değilse sipariş hiç oluşturulmuyor.
   if (veri.get("sozlesme") === null) redirect("/odeme?hata=sozlesme");

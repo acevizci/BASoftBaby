@@ -1,5 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { suresiGecenOdemeleriTemizle } from "@/server/odeme-akis";
+import {
+  havaleHatirlatmalariniGonder,
+  suresiDolanlariKapat,
+} from "@/server/odeme-suresi";
 import { eskiYuklemeleriTemizle } from "@/server/toplu-urun";
 import { birakilanSepetleriHatirlat } from "@/server/sepet-hatirlatma";
 import { eskiBildirimIsteklerimiTemizle } from "@/server/stok-bildirimi";
@@ -25,7 +28,12 @@ export async function GET(istek: NextRequest) {
     return new NextResponse("Yetkisiz", { status: 401 });
   }
 
-  const temizlenen = await suresiGecenOdemeleriTemizle();
+  // Süresi dolan bekleyen siparişler: kartta dakikalar, havalede panelden
+  // ayarlanan saat. Sipariş verilirken de fırsatçı olarak çalışıyor; burası
+  // hiç sipariş gelmeyen günlerde de temizlensin diye (K-64).
+  const temizlenen = await suresiDolanlariKapat();
+  // Süresi dolmak üzere olan havale siparişlerine hatırlatma.
+  const havaleHatirlatma = await havaleHatirlatmalariniGonder();
   // Onay ekranı için tutulan toplu yükleme kayıtları da burada süpürülüyor;
   // ayrı bir zamanlı iş açmaya değmez (Hobby paketinde günlük sınır var).
   const yukleme = await eskiYuklemeleriTemizle();
@@ -39,5 +47,13 @@ export async function GET(istek: NextRequest) {
   const girisSayaci = await eskiGirisSayaclariniTemizle();
   // Süresi geçmiş panel oturumları ve harcanmış sıfırlama jetonları (K-48).
   const panel = await eskiPanelKayitlariniTemizle();
-  return NextResponse.json({ temizlenen, yukleme, hatirlatma, bildirim, girisSayaci, panel });
+  return NextResponse.json({
+    temizlenen,
+    havaleHatirlatma,
+    yukleme,
+    hatirlatma,
+    bildirim,
+    girisSayaci,
+    panel,
+  });
 }

@@ -139,7 +139,7 @@ export default function VaryantSecici({
       <SepeteEkle variantId={secili?.id} devreDisi={stok === 0} tamGenislik />
 
       {stok === 0 && secili && (
-        <StokBildirimi variantId={secili.id} slug={slug} durum={bildirimDurumu} />
+        <StokBildirimi variantId={secili.id} slug={slug} renk={renk} durum={bildirimDurumu} />
       )}
     </div>
   );

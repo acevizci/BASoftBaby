@@ -63,6 +63,11 @@ export default function TalepFormu({
           Sipariş numarası ve e-posta eşleşmedi.
         </p>
       )}
+      {sonuc === "cok-istek" && (
+        <p className="mt-3 rounded-marka bg-sari-soluk px-4 py-3 text-sm font-semibold text-sari-koyu">
+          Kısa sürede çok fazla istek geldi. Biraz bekleyip tekrar dener misin?
+        </p>
+      )}
 
       {bilgi.talepler.length > 0 && (
         <ul className="mt-4 flex flex-col gap-3">

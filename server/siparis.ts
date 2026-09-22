@@ -18,7 +18,7 @@ import { kargoHesapla, kuponOku, sepetIdOku, type SatisAyari } from "@/server/se
 import { enIyiKampanya, gecerliKampanyalar } from "@/server/kampanya";
 import { RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
 import { takipAdresi, tasiyiciAdi } from "@/server/kargo";
-import { suresiGecenOdemeleriTemizle } from "@/server/odeme-akis";
+import { suresiDolanlariKapat } from "@/server/odeme-suresi";
 
 /**
  * Onay sayfasını açan çerezin adı. Burada duruyor çünkü "use server" işaretli
@@ -60,14 +60,18 @@ export async function siparisOlustur(
   /** havale · kart. Kartta sipariş açılıyor, ödeme ekranı sonra geliyor. */
   odemeYontemi: "havale" | "kart" = "havale",
 ): Promise<SiparisSonucu> {
-  // Yarıda kalmış kart ödemelerinin tuttuğu stok, yeni sipariş açılmadan
+  // Süresi dolmuş bekleyen siparişlerin tuttuğu stok, yeni sipariş açılmadan
   // hemen önce serbest bırakılıyor. Zamanlı iş de aynı işi yapıyor ama günde
-  // bir çalışıyor; son adet bedenler bunu bekleyemez. Temizlik başarısız
-  // olursa sipariş yine de alınıyor.
+  // bir çalışıyor; son adet bedenler bunu bekleyemez.
+  //
+  // Eskiden buradaki çağrı yalnızca **kart** siparişlerini kapsıyordu; havale
+  // siparişleri hiçbir temizliğe girmediği için stoğu süresiz tutuyordu
+  // (K-64). Temizlik başarısız olursa sipariş yine de alınıyor: stok
+  // serbest bırakılamaması müşteriyi satın almaktan alıkoymamalı.
   try {
-    await suresiGecenOdemeleriTemizle();
+    await suresiDolanlariKapat();
   } catch (hata) {
-    console.error("Süresi geçen ödemeler temizlenemedi:", hata);
+    console.error("Süresi dolan siparişler kapatılamadı:", hata);
   }
 
   const cartId = await sepetIdOku();

@@ -808,6 +808,17 @@ export async function satisAyariKaydet(veri: FormData): Promise<void> {
   const kdvHam = Number(String(veri.get("kdvOrani") ?? "").replace(",", "."));
   const kdvOrani = Number.isFinite(kdvHam) ? Math.min(100, Math.max(0, Math.round(kdvHam))) : 10;
 
+  // Ödeme süresi saat cinsinden; 0 "otomatik iptal kapalı" demek. Üst sınır
+  // 720 saat (30 gün): daha uzunu stoğu aylarca tutmak olurdu (K-64).
+  const saat = (ad: string, varsayilan: number): number => {
+    const ham = Number(String(veri.get(ad) ?? "").replace(",", "."));
+    return Number.isFinite(ham) ? Math.min(720, Math.max(0, Math.round(ham))) : varsayilan;
+  };
+  const havaleSaat = saat("havaleSaat", 72);
+  // Hatırlatma süreden uzun olamaz: sipariş verilir verilmez hatırlatma
+  // göndermek anlamsız.
+  const havaleHatirlatmaSaat = Math.min(saat("havaleHatirlatmaSaat", 24), havaleSaat);
+
   const tasiyiciKodu = String(veri.get("varsayilanTasiyici") ?? "yurtici");
   const varsayilanTasiyici = TASIYICILAR.some((t) => t.kod === tasiyiciKodu)
     ? tasiyiciKodu
@@ -819,6 +830,8 @@ export async function satisAyariKaydet(veri: FormData): Promise<void> {
       kargoKurus: kargo,
       bedavaKargoEsigi: esik,
       havaleBilgisi,
+      havaleSaat,
+      havaleHatirlatmaSaat,
       kdvOrani,
       varsayilanTasiyici,
     },
@@ -827,6 +840,8 @@ export async function satisAyariKaydet(veri: FormData): Promise<void> {
       kargoKurus: kargo,
       bedavaKargoEsigi: esik,
       havaleBilgisi,
+      havaleSaat,
+      havaleHatirlatmaSaat,
       kdvOrani,
       varsayilanTasiyici,
     },

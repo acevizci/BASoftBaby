@@ -3203,7 +3203,109 @@ asıl işi o yaptı.
 
 ---
 
+### K-64 · Bekleyen siparişin stoğu tutması ve halka açık formlarda sınır
+
+İkisi de aynı boşluğun iki yüzü: **kimlik istemeyen bir işlem, sınırsız
+tekrarlandığında stoğu kilitliyor.**
+
+#### Havale siparişi stoğu süresiz tutuyordu
+
+Sipariş açılırken stok hemen düşülüyor — doğrusu bu, yoksa son adedi iki kişi
+alır. Bekleyen siparişleri temizleyen iş ise onları **`Payment` kaydı
+üzerinden** buluyordu:
+
+```ts
+const girisimler = await db.payment.findMany({ where: { durum: "baslatildi", … } });
+```
+
+`Payment` kaydı yalnızca **kart** akışında oluşuyor. Veritabanından
+doğrulandı: beş havale siparişinin sıfır ödeme kaydı var. Yani havale
+siparişleri temizliğe hiç girmiyordu. Biri havaleyle sipariş verip parayı hiç
+göndermezse o stok, mağaza sahibi fark edip elle iptal edene kadar kilitli
+kalıyordu — ve havale şu an **tek** ödeme yöntemi olduğu için bu istisna
+değil, varsayılan durumdu.
+
+Artık ödeme süresi panelden ayarlanıyor (varsayılan 72 saat: hafta sonuna
+denk gelen bir siparişin parası pazartesi yatabiliyor). Süre dolunca sipariş
+kendiliğinden iptal oluyor ve stok geri veriliyor. Bitmesine 24 saat kala
+müşteriye bir hatırlatma gidiyor — bir kez, `hatirlatildi` damgasıyla; ikinci
+e-posta ısrar olurdu (aynı kural bırakılan sepette de var, K-27). Sıfır
+yazılırsa otomatik iptal kapanıyor: mağaza sahibi elle yönetmek isteyebilir.
+
+Panelde sipariş listesinde "37 saat kaldı" rozeti var, son 12 saatte mercan
+oluyor.
+
+**İkinci katman: temizlik günde bir kez çalışıyordu.** Vercel Hobby paketinde
+ikinci bir zamanlı iş yok (K-27), yani karttaki "30 dakika" politikası
+pratikte 24 saate kadar çıkabiliyordu. Çözüm sıklığı artırmak değil —
+**fırsatçı temizlik**: sipariş verilmeden hemen önce süresi dolanlar
+kapatılıyor. Ucuz bir sorgu ve tam da stoğun önemli olduğu anda çalışıyor. Bu
+çağrı zaten vardı ama yalnızca kart siparişlerini kapsayan işlevi
+çağırıyordu; ikisini de kapsayanla değiştirildi.
+
+Temizlik başarısız olursa sipariş yine de alınıyor: stok serbest
+bırakılamaması müşteriyi satın almaktan alıkoymamalı.
+
+#### Halka açık formlarda hız sınırı yoktu
+
+Giriş denemelerinin sınırı vardı (K-38) ama kimlik istemeyen dört işlemin
+hiçbirinde yoktu: **sipariş oluşturma**, değerlendirme, iade talebi ve
+"gelince haber ver". En ağırı sipariş, çünkü stoğu düşürüyor.
+
+Sayaç giriş sayacıyla **aynı tabloyu** kullanıyor (`LoginThrottle`): ihtiyaç
+aynı — anahtar başına sayaç, pencere, kilit. Anahtarın ön eki işlemi ayırıyor.
+İki fark var:
+
+- **Başarısızlığı değil denemeyi sayıyor.** Girişte ölçüt hatalı denemeydi;
+  burada kötüye kullanım hacmin kendisi — başarılı yüz sipariş de sorun.
+- **Hata olursa geçiyor, engellemiyor.** Sayaç yazılamazsa müşterinin
+  siparişi düşmemeli: sınır bir koruma, satışın önkoşulu değil.
+
+Sipariş sınırı kasten yüksek (saatte 15): gerçek müşteriyi engellemek, betiği
+engellemekten pahalı. Aynı evden ya da iş yerinden birden çok kişi aynı
+adresle çıkabiliyor. Başlık yoksa (yerel ortam) sınır hiç uygulanmıyor —
+herkesi tek sayaca toplamak bütün mağazayı kilitlerdi.
+
+#### Denerken çıkan kusur: dönüş adresi rengi kaybediyordu
+
+Sınır çalışıyordu ama mesaj ekranda görünmüyordu. Sebebi sınırla ilgili
+değildi: "gelince haber ver" formunun dönüş adresi `/urun/<slug>?bildirim=…`
+idi, **seçili renk taşınmıyordu.** Dönüşte sayfa varsayılan renge sıçrıyor,
+varsayılan renk stoktaysa formun kendisi hiç çizilmiyor ve müşteri ne onay ne
+hata mesajını görüyordu. Yalnızca yeni sınır mesajını değil, var olan
+"e-posta geçersiz" uyarısını da yutuyordu. Renk artık gizli alanda taşınıyor.
+
+**Denemede üç kez kendi denemem yanılttı** ve bu kayda değer: (1) `/odeme`
+boş sepette `/sepet`'e yönlendiriyor, yani ham HTML'de mesaj aranamıyor;
+(2) seçicim "Sepete ekle" formunu yakalıyordu, çünkü onda da `variantId` var;
+(3) `waitForFunction` koşulum formun kendi açıklama metnine takılıyordu, yani
+yönlendirmeyi hiç beklemeden geçiyordu. Üçü de "deneme geçti" diyebilirdi.
+
+**Denenen:** 100 saat önce verilmiş havale siparişinin iptal edilip stoğun
+geri verilmesi; süresi dolmamış siparişe dokunulmaması; hatırlatmanın bir kez
+gönderilmesi; panelde kalan sürenin yazması; ayardan 0 verilince otomatik
+iptalin kapanması ve süresi dolan siparişin iptal edilmemesi; hatırlatmanın
+süreyi aşamaması. Sınır tarafında: 10 gönderimden sonra 11'incinin
+engellenmesi, sebebin ekranda yazması, sayacın oluşması, başka adresin
+etkilenmemesi, ödeme sayfasının mesajı göstermesi. Ayrıca JavaScript kapalı
+satın alma akışının bozulmadığı.
+
+**Nerede:** [`../server/odeme-suresi.ts`](../server/odeme-suresi.ts),
+[`../server/istek-siniri.ts`](../server/istek-siniri.ts),
+[`../server/siparis.ts`](../server/siparis.ts),
+[`../server/stok-bildirimi-islem.ts`](../server/stok-bildirimi-islem.ts),
+[`../app/yonetim/(panel)/ayarlar/page.tsx`](../app/yonetim/(panel)/ayarlar/page.tsx),
+[`../db/schema.prisma`](../db/schema.prisma)
+
+---
+
 ## Açık sorular
+
+Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)
+ve **kapananlar** (ne yapıldığı kayıtta dursun diye duruyorlar). Bekleyenlerin
+hemen hepsinde kod hazır ve denendi; eksik olan koddan başka bir şey.
+
+## Bekleyenler
 
 ### A-02 · Alan adı
 Araştırılıyor. Açılış için gerekli. Alındığında Vercel'e bağlanıp `SITE_URL`
@@ -3216,7 +3318,8 @@ kodu hazır ve denendi; başvuru sonuçlanıp anahtarlar Vercel'e girilene kadar
 kart seçeneği müşteriye gösterilmiyor (K-17). Künye de buna bağlı (K-15).
 
 ### A-04 · Logonun orijinal dosyası
-Mevcut değil. Vektör yeniden çizim şimdilik resmî kaynak.
+Mevcut değil. Vektör yeniden çizim şimdilik resmî kaynak. Açılışı engellemiyor:
+her boyut vektörden üretiliyor.
 
 ### A-05 · Yasal metinlerin hukuki onayı
 Dört metnin taslağı yazıldı ve panelden düzenlenebilir hâlde sitede duruyor
@@ -3225,7 +3328,7 @@ sayfada uyarı çıkıyor ve arama motorlarına kapalılar. Avukattan gelen meti
 panele yapıştırılıp "metin hazır" işaretlendiğinde yayımlanmış olacaklar.
 Şirket kurulmadan (A-03) künye de doldurulamıyor.
 
-### A-06 · Yönetim paneli şifresi
+### A-06 · Yönetim paneli şifresi  ·  kapandı
 **19 Eylül 2026'da kapandı.** Aykut Vercel'de `YONETIM_SIFRE` ortam değişkenini
 tanımladı ve panele girdi. Şifre koda ya da depoya hiçbir zaman yazılmıyor.
 
@@ -3234,7 +3337,7 @@ Yönetim panelindeki **Satış ayarları** ekranında banka adı, hesap sahibi v
 alanı boş. Doldurulana kadar sipariş veren müşteri parayı nereye yatıracağını
 göremiyor. Şirket kurulunca (A-03) hesap açılıp buraya yazılacak.
 
-### A-08 · Fotoğraf deposunun açılması
+### A-08 · Fotoğraf deposunun açılması  ·  kapandı
 **20 Eylül 2026'da kapandı.** Aykut Vercel panelinde **Storage → Create
 Database → Blob** ile depoyu oluşturup projeye bağladı; yayındaki panelden
 fotoğraf yükleniyor. Depo yeni biçimde, yani OIDC ile bağlandığı için kodda
@@ -3281,7 +3384,7 @@ soğuk açılış. `/api/canli` ucu hazır; dışarıdan bir izleme servisinde
 tanımlanması gerekiyor. Bu yapılana kadar uzun süre ziyaretçi almayan sitede
 ilk açılış saniyeler sürmeye devam ediyor.
 
-### A-10 · Giriş denemesi sınırı
+### A-10 · Giriş denemesi sınırı  ·  kapandı
 **21 Eylül 2026'da kapandı (K-38).** E-posta başına beş, IP başına yirmi
 hatalı denemeden sonra on beş dakika kilit.
 
