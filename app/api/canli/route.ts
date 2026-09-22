@@ -32,7 +32,14 @@ export async function GET(): Promise<NextResponse> {
   }
 
   return NextResponse.json(
-    { tamam: true, veritabani, ms: Math.round(performance.now() - basla) },
+    {
+      tamam: true,
+      veritabani,
+      ms: Math.round(performance.now() - basla),
+      // Yayındaki sürüm: "değişiklik canlıya çıktı mı" sorusu siteyi
+      // gezmeden buradan cevaplanıyor. Vercel dışında boş.
+      surum: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null,
+    },
     { headers: { "cache-control": "no-store" } },
   );
 }
