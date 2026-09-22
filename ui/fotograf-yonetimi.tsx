@@ -1,5 +1,6 @@
 import Link from "next/link";
 import DosyaBirak from "@/ui/dosya-birak";
+import { EN_GENIS, GOVDE_SINIRI, HEDEF_BAYT, boyutYaz as sinirYaz } from "@/ui/fotograf-sinirlari";
 import GonderDugmesi from "@/ui/gonder-dugmesi";
 import {
   fotografAdiKaydet,
@@ -129,6 +130,7 @@ export default function FotografYonetimi({
           ad="fotograf"
           etiket="Fotoğraf seç"
           kabul="image/jpeg,image/png,image/webp,image/avif,image/gif"
+          kucult
         />
         <label className="flex min-w-[180px] flex-1 flex-col gap-1.5">
           <span className="text-xs font-bold text-metin-2">Açıklama (isteğe bağlı)</span>
@@ -145,13 +147,30 @@ export default function FotografYonetimi({
           Yükle
         </GonderDugmesi>
       </form>
-      <p className="mt-2 text-xs text-metin-3">
-        Birden fazla dosya seçebilirsin. Fotoğraflar yüklenirken otomatik küçültülüp
-        webp&apos;ye çevriliyor, telefonla çekilmiş büyük dosyalar sorun değil. En fazla
-        12 MB. Açıklama boş bırakılırsa ürünün adı yazılıyor; her fotoğrafa kendi
-        açıklamasını yazmak hem görme engelli müşteriler hem arama motoru için daha
-        iyi — aşağıdaki listeden tek tek düzeltebilirsin.
-      </p>
+      <div className="mt-3 rounded-marka bg-zemin-2 px-3 py-2.5 text-xs leading-relaxed text-metin-3">
+        <p className="font-bold text-metin-2">Hangi fotoğraf?</p>
+        <ul className="mt-1 list-disc pl-4">
+          <li>
+            <strong className="text-metin-2">Kare</strong> çek ya da kırp: kartlar ve ürün
+            sayfası kare, kare olmayanın kenarları kesiliyor.
+          </li>
+          <li>
+            En az <span className="rakam">1400×1400</span> piksel; telefon fotoğrafı fazlasıyla
+            yetiyor.
+          </li>
+          <li>JPEG, PNG, WEBP ya da AVIF. Açık, düz bir zemin en iyi sonucu veriyor.</li>
+        </ul>
+        <p className="mt-2">
+          Seçtiğin fotoğraf göndermeden önce telefonda ya da bilgisayarda küçültülüyor:
+          uzun kenarı en fazla <span className="rakam">{EN_GENIS}</span> piksel, boyutu
+          çoğunlukla <span className="rakam">{sinirYaz(HEDEF_BAYT)}</span> altı.
+          Sitede <span className="rakam">1400</span> piksel genişlikte webp olarak duruyor.
+          Tek seferde toplam <span className="rakam">{sinirYaz(GOVDE_SINIRI)}</span>{" "}
+          gönderilebiliyor, bu da on kadar fotoğraf demek. Açıklama boş bırakılırsa ürünün adı
+          yazılıyor; her fotoğrafa kendi açıklamasını yazmak hem görme engelli müşteriler hem
+          arama motoru için daha iyi, aşağıdaki listeden tek tek düzeltebilirsin.
+        </p>
+      </div>
 
       {fotograflar.length > 0 && (
         <ul className="mt-5 flex flex-col gap-3">

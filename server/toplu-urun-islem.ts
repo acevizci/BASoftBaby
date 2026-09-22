@@ -23,8 +23,12 @@ import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { bedenAdlari } from "@/server/bedenler";
 import { renkSecenekleri } from "@/server/renkler";
 
-/** Yükleme dosyası için üst sınır. Birkaç bin satırlık tablo bunun çok altında. */
-const EN_BUYUK_BAYT = 5 * 1024 * 1024;
+/**
+ * Yükleme dosyası için üst sınır. Birkaç bin satırlık tablo bunun çok altında.
+ * Vercel 4,5 MB'tan büyük isteği sunucuya hiç ulaştırmıyor; sınır onun altında
+ * olmazsa kişi bu mesaj yerine anlaşılmaz bir tarayıcı hatası görüyor.
+ */
+const EN_BUYUK_BAYT = 4 * 1024 * 1024;
 
 function vitriniYenile() {
   for (const etiket of TUM_ETIKETLER) updateTag(etiket);

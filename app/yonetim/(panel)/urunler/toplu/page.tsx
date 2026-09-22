@@ -82,7 +82,7 @@ export default async function TopluYukleme({
         </p>
       )}
       {hata === "dosya" && <Uyari>Bir dosya seçilmedi.</Uyari>}
-      {hata === "buyuk" && <Uyari>Dosya çok büyük. En fazla 5 MB.</Uyari>}
+      {hata === "buyuk" && <Uyari>Dosya çok büyük. En fazla 4 MB.</Uyari>}
       {hata === "yok" && <Uyari>Bu yükleme kaydı artık yok. Dosyayı yeniden yükle.</Uyari>}
       {hata === "zaten" && <Uyari>Bu dosya zaten işlenmiş. İkinci kez yazılmadı.</Uyari>}
       {(hata === "okuma" || hata === "yazma") && (
