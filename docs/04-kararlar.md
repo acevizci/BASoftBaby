@@ -3856,6 +3856,51 @@ hata vermesi. Sonunda mağaza menüsünde kategorinin belirdiği ve sayfasının
 
 ---
 
+### K-75 · Satışa hazırlık ekranı
+
+"Mağaza açılmaya hazır mı" sorusunun cevabı sekiz ayrı ekrana dağılmıştı:
+havale bilgisi satış ayarlarında, metinlerin taslak olup olmadığı yasal
+metinlerde, kart ödemesinin açık olup olmadığı **hiçbir yerde**. Bir eksiği
+fark etmenin tek yolu müşterinin şikâyet etmesiydi — havale bilgisi boşken
+sipariş veren müşteri parayı nereye yatıracağını göremiyor ve sipariş
+ödenmeden kalıyor.
+
+Tek ekran, on üç kontrol, dört bölüm: para akışı, yasal, katalog, altyapı.
+
+**Üç ağırlık var ve karışmıyorlar.** `engel` satış yapılamaz ya da hukuka
+aykırı demek (havale bilgisi boş, yasal metin taslak, künye boş, yayında ürün
+yok, ürünün varyantı yok). `uyari` satış olur ama bir şey yarım kalır
+(e-posta servisi yok, fotoğrafsız ürün, tükenmiş ürün). `bilgi` bakılması iyi
+olan şeyler. Her şeye "engel" diyen bir liste, hiçbir şeye demeyen kadar işe
+yaramaz — ayrım bu yüzden sınavla korunuyor.
+
+**Ekran iyimser değil.** Her şey tamamsa bunu bir cümleyle söylüyor; değilse
+en kötü haber en üstte. Yeşil bir onay kutusu gösterebilmek için eksikler
+yumuşatılmıyor.
+
+**Her satır üç şey söylüyor:** ne durumda, eksikse ne olacağı ve nereden
+düzeltileceği. "Eksik" demek yetmiyor; panelde hangi ekrana gidileceği
+yazmazsa aranıyor. Anahtar ve hesap isteyenlerde (kart ödemesi, e-posta
+servisi, alan adı) panel yolu yok, onun yerine Vercel ortam değişkeni
+gerektiği yazıyor.
+
+**Sayımlar yalnızca yayındaki ürünler üzerinden.** Pasif bir üründe
+fotoğrafın ya da stoğun eksik olması bugünün işi değil; o ürün zaten satışta
+değil.
+
+**Ekran hiçbir şeyi değiştirmiyor**, yalnızca bakıyor.
+
+**Nasıl denendi.** Üretim derlemesinde gerçek tarayıcıyla, mevcut kurulumun
+eksikleriyle: iki engel (havale bilgisi, üç taslak metin) ve dört eksik
+doğru sayıldı, katalog sayımları veritabanıyla tuttu, fiyatlar Türkçe biçimde
+yazıldı. Ağırlık sınıflandırması ayrıca sınavla korunuyor.
+
+**Nerede:** [`../server/hazirlik.ts`](../server/hazirlik.ts),
+[`../app/yonetim/(panel)/hazirlik/page.tsx`](../app/yonetim/(panel)/hazirlik/page.tsx),
+[`../testler/hazirlik.test.ts`](../testler/hazirlik.test.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

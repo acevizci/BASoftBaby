@@ -120,6 +120,7 @@ export function menuyuKur(
           ...(rol === "sahip"
             ? [{ yol: "/yonetim/kullanicilar", ad: "Kullanıcılar", ikon: "kullanici" as const }]
             : []),
+          { yol: "/yonetim/hazirlik", ad: "Satışa hazırlık", ikon: "hazirlik" },
           { yol: "/yonetim/tani", ad: "Tanı", ikon: "tani" },
         ],
       },

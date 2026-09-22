@@ -72,6 +72,11 @@ function blobJetonu(): string | undefined {
   return undefined;
 }
 
+/** Fotoğraf deposu bağlı mı; satışa hazırlık ekranı da soruyor (K-75). */
+export function depoBagliMi(): boolean {
+  return blobKimligi() !== undefined;
+}
+
 /** Depo bağlıysa kimlik, bağlı değilse undefined. */
 function blobKimligi(): BlobKimligi | undefined {
   const jeton = blobJetonu();

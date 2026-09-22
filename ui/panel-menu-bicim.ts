@@ -34,6 +34,7 @@ export type IkonAdi =
   | "ayar"
   | "yasal"
   | "kullanici"
+  | "hazirlik"
   | "tani";
 
 export type MenuMaddesi = {

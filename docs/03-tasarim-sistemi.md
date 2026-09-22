@@ -147,6 +147,7 @@ pastel kalır — gerçek ürün fotoğrafları da beyaz zeminde duracağı içi
 | Bedenler | Beden listesi ve ölçüleri, yaş grupları, sıralama ok düğmeleriyle |
 | Renkler | Renk listesi, çizim paleti ve canlı çizim önizlemesi |
 | Müşteriler | Müşteri listesi ve kartı: siparişler, adresler, KVKK veri indirme ve silme |
+| Satışa hazırlık | Dört bölümde on üç kontrol; engel / eksik / bakılabilir ayrımı |
 
 ### Diğer
 | Ekran | İçerik |

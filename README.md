@@ -153,6 +153,13 @@ gelen başvurular için. Silme kuralları üyenin kendi yaptığıyla aynı yerd
 geliyor: siparişler yasal saklama süresince kalıyor, hesapla bağları kopuyor
 (K-70).
 
+**Satışa hazırlık ekranı** (`/yonetim/hazirlik`): mağazanın gerçek bir
+siparişi baştan sona karşılayıp karşılayamayacağını tek ekranda söylüyor —
+havale bilgisi, kart ödemesi, künye, yasal metinlerin taslak olup olmadığı,
+yayında/satın alınabilir/fotoğraflı ürün sayıları, e-posta servisi, fotoğraf
+deposu, alan adı. **Engel** işaretli satır varken satış yapılmamalı; her satır
+nereden düzeltileceğini söylüyor (K-75).
+
 **Ürünü kategoriye atamanın iki yolu var**: ürün ekranında **Temel bilgiler →
 Kategori**, ya da ürün listesinden birkaçını işaretleyip **"Kategoriye taşı"**.
 Ürün listesinde kategori süzgeci (her rozette ürün adedi), kategori ekranında
