@@ -51,6 +51,7 @@ export default function FotografYonetimi({
   eklenen,
   sonuc,
   sonraki,
+  varsayilanRenk = "",
 }: {
   slug: string;
   fotograflar: PanelFotografi[];
@@ -83,6 +84,11 @@ export default function FotografYonetimi({
   sonuc?: "silindi" | "sira";
   /** Fotoğrafı olmayan bir sonraki ürün; fotoğraf çekimi yarım kalmasın. */
   sonraki?: { slug: string; ad: string; kalan: number };
+  /**
+   * Yükleme formunda seçili gelen renk (K-91): az önce stoğu eklenen renk,
+   * yoksa henüz kendi fotoğrafı olmayan ilk renk.
+   */
+  varsayilanRenk?: string;
 }) {
   return (
     <section id="fotograflar" className="rounded-marka border border-cizgi bg-yuzey p-5">
@@ -132,6 +138,34 @@ export default function FotografYonetimi({
           kabul="image/jpeg,image/png,image/webp,image/avif,image/gif"
           kucult
         />
+        {/* Renk yüklerken seçiliyor; seçilen bütün fotoğraflar o renge
+            atanıyor. `key`: sayfa yenilenmeden gelen yeni varsayılan da
+            seçili görünsün (K-91). */}
+        <label className="flex flex-col gap-1.5">
+          <span className="text-xs font-bold text-metin-2">Renk</span>
+          <select
+            key={varsayilanRenk}
+            name="renk"
+            defaultValue={varsayilanRenk}
+            className={GIRDI}
+          >
+            <option value="">Her renk</option>
+            {renkler.map((r) => (
+              <option key={r.kod} value={r.kod}>
+                {r.ad}
+              </option>
+            ))}
+            {digerRenkler.length > 0 && (
+              <optgroup label="Bu üründe henüz yok">
+                {digerRenkler.map((r) => (
+                  <option key={r.kod} value={r.kod}>
+                    {r.ad}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+        </label>
         <label className="flex min-w-[180px] flex-1 flex-col gap-1.5">
           <span className="text-xs font-bold text-metin-2">Açıklama (isteğe bağlı)</span>
           <input

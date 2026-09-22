@@ -4297,6 +4297,27 @@ beden eskisi gibi gri ve üstü çizili: stok bilgisi renkten önemli.
 [`../server/yonetim.ts`](../server/yonetim.ts) (`bannerKaydet`),
 [`../ui/varyant-secici.tsx`](../ui/varyant-secici.tsx)
 
+### K-91 · Fotoğrafın rengi yüklerken seçiliyor, varsayılanı akıllı
+
+Fotoğraflar renksiz yükleniyor, sonra her fotoğrafın altındaki listeden renk
+tek tek seçilip kaydediliyordu. Stok eklerken renk zaten seçilmişti; aynı
+bilgi iki kez giriliyordu, beş mavi fotoğraf beş ayrı kayıt demekti.
+
+- Yükleme formunda **Renk** seçimi var; o seferde seçilen bütün fotoğraflar o
+  renge atanıyor.
+- Varsayılanı: az önce stoğu eklenen renk (varyant eklemek `?renk=` ile
+  dönüyor); yoksa ürünün henüz kendi fotoğrafı olmayan ilk rengi. Renk renk
+  yükleyen kişiye her seferinde sıradaki renk seçili geliyor.
+- "Her renk" hâlâ seçilebiliyor: kumaş yakın çekimi, etiket gibi renkten
+  bağımsız kareler için. Sonradan değiştirmek her fotoğrafın altından
+  yapılmaya devam ediyor.
+
+**Rengi resimden tahmin etmek denenmedi:** arka plan, desen ve ışık yüzünden
+sık yanılır; yanlış renkte görünen fotoğraf renksiz fotoğraftan kötü.
+
+**Nerede:** [`../ui/fotograf-yonetimi.tsx`](../ui/fotograf-yonetimi.tsx),
+[`../server/yonetim.ts`](../server/yonetim.ts) (`fotografEkle`, `varyantEkle`)
+
 ---
 
 ## Açık sorular

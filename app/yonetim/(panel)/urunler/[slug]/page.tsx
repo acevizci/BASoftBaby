@@ -19,7 +19,7 @@ export default async function UrunDuzenle({
   await yoneticiGerekli();
 
   const { slug } = await params;
-  const { kayit, fhata, fkayit, fsil, fsira, hata } = await searchParams;
+  const { kayit, fhata, fkayit, fsil, fsira, hata, renk: renkParam } = await searchParams;
 
   const [urun, kategoriler] = await Promise.all([
     db.product.findUnique({
@@ -68,6 +68,16 @@ export default async function UrunDuzenle({
   });
 
   const urunRenkleri = new Set(sirali.map((v) => v.renk));
+
+  // Fotoğraf yükleme formunda seçili gelen renk (K-91): az önce stoğu eklenen
+  // renk; yoksa ürünün henüz kendi fotoğrafı olmayan ilk rengi. Böylece renk
+  // renk fotoğraf yüklerken her seferinde sıradaki renk seçili geliyor.
+  const fotografliRenkler = new Set(urun.images.map((g) => g.renk).filter(Boolean));
+  const varsayilanRenk =
+    typeof renkParam === "string" && tumRenkler.some((r) => r.kod === renkParam)
+      ? renkParam
+      : (tumRenkler.find((r) => urunRenkleri.has(r.kod) && !fotografliRenkler.has(r.kod))
+          ?.kod ?? "");
 
   const eklenen = typeof fkayit === "string" ? Number(fkayit) : undefined;
   const fotografSonucu = fsil === "1" ? "silindi" : fsira === "1" ? "sira" : undefined;
@@ -131,6 +141,7 @@ export default async function UrunDuzenle({
         // renkleri ayrı grupta, uyarısıyla (K-71).
         renkler={tumRenkler.filter((r) => urunRenkleri.has(r.kod))}
         digerRenkler={secilebilirRenkler.filter((r) => !urunRenkleri.has(r.kod))}
+        varsayilanRenk={varsayilanRenk}
       />
 
       {/* Kaydet düğmesi sayfanın sonunda: form yukarıda bitiyor ama

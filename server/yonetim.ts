@@ -292,7 +292,9 @@ export async function varyantEkle(form: FormData): Promise<void> {
   });
   await stokBildirimleriniGonder([varyant.id]);
   vitriniYenile();
-  redirect(`/yonetim/urunler/${slug}?kayit=1`);
+  // Eklenen renk fotoğraf yükleme formunda seçili gelsin: sıradaki iş
+  // çoğunlukla o rengin fotoğrafını yüklemek (K-91).
+  redirect(`/yonetim/urunler/${slug}?kayit=1&renk=${encodeURIComponent(renk)}`);
 }
 
 export async function varyantSil(form: FormData): Promise<void> {
@@ -1303,6 +1305,10 @@ export async function fotografEkle(veri: FormData): Promise<void> {
   if (dosyalar.length === 0) redirect(`/yonetim/urunler/${slug}?fhata=bos#fotograflar`);
 
   const altMetin = String(veri.get("altMetin") ?? "").trim() || urun.ad;
+  // Yüklenen fotoğrafların hepsi bu renge atanıyor; boşsa "her renk".
+  // Eskiden renk her fotoğrafta ayrı ayrı seçilip kaydediliyordu (K-91).
+  const renkGirdisi = String(veri.get("renk") ?? "").trim();
+  const renk = renkGirdisi && (await renkKodlari()).includes(renkGirdisi) ? renkGirdisi : null;
   let sira = urun.images.reduce((e, g) => Math.max(e, g.sira), 0);
   const hatalar: string[] = [];
 
@@ -1319,6 +1325,7 @@ export async function fotografEkle(veri: FormData): Promise<void> {
           yukseklik: y.yukseklik,
           boyutBayt: y.boyutBayt,
           altMetin,
+          renk,
           sira,
         },
       });
