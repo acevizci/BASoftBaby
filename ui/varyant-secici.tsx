@@ -5,6 +5,31 @@ import Link from "next/link";
 import SepeteEkle from "@/ui/sepete-ekle";
 import StokBildirimi from "@/ui/stok-bildirimi";
 import { renkYaz, type RenkAdi, type RenkSecenegi, type Varyant } from "@/ui/katalog-bicim";
+import { tonSec, type Ton } from "@/ui/kategori-tonu";
+
+/**
+ * Beden düğmelerinin tonları (K-90). Ana sayfadaki "Yaşa göre" kutularıyla
+ * aynı dört pastel. Sınıflar tam yazılı: Tailwind birleştirilmiş sınıf
+ * adlarını göremiyor.
+ */
+const BEDEN_TONU: Record<Ton, { normal: string; secili: string }> = {
+  mavi: {
+    normal: "border-mavi/60 bg-mavi-soluk text-mavi-koyu hover:border-mavi-koyu",
+    secili: "border-mavi-koyu bg-mavi-soluk text-mavi-koyu ring-2 ring-mavi-koyu",
+  },
+  nane: {
+    normal: "border-nane/60 bg-nane-soluk text-nane-koyu hover:border-nane-koyu",
+    secili: "border-nane-koyu bg-nane-soluk text-nane-koyu ring-2 ring-nane-koyu",
+  },
+  mercan: {
+    normal: "border-mercan/60 bg-mercan-soluk text-mercan-koyu hover:border-mercan-koyu",
+    secili: "border-mercan-koyu bg-mercan-soluk text-mercan-koyu ring-2 ring-mercan-koyu",
+  },
+  sari: {
+    normal: "border-sari/70 bg-sari-soluk text-sari-koyu hover:border-sari-koyu",
+    secili: "border-sari-koyu bg-sari-soluk text-sari-koyu ring-2 ring-sari-koyu",
+  },
+};
 
 /** Beden adı → boy/kilo. Bedenler veritabanından geldiği için sunucudan
  *  geçiyor: bu bir istemci bileşeni, veritabanına bakamaz (K-56). */
@@ -63,6 +88,11 @@ export default function VaryantSecici({
             const bedendeStok = varyantlar.some(
               (v) => v.beden === b && v.renk === renk && v.stok > 0,
             );
+            // Ton bedenin mağazadaki sırasından (ölçü tablosu o sırada):
+            // "3-4 Yaş" her üründe aynı renkte. Üründeki sırasından alınsaydı
+            // aynı beden üründen ürüne renk değiştirirdi (K-90).
+            const sira = Object.keys(olculer).indexOf(b);
+            const ton = BEDEN_TONU[tonSec(sira < 0 ? 0 : sira)];
             return (
               <button
                 key={b}
@@ -72,9 +102,9 @@ export default function VaryantSecici({
                 title={bedendeStok ? b : `${b} · ${renkYaz(renkler, renk)} renkte tükendi`}
                 className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
                   beden === b
-                    ? `border-mercan bg-mercan-soluk text-mercan-koyu ${bedendeStok ? "" : "line-through"}`
+                    ? `${ton.secili} ${bedendeStok ? "" : "line-through"}`
                     : bedendeStok
-                      ? "border-cizgi bg-yuzey text-metin-2 hover:border-metin-3"
+                      ? ton.normal
                       : "border-cizgi-soluk bg-yuzey-sicak text-metin-3 line-through"
                 }`}
               >

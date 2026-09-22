@@ -4271,6 +4271,32 @@ kapalı. Banner silinince resim dosyaları da siliniyor.
 [`../server/yonetim.ts`](../server/yonetim.ts) (`bannerKaydet`),
 [`../app/yonetim/(panel)/banner/page.tsx`](../app/yonetim/(panel)/banner/page.tsx)
 
+### K-90 · Banner düzenlenebiliyor; ürün sayfasında bedenler renkli
+
+**Banner düzenleme.** Panelde yalnızca ekleme, açma-kapama ve silme vardı;
+bir resmi ya da bağlantıyı değiştirmek için yeni banner ekleyip eskisini
+silmek gerekiyordu. Listede her satırda "Düzenle" var; ekleme formunun
+aynısı o satırın altında dolu açılıyor.
+
+- Resim yüklemek isteğe bağlı: yeni resim seçilmezse eskisi kalıyor.
+- Resim değişince eski dosyalar siliniyor — önce kayıt, sonra dosya: kayıt
+  başarısız olursa eski resim kaybolmasın.
+- Telefon resmi ayrıca kaldırılabiliyor.
+- Tür değiştirilebiliyor; resimliden yazılıya geçince resimler temizleniyor.
+- Hata olursa (başlıksız yazılı banner, yüklenemeyen resim) düzenleme formu
+  açık dönüyor.
+
+**Renkli bedenler.** Ürün sayfasındaki beden düğmeleri beyazdı; yalnızca
+seçili olan renkliydi. Artık her beden ana sayfadaki "Yaşa göre" kutularının
+dört pastel tonundan birinde. Ton bedenin mağazadaki sırasından geliyor, yani
+"3-4 Yaş" her üründe aynı renkte. Üründeki sırasından alınsaydı aynı beden
+üründen ürüne renk değiştirirdi. Seçili beden koyu bir halkayla, tükenmiş
+beden eskisi gibi gri ve üstü çizili: stok bilgisi renkten önemli.
+
+**Nerede:** [`../app/yonetim/(panel)/banner/page.tsx`](../app/yonetim/(panel)/banner/page.tsx) (`BannerFormu`),
+[`../server/yonetim.ts`](../server/yonetim.ts) (`bannerKaydet`),
+[`../ui/varyant-secici.tsx`](../ui/varyant-secici.tsx)
+
 ---
 
 ## Açık sorular

@@ -49,7 +49,7 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { kayit, hata, ac, sayfa, mesaj } = await searchParams;
+  const { kayit, hata, ac, sayfa, mesaj, duzenle } = await searchParams;
   const [bannerlar, saniye] = await Promise.all([tumBannerlar(), bannerSaniyeGetir()]);
 
   const durum = sayfaCoz(sayfa, bannerlar.length, LISTE_BOYU);
@@ -133,7 +133,11 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
         ) : (
           <ul className="mt-3 flex flex-col divide-y divide-cizgi-soluk">
             {sayfadakiler.map((b) => (
-              <li key={b.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3">
+              <li
+                key={b.id}
+                id={`banner-${b.id}`}
+                className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3"
+              >
                 <span className="rakam text-xs text-metin-3">{b.sira}</span>
                 {b.resimYol && (
                   // Küçük önizleme: resimli banner'ın başlığı olmayabiliyor,
@@ -165,6 +169,16 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
                 >
                   {b.aktif ? "Yayında" : "Kapalı"}
                 </span>
+                <Link
+                  href={
+                    duzenle === b.id
+                      ? sayfaAdresi("/yonetim/banner", durum.sayfa)
+                      : `${sayfaAdresi("/yonetim/banner", durum.sayfa)}${durum.sayfa > 1 ? "&" : "?"}duzenle=${b.id}#banner-${b.id}`
+                  }
+                  className="rounded-full border border-cizgi px-3 py-1.5 text-xs font-bold text-metin-2 hover:border-metin-3"
+                >
+                  {duzenle === b.id ? "Vazgeç" : "Düzenle"}
+                </Link>
                 <form action={bannerCevir}>
                   <input type="hidden" name="id" value={b.id} />
                   <SayfaAlani sayfa={durum.sayfa} />
@@ -184,6 +198,11 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
                     </button>
                   </form>
                 </SilmeOnayi>
+                {duzenle === b.id && (
+                  <div className="mt-2 w-full rounded-marka border border-cizgi-soluk bg-yuzey-sicak p-4">
+                    <BannerFormu b={b} />
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -202,9 +221,40 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
         eylem
         acik={ac === "yeni-banner" || bannerlar.length === 0}
       >
+        <BannerFormu varsayilanSira={bannerlar.length} />
+      </Katlanir>
+    </div>
+  );
+}
+
+/** "YYYY-MM-DD": tarih kutusunun beklediği biçim. */
+function tarihGirdisi(t: Date | null | undefined): string {
+  if (!t) return "";
+  const y = t.getFullYear();
+  const a = String(t.getMonth() + 1).padStart(2, "0");
+  const g = String(t.getDate()).padStart(2, "0");
+  return `${y}-${a}-${g}`;
+}
+
+type BannerKaydi = Awaited<ReturnType<typeof tumBannerlar>>[number];
+
+/**
+ * Banner formu; ekleme ve düzenlemede aynı (K-90).
+ *
+ * Düzenlemede resim yüklemek isteğe bağlı: yeni resim seçilmezse eskisi
+ * kalıyor. Tür değiştirilebiliyor; resimliden yazılıya geçince resim
+ * dosyaları siliniyor.
+ */
+function BannerFormu({ b, varsayilanSira = 0 }: { b?: BannerKaydi; varsayilanSira?: number }) {
+  const tur = b ? (b.resimYol ? "resim" : "yazi") : "resim";
+  return (
         <form action={bannerKaydet} className="banner-form flex flex-col gap-4">
-          {/* Arka arkaya birkaç banner eklenebilsin. */}
-          <input type="hidden" name="ac" value="yeni-banner" />
+          {b ? (
+            <input type="hidden" name="id" value={b.id} />
+          ) : (
+            // Arka arkaya birkaç banner eklenebilsin.
+            <input type="hidden" name="ac" value="yeni-banner" />
+          )}
 
           {/* Tür: hazır bir kampanya görseli mi, yoksa yazı + çizim mi (K-89).
               Seçilmeyen türün alanları CSS ile gizleniyor. */}
@@ -224,7 +274,7 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
                   type="radio"
                   name="tur"
                   value={deger}
-                  defaultChecked={deger === "resim"}
+                  defaultChecked={deger === tur}
                   className="mt-1 accent-[var(--mercan)]"
                 />
                 <span>
@@ -237,9 +287,20 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
 
           <div className="yalniz-resim grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5 sm:col-span-2">
+              {b?.resimYol && (
+                <p className="flex items-center gap-3 text-xs text-metin-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={b.resimKucukYol || b.resimYol}
+                    alt=""
+                    className="h-12 w-32 rounded-md object-cover ring-1 ring-cizgi"
+                  />
+                  Şu anki resim. Yeni resim seçmezsen bu kalır.
+                </p>
+              )}
               <DosyaBirak
                 ad="resim"
-                etiket="Banner resmi"
+                etiket={b?.resimYol ? "Resmi değiştir (isteğe bağlı)" : "Banner resmi"}
                 kabul={RESIM_BICIMLERI}
                 kucult
                 tekli
@@ -270,12 +331,23 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
                 Telefonda geniş resim küçülüp yazısı okunmaz hâle geliyor. Buraya daha
                 dik bir görsel koyarsan (örneğin 1080×1080) telefonda o gösterilir.
               </span>
+              {b?.telefonYol && (
+                <label className="flex items-center gap-2 text-xs text-metin-2">
+                  <input
+                    type="checkbox"
+                    name="telefonKaldir"
+                    className="h-4 w-4 accent-[var(--mercan)]"
+                  />
+                  Şu anki telefon resmini kaldır (telefonda da geniş resim görünsün)
+                </label>
+              )}
             </div>
 
             <label className="flex flex-col gap-1.5">
               <span className={ETIKET}>Resmin açıklaması (isteğe bağlı)</span>
               <input
                 name="resimAciklama"
+                defaultValue={b?.resimYol ? b.baslik : ""}
                 placeholder="Sonbahar koleksiyonu: yüzde 20 indirim"
                 className={GIRDI}
               />
@@ -286,7 +358,12 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
 
             <label className="flex flex-col gap-1.5">
               <span className={ETIKET}>Tıklanınca gideceği sayfa (isteğe bağlı)</span>
-              <input name="resimLink" placeholder="/kiz-cocuk" className={GIRDI} />
+              <input
+                name="resimLink"
+                defaultValue={b?.resimYol ? b.dugmeLink : ""}
+                placeholder="/kiz-cocuk"
+                className={GIRDI}
+              />
             </label>
           </div>
 
@@ -295,6 +372,7 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
               <span className={ETIKET}>Başlık</span>
               <input
                 name="baslik"
+                defaultValue={b && !b.resimYol ? b.baslik : ""}
                 placeholder="Sonbahar koleksiyonu yayında"
                 className={GIRDI}
               />
@@ -304,6 +382,7 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
               <span className={ETIKET}>Alt yazı</span>
               <input
                 name="altYazi"
+                defaultValue={b?.altYazi ?? ""}
                 placeholder="Yumuşacık kadife ve fitilli pamuk parçalar"
                 className={GIRDI}
               />
@@ -311,17 +390,27 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
 
             <label className="flex flex-col gap-1.5">
               <span className={ETIKET}>Düğme yazısı</span>
-              <input name="dugmeYazi" placeholder="Koleksiyonu gör" className={GIRDI} />
+              <input
+                name="dugmeYazi"
+                defaultValue={b?.dugmeYazi ?? ""}
+                placeholder="Koleksiyonu gör"
+                className={GIRDI}
+              />
             </label>
 
             <label className="flex flex-col gap-1.5">
               <span className={ETIKET}>Düğme bağlantısı</span>
-              <input name="dugmeLink" placeholder="/tulum" className={GIRDI} />
+              <input
+                name="dugmeLink"
+                defaultValue={b && !b.resimYol ? b.dugmeLink : ""}
+                placeholder="/tulum"
+                className={GIRDI}
+              />
             </label>
 
             <label className="flex flex-col gap-1.5">
               <span className={ETIKET}>Arka plan rengi</span>
-              <select name="palet" defaultValue="sari" className={GIRDI}>
+              <select name="palet" defaultValue={b?.palet ?? "sari"} className={GIRDI}>
                 {BANNER_PALETLERI.map((p) => (
                   <option key={p} value={p}>
                     {BANNER_PALET_ADLARI[p]}
@@ -332,7 +421,7 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
 
             <label className="flex flex-col gap-1.5">
               <span className={ETIKET}>Çizim</span>
-              <select name="gorsel" defaultValue="amblem" className={GIRDI}>
+              <select name="gorsel" defaultValue={b?.gorsel ?? "amblem"} className={GIRDI}>
                 {BANNER_GORSELLERI.map((g) => (
                   <option key={g} value={g}>
                     {g === "amblem" ? "Logo amblemi" : g}
@@ -349,7 +438,7 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
               <input
                 name="sira"
                 type="number"
-                defaultValue={bannerlar.length}
+                defaultValue={b ? b.sira : varsayilanSira}
                 className={`${GIRDI} rakam`}
               />
             </label>
@@ -358,12 +447,22 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
 
             <label className="flex flex-col gap-1.5">
               <span className={ETIKET}>Başlangıç</span>
-              <input name="baslangic" type="date" className={GIRDI} />
+              <input
+                name="baslangic"
+                type="date"
+                defaultValue={tarihGirdisi(b?.baslangic)}
+                className={GIRDI}
+              />
             </label>
 
             <label className="flex flex-col gap-1.5">
               <span className={ETIKET}>Bitiş</span>
-              <input name="bitis" type="date" className={GIRDI} />
+              <input
+                name="bitis"
+                type="date"
+                defaultValue={tarihGirdisi(b?.bitis)}
+                className={GIRDI}
+              />
             </label>
           </div>
 
@@ -371,7 +470,7 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
             <input
               type="checkbox"
               name="aktif"
-              defaultChecked
+              defaultChecked={b ? b.aktif : true}
               className="h-4 w-4 accent-[var(--mercan)]"
             />
             <span className="text-sm font-semibold">Banner yayında</span>
@@ -386,10 +485,8 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
             type="submit"
             className="self-start rounded-full bg-dugme px-6 py-3 font-bold text-dugme-yazi transition hover:brightness-95"
           >
-            Banner ekle
+            {b ? "Kaydet" : "Banner ekle"}
           </button>
         </form>
-      </Katlanir>
-    </div>
   );
 }

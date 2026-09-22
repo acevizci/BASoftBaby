@@ -1115,7 +1115,22 @@ export async function bannerKaydet(veri: FormData): Promise<void> {
     .trim()
     .slice(0, 120);
   const hata = (kod: string, ek = "") =>
-    redirect(`/yonetim/banner?hata=${kod}${ek}&ac=yeni-banner#yeni-banner`);
+    redirect(
+      id
+        ? `/yonetim/banner?hata=${kod}${ek}&duzenle=${encodeURIComponent(id)}#banner-${encodeURIComponent(id)}`
+        : `/yonetim/banner?hata=${kod}${ek}&ac=yeni-banner#yeni-banner`,
+    );
+
+  // Düzenlemede var olan resimler: yeni resim seçilmezse kalıyor (K-90).
+  const mevcut = id
+    ? await db.heroBanner.findUnique({
+        where: { id },
+        select: { resimYol: true, resimKucukYol: true, telefonYol: true },
+      })
+    : null;
+  if (id && !mevcut) redirect("/yonetim/banner?hata=bulunamadi");
+  /** Kayıttan sonra silinecek eski dosyalar: önce kayıt, sonra dosya. */
+  const silinecek: string[] = [];
   if (tur === "yazi" && !baslik) hata("baslik");
 
   const palet = String(veri.get("palet") ?? "sari");
@@ -1129,15 +1144,23 @@ export async function bannerKaydet(veri: FormData): Promise<void> {
   if (tur === "resim") {
     const dosya = veri.get("resim");
     const telefon = veri.get("telefonResmi");
-    if (!(dosya instanceof File) || dosya.size === 0) hata("resim-yok");
+    const yeniResim = dosya instanceof File && dosya.size > 0;
+    if (!yeniResim && !mevcut?.resimYol) hata("resim-yok");
+    if (veri.get("telefonKaldir") === "on" && mevcut?.telefonYol) {
+      Object.assign(resimAlanlari, { telefonYol: "", telefonGenislik: 0, telefonYukseklik: 0 });
+      silinecek.push(mevcut.telefonYol);
+    }
     try {
-      const y = await gorselYukle(dosya as File, BANNER_OLCU);
-      Object.assign(resimAlanlari, {
-        resimYol: y.yol,
-        resimKucukYol: y.kucukYol,
-        resimGenislik: y.genislik,
-        resimYukseklik: y.yukseklik,
-      });
+      if (yeniResim) {
+        const y = await gorselYukle(dosya, BANNER_OLCU);
+        Object.assign(resimAlanlari, {
+          resimYol: y.yol,
+          resimKucukYol: y.kucukYol,
+          resimGenislik: y.genislik,
+          resimYukseklik: y.yukseklik,
+        });
+        if (mevcut?.resimYol) silinecek.push(mevcut.resimYol, mevcut.resimKucukYol);
+      }
       if (telefon instanceof File && telefon.size > 0) {
         const t = await gorselYukle(telefon, TELEFON_OLCU);
         // Telefon için tek boyut yeter; küçük kopya silinsin, depoda öksüz kalmasın.
@@ -1147,6 +1170,9 @@ export async function bannerKaydet(veri: FormData): Promise<void> {
           telefonGenislik: t.genislik,
           telefonYukseklik: t.yukseklik,
         });
+        if (mevcut?.telefonYol && !silinecek.includes(mevcut.telefonYol)) {
+          silinecek.push(mevcut.telefonYol);
+        }
       }
     } catch (e) {
       console.error("Banner resmi yüklenemedi:", e);
@@ -1155,6 +1181,18 @@ export async function bannerKaydet(veri: FormData): Promise<void> {
         `&mesaj=${encodeURIComponent(e instanceof GorselHatasi ? e.message : "Resim yüklenemedi.")}`,
       );
     }
+  } else if (mevcut?.resimYol || mevcut?.telefonYol) {
+    // Resimliden yazılıya geçti: resimler boşalıyor, dosyaları da gidiyor.
+    Object.assign(resimAlanlari, {
+      resimYol: "",
+      resimKucukYol: "",
+      resimGenislik: 0,
+      resimYukseklik: 0,
+      telefonYol: "",
+      telefonGenislik: 0,
+      telefonYukseklik: 0,
+    });
+    silinecek.push(mevcut.resimYol, mevcut.resimKucukYol, mevcut.telefonYol);
   }
 
   const veriler = {
@@ -1179,6 +1217,7 @@ export async function bannerKaydet(veri: FormData): Promise<void> {
   } else {
     await db.heroBanner.create({ data: veriler });
   }
+  await gorselDosyalariniSil(silinecek.filter(Boolean));
 
   vitriniYenile();
   redirect(acikDonus("/yonetim/banner", veri));
