@@ -4221,6 +4221,29 @@ koymak e-postanın o kişiye ait olduğunu kanıtlıyor (`AdminUser.epostaDogrul
 [`../server/yonetim-kimlik.ts`](../server/yonetim-kimlik.ts),
 [`../testler/panel-davet-db.test.ts`](../testler/panel-davet-db.test.ts)
 
+### K-88 · Kart üzerindeki renk noktaları fotoğrafı değiştiriyor
+
+Çok renkli bir üründe müşteri rengin nasıl göründüğünü görmek için ürüne
+girmek zorundaydı; karttaki noktalar yalnızca süstü.
+
+- **Masaüstü:** noktanın üzerine gelmek fotoğrafı o rengin fotoğrafına
+  çeviriyor, fare çekilince seçili renge (yoksa ilk fotoğrafa) dönüyor.
+  Klavyeyle odaklanmak da aynısını yapıyor.
+- **Telefon:** üzerine gelmek yok; dokunmak rengi seçiyor ve seçim kalıyor.
+  Aynı noktaya yeniden dokunmak seçimi kaldırıyor.
+- **Seçilen renk kartın geri kalanına geçiyor:** "Sepete ekle" o rengin
+  stoktaki ilk bedenini ekliyor (renk tükenmişse düğme kapanıyor), ürün
+  bağlantısı sayfayı `?renk=` ile o renkte açıyor. Mavi fotoğrafa bakıp
+  pembe eklemek, hiç değişmemesinden kötü olurdu.
+- Fotoğrafın rengi panelde yüklenirken seçiliyor (K-48). Rengine ait fotoğrafı
+  olmayan renkte genel fotoğraf kalıyor; hiç fotoğraf yoksa çizim o rengin
+  paletine boyanıyor.
+- Fare noktalara yaklaşınca renk fotoğraflarının küçük hâlleri önceden
+  isteniyor: yoksa değişim anında bir süre boş kare görünüyordu.
+- Kart bu yüzden istemci bileşeni oldu. Tek renkli üründe nokta düğme değil.
+
+**Nerede:** [`../ui/urun-karti.tsx`](../ui/urun-karti.tsx)
+
 ---
 
 ## Açık sorular
