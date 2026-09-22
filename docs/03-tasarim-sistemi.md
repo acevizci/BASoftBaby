@@ -106,7 +106,7 @@ pastel kalır — gerçek ürün fotoğrafları da beyaz zeminde duracağı içi
 | Ekran | İçerik |
 | --- | --- |
 | Ana sayfa | Üç afişli kayan banner, yaş kutuları, yaş filtresi, ürün ızgarası, güven şeridi |
-| Kategori | Sol filtre sütunu (beden, renk, kumaş, fiyat), ürün ızgarası |
+| Kategori | Süzgeçler: masaüstünde sol sütun, telefonda kapalı açılır panel + açık süzgeç rozetleri; ürün ızgarası |
 | Ürün detayı | Galeri, beden ve renk seçimi, stok uyarısı, sepete ekle, hediye paketi, bilgi akordeonu |
 | Arama sonuçları | Arama kutusu, kategori daraltma, sonuç ızgarası |
 | Beden rehberi | Boy-kilo-göğüs tablosu, nasıl ölçülür, kumaş payı |

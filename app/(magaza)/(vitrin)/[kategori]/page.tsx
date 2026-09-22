@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import UrunKarti from "@/ui/urun-karti";
 import {
   SIRALAMALAR,
+  yasEtiketleri as yasEtiketleriYap,
   SIRALAMA_ADLARI,
   kategoriGetir,
   urunSayfasi,
@@ -11,6 +12,7 @@ import {
 import { bedenler as bedenleriGetir } from "@/server/bedenler";
 import { yasGruplari } from "@/server/yas-gruplari";
 import { renkSecenekleri } from "@/server/renkler";
+import type { RenkSecenegi } from "@/ui/katalog-bicim";
 import Sayfalama from "@/ui/sayfalama";
 import { sayfaAdresi, sayfaNo } from "@/ui/sayfalama-bicim";
 
@@ -142,12 +144,47 @@ export default async function KategoriSayfasi({
     return sayfaAdresi(temel, n);
   };
 
-  const suzgecVar = Boolean(aranan.yas || aranan.beden || aranan.renk || aranan.fiyat);
+  const acikSuzgecAdedi = [aranan.yas, aranan.beden, aranan.renk, aranan.fiyat].filter(
+    Boolean,
+  ).length;
+  const suzgecVar = acikSuzgecAdedi > 0;
   const [bedenSecenekleri, yasSecenekleri, renkler] = await Promise.all([
     bedenleriGetir(),
     yasGruplari(),
     renkSecenekleri(),
   ]);
+
+  const yasEtiketleri = yasEtiketleriYap(yasSecenekleri);
+
+  // Açık süzgeçlerin ekrandaki karşılıkları; her biri kendini kaldıran bir
+  // bağlantıya dönüşüyor (K-72).
+  type AcikSuzgec = { alan: keyof Aranan; deger: string; etiket: string };
+  const acikSuzgecler: AcikSuzgec[] = [];
+  if (aranan.yas) {
+    acikSuzgecler.push({
+      alan: "yas",
+      deger: aranan.yas,
+      etiket: yasEtiketleri.get(aranan.yas) ?? aranan.yas,
+    });
+  }
+  if (aranan.beden) {
+    acikSuzgecler.push({ alan: "beden", deger: aranan.beden, etiket: aranan.beden });
+  }
+  if (aranan.renk) {
+    acikSuzgecler.push({
+      alan: "renk",
+      deger: aranan.renk,
+      etiket: renkler.find((r) => r.kod === aranan.renk)?.ad ?? aranan.renk,
+    });
+  }
+  if (aranan.fiyat) {
+    acikSuzgecler.push({
+      alan: "fiyat",
+      deger: aranan.fiyat,
+      etiket:
+        FIYAT_ARALIKLARI.find((f) => String(f.kurus) === aranan.fiyat)?.etiket ?? aranan.fiyat,
+    });
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -164,7 +201,190 @@ export default async function KategoriSayfasi({
       </p>
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[210px_1fr]">
+        {/*
+          Telefonda süzgeçler kapalı bir panelde, ürünler hemen altında.
+          Eskiden yan sütun telefonda ürünlerin **üstüne** yığılıyordu: ilk
+          ürün kartı sayfanın 1322 piksel altında kalıyordu, yani 844
+          piksellik bir ekranda bir buçuk ekran boyu süzgeç kaydırmadan tek
+          bir ürün görünmüyordu (K-72).
+
+          Masaüstünde yan sütun olduğu gibi duruyor. Aynı süzgeçler iki kez
+          yazılıyor ama aynı anda yalnızca biri çiziliyor: `hidden`
+          `display:none` demek, yani öteki erişilebilirlik ağacında da yok.
+          Tek bir `<details>` kullanıp masaüstünde CSS ile açık tutmak
+          denenmedi — kapalı `<details>` içeriğini geri getirmek tarayıcıdan
+          tarayıcıya değişiyor, bu yol her yerde aynı çalışıyor.
+        */}
         <aside className="flex flex-col gap-6">
+          {/*
+            Panel süzgeç seçiliyken de **kapalı** açılıyor. Bir aralık açık
+            gelsin diye denendi ama tam tersi oluyordu: süzgece dokunan
+            müşteri sonucu görmek istiyor, panel açık gelince ürünler 1445
+            piksel aşağı düşüyordu — düzeltmeye çalıştığımız şeyin kendisi.
+            Neyin açık olduğunu başlıktaki sayı ve ürünlerin üstündeki
+            rozetler söylüyor (K-72).
+          */}
+          <details className="rounded-marka border border-cizgi bg-yuzey lg:hidden">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-bold [&::-webkit-details-marker]:hidden">
+              <span>
+                Süzgeçler
+                {acikSuzgecAdedi > 0 && (
+                  <span className="rakam ml-2 rounded-full bg-mercan-soluk px-2 py-0.5 text-xs text-mercan-koyu">
+                    {acikSuzgecAdedi}
+                  </span>
+                )}
+              </span>
+              <span aria-hidden="true" className="text-metin-3">
+                ▾
+              </span>
+            </summary>
+            <div className="flex flex-col gap-6 border-t border-cizgi-soluk px-4 py-4">
+              <Suzgecler
+                kategori={kategori}
+                aranan={aranan}
+                yasSecenekleri={yasSecenekleri}
+                bedenSecenekleri={bedenSecenekleri}
+                renkler={renkler}
+                yasEtiketleri={yasEtiketleri}
+              />
+              {suzgecVar && (
+                <Link
+                  href={`/${kategori}`}
+                  className="text-sm font-bold text-mavi-koyu hover:underline"
+                >
+                  Süzgeçleri temizle
+                </Link>
+              )}
+            </div>
+          </details>
+
+          <div className="hidden flex-col gap-6 lg:flex">
+            <Suzgecler
+              kategori={kategori}
+              aranan={aranan}
+              yasSecenekleri={yasSecenekleri}
+              bedenSecenekleri={bedenSecenekleri}
+              renkler={renkler}
+              yasEtiketleri={yasEtiketleri}
+            />
+            {suzgecVar && (
+              <Link
+                href={`/${kategori}`}
+                className="text-sm font-bold text-mavi-koyu hover:underline"
+              >
+                Süzgeçleri temizle
+              </Link>
+            )}
+          </div>
+        </aside>
+
+        <div>
+          {/* Açık süzgeçler ürünlerin üstünde, tek dokunuşla kalkıyor.
+              Yalnızca telefonda: masaüstünde yan sütun zaten gösteriyor. */}
+          {suzgecVar && (
+            <div className="mb-4 flex flex-wrap items-center gap-2 lg:hidden">
+              {acikSuzgecler.map((a) => (
+                <Link
+                  key={a.alan}
+                  href={baglanti(kategori, aranan, a.alan, a.deger)}
+                  className="flex items-center gap-1.5 rounded-full border border-mercan bg-mercan-soluk px-3 py-1.5 text-xs font-bold text-mercan-koyu"
+                >
+                  {a.etiket}
+                  <span aria-hidden="true">✕</span>
+                  <span className="sr-only">süzgecini kaldır</span>
+                </Link>
+              ))}
+              <Link
+                href={`/${kategori}`}
+                className="text-xs font-bold text-mavi-koyu hover:underline"
+              >
+                Hepsini temizle
+              </Link>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="rakam text-sm text-metin-3">{durum.toplam} ürün listeleniyor</p>
+
+            {/* Sıralama da bağlantı: süzgeçlerle aynı düzen, JavaScript
+                kapalıyken de çalışıyor. */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs text-metin-3">Sırala:</span>
+              {SIRALAMALAR.map((sr) => {
+                const seciliSr = (aranan.sirala ?? "onerilen") === sr;
+                return (
+                  <Link
+                    key={sr}
+                    href={baglanti(kategori, aranan, "sirala", sr)}
+                    aria-pressed={seciliSr}
+                    className={`rounded-full border px-2.5 py-1 text-xs font-bold transition ${
+                      seciliSr
+                        ? "border-mercan bg-mercan-soluk text-mercan-koyu"
+                        : "border-cizgi text-metin-2 hover:border-metin-3"
+                    }`}
+                  >
+                    {SIRALAMA_ADLARI[sr]}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+
+          {durum.toplam === 0 ? (
+            <div className="mt-4 rounded-marka border border-cizgi bg-yuzey p-8 text-center">
+              <p className="font-baslik text-lg font-bold">Bu seçimle ürün bulunamadı</p>
+              <p className="mt-2 text-sm text-metin-2">
+                Bir süzgeci kaldırmayı dene; stokta olmayan bedenler listeye girmiyor.
+              </p>
+              <Link
+                href={`/${kategori}`}
+                className="mt-4 inline-block rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi"
+              >
+                Süzgeçleri temizle
+              </Link>
+            </div>
+          ) : (
+            <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-3">
+              {urunler.map((u) => (
+                <UrunKarti key={u.slug} urun={u} />
+              ))}
+            </div>
+          )}
+
+          <div className="mt-8">
+            <Sayfalama durum={durum} birim="ürün" adres={sayfaBaglantisi} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Süzgeç blokları: yaş, beden, renk, fiyat.
+ *
+ * Telefondaki açılır panel ve masaüstündeki yan sütun aynı bileşeni
+ * çiziyor; ikisinden yalnızca biri görünür oluyor (K-72).
+ */
+function Suzgecler({
+  kategori,
+  aranan,
+  yasSecenekleri,
+  bedenSecenekleri,
+  renkler,
+  yasEtiketleri,
+}: {
+  kategori: string;
+  aranan: Aranan;
+  yasSecenekleri: { kod: string; ad: string; aciklama: string }[];
+  bedenSecenekleri: { id: string; ad: string; boy: string }[];
+  renkler: RenkSecenegi[];
+  /** Yaş grubu kodu → etiket; aynı açıklamalı gruplar ayrışsın diye (K-72). */
+  yasEtiketleri: Map<string, string>;
+}) {
+  return (
+    <>
+
           {/* Hiç yaş grubu tanımlı değilse başlık da çizilmiyor: boş bir
               süzgeç bölümü müşteriye seçenek varmış gibi görünür (K-65). */}
           {yasSecenekleri.length > 0 && (
@@ -180,7 +400,7 @@ export default async function KategoriSayfasi({
                   secili={aranan.yas === y.kod}
                   href={baglanti(kategori, aranan, "yas", y.kod)}
                 >
-                  {y.aciklama}
+                  {yasEtiketleri.get(y.kod) ?? y.aciklama}
                 </SuzgecDugmesi>
               ))}
             </div>
@@ -251,68 +471,6 @@ export default async function KategoriSayfasi({
               ))}
             </div>
           </div>
-
-          {suzgecVar && (
-            <Link href={`/${kategori}`} className="text-sm font-bold text-mavi-koyu hover:underline">
-              Süzgeçleri temizle
-            </Link>
-          )}
-        </aside>
-
-        <div>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="rakam text-sm text-metin-3">{durum.toplam} ürün listeleniyor</p>
-
-            {/* Sıralama da bağlantı: süzgeçlerle aynı düzen, JavaScript
-                kapalıyken de çalışıyor. */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-xs text-metin-3">Sırala:</span>
-              {SIRALAMALAR.map((sr) => {
-                const seciliSr = (aranan.sirala ?? "onerilen") === sr;
-                return (
-                  <Link
-                    key={sr}
-                    href={baglanti(kategori, aranan, "sirala", sr)}
-                    aria-pressed={seciliSr}
-                    className={`rounded-full border px-2.5 py-1 text-xs font-bold transition ${
-                      seciliSr
-                        ? "border-mercan bg-mercan-soluk text-mercan-koyu"
-                        : "border-cizgi text-metin-2 hover:border-metin-3"
-                    }`}
-                  >
-                    {SIRALAMA_ADLARI[sr]}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-
-          {durum.toplam === 0 ? (
-            <div className="mt-4 rounded-marka border border-cizgi bg-yuzey p-8 text-center">
-              <p className="font-baslik text-lg font-bold">Bu seçimle ürün bulunamadı</p>
-              <p className="mt-2 text-sm text-metin-2">
-                Bir süzgeci kaldırmayı dene; stokta olmayan bedenler listeye girmiyor.
-              </p>
-              <Link
-                href={`/${kategori}`}
-                className="mt-4 inline-block rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi"
-              >
-                Süzgeçleri temizle
-              </Link>
-            </div>
-          ) : (
-            <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-3">
-              {urunler.map((u) => (
-                <UrunKarti key={u.slug} urun={u} />
-              ))}
-            </div>
-          )}
-
-          <div className="mt-8">
-            <Sayfalama durum={durum} birim="ürün" adres={sayfaBaglantisi} />
-          </div>
-        </div>
-      </div>
-    </div>
+    </>
   );
 }

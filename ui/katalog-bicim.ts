@@ -225,3 +225,35 @@ export function urununBedenleri(urun: Urun): string[] {
   }
   return liste;
 }
+
+/**
+ * Yaş grubu süzgecinin etiketleri.
+ *
+ * Etikette yalnızca açıklama yazıyordu ("0-3 ay"). Panelden iki gruba aynı
+ * açıklama verilince — ki "2-14 Yaş"ı iki ayrı gruba bölmek olağan bir şey —
+ * süzgeçte **birbirinin aynı iki düğme** çıkıyor, hangisinin ne getirdiği
+ * anlaşılmıyordu (K-72).
+ *
+ * Kural: açıklama o listede tekse olduğu gibi kalıyor (kısa etiket iyi
+ * etiket); çakışıyorsa grubun adı önüne geliyor ("Çocuk · 2-14 Yaş").
+ * Açıklama hiç yoksa ad kullanılıyor.
+ */
+export function yasEtiketleri(
+  gruplar: readonly { kod: string; ad: string; aciklama: string }[],
+): Map<string, string> {
+  const sayim = new Map<string, number>();
+  for (const g of gruplar) {
+    const a = g.aciklama.trim();
+    if (a) sayim.set(a, (sayim.get(a) ?? 0) + 1);
+  }
+
+  const etiketler = new Map<string, string>();
+  for (const g of gruplar) {
+    const a = g.aciklama.trim();
+    const ad = g.ad.trim();
+    if (!a) etiketler.set(g.kod, ad || g.kod);
+    else if ((sayim.get(a) ?? 0) > 1 && ad) etiketler.set(g.kod, `${ad} · ${a}`);
+    else etiketler.set(g.kod, a);
+  }
+  return etiketler;
+}

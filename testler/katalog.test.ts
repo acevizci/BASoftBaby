@@ -2,6 +2,7 @@ import "./hazirlik";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  yasEtiketleri,
   GORSEL_ADLARI,
   GORSEL_TIPLERI,
   paletCoz,
@@ -191,5 +192,45 @@ describe("GORSEL_ADLARI", () => {
     assert.equal(GORSEL_ADLARI.zibin, "Zıbın");
     assert.equal(GORSEL_ADLARI.sapka, "Şapka");
     assert.equal(GORSEL_ADLARI.onluk, "Önlük");
+  });
+});
+
+describe("yasEtiketleri", () => {
+  const grup = (kod: string, ad: string, aciklama: string) => ({ kod, ad, aciklama });
+
+  it("açıklama tekse kısa etiket kalıyor", () => {
+    const e = yasEtiketleri([grup("0-3", "Yenidoğan", "0-3 ay"), grup("3-6", "Bebek", "3-6 ay")]);
+    assert.equal(e.get("0-3"), "0-3 ay");
+    assert.equal(e.get("3-6"), "3-6 ay");
+  });
+
+  it("aynı açıklamalı gruplar adıyla ayrışıyor", () => {
+    // Süzgeçte birbirinin aynı iki düğme çıkıyordu (K-72).
+    const e = yasEtiketleri([grup("a", "Çocuk", "2-14 Yaş"), grup("b", "Genç", "2-14 Yaş")]);
+    assert.equal(e.get("a"), "Çocuk · 2-14 Yaş");
+    assert.equal(e.get("b"), "Genç · 2-14 Yaş");
+    assert.notEqual(e.get("a"), e.get("b"));
+  });
+
+  it("çakışma yalnızca çakışanları uzatıyor", () => {
+    const e = yasEtiketleri([
+      grup("a", "Çocuk", "2-14 Yaş"),
+      grup("b", "Genç", "2-14 Yaş"),
+      grup("c", "Bebek", "0-3 ay"),
+    ]);
+    assert.equal(e.get("c"), "0-3 ay");
+  });
+
+  it("açıklama boşsa ad kullanılıyor", () => {
+    const e = yasEtiketleri([grup("x", "Yürüyen", "")]);
+    assert.equal(e.get("x"), "Yürüyen");
+  });
+
+  it("ikisi de boşsa kod yazılıyor — etiket hiç boş kalmıyor", () => {
+    assert.equal(yasEtiketleri([grup("x", "", "")]).get("x"), "x");
+  });
+
+  it("boş listede boş harita", () => {
+    assert.equal(yasEtiketleri([]).size, 0);
   });
 });

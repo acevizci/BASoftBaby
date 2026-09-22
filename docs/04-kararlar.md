@@ -3709,6 +3709,58 @@ atanan fotoğrafın altında uyarının belirdiği.
 
 ---
 
+### K-72 · Telefonda önce ürün, sonra süzgeç
+
+Liste sayfasının süzgeç sütunu masaüstünde solda duruyordu; telefonda ise
+`lg:` kırılımının altında ürünlerin **üstüne** yığılıyordu. Panelden beden
+eklendikçe sütun uzadı ve ölçüldüğünde şu çıktı: **ilk ürün kartı sayfanın
+1322 piksel altında.** 844 piksellik bir telefonda bir buçuk ekran boyu
+süzgeç kaydırmadan tek bir ürün görünmüyordu. Mağazanın ilk ekranında satacak
+bir şey yoktu.
+
+Artık telefonda süzgeçler kapalı bir panelde, ürünler hemen altında: **ilk
+ürün 524 piksele çıktı**, yani ilk ekranda. Masaüstünde yan sütun olduğu gibi.
+
+**Aynı süzgeçler iki kez yazılıyor, biri gizli.** Tek bir `<details>` kullanıp
+masaüstünde CSS ile açık tutmak denenmedi: kapalı bir `<details>`in içeriğini
+CSS'le geri getirmek tarayıcıdan tarayıcıya değişiyor. İki ayrı blok
+`hidden` / `lg:hidden` ile ayrılıyor — `hidden` `display:none` demek, yani
+gizli olan erişilebilirlik ağacında da yok, ekran okuyucu süzgeçleri iki kez
+okumuyor. Fazladan giden şey birkaç bağlantıdan ibaret.
+
+**Panel süzgeç seçiliyken de kapalı açılıyor.** Önce "açık gelsin, ne
+süzdüğünü görsün" diye yapıldı; ölçünce tam tersi çıktı: iki süzgeç seçili
+bir listede ürünler 1445 piksele düşüyordu — düzeltilmeye çalışılan şeyin
+kendisi. Süzgece dokunan müşteri süzgeci değil **sonucu** görmek istiyor.
+Neyin açık olduğunu başlıktaki sayı ve ürünlerin üstündeki rozetler
+söylüyor.
+
+**Açık süzgeçler ürünlerin üstünde, tek dokunuşla kalkıyor.** Her rozet
+kendi süzgecini kaldıran bir bağlantı; ötekiler yerinde kalıyor. Yalnızca
+telefonda — masaüstünde yan sütun zaten gösteriyor.
+
+#### Aynı açıklamalı iki yaş grubu, aynı görünen iki düğme
+
+Süzgeç etiketinde yalnızca açıklama yazıyordu ("0-3 ay"). Panelden iki gruba
+aynı açıklama verilince — "2-14 Yaş"ı ikiye bölmek olağan bir şey —
+süzgeçte **birbirinin aynı iki düğme** çıkıyor, hangisinin ne getirdiği
+anlaşılmıyordu. Artık açıklama o listede tekse olduğu gibi kalıyor (kısa
+etiket iyi etiket), çakışıyorsa grubun adı önüne geliyor: "Çocuk · 2-14 Yaş",
+"Genç · 2-14 Yaş". Açıklama hiç yoksa ad, o da yoksa kod — etiket hiç boş
+kalmıyor.
+
+**Nasıl denendi.** Üretim derlemesinde gerçek tarayıcıyla, kullanıcının
+verisi taklit edilerek (uzun beden listesi + aynı açıklamalı iki grup): ilk
+ürün kartının sayfadaki yeri telefonda ve masaüstünde ölçülerek, panelin
+açılıp kapandığı, masaüstünde yan sütunun görünüp panelin gizlendiği,
+rozetlerin doğru süzgeci kaldırdığı (ötekiler dururken), etiketlerin
+ayrıştığı. Panel ve rozetler bir de JavaScript kapalı tarayıcıda.
+
+**Nerede:** [`../app/(magaza)/(vitrin)/[kategori]/page.tsx`](../app/(magaza)/(vitrin)/[kategori]/page.tsx),
+[`../ui/katalog-bicim.ts`](../ui/katalog-bicim.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)
