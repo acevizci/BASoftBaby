@@ -13,24 +13,21 @@ import { sifreKisaMi, sifreOzetle, sifreTutuyorMu } from "@/server/uyelik";
 import { basariliGiris, basarisizDeneme, girisDenenebilirMi } from "@/server/giris-sinir";
 import { epostaAcikMi, panelSifreSifirlamaEpostasi } from "@/server/eposta";
 import {
-  ROLLER,
+  acikKullaniciKalsinDiye,
   epostaNormalle,
   ilkKullaniciyiOlustur,
   kimlikDogrula,
   kullaniciVarMi,
   kurulumSifresi,
   oturumlariDusur,
-  sahipGerekli,
-  sahipKalsinDiye,
   sifirlamaJetonuHarca,
   sifirlamaJetonuUret,
   sifirlanabilirKullanici,
   sifreyiYaz,
-  sonSahipMi,
+  sonAcikKullaniciMi,
   yonetimOturumuAc,
   yonetimOturumuKapat,
   yoneticiGerekli,
-  type Rol,
 } from "@/server/yonetim-kimlik";
 
 function metin(form: FormData, ad: string): string {
@@ -191,17 +188,12 @@ function listeye(anahtar: string, deger: string): never {
   redirect(`${LISTE}?${anahtar}=${deger}`);
 }
 
-function rolCoz(deger: string): Rol {
-  return (ROLLER as readonly string[]).includes(deger) ? (deger as Rol) : "yonetici";
-}
-
 export async function kullaniciEkle(form: FormData): Promise<void> {
-  await sahipGerekli();
+  await yoneticiGerekli();
 
   const eposta = epostaNormalle(metin(form, "eposta"));
   const adSoyad = metin(form, "adSoyad");
   const sifre = String(form.get("sifre") ?? "");
-  const rol = rolCoz(metin(form, "rol"));
 
   if (!eposta.includes("@")) listeye("hata", "gecersiz-eposta");
   if (!adSoyad) listeye("hata", "eksik");
@@ -209,7 +201,7 @@ export async function kullaniciEkle(form: FormData): Promise<void> {
 
   const ozet = await sifreOzetle(sifre);
   try {
-    await db.adminUser.create({ data: { eposta, adSoyad, sifreOzeti: ozet, rol } });
+    await db.adminUser.create({ data: { eposta, adSoyad, sifreOzeti: ozet } });
   } catch {
     listeye("hata", "eposta-kullanimda");
   }
@@ -220,10 +212,10 @@ export async function kullaniciEkle(form: FormData): Promise<void> {
  * Kullanıcıyı açar ya da kapatır.
  *
  * Kapatınca oturumları da düşüyor: bir sonraki istekte dışarıda kalıyor.
- * Kendini ve son sahibi kapatmak engelli — panele girilemez hâle gelirdi.
+ * Kendini ve son açık hesabı kapatmak engelli — panele girilemez hâle gelirdi.
  */
 export async function kullaniciCevir(form: FormData): Promise<void> {
-  const ben = await sahipGerekli();
+  const ben = await yoneticiGerekli();
   const id = metin(form, "id");
   if (!id) listeye("hata", "bulunamadi");
 
@@ -232,15 +224,15 @@ export async function kullaniciCevir(form: FormData): Promise<void> {
 
   if (kayit.aktif) {
     if (id === ben.id) listeye("hata", "kendini-kapatamaz");
-    if (await sonSahipMi(id)) listeye("hata", "son-sahip");
+    if (await sonAcikKullaniciMi(id)) listeye("hata", "son-kullanici");
   }
 
-  // Kapatma açık sahip bırakmıyorsa hiç uygulanmıyor; kontrol işlemin
+  // Kapatma açık hesap bırakmıyorsa hiç uygulanmıyor; kontrol işlemin
   // içinde, yukarıdaki okuma yalnızca hata metni için (K-46).
-  const oldu = await sahipKalsinDiye((islem) =>
+  const oldu = await acikKullaniciKalsinDiye((islem) =>
     islem.adminUser.update({ where: { id }, data: { aktif: !kayit.aktif } }),
   );
-  if (!oldu) listeye("hata", "son-sahip");
+  if (!oldu) listeye("hata", "son-kullanici");
 
   if (kayit.aktif) await oturumlariDusur(id);
 
@@ -254,49 +246,29 @@ export async function kullaniciCevir(form: FormData): Promise<void> {
  * bir hesap için var.
  */
 export async function kullaniciSil(form: FormData): Promise<void> {
-  const ben = await sahipGerekli();
+  const ben = await yoneticiGerekli();
   const id = metin(form, "id");
   if (!id) listeye("hata", "bulunamadi");
   if (id === ben.id) listeye("hata", "kendini-silemez");
-  if (await sonSahipMi(id)) listeye("hata", "son-sahip");
+  if (await sonAcikKullaniciMi(id)) listeye("hata", "son-kullanici");
 
   const varMi = await db.adminUser.count({ where: { id } });
   if (varMi === 0) listeye("hata", "bulunamadi");
 
-  const oldu = await sahipKalsinDiye((islem) => islem.adminUser.delete({ where: { id } }));
-  if (!oldu) listeye("hata", "son-sahip");
+  const oldu = await acikKullaniciKalsinDiye((islem) => islem.adminUser.delete({ where: { id } }));
+  if (!oldu) listeye("hata", "son-kullanici");
 
   listeye("kayit", "silindi");
 }
 
-export async function rolDegistir(form: FormData): Promise<void> {
-  const ben = await sahipGerekli();
-  const id = metin(form, "id");
-  const rol = rolCoz(metin(form, "rol"));
-  if (!id) listeye("hata", "bulunamadi");
-
-  // Kendi rolünü düşürmek ya da son sahibi yöneticiye çevirmek: ikisi de
-  // kullanıcı yönetimini kimsenin açamayacağı hâle getirir.
-  if (rol !== "sahip" && (id === ben.id || (await sonSahipMi(id)))) {
-    listeye("hata", "son-sahip");
-  }
-
-  const oldu = await sahipKalsinDiye((islem) =>
-    islem.adminUser.update({ where: { id }, data: { rol } }),
-  );
-  if (!oldu) listeye("hata", "son-sahip");
-
-  listeye("kayit", "rol");
-}
-
 /**
- * Başkasının şifresini değiştirir (sahip).
+ * Başkasının şifresini değiştirir.
  *
  * Şifre değişince o kullanıcının açık oturumları düşüyor: şifresi
  * değiştirilen biri açık sekmesinden çalışmaya devam etmesin.
  */
 export async function sifreAta(form: FormData): Promise<void> {
-  const ben = await sahipGerekli();
+  const ben = await yoneticiGerekli();
   const id = metin(form, "id");
   const sifre = String(form.get("sifre") ?? "");
   if (!id) listeye("hata", "bulunamadi");

@@ -8,6 +8,7 @@ import {
   paletCoz,
   renkYaz,
   renginFotograflari,
+  suzgecKapsami,
   toplamStok,
   urununBedenleri,
   VARSAYILAN_PALET,
@@ -15,7 +16,7 @@ import {
   type RenkSecenegi,
   type Urun,
 } from "@/ui/katalog-bicim";
-import { slugYap } from "@/server/slug";
+import { adresAyrilmisMi, slugYap } from "@/server/slug";
 import { kelimeler } from "@/server/arama-metin";
 import { adiKisalt } from "@/server/yorum";
 import { tonSec, TONLAR } from "@/ui/kategori-tonu";
@@ -232,5 +233,49 @@ describe("yasEtiketleri", () => {
 
   it("boş listede boş harita", () => {
     assert.equal(yasEtiketleri([]).size, 0);
+  });
+});
+
+describe("suzgecKapsami", () => {
+  const urun = (fiyatKurus: number, varyantlar: [string, string, number][]) => ({
+    fiyatKurus,
+    varyantlar: varyantlar.map(([beden, renk, stok], i) => ({ id: String(i), beden, renk, stok })),
+  });
+
+  it("yalnızca kategorideki ürünlerin bedenlerini ve renklerini veriyor", () => {
+    // "Aksesuar"da hiç olmayan bedenler süzgeçte çıkıp boş liste açıyordu (K-78).
+    const k = suzgecKapsami([
+      urun(15990, [["0-3 ay", "mint", 4]]),
+      urun(18990, [["3-6 ay", "krem", 2]]),
+    ]);
+    assert.deepEqual([...k.bedenler].sort(), ["0-3 ay", "3-6 ay"]);
+    assert.deepEqual([...k.renkler].sort(), ["krem", "mint"]);
+    assert.equal(k.enDusukKurus, 15990);
+  });
+
+  it("stoksuz beden süzgece girmiyor, rengi giriyor — süzgecin kuralıyla aynı", () => {
+    const k = suzgecKapsami([urun(10000, [["6-9 ay", "mercan", 0]])]);
+    assert.equal(k.bedenler.has("6-9 ay"), false);
+    assert.equal(k.renkler.has("mercan"), true);
+  });
+
+  it("boş listede fiyat yok", () => {
+    const k = suzgecKapsami([]);
+    assert.equal(k.enDusukKurus, undefined);
+    assert.equal(k.bedenler.size, 0);
+  });
+});
+
+describe("adresAyrilmisMi", () => {
+  it("mağaza sayfalarıyla çakışan kategori adları ayrılmış", () => {
+    // "Ürünler" kategorisi `/urunler` olunca tüm kataloğu gösteriyordu (K-78).
+    assert.equal(adresAyrilmisMi(slugYap("Ürünler")), true);
+    assert.equal(adresAyrilmisMi(slugYap("Arama")), true);
+    assert.equal(adresAyrilmisMi(slugYap("Sepet")), true);
+  });
+
+  it("sıradan kategori adları serbest", () => {
+    assert.equal(adresAyrilmisMi(slugYap("Zıbın & Body")), false);
+    assert.equal(adresAyrilmisMi(slugYap("Ürünler 2")), false);
   });
 });

@@ -1882,7 +1882,8 @@ bir müşteri hesabından pahalı.
 **İki rol, üç değil.** `sahip` kullanıcı ekleyip çıkarabiliyor, `yonetici`
 paneldeki her şeyi yapabiliyor ama kullanıcılara dokunamıyor. Bir kişilik bir
 mağazada rol ağacı kurmanın kimseye faydası olmazdı; ama "kullanıcıyı
-silebilen kim" sorusunun cevapsız kalmasının zararı olurdu.
+silebilen kim" sorusunun cevapsız kalmasının zararı olurdu. *(K-79 ile
+kaldırıldı: artık rol yok, her panel kullanıcısı her şeyi yapabiliyor.)*
 
 **Kendini kilitleme koruması kodda, uyarı metninde değil.** Kendini
 kapatmak, kendini silmek, kendi rolünü düşürmek ve son aktif sahibi
@@ -3992,6 +3993,51 @@ sınavları koşuyor — Vercel'deki derleme de böyle.
 **Nerede:** [`../testler/stok-db.test.ts`](../testler/stok-db.test.ts),
 [`../testler/veritabani.ts`](../testler/veritabani.ts),
 [`../testler/hazirlik.ts`](../testler/hazirlik.ts)
+
+### K-78 · Kategori sayfası yalnızca kendi ürünlerini ve kendi süzgeçlerini gösteriyor
+
+İki ayrı şikâyet vardı, ikisi de "kategori süzgeci yanlış" diye geldi.
+
+**Başka kategorinin ürünleri.** Kategori sayfası kökte duruyor (`/uyku`), yani
+mağazanın öteki sayfalarıyla aynı adres alanını paylaşıyor. Panelde "Ürünler"
+adlı bir kategori açılınca slug'ı `urunler` oluyordu; o adres "tüm ürünler"
+listesi olduğu için kategoriye tıklayan müşteri **bütün kataloğu** görüyordu.
+"Arama", "Sepet", "Giriş" gibi adlarda ise kategori sayfası hiç açılmıyor,
+bağlantı o sayfaya gidiyordu. Yeni kategoride bu adresler çakışma sayılıyor ve
+sonuna sayı ekleniyor (`urunler-2`); var olan çakışmalar bir göçle aynı biçimde
+taşındı. Liste `server/slug.ts` içinde (`AYRILMIS_ADRESLER`); mağazaya kökte
+yeni bir sayfa eklenince oraya da eklenmeli.
+
+**Alakasız süzgeçler.** Beden, renk, yaş ve fiyat seçenekleri bütün katalogdan
+geliyordu: "Aksesuar"da hiç üretilmemiş bedenler, "Uyku"da olmayan renkler
+çıkıyor, seçen müşteri boş listeye düşüyordu. Seçenekler artık o kategorinin
+yayındaki ürünlerinden çıkıyor, süzgecin kendi kurallarıyla: beden ve yaş stokta
+olan varyanta, renk varyantın varlığına, fiyat en düşük liste fiyatına bakıyor.
+Seçili bir değer karşılığı olmasa da görünür kalıyor — yoksa adresle gelen bir
+süzgeç kaldırılamazdı. Seçenekler öteki seçili süzgeçlere göre daraltılmıyor:
+her tıklamada listenin yeniden dizilmesi, müşterinin "az önce buradaydı"
+dediği düğmeyi kaybettiriyordu.
+
+**Nerede:** [`../server/slug.ts`](../server/slug.ts),
+[`../ui/katalog-bicim.ts`](../ui/katalog-bicim.ts) (`suzgecKapsami`),
+[`../app/(magaza)/(vitrin)/[kategori]/page.tsx`](../app/(magaza)/(vitrin)/[kategori]/page.tsx)
+
+### K-79 · Panelde rol yok
+
+K-45'teki iki rol (sahip / yönetici) kaldırıldı. Yöneticiden gizlenen tek şey
+Kullanıcılar ekranıydı, ama yeni kullanıcı formunda rol varsayılan olarak
+"Yönetici" geldiği için sonradan açılan her hesap o menüyü göremiyordu; mağaza
+sahibi bunu "yeni admin bazı menüleri göremiyor" diye hata olarak bildirdi.
+Bir-iki kişilik bir mağazada ayrımın koruduğu bir şey yoktu. Artık her panel
+kullanıcısı her şeyi yapabiliyor; `AdminUser.rol` sütunu bir göçle silindi.
+
+Kendini kilitleme koruması (K-46) duruyor, ölçütü değişti: "son açık sahip"
+değil **son açık hesap** kapatılamıyor ve silinemiyor; kontrol yine
+değişiklikle aynı `Serializable` işlemde.
+
+**Nerede:** [`../server/yonetim-kimlik.ts`](../server/yonetim-kimlik.ts),
+[`../server/yonetim-kimlik-islem.ts`](../server/yonetim-kimlik-islem.ts),
+[`../server/panel-menu.ts`](../server/panel-menu.ts)
 
 ---
 

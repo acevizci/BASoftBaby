@@ -3,18 +3,14 @@ import GonderDugmesi from "@/ui/gonder-dugmesi";
 import Katlanir from "@/ui/katlanir";
 import { EN_KISA_SIFRE } from "@/server/uyelik";
 import {
-  ROLLER,
-  ROL_ACIKLAMALARI,
-  ROL_ADLARI,
   kullanicilariGetir,
-  sahipGerekli,
+  yoneticiGerekli,
   type KullaniciSatiri,
 } from "@/server/yonetim-kimlik";
 import {
   kullaniciCevir,
   kullaniciEkle,
   kullaniciSil,
-  rolDegistir,
   sifreAta,
 } from "@/server/yonetim-kimlik-islem";
 import {
@@ -47,20 +43,19 @@ function tarihYaz(t: Date | null): string {
 /**
  * Panel kullanıcıları.
  *
- * Yalnızca sahip açabiliyor. İki rol var: sahip kullanıcı ekleyip
- * çıkarabiliyor, yönetici çıkaramıyor. Kendini kapatmak, silmek ya da son
- * sahibi düşürmek engelli — paneli kimsenin açamayacağı hâle getirirdi
- * (K-45).
+ * Her panel kullanıcısı açabiliyor; rol yok (K-79). Kendini kapatmak,
+ * silmek ya da son açık hesabı kapatmak engelli — paneli kimsenin
+ * açamayacağı hâle getirirdi (K-45).
  */
 export default async function KullanicilarSayfasi({
   searchParams,
 }: PageProps<"/yonetim/kullanicilar">) {
-  const ben = await sahipGerekli();
+  const ben = await yoneticiGerekli();
   const { kayit, hata, sayfa, ara } = await searchParams;
   const tumListe = await kullanicilariGetir();
 
   const arama = aramaCoz(ara);
-  const kullanicilar = aramayaGoreSuz(tumListe, arama, (k) => [k.eposta, k.adSoyad, k.rol]);
+  const kullanicilar = aramayaGoreSuz(tumListe, arama, (k) => [k.eposta, k.adSoyad]);
 
   const durum = sayfaCoz(sayfa, kullanicilar.length, LISTE_BOYU);
   const sayfadakiler = dilimle(kullanicilar, durum);
@@ -72,14 +67,12 @@ export default async function KullanicilarSayfasi({
   const bildirim = typeof kayit === "string" ? KULLANICI_BILDIRIMLERI[kayit] : undefined;
   const hataMetni = typeof hata === "string" ? KULLANICI_HATALARI[hata] : undefined;
 
-  // Tek açık sahip varsa panele girmenin tek yolu o hesap: kurulum ekranı
+  // Tek açık hesap varsa panele girmenin tek yolu o hesap: kurulum ekranı
   // ancak hiç kullanıcı kalmazsa ve `YONETIM_SIFRE` tanımlıysa geri geliyor.
   // Bu yüzden durum ekranda yazıyor — kod bunu zaten koruyor ama kişinin
-  // bilmesi lazım (K-46).
-  // Sayfayı yalnızca açık bir sahip açabildiği için "tek sahip" hep
-  // buradaki kişi oluyor.
-  const acikSahipSayisi = tumListe.filter((k) => k.aktif && k.rol === "sahip").length;
-  const tekSahibim = acikSahipSayisi === 1;
+  // bilmesi lazım (K-46). Sayfayı yalnızca açık bir hesap açabildiği için
+  // "tek hesap" hep buradaki kişi oluyor.
+  const tekHesapBenim = tumListe.filter((k) => k.aktif).length === 1;
 
   return (
     <div className="flex flex-col gap-5">
@@ -92,14 +85,13 @@ export default async function KullanicilarSayfasi({
       {bildirim && <p className={IYI_KUTU}>{bildirim}</p>}
       {hataMetni && <p className={HATA_KUTUSU}>{hataMetni}</p>}
 
-      {tekSahibim && (
+      {tekHesapBenim && (
         <div className="rounded-marka border border-sari bg-sari-soluk px-4 py-3 text-sm text-sari-koyu">
-          <p className="font-bold">Açık tek sahip sensin.</p>
+          <p className="font-bold">Panelde açık tek hesap seninki.</p>
           <p className="mt-1">
-            Bu hesap panele girmenin tek yolu; kapatılamıyor, silinemiyor ve rolü
-            düşürülemiyor. Şifreni unutursan giriş ekranındaki &quot;Şifremi unuttum&quot;
+            Bu hesap panele girmenin tek yolu; kapatılamıyor ve silinemiyor. Şifreni unutursan giriş ekranındaki &quot;Şifremi unuttum&quot;
             ile sıfırlayabilirsin — ama o da e-posta servisine bağlı.{" "}
-            <strong>İkinci bir sahip hesabı açmanı öneririm:</strong> iki sahip olunca biri
+            <strong>İkinci bir hesap açmanı öneririm:</strong> iki hesap olunca biri
             ötekinin şifresini yenileyebiliyor, e-posta çalışmasa bile.
           </p>
         </div>
@@ -108,7 +100,7 @@ export default async function KullanicilarSayfasi({
       <PanelArama
         yol="/yonetim/kullanicilar"
         ara={arama}
-        yerTutucu="Kişi ara: e-posta, ad ya da rol"
+        yerTutucu="Kişi ara: e-posta ya da ad"
       />
 
       <section className="rounded-marka border border-cizgi bg-yuzey p-5">
@@ -121,7 +113,7 @@ export default async function KullanicilarSayfasi({
 
         <ul className="mt-3 flex flex-col divide-y divide-cizgi-soluk">
           {sayfadakiler.map((k) => (
-            <Kullanici key={k.id} kullanici={k} benimId={ben.id} tekSahibim={tekSahibim} />
+            <Kullanici key={k.id} kullanici={k} benimId={ben.id} />
           ))}
         </ul>
 
@@ -163,18 +155,6 @@ export default async function KullanicilarSayfasi({
                 okunamıyor.
               </span>
             </label>
-
-            <label className="flex flex-col gap-1.5">
-              <span className={ETIKET}>Rol</span>
-              <select name="rol" defaultValue="yonetici" className={GIRDI}>
-                {ROLLER.map((r) => (
-                  <option key={r} value={r}>
-                    {ROL_ADLARI[r]}
-                  </option>
-                ))}
-              </select>
-              <span className="text-xs text-metin-3">{ROL_ACIKLAMALARI.yonetici}</span>
-            </label>
           </div>
 
           <GonderDugmesi bekleyen="Ekleniyor…" className={`${ANA_DUGME} self-start`}>
@@ -186,7 +166,7 @@ export default async function KullanicilarSayfasi({
       <p className="text-xs text-metin-3">
         Şifresini unutan bir kullanıcı giriş ekranındaki &quot;Şifremi unuttum&quot; ile
         kendisi sıfırlayabiliyor (e-posta servisi bağlıysa). Buradan da yeni bir şifre
-        atayabilirsin; ataman o kişinin açık oturumlarını düşürür. Açık sahip kalmayacak
+        atayabilirsin; ataman o kişinin açık oturumlarını düşürür. Açık hesap kalmayacak
         hiçbir değişikliğe izin verilmiyor — panele girmenin tek yolu bir hesapla giriş
         yapmak.
       </p>
@@ -197,15 +177,11 @@ export default async function KullanicilarSayfasi({
 function Kullanici({
   kullanici: k,
   benimId,
-  tekSahibim,
 }: {
   kullanici: KullaniciSatiri;
   benimId: string;
-  /** Açık tek sahip bu sayfayı açan kişi mi? Öyleyse satırında "tek" yazıyor. */
-  tekSahibim: boolean;
 }) {
   const benMiyim = k.id === benimId;
-  const tekSahipMi = benMiyim && tekSahibim;
 
   return (
     <li className="flex flex-col gap-3 py-4">
@@ -227,15 +203,6 @@ function Kullanici({
 
         <span
           className={`rounded-full px-2.5 py-1 text-xs font-bold ${
-            k.rol === "sahip" ? "bg-mavi-soluk text-mavi-koyu" : "bg-yuzey-sicak text-metin-2"
-          }`}
-        >
-          {ROL_ADLARI[k.rol]}
-          {tekSahipMi && <span className="font-normal"> · tek</span>}
-        </span>
-
-        <span
-          className={`rounded-full px-2.5 py-1 text-xs font-bold ${
             k.aktif ? "bg-nane-soluk text-nane-koyu" : "bg-cizgi-soluk text-metin-2"
           }`}
         >
@@ -244,7 +211,7 @@ function Kullanici({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        {/* Kendi hesabını ve açık tek sahibi kapatmak/silmek paneli
+        {/* Kendi hesabını kapatmak/silmek paneli
             kilitleyebilir; düğme hiç çıkmıyor. Kural sunucuda da var —
             görünmeyen düğme koruma değildir (K-45, K-46). */}
         {!benMiyim && (
@@ -253,18 +220,6 @@ function Kullanici({
               <input type="hidden" name="id" value={k.id} />
               <button type="submit" className={KUCUK_DUGME}>
                 {k.aktif ? "Kapat" : "Aç"}
-              </button>
-            </form>
-
-            <form action={rolDegistir}>
-              <input type="hidden" name="id" value={k.id} />
-              <input
-                type="hidden"
-                name="rol"
-                value={k.rol === "sahip" ? "yonetici" : "sahip"}
-              />
-              <button type="submit" className={KUCUK_DUGME}>
-                {k.rol === "sahip" ? "Yönetici yap" : "Sahip yap"}
               </button>
             </form>
 

@@ -19,7 +19,7 @@ import { TASIYICILAR, takipAdresi, tasiyiciAdi } from "@/server/kargo";
 import { faturaOlustur } from "@/server/fatura";
 import { belgeBasilabilirMi } from "@/server/siparis-belge";
 import { irsaliyeOlustur, irsaliyeSevkiniYaz } from "@/server/irsaliye";
-import { slugYap } from "@/server/slug";
+import { adresAyrilmisMi, slugYap } from "@/server/slug";
 import { renkKodlari } from "@/server/renkler";
 import { formSayfaEki, tasimaSayfaEki } from "@/ui/sayfalama-bicim";
 import { formAramaEki } from "@/ui/panel-arama-bicim";
@@ -551,9 +551,15 @@ export async function kategoriKaydet(veri: FormData): Promise<void> {
   }
 
   // Yeni kategori: slug addan üretiliyor, çakışırsa sonuna sayı ekleniyor.
+  // Mağazanın kendi sayfalarının adresleri de çakışma sayılıyor: "Ürünler"
+  // adlı kategori `/urunler` olursa tüm katalog listesine düşüyordu (K-78).
   const taban = slugYap(ad) || "kategori";
-  let slug = taban;
-  for (let sayi = 2; await db.category.findUnique({ where: { slug } }); sayi += 1) {
+  let slug = adresAyrilmisMi(taban) ? `${taban}-2` : taban;
+  for (
+    let sayi = adresAyrilmisMi(taban) ? 3 : 2;
+    await db.category.findUnique({ where: { slug } });
+    sayi += 1
+  ) {
     slug = `${taban}-${sayi}`;
   }
 

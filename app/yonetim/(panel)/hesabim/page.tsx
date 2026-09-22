@@ -1,6 +1,6 @@
 import GonderDugmesi from "@/ui/gonder-dugmesi";
 import { EN_KISA_SIFRE } from "@/server/uyelik";
-import { ROL_ACIKLAMALARI, ROL_ADLARI, yoneticiGerekli } from "@/server/yonetim-kimlik";
+import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { kendiSifremiDegistir, tumOturumlariKapat } from "@/server/yonetim-kimlik-islem";
 import {
   ANA_DUGME,
@@ -17,8 +17,7 @@ export const dynamic = "force-dynamic";
 /**
  * Panel kullanıcısının kendi hesabı.
  *
- * Şifre değiştirmek ve bütün oturumları kapatmak her kullanıcıda; kimin ne
- * yapabileceği rol satırında yazıyor (K-45).
+ * Şifre değiştirmek ve bütün oturumları kapatmak her kullanıcıda (K-45).
  */
 export default async function PanelHesabim({ searchParams }: PageProps<"/yonetim/hesabim">) {
   const ben = await yoneticiGerekli();
@@ -39,12 +38,6 @@ export default async function PanelHesabim({ searchParams }: PageProps<"/yonetim
       <section className={KART}>
         <h2 className="text-lg">{ben.adSoyad}</h2>
         <p className="mt-1 text-sm text-metin-2">{ben.eposta}</p>
-        <p className="mt-3 text-sm">
-          <span className="rounded-full bg-yuzey-sicak px-2.5 py-1 text-xs font-bold text-metin-2">
-            {ROL_ADLARI[ben.rol]}
-          </span>{" "}
-          <span className="text-metin-3">{ROL_ACIKLAMALARI[ben.rol]}</span>
-        </p>
       </section>
 
       <form action={kendiSifremiDegistir} className={`flex flex-col gap-4 ${KART}`}>

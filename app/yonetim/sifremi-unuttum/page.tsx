@@ -73,7 +73,7 @@ export default async function SifremiUnuttum({
         <div className="mt-5 rounded-marka border border-sari bg-sari-soluk px-4 py-3 text-sm text-sari-koyu">
           <p className="font-bold">E-posta servisi henüz bağlı değil.</p>
           <p className="mt-1">
-            Bağlantı gönderilemiyor. Panelde başka bir sahip varsa ondan Kullanıcılar
+            Bağlantı gönderilemiyor. Panelde başka bir kullanıcı varsa ondan Kullanıcılar
             ekranından sana yeni bir şifre atamasını iste. Yoksa Vercel&apos;de{" "}
             <code className="rakam">RESEND_ANAHTARI</code> tanımlanınca bu sayfa çalışmaya
             başlıyor.

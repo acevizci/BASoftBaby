@@ -53,7 +53,7 @@ export const KULLANICI_HATALARI: Record<string, string> = {
   bulunamadi: "Kullanıcı bulunamadı.",
   "kendini-kapatamaz": "Kendi hesabını kapatamazsın.",
   "kendini-silemez": "Kendi hesabını silemezsin.",
-  "son-sahip": "Son sahip kalmadan panel yönetilemez hale gelir.",
+  "son-kullanici": "Son açık hesap kapanırsa panele kimse giremez.",
   "eski-sifre": "Mevcut şifren tutmuyor.",
 };
 
@@ -63,7 +63,6 @@ export const KULLANICI_BILDIRIMLERI: Record<string, string> = {
   kapatildi: "Kullanıcı kapatıldı ve açık oturumları sonlandırıldı.",
   acildi: "Kullanıcı yeniden açıldı.",
   silindi: "Kullanıcı silindi.",
-  rol: "Rol değiştirildi.",
   sifre: "Şifre değiştirildi ve o kullanıcının açık oturumları sonlandırıldı.",
 };
 

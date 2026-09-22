@@ -20,7 +20,7 @@ import { menuDarMi, menuyuCevir } from "@/server/panel-gorunum";
 export default async function YonetimDuzeni({ children }: LayoutProps<"/yonetim">) {
   const yonetici = await yoneticiGerekli();
   const sayaclar = await menuSayaclari();
-  const { ozet, gruplar } = menuyuKur(sayaclar, yonetici.rol);
+  const { ozet, gruplar } = menuyuKur(sayaclar);
   // Dar/geniş tercihi çerezde: sunucuda okunuyor, yani ilk boyamada doğru
   // genişlik çiziliyor ve sıçrama olmuyor (K-60).
   const dar = await menuDarMi();

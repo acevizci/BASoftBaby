@@ -39,24 +39,19 @@ export const YONETIM_CEREZI = "yonetim_oturum";
  */
 const OTURUM_OMRU_SAAT = 12;
 
-export const ROLLER = ["sahip", "yonetici"] as const;
-export type Rol = (typeof ROLLER)[number];
-
-export const ROL_ADLARI: Record<Rol, string> = {
-  sahip: "Sahip",
-  yonetici: "Yönetici",
-};
-
-export const ROL_ACIKLAMALARI: Record<Rol, string> = {
-  sahip: "Her şeyi yapabilir, kullanıcı ekleyip çıkarabilir.",
-  yonetici: "Paneldeki her şeyi yapabilir; kullanıcıları yönetemez.",
-};
-
+/**
+ * Panel kullanıcısı.
+ *
+ * **Rol yok.** Eskiden "sahip" ve "yönetici" vardı; yöneticiden yalnızca
+ * Kullanıcılar ekranı gizleniyordu. Sonradan açılan hesap varsayılan olarak
+ * yönetici oluyor, kişi de menüde bir şeyin eksik olduğunu görüp bunu hata
+ * sanıyordu. Bir-iki kişilik bir mağazada ayrımın koruduğu bir şey yoktu:
+ * her panel kullanıcısı her şeyi yapabiliyor (K-79).
+ */
 export type Yonetici = {
   id: string;
   eposta: string;
   adSoyad: string;
-  rol: Rol;
 };
 
 function jetonOzeti(jeton: string): string {
@@ -65,10 +60,6 @@ function jetonOzeti(jeton: string): string {
 
 function saatSonra(saat: number): Date {
   return new Date(Date.now() + saat * 60 * 60 * 1000);
-}
-
-function rolCoz(deger: string): Rol {
-  return (ROLLER as readonly string[]).includes(deger) ? (deger as Rol) : "yonetici";
 }
 
 export function epostaNormalle(deger: string): string {
@@ -113,7 +104,7 @@ export async function ilkKullaniciyiOlustur(girdi: {
     const id = await db.$transaction(async (islem) => {
       if ((await islem.adminUser.count()) > 0) throw new Error("zaten-var");
       const olusan = await islem.adminUser.create({
-        data: { eposta, adSoyad: girdi.adSoyad.trim(), sifreOzeti: ozet, rol: "sahip" },
+        data: { eposta, adSoyad: girdi.adSoyad.trim(), sifreOzeti: ozet },
         select: { id: true },
       });
       return olusan.id;
@@ -185,7 +176,7 @@ export const yoneticiGetir = istekOnbellegi(async function yoneticiGetir(): Prom
     select: {
       id: true,
       biter: true,
-      admin: { select: { id: true, eposta: true, adSoyad: true, rol: true, aktif: true } },
+      admin: { select: { id: true, eposta: true, adSoyad: true, aktif: true } },
     },
   });
   if (!oturum) return undefined;
@@ -207,8 +198,8 @@ export const yoneticiGetir = istekOnbellegi(async function yoneticiGetir(): Prom
     }
   }
 
-  const { id, eposta, adSoyad, rol } = oturum.admin;
-  return { id, eposta, adSoyad, rol: rolCoz(rol) };
+  const { id, eposta, adSoyad } = oturum.admin;
+  return { id, eposta, adSoyad };
 });
 
 /**
@@ -229,13 +220,6 @@ export async function yoneticiGerekli(donus?: string): Promise<Yonetici> {
 
   const nereye = donus && donus.startsWith("/yonetim") ? `?nereye=${encodeURIComponent(donus)}` : "";
   redirect(`/yonetim/giris${nereye}`);
-}
-
-/** Kullanıcı yönetimi yalnızca sahipte. */
-export async function sahipGerekli(): Promise<Yonetici> {
-  const yonetici = await yoneticiGerekli();
-  if (yonetici.rol !== "sahip") redirect("/yonetim?yetki=yok");
-  return yonetici;
 }
 
 // ─── Giriş ───────────────────────────────────────────────────────────────
@@ -259,13 +243,13 @@ export async function kimlikDogrula(
 
   const kayit = await db.adminUser.findUnique({
     where: { eposta },
-    select: { id: true, eposta: true, adSoyad: true, rol: true, sifreOzeti: true, aktif: true },
+    select: { id: true, eposta: true, adSoyad: true, sifreOzeti: true, aktif: true },
   });
 
   const tutuyor = await sifreTutuyorMu(sifre, kayit?.sifreOzeti ?? SAHTE_OZET);
   if (!kayit || !kayit.aktif || !tutuyor) return undefined;
 
-  return { id: kayit.id, eposta: kayit.eposta, adSoyad: kayit.adSoyad, rol: rolCoz(kayit.rol) };
+  return { id: kayit.id, eposta: kayit.eposta, adSoyad: kayit.adSoyad };
 }
 
 // ─── Şifre sıfırlama ─────────────────────────────────────────────────────
@@ -396,7 +380,6 @@ export async function kullanicilariGetir(): Promise<KullaniciSatiri[]> {
       id: true,
       eposta: true,
       adSoyad: true,
-      rol: true,
       aktif: true,
       olusturuldu: true,
       sonGiris: true,
@@ -408,7 +391,6 @@ export async function kullanicilariGetir(): Promise<KullaniciSatiri[]> {
     id: s.id,
     eposta: s.eposta,
     adSoyad: s.adSoyad,
-    rol: rolCoz(s.rol),
     aktif: s.aktif,
     olusturuldu: s.olusturuldu,
     sonGiris: s.sonGiris,
@@ -417,23 +399,23 @@ export async function kullanicilariGetir(): Promise<KullaniciSatiri[]> {
 }
 
 /**
- * Son açık sahip mi?
+ * Son açık kullanıcı mı?
  *
- * Kendini kapatmak, silmek ya da rolünü düşürmek panele girilemez hâle
- * getirebilir. Kural kodda duruyor, uyarı metninde değil.
+ * Son açık hesabı kapatmak ya da silmek panele girilemez hâle getirir.
+ * Kural kodda duruyor, uyarı metninde değil.
  *
  * **Bu tek başına yetmiyor**: okuma ile yazma arasında geçen sürede başka
- * bir istek aynı işi yapabilir (bkz. {@link sahipKalsinDiye}). Buradaki
- * kontrol düğmenin ve hata metninin doğru olması için; garanti işlemde.
+ * bir istek aynı işi yapabilir (bkz. {@link acikKullaniciKalsinDiye}).
+ * Buradaki kontrol düğmenin ve hata metninin doğru olması için; garanti
+ * işlemde.
  */
-export async function sonSahipMi(adminId: string): Promise<boolean> {
-  return (await acikSahipSayisi({ haric: adminId })) === 0;
+export async function sonAcikKullaniciMi(adminId: string): Promise<boolean> {
+  return (await acikKullaniciSayisi({ haric: adminId })) === 0;
 }
 
-export async function acikSahipSayisi(secenek: { haric?: string } = {}): Promise<number> {
+export async function acikKullaniciSayisi(secenek: { haric?: string } = {}): Promise<number> {
   return db.adminUser.count({
     where: {
-      rol: "sahip",
       aktif: true,
       ...(secenek.haric ? { id: { not: secenek.haric } } : {}),
     },
@@ -441,29 +423,29 @@ export async function acikSahipSayisi(secenek: { haric?: string } = {}): Promise
 }
 
 /**
- * Açık sahip bırakmayan değişikliği uygulamayan sarmalayıcı.
+ * Açık kullanıcı bırakmayan değişikliği uygulamayan sarmalayıcı.
  *
  * `YONETIM_SIFRE` silindikten sonra panele girmenin tek yolu bir hesapla
  * giriş yapmak; kurulum ekranı ancak hiç kullanıcı kalmazsa geri geliyor ve
- * o da değişken yoksa açılmıyor. Yani **son açık sahip kaybolursa panel
+ * o da değişken yoksa açılmıyor. Yani **son açık hesap kapanırsa panel
  * kalıcı olarak kapanıyor**, çaresi veritabanına elle müdahale oluyor.
  *
- * Önce okuyup sonra yazmak bunu garanti etmiyor: iki sahip aynı anda
- * birbirini silerse ikisi de kontrolden geçer, ikisi de yazar, ortada sahip
- * kalmaz. O yüzden değişiklik ve sayım **tek bir işlemde**, üstelik
+ * Önce okuyup sonra yazmak bunu garanti etmiyor: iki kullanıcı aynı anda
+ * birbirini kapatırsa ikisi de kontrolden geçer, ikisi de yazar, ortada açık
+ * hesap kalmaz. O yüzden değişiklik ve sayım **tek bir işlemde**, üstelik
  * `Serializable` yalıtımla yapılıyor — çakışan iki işlemden biri
- * veritabanınca geri çevriliyor. Sayım yazmadan sonra: işlem sahipsiz bir
- * duruma varıyorsa tamamı geri alınıyor (K-46).
+ * veritabanınca geri çevriliyor. Sayım yazmadan sonra: işlem açık hesapsız
+ * bir duruma varıyorsa tamamı geri alınıyor (K-46).
  */
-export async function sahipKalsinDiye(
+export async function acikKullaniciKalsinDiye(
   degistir: (islem: Prisma.TransactionClient) => Promise<unknown>,
 ): Promise<boolean> {
   try {
     await db.$transaction(
       async (islem) => {
         await degistir(islem);
-        const kalan = await islem.adminUser.count({ where: { rol: "sahip", aktif: true } });
-        if (kalan === 0) throw new Error("sahipsiz-kalir");
+        const kalan = await islem.adminUser.count({ where: { aktif: true } });
+        if (kalan === 0) throw new Error("acik-hesap-kalmaz");
       },
       { isolationLevel: "Serializable" },
     );

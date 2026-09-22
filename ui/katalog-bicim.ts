@@ -257,3 +257,31 @@ export function yasEtiketleri(
   }
   return etiketler;
 }
+
+/**
+ * Bir listede gerçekten karşılığı olan süzgeç değerleri.
+ *
+ * Kategori sayfası eskiden bütün bedenleri, renkleri ve yaş gruplarını
+ * gösteriyordu: "Aksesuar"da 0-3 ay bedeni, "Uyku"da hiç üretilmemiş bir
+ * renk çıkıyor, seçen müşteri boş bir listeye düşüyordu (K-78). Seçenekler
+ * artık o kategorinin yayındaki ürünlerinden çıkarılıyor.
+ *
+ * Kurallar süzgecin kendisiyle aynı (`server/katalog.ts` varyantKosulu):
+ * beden ve yaş stokta olan varyanta bakıyor, renk stoğa bakmıyor. Fiyat
+ * süzgeci liste fiyatına bakıyor, o yüzden en düşük liste fiyatı dönüyor.
+ */
+export function suzgecKapsami(
+  urunler: readonly Pick<Urun, "fiyatKurus" | "varyantlar">[],
+): { bedenler: Set<string>; renkler: Set<string>; enDusukKurus: number | undefined } {
+  const bedenler = new Set<string>();
+  const renkler = new Set<string>();
+  let enDusukKurus: number | undefined;
+  for (const u of urunler) {
+    if (enDusukKurus === undefined || u.fiyatKurus < enDusukKurus) enDusukKurus = u.fiyatKurus;
+    for (const v of u.varyantlar) {
+      renkler.add(v.renk);
+      if (v.stok > 0) bedenler.add(v.beden);
+    }
+  }
+  return { bedenler, renkler, enDusukKurus };
+}

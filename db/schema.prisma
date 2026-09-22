@@ -904,18 +904,15 @@ model LoginThrottle {
 /// farklı oturum. Müşteri oturumu hiçbir koşulda panele geçiş vermiyor
 /// (K-45).
 ///
-/// İki rol var. `sahip` kullanıcı ekleyip çıkarabiliyor, `yonetici`
-/// çıkaramıyor. Üçüncü bir rol yok: bir kişilik bir mağazada rol ağacı
-/// kurmanın kimseye faydası olmaz, "kullanıcıyı silebilen kim" sorusunun
-/// cevapsız kalmasının ise zararı var.
+/// Rol yok: her panel kullanıcısı her şeyi yapabiliyor. Eskiden "sahip" ve
+/// "yönetici" vardı; sonradan açılan hesaplar yönetici oluyor ve menüde
+/// Kullanıcılar'ı göremiyordu, bu da hata sanılıyordu (K-79).
 model AdminUser {
   id          String    @id @default(cuid())
   eposta      String    @unique
   adSoyad     String
   /// scrypt özeti; müşteri şifreleriyle aynı biçim (server/uyelik.ts).
   sifreOzeti  String
-  /// "sahip" ya da "yonetici"
-  rol         String    @default("yonetici")
   /// Kapatılan kullanıcı giremiyor ama kaydı duruyor: kimin ne zaman ne
   /// yaptığı sorusu silinmiş bir satırla cevaplanamıyor.
   aktif       Boolean   @default(true)

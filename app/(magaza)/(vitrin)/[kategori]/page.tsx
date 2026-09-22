@@ -7,6 +7,8 @@ import {
   yasEtiketleri as yasEtiketleriYap,
   SIRALAMA_ADLARI,
   kategoriGetir,
+  suzgecKapsami,
+  urunleriGetir,
   urunSayfasi,
 } from "@/server/katalog";
 import { bedenler as bedenleriGetir } from "@/server/bedenler";
@@ -148,13 +150,37 @@ export default async function KategoriSayfasi({
     Boolean,
   ).length;
   const suzgecVar = acikSuzgecAdedi > 0;
-  const [bedenSecenekleri, yasSecenekleri, renkler] = await Promise.all([
+  const [tumBedenler, tumYaslar, renkler, kapsamdakiler] = await Promise.all([
     bedenleriGetir(),
     yasGruplari(),
     renkSecenekleri(),
+    // Süzgeç seçenekleri bu kategorinin yayındaki ürünlerinden çıkıyor
+    // (K-78). Liste önbellekte; aynı sorgu zaten sayfalama için yapıldı.
+    urunleriGetir({ kategori: tumu ? undefined : kategori }),
   ]);
 
-  const yasEtiketleri = yasEtiketleriYap(yasSecenekleri);
+  // Karşılığı olmayan seçenek gösterilmiyor: "Aksesuar"da 0-3 ay bedeni
+  // seçen müşteri boş bir listeye düşüyordu. Seçili olan her hâlükârda
+  // kalıyor, yoksa adresle gelen bir süzgeç kaldırılamazdı (K-78).
+  const kapsam = suzgecKapsami(kapsamdakiler);
+  const bedenSecenekleri = tumBedenler.filter(
+    (b) => kapsam.bedenler.has(b.ad) || aranan.beden === b.ad,
+  );
+  const yasSecenekleri = tumYaslar.filter(
+    (y) =>
+      aranan.yas === y.kod ||
+      tumBedenler.some((b) => b.yasKodu === y.kod && kapsam.bedenler.has(b.ad)),
+  );
+  const gorunenRenkler = renkler.filter(
+    (r) => kapsam.renkler.has(r.kod) || aranan.renk === r.kod,
+  );
+  const fiyatSecenekleri = FIYAT_ARALIKLARI.filter(
+    (f) =>
+      aranan.fiyat === String(f.kurus) ||
+      (kapsam.enDusukKurus !== undefined && kapsam.enDusukKurus <= f.kurus),
+  );
+
+  const yasEtiketleri = yasEtiketleriYap(tumYaslar);
 
   // Açık süzgeçlerin ekrandaki karşılıkları; her biri kendini kaldıran bir
   // bağlantıya dönüşüyor (K-72).
@@ -244,7 +270,8 @@ export default async function KategoriSayfasi({
                 aranan={aranan}
                 yasSecenekleri={yasSecenekleri}
                 bedenSecenekleri={bedenSecenekleri}
-                renkler={renkler}
+                renkler={gorunenRenkler}
+                fiyatSecenekleri={fiyatSecenekleri}
                 yasEtiketleri={yasEtiketleri}
               />
               {suzgecVar && (
@@ -264,7 +291,8 @@ export default async function KategoriSayfasi({
               aranan={aranan}
               yasSecenekleri={yasSecenekleri}
               bedenSecenekleri={bedenSecenekleri}
-              renkler={renkler}
+              renkler={gorunenRenkler}
+              fiyatSecenekleri={fiyatSecenekleri}
               yasEtiketleri={yasEtiketleri}
             />
             {suzgecVar && (
@@ -393,6 +421,7 @@ function Suzgecler({
   yasSecenekleri,
   bedenSecenekleri,
   renkler,
+  fiyatSecenekleri,
   yasEtiketleri,
 }: {
   kategori: string;
@@ -400,6 +429,7 @@ function Suzgecler({
   yasSecenekleri: { kod: string; ad: string; aciklama: string }[];
   bedenSecenekleri: { id: string; ad: string; boy: string }[];
   renkler: RenkSecenegi[];
+  fiyatSecenekleri: typeof FIYAT_ARALIKLARI;
   /** Yaş grubu kodu → etiket; aynı açıklamalı gruplar ayrışsın diye (K-72). */
   yasEtiketleri: Map<string, string>;
 }) {
@@ -428,6 +458,7 @@ function Suzgecler({
           </div>
           )}
 
+          {bedenSecenekleri.length > 0 && (
           <div>
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <p className="text-sm font-bold">Beden</p>
@@ -453,7 +484,9 @@ function Suzgecler({
               ))}
             </div>
           </div>
+          )}
 
+          {renkler.length > 0 && (
           <div>
             <p className="text-sm font-bold">Renk</p>
             <div className="mt-2 flex flex-wrap gap-2">
@@ -477,11 +510,13 @@ function Suzgecler({
               ))}
             </div>
           </div>
+          )}
 
+          {fiyatSecenekleri.length > 0 && (
           <div>
             <p className="text-sm font-bold">Fiyat</p>
             <div className="mt-2 flex flex-wrap gap-2">
-              {FIYAT_ARALIKLARI.map((f) => (
+              {fiyatSecenekleri.map((f) => (
                 <SuzgecDugmesi
                   key={f.kurus}
                   secili={aranan.fiyat === String(f.kurus)}
@@ -492,6 +527,7 @@ function Suzgecler({
               ))}
             </div>
           </div>
+          )}
     </>
   );
 }

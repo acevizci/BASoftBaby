@@ -98,7 +98,7 @@ app/
     (panel)/              oturum gerektiren her şey (grup adı adrese girmez)
       layout.tsx          sayaçlar + menü; oturum kontrolü her sayfada da (K-51)
       hesabim/            kendi şifresi ve oturumları
-      kullanicilar/       panel kullanıcıları (yalnızca sahip)
+      kullanicilar/       panel kullanıcıları (rol yok, K-79)
       siparisler/ talepler/ yorumlar/ rapor/  Satış
         siparisler/etiketler/  seçilenlerin toplu kargo etiketi
       urunler/ kategoriler/ stok/             Katalog

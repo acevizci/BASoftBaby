@@ -213,10 +213,9 @@ Panel kendi giriş ekranında (`/yonetim/giris`), site temasıyla. Tarayıcını
 kendi şifre kutusu bırakıldı: biçimlendirilemiyordu, Türkçe değildi ve çıkış
 yapmanın yolu yoktu (K-45).
 
-Her kişinin kendi e-postası ve şifresi var. İki rol: **sahip** kullanıcı
-ekleyip çıkarabiliyor, **yönetici** paneldeki her şeyi yapabiliyor ama
-kullanıcılara dokunamıyor. Kendini kapatmak, silmek ya da son sahibi düşürmek
-engelli.
+Her kişinin kendi e-postası ve şifresi var. Rol yok: her panel kullanıcısı
+her şeyi yapabiliyor, kullanıcı ekleyip çıkarmak dahil (K-79). Kendini
+kapatmak ya da silmek engelli.
 
 İlk kurulum: hiç kullanıcı yokken giriş sayfası "ilk kullanıcıyı oluştur"
 hâline geçiyor ve `YONETIM_SIFRE` ile korunuyor. Hesap açıldıktan sonra o
@@ -230,11 +229,11 @@ kapanıyor (K-47). E-posta servisi bağlı değilken sayfa bunu açıkça söyl�
 ve gitmeyecek bir bağlantı için "gönderdik" demiyor.
 
 **Ayrıca:** panele girmenin başka yolu olmadığı için **her zaman
-en az bir açık sahip kalıyor.** Silme, kapatma ve rol düşürme bunu bozacaksa
+en az bir açık hesap kalıyor.** Silme ve kapatma bunu bozacaksa
 hiç uygulanmıyor; kontrol değişiklikle aynı veritabanı işleminde ve
 `Serializable` yalıtımla yapılıyor, yani iki kişi aynı anda birbirini silse
-bile biri geri çevriliyor (K-46). Tek sahipsen panel bunu ekranda söylüyor ve
-ikinci bir sahip açmanı öneriyor — şifreni unutursan seni içeri alabilecek
+bile biri geri çevriliyor (K-46). Tek açık hesap seninkiyse panel bunu ekranda
+söylüyor ve ikinci bir hesap açmanı öneriyor — şifreni unutursan seni içeri alabilecek
 tek şey o.
 
 Oturum 12 saat (müşterininki 30 gün): panelde stok, sipariş ve müşteri
@@ -663,7 +662,7 @@ içindeki "Açık sorular").
 - [x] Ürün, kategori, beden ve stok yönetimi; Excel/CSV ile toplu ürün yükleme
 - [x] Değerlendirmeler, "gelince haber ver", bırakılan sepet hatırlatması
 - [x] Satış raporu (dönem, grafik, kırılımlar, CSV) ve günün işi ekranı
-- [x] Panel kullanıcıları, roller, şifre sıfırlama, giriş denemesi sınırı
+- [x] Panel kullanıcıları, şifre sıfırlama, giriş denemesi sınırı
 - [x] Yardım sayfaları (beden, kargo, iade, SSS) ve yasal metin altyapısı
 - [x] SEO: sitemap, robots, yapısal veri, canonical adresler
 - [x] Erişilebilirlik: iki temada WCAG AA kontrast denetimi
