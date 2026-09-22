@@ -155,7 +155,11 @@ export default function FotografYonetimi({
                 {r.ad}
               </option>
             ))}
-            {digerRenkler.length > 0 && (
+            {/* Ürünün olmayan renkleri yalnızca hiç stoğu yokken: önce
+                fotoğraf yükleyen kişi renk seçebilsin. Stok varken bu renklere
+                atanan fotoğraf galeride görünmüyor, liste boşuna kalabalık
+                oluyordu (K-92). */}
+            {renkler.length === 0 && digerRenkler.length > 0 && (
               <optgroup label="Bu üründe henüz yok">
                 {digerRenkler.map((r) => (
                   <option key={r.kod} value={r.kod}>
@@ -248,9 +252,14 @@ export default function FotografYonetimi({
                         {r.ad}
                       </option>
                     ))}
-                    {digerRenkler.length > 0 && (
+                    {/* Aynı kural; fotoğraf daha önce ürünün olmayan bir
+                        renge atanmışsa o renk listede kalıyor, seçimi
+                        kaybolmasın (K-92). */}
+                    {digerRenkler.some((r) => renkler.length === 0 || r.kod === f.renk) && (
                       <optgroup label="Bu üründe henüz yok">
-                        {digerRenkler.map((r) => (
+                        {digerRenkler
+                          .filter((r) => renkler.length === 0 || r.kod === f.renk)
+                          .map((r) => (
                           <option key={r.kod} value={r.kod}>
                             {r.ad}
                           </option>

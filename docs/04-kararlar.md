@@ -4318,6 +4318,23 @@ sık yanılır; yanlış renkte görünen fotoğraf renksiz fotoğraftan kötü.
 **Nerede:** [`../ui/fotograf-yonetimi.tsx`](../ui/fotograf-yonetimi.tsx),
 [`../server/yonetim.ts`](../server/yonetim.ts) (`fotografEkle`, `varyantEkle`)
 
+### K-92 · Fotoğraf renginde yalnızca ürünün renkleri
+
+Fotoğraf rengi listesinde ürünün renklerinin altında "Bu üründe henüz yok"
+grubu mağazanın bütün öteki renklerini sıralıyordu: üç renkli bir üründe on
+seçenek. Bu renklere atanan fotoğraf o renkte stok açılana kadar galeride
+görünmüyor, yani seçenekler hem kalabalık hem yanlış seçime açıktı.
+
+Grup K-71'de, fotoğrafı stoktan önce yükleyen kişiye tek seçenek kalmasın diye
+eklenmişti. O durum yalnızca ürünün hiç stoğu yokken geçerli:
+
+- Ürünün stoğu varsa listede yalnızca kendi renkleri ve "Her renk".
+- Hiç stoğu yoksa bütün renkler, eskisi gibi.
+- Fotoğraf daha önce ürünün olmayan bir renge atanmışsa o fotoğrafın
+  listesinde o renk kalıyor; seçim sessizce kaybolmasın.
+
+**Nerede:** [`../ui/fotograf-yonetimi.tsx`](../ui/fotograf-yonetimi.tsx)
+
 ---
 
 ## Açık sorular
