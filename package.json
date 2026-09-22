@@ -4,13 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && tsx db/goc.ts && tsx db/tohum.ts --bir-kez && next build",
+    "build": "prisma generate && npm test && tsx db/goc.ts && tsx db/tohum.ts --bir-kez && next build",
     "start": "next start",
     "lint": "eslint",
-    "kontrol": "tsc --noEmit && eslint",
+    "kontrol": "tsc --noEmit && eslint && npm test",
     "tohum": "tsx db/tohum.ts",
     "postinstall": "prisma generate",
-    "goc": "tsx db/goc.ts"
+    "goc": "tsx db/goc.ts",
+    "test": "tsx --test \"testler/**/*.test.ts\""
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",
@@ -27,7 +28,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^22.20.4",
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",

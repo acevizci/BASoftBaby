@@ -137,6 +137,14 @@ siparişlerin kaydı değişmiyor. Kullanılan renk silinemiyor — kapatılıyo
 kapalı renk süzgeçten ve formdan düşüyor ama var olan ürünlerde adıyla
 görünmeye devam ediyor. Son açık renk kapatılamıyor (K-66).
 
+**Otomatik testler** `testler/` altında, `npm test` ile çalışıyor (84 sınav,
+yarım saniye). Kapsam paranın hesaplandığı saf mantık: kampanya indirimi ve
+çakışma kuralı, kargo eşiği, belge basma kuralı, sayfalama, katalog biçimi,
+arama metni, ödeme süresi ve toplu yükleme süzgeci. Veritabanı gerekmiyor —
+`server-only` işareti ve Prisma istemcisi test hazırlığında karşılanıyor.
+`npm run build` testleri göçlerden **önce** çalıştırıyor: bozuk bir hesap
+veritabanına dokunmadan, dağıtıma çıkmadan duruyor (K-68).
+
 **Bütün listeler sayfalı** — panelde bedenler, renkler, yaş grupları,
 kategoriler, ürünler, yorumlar, talepler, iadeler, kampanyalar, kullanıcılar,
 duyurular, afişler, stok ve siparişler; mağazada ürün listesi, arama sonucu,

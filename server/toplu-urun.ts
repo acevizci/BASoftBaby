@@ -106,6 +106,27 @@ export function kurusaCevir(ham: string): number | null {
   return Math.round(sayi * 100);
 }
 
+/**
+ * Stok adedini okur; okunamayan her şeyde `null`.
+ *
+ * **Rakam dışı karakterleri silmek yanlıştı** (K-68): `"2,5"` yazan satır
+ * `25 adet` oluyordu — iki kat değil, on iki kat fazla stok. Sessizce
+ * oluyordu, üstelik toplu yükleme yüzlerce satırı tek seferde kataloğa
+ * yazıyor. Stok tam sayı olmak zorunda: yarım zıbın diye bir şey yok.
+ *
+ * Binlik ayracı kabul ediliyor (`1.000`, `1 000`) çünkü Excel sayıyı öyle
+ * biçimlendirip veriyor; **virgül kabul edilmiyor** çünkü Türkçede virgül
+ * ondalık demek ve ondalık stok yok.
+ */
+function stokCoz(ham: string): number | null {
+  const metin = ham.trim().replace(/\s/g, "");
+  if (!metin) return null;
+  // Ya düz tam sayı, ya da üçerli gruplanmış hâli.
+  if (!/^-?\d+$/.test(metin) && !/^-?\d{1,3}(\.\d{3})+$/.test(metin)) return null;
+  const sayi = Number(metin.replace(/\./g, ""));
+  return Number.isInteger(sayi) ? sayi : null;
+}
+
 function evetMi(ham: string, varsayilan: boolean): boolean {
   const m = anahtar(ham);
   if (!m) return varsayilan;
@@ -312,9 +333,14 @@ export function satirlariCoz(
     }
 
     const stokHam = al(h, "stok");
-    const stok = Number(stokHam.replace(/[^\d-]/g, ""));
-    if (!Number.isInteger(stok) || stok < 0) {
-      hatalar.push({ satirNo, sutun: "Stok", mesaj: `"${stokHam}" adet olarak okunamadı.` });
+    const stokCozulen = stokCoz(stokHam);
+    const stok = stokCozulen ?? 0;
+    if (stokCozulen === null || stokCozulen < 0) {
+      hatalar.push({
+        satirNo,
+        sutun: "Stok",
+        mesaj: `"${stokHam}" adet olarak okunamadı. Stok tam sayı olmalı; ondalık kabul edilmiyor.`,
+      });
     }
 
     const gorselHam = anahtar(al(h, "gorsel"));

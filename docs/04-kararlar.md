@@ -3502,6 +3502,50 @@ JavaScript kapalı tarayıcıda.
 
 ---
 
+### K-68 · Otomatik testler: önce paranın hesaplandığı yerler
+
+Altmış yedi karar, gerçek para ve stok mantığı, **tek bir otomatik test yok.**
+Her değişiklik gerçek tarayıcıda elle denendi, betikler sonra silindi. Bu
+oturumda bulunan üç sessiz hata (yorum ortalamasının ilk 50 yorumdan
+hesaplanması, iade toplamının sayfadan gelmesi, listelerin 100'de kesilmesi)
+tam olarak bunun sonucuydu: kimse bakmadığı için yıllarca durabilirlerdi.
+
+**Kapsam: parayla ve veriyle ilgili saf mantık.** 84 sınav; kampanya indirimi
+ve "en çok indiren kazanır" kuralı (K-10), kargo eşiği, belge basma kuralı
+(K-54), sayfalama (K-67), katalog biçimi, arama metni, ödeme süresi ve toplu
+yükleme süzgeci (K-26). Hepsi veritabanına dokunmuyor, hepsi yarım saniyede
+bitiyor.
+
+**Veritabanına bağlı akışlar şimdilik dışarıda** — stok düşme yarışı, sipariş
+oluşturma, iade kaydı. Bunlar gerçek bir Postgres istiyor; testin kendisi
+değil, kurulumu zor. Tarayıcı denemeleri bu boşluğu kapatmaya devam ediyor.
+
+**Next.js olmadan çalışıyor.** Sunucu modülleri `server-only` işaretini
+taşıyor; Next derlerken kendi çözüyor, düz Node'da böyle bir modül yok.
+Testler bunu Node'un `registerHooks` çengeliyle boş bir modüle bağlıyor —
+işaretin amacı sunucu kodunun tarayıcıya sızmasını engellemek, testte tarayıcı
+yok. `DATABASE_URL` de sahte bir değerle dolduruluyor: Prisma istemcisini
+kurmak bağlanmak demek değil, ilk sorguya kadar hiçbir yere gidilmiyor.
+
+**Testler derlemenin içinde.** `npm run build` artık önce `npm test`
+çalıştırıyor, hem de göçlerden önce: bozuk bir hesap veritabanına dokunmadan,
+dağıtıma çıkmadan duruyor. Yarım saniyelik bir gecikmenin karşılığı bu.
+
+**İlk koşuşunda gerçek bir hata buldu.** Toplu yüklemede stok `"2,5"` yazılan
+satır **25 adet** oluyordu: kod rakam dışındaki her karakteri siliyordu, yani
+virgül düşüp iki rakam birleşiyordu. Sessizce oluyordu ve toplu yükleme
+yüzlerce satırı tek seferde kataloğa yazıyor — on iki kat fazla stok,
+satılamayacak ürünün satılması demek. Artık stok tam sayı olmak zorunda;
+binlik ayracı (`1.000`, Excel'in verdiği biçim) kabul ediliyor, virgül
+edilmiyor — Türkçede virgül ondalık demek ve yarım zıbın diye bir şey yok.
+
+**Nerede:** [`../testler/`](../testler/),
+[`../testler/hazirlik.ts`](../testler/hazirlik.ts),
+[`../server/toplu-urun.ts`](../server/toplu-urun.ts),
+[`../package.json`](../package.json)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)
