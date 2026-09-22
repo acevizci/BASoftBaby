@@ -4108,6 +4108,30 @@ taşınsın?" bölümünde yenisi seçiliyor (K-74'ün taşıyarak silmesi).
 [`../server/katalog.ts`](../server/katalog.ts),
 [`../server/yonetim.ts`](../server/yonetim.ts) (`kategoriKaydet`)
 
+### K-83 · Kategori adı veritabanında tekil
+
+K-82'deki kontrol uygulamada: önce okuyor, sonra yazıyor. Aynı anda gelen iki
+istek ikisi de geçebilir. Asıl garanti artık veritabanında: `Category` üzerinde
+`lower(btrim(ad))` tekil dizini. Büyük-küçük harf ve kenar boşluğu farkı ayrı ad
+sayılmıyor.
+
+- **Prisma şeması ifade dizinini tanımlayamıyor.** Dizin yalnızca göçte
+  duruyor; `prisma migrate diff` onu fark saymıyor (denendi).
+- **Göç çakışma varsa dizini kurmuyor, hata vermiyor.** Hata verseydi Prisma
+  göçü "başarısız" işaretler ve elle çözülene kadar bütün dağıtımlar
+  dururdu. Çakışma varken dizin kurulmuyor, uyarı bırakılıyor; Kategoriler
+  ekranı çakışan adresleri sarı kutuda gösteriyor. Öyle bir durumda dizin,
+  çakışma giderildikten sonra yeni bir göçle kurulmalı.
+- **Dizin harfleri veritabanının kuralıyla küçültüyor**, uygulama ise Türkçe
+  kuralla. "KIZ" ile "kiz" veritabanında aynı, uygulamada farklı. Bu yüzden
+  kayıt hatası (`P2002`) da yakalanıyor ve aynı "bu adda kategori var"
+  mesajına dönüyor, 500 değil.
+- Testlerin ürün kurucusu her kategoriye aynı adı veriyordu; dizin bunu
+  yakaladı, artık her test kategorisinin adı kendi kimliği.
+
+**Nerede:** [`../db/migrations/20260922220000_kategori_adi_tekil/migration.sql`](../db/migrations/20260922220000_kategori_adi_tekil/migration.sql),
+[`../testler/kategori-db.test.ts`](../testler/kategori-db.test.ts)
+
 ---
 
 ## Açık sorular

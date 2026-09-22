@@ -552,8 +552,21 @@ export async function kategoriKaydet(veri: FormData): Promise<void> {
     redirect(`/yonetim/kategoriler?hata=ad-tekrar${id ? `&duzenle=${id}` : ""}`);
   }
 
+  // Yukarıdaki kontrol okuyup sonra yazıyor; aynı anda gelen iki isteği
+  // veritabanındaki tekil dizin yakalıyor (K-83). Dizin harfleri Türkçe
+  // kurala göre değil veritabanınınkine göre küçültüyor ("KIZ" ile "kiz"
+  // orada aynı), o yüzden nadiren buradan da dönebilir.
+  const adCakisti = (e: unknown) =>
+    (e as { code?: string }).code === "P2002" ||
+    String((e as Error).message).includes("Category_ad_tekil");
+
   if (id) {
-    await db.category.update({ where: { id }, data: { ad, aciklama, aktif } });
+    try {
+      await db.category.update({ where: { id }, data: { ad, aciklama, aktif } });
+    } catch (e) {
+      if (adCakisti(e)) redirect(`/yonetim/kategoriler?hata=ad-tekrar&duzenle=${id}`);
+      throw e;
+    }
     vitriniYenile();
     redirect("/yonetim/kategoriler?kayit=1");
   }
@@ -572,9 +585,14 @@ export async function kategoriKaydet(veri: FormData): Promise<void> {
   }
 
   const sonSira = await db.category.aggregate({ _max: { sira: true } });
-  await db.category.create({
-    data: { slug, ad, aciklama, aktif, sira: (sonSira._max.sira ?? 0) + 1 },
-  });
+  try {
+    await db.category.create({
+      data: { slug, ad, aciklama, aktif, sira: (sonSira._max.sira ?? 0) + 1 },
+    });
+  } catch (e) {
+    if (adCakisti(e)) redirect("/yonetim/kategoriler?hata=ad-tekrar");
+    throw e;
+  }
 
   vitriniYenile();
   redirect("/yonetim/kategoriler?kayit=1");

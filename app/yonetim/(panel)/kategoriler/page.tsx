@@ -78,6 +78,15 @@ export default async function KategoriEkrani({
   const duzenlenen =
     typeof duzenle === "string" ? tumListe.find((k) => k.id === duzenle) : undefined;
 
+  // Aynı adlı kategoriler: yeni çakışma açılamıyor ama eskiden kalan olabilir.
+  // Veritabanı kuralı ancak bunlar giderilince kurulabiliyor (K-83).
+  const adSayimi = new Map<string, string[]>();
+  for (const k of tumListe) {
+    const anahtar = k.ad.trim().toLocaleLowerCase("tr");
+    adSayimi.set(anahtar, [...(adSayimi.get(anahtar) ?? []), k.slug]);
+  }
+  const cakisanlar = [...adSayimi.values()].filter((s) => s.length > 1);
+
   return (
     <div className="flex flex-col gap-5">
       <h1 className="text-2xl">Kategoriler</h1>
@@ -93,6 +102,17 @@ export default async function KategoriEkrani({
       </p>
 
       <PanelBildirim kayit={kayit} hata={hata} bildirimler={BILDIRIMLER} hatalar={HATALAR} />
+
+      {cakisanlar.length > 0 && (
+        <div className="rounded-marka border border-sari bg-sari-soluk px-4 py-3 text-sm text-sari-koyu">
+          <p className="font-bold">Aynı adlı kategoriler var</p>
+          <p className="mt-1">
+            {cakisanlar.map((c) => c.map((slug) => `/${slug}`).join(" ile ")).join("; ")}.
+            Seçim listelerinde birbirine karışıyorlar. Birleştirmek için birini sil ve
+            &quot;Ürünler nereye taşınsın?&quot; bölümünde ötekini seç.
+          </p>
+        </div>
+      )}
 
       {/* Bu ikisi adres satırından bir **sayı** alıyor; cümle sayfada
           tamamlanıyor. Metin taşınmıyor (K-57). */}

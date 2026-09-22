@@ -71,7 +71,8 @@ export async function urunKur(stok: number): Promise<{ productId: string; varian
   const variantId = kimlik("var");
 
   await db.category.create({
-    data: { id: categoryId, slug: categoryId.toLowerCase(), ad: "Test kategorisi", sira: 999 },
+    // Ad da tekil olmalı: kategori adı veritabanında tekil (K-83).
+    data: { id: categoryId, slug: categoryId.toLowerCase(), ad: categoryId, sira: 999 },
   });
   await db.product.create({
     data: {
