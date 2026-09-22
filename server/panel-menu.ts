@@ -88,6 +88,7 @@ export function menuyuKur(
             rozet: s.yorum,
             ton: "hatirlatma",
           },
+          { yol: "/yonetim/musteriler", ad: "Müşteriler", ikon: "musteri" },
           { yol: "/yonetim/rapor", ad: "Satış raporu", ikon: "rapor" },
         ],
       },

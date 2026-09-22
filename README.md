@@ -145,6 +145,14 @@ arama metni, ödeme süresi ve toplu yükleme süzgeci. Veritabanı gerekmiyor �
 `npm run build` testleri göçlerden **önce** çalıştırıyor: bozuk bir hesap
 veritabanına dokunmadan, dağıtıma çıkmadan duruyor (K-68).
 
+**Müşteriler ekranı** (`/yonetim/musteriler`): hesap açmış müşteriler,
+harcama toplamı (yalnızca ödenmiş siparişler), sipariş geçmişi, adres
+defteri, e-posta doğrulaması ve pazarlama izni. KVKK'nın iki hakkı panelden
+de kullanılabiliyor: verileri JSON olarak indirme ve hesabı silme — telefonla
+gelen başvurular için. Silme kuralları üyenin kendi yaptığıyla aynı yerden
+geliyor: siparişler yasal saklama süresince kalıyor, hesapla bağları kopuyor
+(K-70).
+
 **Panel listelerinde arama** — ürünler, bedenler, yaş grupları, renkler,
 kategoriler, kullanıcılar, yorumlar, talepler, iadeler ve kampanyalar. Düz
 GET formu: JavaScript'siz çalışıyor, adres paylaşılabiliyor. Türkçe klavyeye

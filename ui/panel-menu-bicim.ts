@@ -21,6 +21,7 @@ export type IkonAdi =
   | "talep"
   | "iade"
   | "yorum"
+  | "musteri"
   | "rapor"
   | "urun"
   | "kategori"

@@ -20,6 +20,8 @@ const YOLLAR: Record<IkonAdi, string> = {
   talep: "M21 12a8 8 0 0 1-11.6 7.1L4 20l1-5.2A8 8 0 1 1 21 12Z",
   iade: "M4 9h11a5 5 0 0 1 0 10H8M4 9l4-4M4 9l4 4",
   yorum: "m12 4 2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4L4.2 9.7l5.4-.8L12 4Z",
+  // İki kişi: liste "kullanıcılar"dan (tek kişi) ayrılsın.
+  musteri: "M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm-6 9a6 6 0 0 1 12 0M17 11a3 3 0 1 0 0-6m1.5 9a5.5 5.5 0 0 1 3.5 5",
   rapor: "M5 20V10m7 10V4m7 16v-7",
   urun: "M20 8 12 4 4 8m16 0v8l-8 4-8-4V8m16 0-8 4m0 0L4 8m8 4v8",
   kategori: "M4 5h7v7H4V5Zm9 0h7v7h-7V5ZM4 14h7v5H4v-5Zm9 0h7v5h-7v-5Z",

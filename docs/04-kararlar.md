@@ -3602,6 +3602,59 @@ tarayıcıda.
 
 ---
 
+### K-70 · Müşteriler ekranı ve KVKK'nın panel kapısı
+
+`Customer` tablosu vardı ama **panelde hiçbir yerde görünmüyordu.** Mağaza
+sahibi "bu müşteri kaç sipariş verdi, toplam ne harcadı, adresi ne"
+sorusuna bakamıyor, sipariş listesinde adı tek tek arıyordu. Daha ciddi bir
+boşluk da vardı: üye kendi verisini indirip hesabını silebiliyordu (K-39),
+ama **telefonla arayıp "verilerimi silin" diyen biri için panelde bir yol
+yoktu.** KVKK'nın erişim ve silme hakkı başvuru kanalına göre değişmiyor.
+
+Liste **en yeni üye önce** ve aranabilir (K-69); kart bir müşteri hakkında
+sorulan her şeyi tek ekranda topluyor: siparişleri, adres defteri, e-posta
+doğrulaması, pazarlama izni ve izni verdiği an, açık oturum sayısı.
+
+**Harcama yalnızca ödenmiş siparişlerden.** İptal edilmiş ya da parası hiç
+gelmemiş sipariş "bu müşteri 12.000 ₺ harcadı" demez; öyle sayılsaydı en
+değerli müşteri, en çok sipariş açıp ödemeyen kişi olurdu.
+
+**Panelden düzenleme yok, silme var.** Müşterinin adını, adresini ya da
+e-postasını panelden değiştirmek kişinin kendi verisini haberi olmadan
+değiştirmek demek; üstelik siparişlerdeki kopyaları da düzeltmiyor (adres
+kopyalanıyor, işaret edilmiyor). Silme ise bir yükümlülük.
+
+**Silme kuralları kopyalanmadı.** Neyin silinip neyin kaldığı K-39'da bir
+kere kararlaştırıldı ve `server/kisisel-veri.ts` içinde duruyor; panel aynı
+işlevi çağırıyor. İki kapı, tek kural: hesap, oturumlar, jetonlar, adres
+defteri ve stok bildirimi istekleri gidiyor; siparişler ve faturalar vergi
+mevzuatının süresi boyunca kalıyor ama hesapla bağları kopuyor,
+değerlendirmelerin adı "Müşteri"ye dönüyor. Ekranda bu olduğu gibi yazıyor
+— "her şeyi sildik" demek yanlış olurdu.
+
+**Siparişi olan hesapta yazılı onay isteniyor** — ürün silmedeki kuralın
+aynısı (K-52). Veri indirme dosyası üyenin kendi indirdiğiyle birebir aynı:
+şifre özeti ve oturum jetonları ikisinde de dışarıda.
+
+**Üyeliksiz siparişler bu ekranda yok** ve ekran bunu yazıyor. Onlar bir
+hesaba bağlı değil; sipariş ekranından e-postayla aranıyorlar. Yazmasaydı
+liste eksik sanılırdı.
+
+**Nasıl denendi.** Üretim derlemesinde gerçek tarayıcıyla: menü maddesi,
+liste ve arama, kartın beş bölümü, harcama toplamının yalnızca ödenmişi
+sayması, veri dosyasında şifre özeti bulunmaması, oturumsuz indirmenin giriş
+sayfasına düşmesi, yanlış onayla silmenin **hesabı silmemesi**. Sonra
+gerçekten silindi ve veritabanından doğrulandı: hesap ve adres gitti, sipariş
+kaydı durdu, `customerId` boşaldı. Silme akışı bir de JavaScript kapalı
+tarayıcıda.
+
+**Nerede:** [`../server/musteri.ts`](../server/musteri.ts),
+[`../server/yonetim-musteri.ts`](../server/yonetim-musteri.ts),
+[`../app/yonetim/(panel)/musteriler/page.tsx`](../app/yonetim/(panel)/musteriler/page.tsx),
+[`../server/kisisel-veri.ts`](../server/kisisel-veri.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)
