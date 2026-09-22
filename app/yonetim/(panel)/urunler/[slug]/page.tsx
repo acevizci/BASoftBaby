@@ -78,6 +78,7 @@ export default async function UrunDuzenle({
         kategoriler={kategoriler.map((k) => ({ slug: k.slug, ad: k.ad }))}
         bedenler={secilebilirBedenler.map((b) => ({ id: b.id, ad: b.ad }))}
         renkler={secilebilirRenkler}
+        fotografVar={urun.images.length > 0}
         urun={{
           slug: urun.slug,
           ad: urun.ad,
@@ -122,8 +123,10 @@ export default async function UrunDuzenle({
           boyutBayt: g.boyutBayt,
           renk: g.renk,
         }))}
-        // Fotoğrafa yalnızca ürünün kendi renkleri atanabiliyor.
+        // Ürünün kendi renkleri listenin başında; mağazanın öteki açık
+        // renkleri ayrı grupta, uyarısıyla (K-71).
         renkler={tumRenkler.filter((r) => urunRenkleri.has(r.kod))}
+        digerRenkler={secilebilirRenkler.filter((r) => !urunRenkleri.has(r.kod))}
       />
 
       {/* Kaydet düğmesi sayfanın sonunda: form yukarıda bitiyor ama

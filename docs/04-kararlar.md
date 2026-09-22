@@ -3655,6 +3655,60 @@ tarayıcıda.
 
 ---
 
+### K-71 · Ürün ekranındaki üç liste: çizim bir kategori değil
+
+Renkler panele taşındıktan sonra (K-66) ürün ekranında iki şey sırıtmaya
+başladı. İkisi de "eklediğim renk neden burada yok" diye sorulunca ortaya
+çıktı.
+
+#### Fotoğrafın renk listesi tek seçenek gösteriyordu
+
+Fotoğrafa **yalnızca ürünün kendi varyant renkleri** atanabiliyordu. Mantığı
+vardı: galeri seçili renge göre süzülüyor, seçili renk varyantlardan geliyor,
+yani satılmayan bir renge atanan fotoğraf hiç görünmüyor — hatta o üründe
+başka renkli fotoğraf varsa **gizleniyor** (K-48'deki süzgeç).
+
+Ama bir sıra tuzağı kuruyordu. Doğal iş akışı "önce çekimi yükle, sonra stoğu
+gir": tek renkte varyantı olan bir ürüne altı fotoğraf yükleyen kişi açılır
+listede yalnızca o rengi görüyor, mağazasında beş renk tanımlı olduğu hâlde.
+Sebebi hiçbir yerde yazmıyordu, dolayısıyla eksiklik gibi görünüyordu.
+
+Liste artık ikiye ayrılmış: ürünün kendi renkleri üstte, mağazanın öteki açık
+renkleri **"Bu üründe henüz yok"** grubunda. Varyantı olmayan bir renge
+atanmış fotoğrafın altında da uyarı duruyor: o renk stoğa girilene kadar
+galeride görünmeyebilir. Engellemek yerine söylemek doğrusu — stok birazdan
+girilecek olabilir.
+
+#### "Çizim" listesi kategori sanılıyordu
+
+Açılır listede ham anahtarlar yazıyordu: `zibin`, `tulum`, `battaniye`,
+`patik`, `sapka`, `onluk`. Türkçesi bile değildi ve tam da mağazanın kategori
+adlarına benziyordu — "yeni kategori ekledim, neden burada yok" sorusunun
+kaynağı buydu. Adlar düzeltildi (Zıbın, Şapka, Önlük…).
+
+**Bu liste panelden uzatılamıyor ve uzatılmayacak.** Beden (K-56), yaş grubu
+(K-65) ve renk (K-66) tabloya taşındı; çizimler taşınamaz, çünkü her biri
+`ui/urun-gorseli.tsx` içinde elle çizilmiş bir SVG. Yeni bir tip eklemek kod
+işi değil, çizim işi. Ekran bunu artık yazıyor ve doğru çözümü söylüyor:
+ürüne uyan çizim yoksa fotoğraf yükle.
+
+**Fotoğrafı olan üründe bu bölümün hiçbir etkisi yok** — çizim yalnızca
+fotoğraf yokken gösteriliyor. Öyle ürünlerde bölümün başında bunu söyleyen
+bir satır çıkıyor; yoksa "çizimi değiştirdim ama bir şey olmadı" denirdi.
+
+**Nasıl denendi.** Üretim derlemesinde gerçek tarayıcıyla, sayfadaki bütün
+açılır listeler seçenekleriyle dökülerek: çizim adlarının Türkçeleştiği,
+fotoğraf listesinin gruplandığı (üç kendi rengi + iki "henüz yok"),
+fotoğrafı olan üründe uyarı satırının çıktığı ve varyantı olmayan bir renge
+atanan fotoğrafın altında uyarının belirdiği.
+
+**Nerede:** [`../ui/fotograf-yonetimi.tsx`](../ui/fotograf-yonetimi.tsx),
+[`../ui/urun-formu.tsx`](../ui/urun-formu.tsx),
+[`../ui/katalog-bicim.ts`](../ui/katalog-bicim.ts),
+[`../app/yonetim/(panel)/urunler/[slug]/page.tsx`](../app/yonetim/(panel)/urunler/[slug]/page.tsx)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

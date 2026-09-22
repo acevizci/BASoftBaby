@@ -45,6 +45,7 @@ export default function FotografYonetimi({
   slug,
   fotograflar,
   renkler,
+  digerRenkler = [],
   hata,
   eklenen,
   sonuc,
@@ -52,8 +53,23 @@ export default function FotografYonetimi({
 }: {
   slug: string;
   fotograflar: PanelFotografi[];
-  /** Ürünün kendi renkleri; fotoğrafa yalnızca bunlardan biri atanabiliyor. */
+  /**
+   * Ürünün kendi renkleri: varyantı olan renkler, listenin başında.
+   *
+   * Fotoğrafa **yalnızca** bunlar atanabiliyordu. Mantığı vardı — galeri
+   * seçili renge göre süzülüyor ve seçili renk varyantlardan geliyor, yani
+   * satılmayan bir renge atanan fotoğraf hiç görünmüyor — ama bir sıra
+   * tuzağı kuruyordu: fotoğrafları varyantlardan önce yükleyen kişiye tek
+   * bir seçenek çıkıyordu ve sebebi hiçbir yerde yazmıyordu (K-71).
+   */
   renkler: RenkSecenegi[];
+  /**
+   * Mağazanın öteki açık renkleri: ayrı bir grupta, uyarısıyla.
+   *
+   * Varyantı henüz açılmamış bir renge fotoğraf atamak olağan bir sıra:
+   * önce çekimi yükle, sonra stoğu gir. Engellemek yerine söylüyoruz.
+   */
+  digerRenkler?: RenkSecenegi[];
   hata?: string;
   eklenen?: number;
   /**
@@ -179,6 +195,15 @@ export default function FotografYonetimi({
                         {r.ad}
                       </option>
                     ))}
+                    {digerRenkler.length > 0 && (
+                      <optgroup label="Bu üründe henüz yok">
+                        {digerRenkler.map((r) => (
+                          <option key={r.kod} value={r.kod}>
+                            {r.ad}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                   <button type="submit" className={DUGME}>
                     Kaydet
@@ -189,6 +214,16 @@ export default function FotografYonetimi({
                   {f.genislik > 0 && `${f.genislik}×${f.yukseklik} · `}
                   {boyutYaz(f.boyutBayt)}
                 </p>
+                {/* Galeri seçili renge göre süzülüyor ve seçili renk
+                    varyantlardan geliyor: varyantı olmayan bir renge atanan
+                    fotoğraf müşteriye hiç görünmeyebilir. Engellemek yerine
+                    söylüyoruz — stok birazdan girilecek olabilir (K-71). */}
+                {f.renk && digerRenkler.some((r) => r.kod === f.renk) && (
+                  <p className="mt-1.5 text-xs font-semibold text-sari-koyu">
+                    Bu üründe {digerRenkler.find((r) => r.kod === f.renk)?.ad} varyantı yok
+                    — o renk stoğa girilene kadar bu fotoğraf galeride görünmeyebilir.
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center gap-2">

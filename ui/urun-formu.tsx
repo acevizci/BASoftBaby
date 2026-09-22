@@ -3,6 +3,7 @@ import BedenTablosu from "@/ui/beden-tablosu";
 import UrunGorseli from "@/ui/urun-gorseli";
 import { urunKaydet, varyantEkle, varyantSil } from "@/server/yonetim";
 import {
+  GORSEL_ADLARI,
   GORSEL_TIPLERI,
   paletCoz,
   renkYaz,
@@ -55,6 +56,7 @@ export default function UrunFormu({
   kategoriler,
   bedenler = [],
   renkler = [],
+  fotografVar = false,
   kaydedildi,
 }: {
   urun?: FormUrunu;
@@ -63,6 +65,8 @@ export default function UrunFormu({
   bedenler?: { id: string; ad: string }[];
   /** Çizim rengi ve yeni varyantın rengi; veritabanından geliyor (K-66). */
   renkler?: RenkSecenegi[];
+  /** Ürünün yüklenmiş fotoğrafı var mı; varsa çizim hiç görünmüyor (K-71). */
+  fotografVar?: boolean;
   kaydedildi?: boolean;
 }) {
   const yeni = !urun;
@@ -199,15 +203,25 @@ export default function UrunFormu({
         <div className="rounded-marka border border-cizgi bg-yuzey p-5">
           <h2 className="text-lg">Görünüm</h2>
           <p className="mt-1 text-xs text-metin-3">
-            Gerçek fotoğraflar yüklenene kadar ürün, seçtiğin çizim ve renkle görünüyor.
+            Ürünün <strong>fotoğrafı yokken</strong> gösterilen yedek çizim. Kategori değil:
+            listedeki altı çizim koda elle çizilmiş, panelden yenisi eklenemiyor. Ürüne
+            uyan bir çizim yoksa doğru çözüm fotoğraf yüklemek.
           </p>
+          {/* Fotoğraflı üründe bu bölümün hiçbir etkisi yok; yazmasaydı
+              "çizimi değiştirdim ama bir şey olmadı" denirdi (K-71). */}
+          {fotografVar && (
+            <p className="mt-2 rounded-marka bg-nane-soluk px-3 py-2 text-xs font-semibold text-nane-koyu">
+              Bu ürünün fotoğrafı var, yani aşağıdaki çizim ve renk hiçbir yerde
+              görünmüyor. Bütün fotoğrafları silersen yeniden devreye giriyor.
+            </p>
+          )}
           <div className="mt-4 grid gap-4 sm:grid-cols-[1fr_1fr_140px]">
             <label className="flex flex-col gap-1.5">
               <span className={ETIKET}>Çizim</span>
               <select name="gorsel" defaultValue={urun?.gorsel ?? "zibin"} className={GIRDI}>
                 {GORSEL_TIPLERI.map((g) => (
                   <option key={g} value={g}>
-                    {g}
+                    {GORSEL_ADLARI[g]}
                   </option>
                 ))}
               </select>

@@ -169,6 +169,29 @@ export const GORSEL_TIPLERI: GorselTipi[] = [
   "onluk",
 ];
 
+/**
+ * Çizimlerin ekranda görünen adları.
+ *
+ * Açılır listede ham anahtarlar yazıyordu: "zibin", "sapka", "onluk".
+ * Türkçesi bile değildi ve kategori listesine benziyordu — oysa bu bir
+ * kategori değil, **fotoğrafı olmayan ürün için çizilen yedek resim**
+ * (K-71).
+ *
+ * **Bu liste panelden uzatılamıyor.** Bedenler, renkler ve yaş grupları
+ * tabloya taşındı; çizimler taşınamaz, çünkü her biri elle çizilmiş bir SVG
+ * (`ui/urun-gorseli.tsx`). Yeni bir tip eklemek kod değil çizim işi. Ürünün
+ * fotoğrafı varsa çizim zaten hiç görünmüyor, yani doğru çözüm fotoğraf
+ * yüklemek.
+ */
+export const GORSEL_ADLARI: Record<GorselTipi, string> = {
+  zibin: "Zıbın",
+  tulum: "Tulum",
+  battaniye: "Battaniye",
+  patik: "Patik",
+  sapka: "Şapka",
+  onluk: "Önlük",
+};
+
 
 /** Kuruşu ekranda görünen fiyata çevirir: 24990 → "249,90 ₺" */
 export function fiyatYaz(kurus: number): string {

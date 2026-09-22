@@ -2,6 +2,8 @@ import "./hazirlik";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  GORSEL_ADLARI,
+  GORSEL_TIPLERI,
   paletCoz,
   renkYaz,
   renginFotograflari,
@@ -173,5 +175,21 @@ describe("odemeSonTarihi", () => {
 
   it("süre kapalıysa (0) hiç sınır yok", () => {
     assert.equal(odemeSonTarihi(temel, 0), undefined);
+  });
+});
+
+describe("GORSEL_ADLARI", () => {
+  it("her çizim tipinin Türkçe adı var", () => {
+    // Açılır listede ham anahtarlar yazıyordu ("zibin", "sapka"); yeni bir
+    // tip eklenince adı unutulmasın (K-71).
+    for (const tip of GORSEL_TIPLERI) {
+      assert.ok(GORSEL_ADLARI[tip], `${tip} için ad yok`);
+    }
+  });
+
+  it("adlar anahtarın kendisi değil", () => {
+    assert.equal(GORSEL_ADLARI.zibin, "Zıbın");
+    assert.equal(GORSEL_ADLARI.sapka, "Şapka");
+    assert.equal(GORSEL_ADLARI.onluk, "Önlük");
   });
 });
