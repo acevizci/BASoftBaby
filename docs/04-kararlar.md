@@ -3761,6 +3761,60 @@ ayrıştığı. Panel ve rozetler bir de JavaScript kapalı tarayıcıda.
 
 ---
 
+### K-73 · Üst çubuk iki sıra, boş kategori vitrinde yok
+
+Kategoriler panelden çoğalınca üst çubuk iki yerden birden bozuldu.
+
+#### Şerit sarıyordu, başlık her sayfada başka boydaydı
+
+Kategori bağlantıları logo ile aynı sarmalayan kutudaydı. Uzun adlı altı
+kategoriyle ("Yenidoğan - Hastane Çıkış Setleri", "Çorap - İç Çamaşırı")
+şerit ikinci satıra taşıyor, arama kutusuyla logo yer değiştiriyor, başlığın
+yüksekliği kategori sayısına göre değişiyordu.
+
+Üst çubuk artık **iki sıra**: logo, arama ve hesap üstte; kategori şeridi
+altta, kendi satırında. Şerit **sarmıyor, kayıyor** — kategori sayısı ne
+olursa olsun tek satır, sığmayanlar yatay kaydırmayla geliyor. Ölçüldü:
+aynı uzun adlarla başlık 1280 ve 768 pikselde 130 pikselde kalıyor ve şerit
+tek satır.
+
+Bağlantılar düz yazıdan **yuvarlak düğmelere** geçti: sitenin geri kalanında
+gezinme öğeleri (süzgeçler, sıralama, rozetler) zaten böyle. Şeridin başına
+"Tüm ürünler" eklendi — eskiden yalnızca telefon menüsünde vardı.
+
+`scrollbar-gizli` yalnızca kaydırma çubuğunu saklıyor: kaydırma, dokunma,
+fare tekerleği ve klavye (Tab ile sıradaki bağlantıya gidince şerit
+kendiliğinden kayıyor) olduğu gibi çalışıyor.
+
+#### Boş kategori vitrinde görünüyordu
+
+Menüdeki her bağlantı boş bir sayfa açıyordu, çünkü kategoriler açılmış ama
+içlerine henüz ürün atanmamıştı. Vitrin açısından bu bir hata değil ama
+sonucu hata gibi: müşteri menüden ne seçerse seçsin boş sayfa görüyor,
+mağazanın eksik olduğunu düşünüyor.
+
+**Vitrin artık yalnızca içinde yayında ürün olan kategorileri gösteriyor** —
+menüde, ana sayfa kutularında, arama rozetlerinde, 404 sayfasında ve site
+haritasında. Kategori panelde duruyor ve ürün atanır atanmaz menüye giriyor.
+Kategori sayfasının kendisi hâlâ açılıyor (adresi paylaşılmış olabilir) ama
+artık doğru şeyi söylüyor: süzgeç varken "bir süzgeci kaldırmayı dene",
+süzgeç yokken **"bu kategoride henüz ürün yok"**. Eskiden kaldıracak süzgeç
+olmadığı hâlde süzgeç mesajı çıkıyordu.
+
+**Nasıl denendi.** Üretim derlemesinde gerçek tarayıcıyla, kullanıcının
+kategori adları taklit edilerek: üç genişlikte başlığın yüksekliği ve şeridin
+satır sayısı ölçülerek, boş kategorilerin menüden düştüğü, ürün atanınca geri
+geldiği, dolu kategorilerin çalışmaya devam ettiği, boş kategori sayfasının
+doğru mesajı verdiği. Telefon menüsü ve kategoriye gidiş bir de JavaScript
+kapalı tarayıcıda.
+
+**Nerede:** [`../ui/ust-cubuk.tsx`](../ui/ust-cubuk.tsx),
+[`../server/katalog.ts`](../server/katalog.ts),
+[`../app/(magaza)/(vitrin)/[kategori]/page.tsx`](../app/(magaza)/(vitrin)/[kategori]/page.tsx),
+[`../app/globals.css`](../app/globals.css)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

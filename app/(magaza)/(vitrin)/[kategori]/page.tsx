@@ -332,16 +332,37 @@ export default async function KategoriSayfasi({
 
           {durum.toplam === 0 ? (
             <div className="mt-4 rounded-marka border border-cizgi bg-yuzey p-8 text-center">
-              <p className="font-baslik text-lg font-bold">Bu seçimle ürün bulunamadı</p>
-              <p className="mt-2 text-sm text-metin-2">
-                Bir süzgeci kaldırmayı dene; stokta olmayan bedenler listeye girmiyor.
-              </p>
-              <Link
-                href={`/${kategori}`}
-                className="mt-4 inline-block rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi"
-              >
-                Süzgeçleri temizle
-              </Link>
+              {/* Süzgeç yokken "bir süzgeci kaldırmayı dene" demek anlamsız:
+                  kaldıracak süzgeç yok, kategori boş. İki durum ayrı (K-73). */}
+              {suzgecVar ? (
+                <>
+                  <p className="font-baslik text-lg font-bold">Bu seçimle ürün bulunamadı</p>
+                  <p className="mt-2 text-sm text-metin-2">
+                    Bir süzgeci kaldırmayı dene; stokta olmayan bedenler listeye girmiyor.
+                  </p>
+                  <Link
+                    href={`/${kategori}`}
+                    className="mt-4 inline-block rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi"
+                  >
+                    Süzgeçleri temizle
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <p className="font-baslik text-lg font-bold">
+                    Bu kategoride henüz ürün yok
+                  </p>
+                  <p className="mt-2 text-sm text-metin-2">
+                    Yakında ekleniyor. O zamana kadar kataloğun tamamına göz atabilirsin.
+                  </p>
+                  <Link
+                    href="/urunler"
+                    className="mt-4 inline-block rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi"
+                  >
+                    Tüm ürünler
+                  </Link>
+                </>
+              )}
             </div>
           ) : (
             <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-3">

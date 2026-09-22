@@ -143,10 +143,22 @@ function urunYap(
  * Kategoriler her sayfanın üst çubuğunda gerekiyor ama ayda bir değişiyor:
  * paylaşılan önbellekte duruyor, panelden değişince düşüyor.
  */
+/**
+ * Vitrinde görünen kategoriler.
+ *
+ * **Boş kategori listelenmiyor.** Kategori açık olsa bile içinde yayında
+ * ürün yoksa menüde, ana sayfada, arama rozetlerinde ve site haritasında
+ * çıkmıyor. Sebebi basit: tıklayınca boş bir sayfa açan bir bağlantı
+ * mağazanın eksik olduğunu düşündürüyor ve müşteriyi çıkmaza sokuyor
+ * (K-73). Kategori panelde duruyor ve ürün atanır atanmaz menüye giriyor.
+ *
+ * Kategori sayfasının kendisi hâlâ açılıyor: adresi paylaşılmış olabilir,
+ * sayfa da "bu kategoride henüz ürün yok" diyor.
+ */
 export const kategorileriGetir = paylasilanOnbellek(
   async function kategorileriGetir(): Promise<Kategori[]> {
     const satirlar = await db.category.findMany({
-      where: { aktif: true },
+      where: { aktif: true, products: { some: { aktif: true } } },
       orderBy: { sira: "asc" },
     });
     return satirlar.map((k) => ({

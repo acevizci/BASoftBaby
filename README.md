@@ -153,6 +153,13 @@ gelen başvurular için. Silme kuralları üyenin kendi yaptığıyla aynı yerd
 geliyor: siparişler yasal saklama süresince kalıyor, hesapla bağları kopuyor
 (K-70).
 
+**Vitrinde boş kategori görünmüyor**: içinde yayında ürün olmayan kategori
+menüde, ana sayfada, arama rozetlerinde ve site haritasında çıkmıyor — menüde
+boş sayfaya giden bağlantı olmasın diye. Panelde duruyor, ürün atanır atanmaz
+menüye giriyor. Üst çubuk iki sıra: logo/arama/hesap üstte, kategori şeridi
+altta; şerit sarmıyor, kayıyor — kategori sayısı ne olursa olsun başlık tek
+boyda kalıyor (K-73).
+
 **Panel listelerinde arama** — ürünler, bedenler, yaş grupları, renkler,
 kategoriler, kullanıcılar, yorumlar, talepler, iadeler ve kampanyalar. Düz
 GET formu: JavaScript'siz çalışıyor, adres paylaşılabiliyor. Türkçe klavyeye

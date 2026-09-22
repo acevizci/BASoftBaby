@@ -622,3 +622,19 @@ body:has(.buyutec:target) {
       transparent calc(50% + 0.7px)
     );
 }
+
+/*
+ * Yatay kayan şeritlerde kaydırma çubuğunu gizler.
+ *
+ * Yalnızca çubuğun kendisi gizleniyor: kaydırma, klavye (Tab ile sıradaki
+ * bağlantıya gidince şerit kendiliğinden kayıyor), dokunma ve fare tekerleği
+ * olduğu gibi çalışıyor. Üst çubuktaki kategori şeridi bunu kullanıyor —
+ * kategori sayısı ne olursa olsun başlık tek satır kalıyor (K-73).
+ */
+.scrollbar-gizli {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-gizli::-webkit-scrollbar {
+  display: none;
+}
