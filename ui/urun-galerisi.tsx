@@ -1,6 +1,6 @@
 import UrunFoto from "@/ui/urun-foto";
 import UrunGorseli from "@/ui/urun-gorseli";
-import type { Fotograf, GorselTipi, RenkAdi } from "@/ui/katalog-bicim";
+import type { Fotograf, GorselTipi, Palet, RenkSecenegi } from "@/ui/katalog-bicim";
 
 /**
  * Ürün sayfasının fotoğraf galerisi.
@@ -26,9 +26,9 @@ export default function UrunGalerisi({
 }: {
   fotograflar: Fotograf[];
   gorsel: GorselTipi;
-  palet: RenkAdi;
+  palet: Palet;
   /** Fotoğraf yokken küçük görsellerde gösterilecek renk seçenekleri. */
-  renkler: RenkAdi[];
+  renkler: RenkSecenegi[];
   ad: string;
 }) {
   // Hiç fotoğraf yoksa eski davranış: büyük çizim + renk seçenekleri.
@@ -38,7 +38,12 @@ export default function UrunGalerisi({
         <UrunGorseli tip={gorsel} palet={palet} className="aspect-square w-full rounded-marka" />
         <div className="grid grid-cols-4 gap-3">
           {renkler.slice(0, 4).map((r) => (
-            <UrunGorseli key={r} tip={gorsel} palet={r} className="aspect-square rounded-marka" />
+            <UrunGorseli
+              key={r.kod}
+              tip={gorsel}
+              palet={r.palet}
+              className="aspect-square rounded-marka"
+            />
           ))}
         </div>
       </div>

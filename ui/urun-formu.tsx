@@ -4,10 +4,11 @@ import UrunGorseli from "@/ui/urun-gorseli";
 import { urunKaydet, varyantEkle, varyantSil } from "@/server/yonetim";
 import {
   GORSEL_TIPLERI,
-  RENK_ADLARI,
+  paletCoz,
+  renkYaz,
   fiyatYaz,
   type GorselTipi,
-  type RenkAdi,
+  type RenkSecenegi,
 } from "@/ui/katalog-bicim";
 import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
 
@@ -53,12 +54,15 @@ export default function UrunFormu({
   urun,
   kategoriler,
   bedenler = [],
+  renkler = [],
   kaydedildi,
 }: {
   urun?: FormUrunu;
   kategoriler: { slug: string; ad: string }[];
   /** Yeni varyantta seçilebilecek bedenler; veritabanından geliyor (K-56). */
   bedenler?: { id: string; ad: string }[];
+  /** Çizim rengi ve yeni varyantın rengi; veritabanından geliyor (K-66). */
+  renkler?: RenkSecenegi[];
   kaydedildi?: boolean;
 }) {
   const yeni = !urun;
@@ -210,17 +214,24 @@ export default function UrunFormu({
             </label>
             <label className="flex flex-col gap-1.5">
               <span className={ETIKET}>Renk</span>
-              <select name="palet" defaultValue={urun?.palet ?? "mint"} className={GIRDI}>
-                {(Object.keys(RENK_ADLARI) as RenkAdi[]).map((r) => (
-                  <option key={r} value={r}>
-                    {RENK_ADLARI[r]}
+              <select
+                name="palet"
+                defaultValue={urun?.palet ?? renkler[0]?.kod ?? ""}
+                className={GIRDI}
+              >
+                {renkler.map((r) => (
+                  <option key={r.kod} value={r.kod}>
+                    {r.ad}
                   </option>
                 ))}
               </select>
             </label>
+            {/* Önizleme sayfa yüklendiğindeki renkle çiziliyor: açılır listeyi
+                değiştirince güncellenmesi JavaScript isterdi, kaydedince
+                zaten doğrusu görünüyor. */}
             <UrunGorseli
               tip={(urun?.gorsel ?? "zibin") as GorselTipi}
-              palet={(urun?.palet ?? "mint") as RenkAdi}
+              palet={paletCoz(renkler, urun?.palet ?? renkler[0]?.kod)}
               className="aspect-square"
             />
           </div>
@@ -298,7 +309,7 @@ export default function UrunFormu({
                   {urun.variants.map((v) => (
                     <tr key={v.id}>
                       <td className="py-2">{v.beden}</td>
-                      <td className="py-2">{RENK_ADLARI[v.renk as RenkAdi] ?? v.renk}</td>
+                      <td className="py-2">{renkYaz(renkler, v.renk)}</td>
                       <td className="rakam py-2">{v.stok}</td>
                       <td className="py-2 text-right">
                         {/* Varyant silmek o beden-renk birleşiminin stoğunu da
@@ -343,9 +354,9 @@ export default function UrunFormu({
             <label className="flex flex-col gap-1.5">
               <span className={ETIKET}>Renk</span>
               <select name="renk" className={GIRDI}>
-                {(Object.keys(RENK_ADLARI) as RenkAdi[]).map((r) => (
-                  <option key={r} value={r}>
-                    {RENK_ADLARI[r]}
+                {renkler.map((r) => (
+                  <option key={r.kod} value={r.kod}>
+                    {r.ad}
                   </option>
                 ))}
               </select>

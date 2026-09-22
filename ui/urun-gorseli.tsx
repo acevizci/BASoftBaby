@@ -1,10 +1,12 @@
-import { PALET, type GorselTipi, type RenkAdi } from "@/ui/katalog-bicim";
+import type { GorselTipi, Palet } from "@/ui/katalog-bicim";
 
 /**
  * Ürün görselleri henüz çizim. Gerçek fotoğraflar çekilip yüklendiğinde bu
  * bileşenin yerine fotoğraf gelecek; çağıran sayfalar değişmeyecek.
  *
- * Renkler ürünün paletinden geliyor: c1 vurgu, c2 gövde, c3 çizgi.
+ * Renkler ürünün paletinden geliyor: c1 vurgu, c2 gövde, c3 çizgi. Palet
+ * hazır çözülmüş geliyor, renk kodu değil: renk listesi artık veritabanında
+ * (K-66) ve bu bileşen tarayıcıda da çiziliyor, sorgu yapamaz.
  */
 
 type CizimOzellik = { c1: string; c2: string; c3: string; zemin: string };
@@ -106,10 +108,10 @@ export default function UrunGorseli({
   className = "",
 }: {
   tip: GorselTipi;
-  palet: RenkAdi;
+  palet: Palet;
   className?: string;
 }) {
-  const p = PALET[palet];
+  const p = palet;
   const Cizim = CIZIMLER[tip];
   return (
     <div

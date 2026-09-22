@@ -25,6 +25,7 @@ export type IkonAdi =
   | "urun"
   | "kategori"
   | "beden"
+  | "renk"
   | "stok"
   | "kampanya"
   | "banner"

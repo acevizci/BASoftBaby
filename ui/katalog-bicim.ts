@@ -8,7 +8,11 @@
  */
 
 export type GorselTipi = "zibin" | "tulum" | "battaniye" | "patik" | "sapka" | "onluk";
-export type RenkAdi = "mint" | "krem" | "mercan" | "mavi" | "sari";
+/**
+ * Renk kodu. Eskiden beş değerlik bir birleşim tipiydi; renkler panelden
+ * yönetildiği için (K-66) derleme zamanında bilinmiyor.
+ */
+export type RenkAdi = string;
 export type RozetTonu = "mint" | "mercan" | "sari" | "mavi";
 
 export type Kategori = {
@@ -60,9 +64,12 @@ export type Urun = {
   ad: string;
   ozet: string;
   kategori: string;
-  /** Fotoğraf yoksa gösterilen çizim ve renk paleti */
+  /** Fotoğraf yoksa gösterilen çizim */
   gorsel: GorselTipi;
+  /** Çizimin renk kodu; formda seçili duran değer */
   palet: RenkAdi;
+  /** Çizimin çözülmüş paleti: bileşenler renk listesini sorgulamasın diye burada */
+  paletRenkleri: Palet;
   /** Yüklenmiş fotoğraflar, sıralı. Boşsa çizim gösterilir. */
   fotograflar: Fotograf[];
   fiyatKurus: number;
@@ -72,7 +79,7 @@ export type Urun = {
   rozet?: { ton: RozetTonu; yazi: string };
   puan: number;
   yorumSayisi: number;
-  renkler: RenkAdi[];
+  renkler: RenkSecenegi[];
   varyantlar: Varyant[];
   kumasIcerigi: string;
   yikamaTalimati: string;
@@ -106,22 +113,52 @@ export const SIRALAMA_ADLARI: Record<Siralama, string> = {
  * bedenler ise stok verisi.
  */
 
-export const RENK_ADLARI: Record<RenkAdi, string> = {
-  mint: "Nane",
-  krem: "Krem",
-  mercan: "Mercan",
-  mavi: "Mavi",
-  sari: "Sarı",
+/**
+ * Renkler artık kodda değil: `Color` tablosunda ve panelden yönetiliyor
+ * (K-66). Okumak için `server/renkler.ts`.
+ *
+ * Burada yalnızca **biçim** kalıyor: rengin neye benzediği (palet) ve
+ * listeden nasıl bulunduğu. Tarayıcıda çalışan bileşenler renk listesini
+ * özellik olarak alıyor, sorgulamıyor.
+ */
+
+/** Fotoğraf yokken çizilen ürün görselinin renkleri: c1 vurgu, c2 gövde, c3 çizgi. */
+export type Palet = { zemin: string; c1: string; c2: string; c3: string };
+
+/** Ekranlara geçen renk: kodu, görünen adı ve paleti. */
+export type RenkSecenegi = { kod: string; ad: string; palet: Palet };
+
+/**
+ * Listede olmayan renk için palet.
+ *
+ * Bir renk silinirse o renkteki eski sipariş satırları ve varyantlar
+ * duruyor; çizim renksiz kalmasın diye nötr bir kum tonu kullanılıyor.
+ * Marka renklerinden biri seçilseydi yanlış bir ürün rengi gösterirdi.
+ */
+export const VARSAYILAN_PALET: Palet = {
+  zemin: "#F4EFE6",
+  c1: "#D9CFC0",
+  c2: "#EAE3D6",
+  c3: "#8C8378",
 };
 
-/** Ürün görselleri henüz çizim; gerçek fotoğraflar çekildiğinde yerlerine oturacak. */
-export const PALET: Record<RenkAdi, { zemin: string; c1: string; c2: string; c3: string }> = {
-  mint: { zemin: "#E6F7EE", c1: "#8FD9B7", c2: "#B9E9D2", c3: "#3FA478" },
-  krem: { zemin: "#FBF3E4", c1: "#EBD3A8", c2: "#F7E7C9", c3: "#B08A45" },
-  mercan: { zemin: "#FDEBE9", c1: "#F5A79E", c2: "#FAC8C2", c3: "#C2433A" },
-  mavi: { zemin: "#EAF3FA", c1: "#A9CCE6", c2: "#CBE2F2", c3: "#3F82B4" },
-  sari: { zemin: "#FDF3DD", c1: "#F2CE85", c2: "#F9E6BC", c3: "#8F6410" },
-};
+export function renkBul(
+  renkler: readonly RenkSecenegi[],
+  kod: string | null | undefined,
+): RenkSecenegi | undefined {
+  if (!kod) return undefined;
+  return renkler.find((r) => r.kod === kod);
+}
+
+/** Rengin paleti; bilinmeyen kodda nötr palet. */
+export function paletCoz(renkler: readonly RenkSecenegi[], kod: string | null | undefined): Palet {
+  return renkBul(renkler, kod)?.palet ?? VARSAYILAN_PALET;
+}
+
+/** Rengin görünen adı; bilinmeyen kodda kodun kendisi — boş yazı hiç yazmıyor. */
+export function renkYaz(renkler: readonly RenkSecenegi[], kod: string): string {
+  return renkBul(renkler, kod)?.ad ?? kod;
+}
 
 export const GORSEL_TIPLERI: GorselTipi[] = [
   "zibin",

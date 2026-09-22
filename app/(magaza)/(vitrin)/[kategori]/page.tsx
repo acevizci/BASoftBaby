@@ -3,16 +3,14 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import UrunKarti from "@/ui/urun-karti";
 import {
-  RENK_ADLARI,
-  PALET,
   SIRALAMALAR,
   SIRALAMA_ADLARI,
   kategoriGetir,
   urunleriGetir,
-  type RenkAdi,
 } from "@/server/katalog";
 import { bedenler as bedenleriGetir } from "@/server/bedenler";
 import { yasGruplari } from "@/server/yas-gruplari";
+import { renkSecenekleri } from "@/server/renkler";
 
 /** "urunler" gerçek bir kategori değil; tüm katalogu gösteren liste. */
 const TUMU = "urunler";
@@ -98,10 +96,10 @@ export default async function KategoriSayfasi({
   });
 
   const suzgecVar = Boolean(aranan.yas || aranan.beden || aranan.renk || aranan.fiyat);
-  const renkler = Object.keys(RENK_ADLARI) as RenkAdi[];
-  const [bedenSecenekleri, yasSecenekleri] = await Promise.all([
+  const [bedenSecenekleri, yasSecenekleri, renkler] = await Promise.all([
     bedenleriGetir(),
     yasGruplari(),
+    renkSecenekleri(),
   ]);
 
   return (
@@ -173,20 +171,20 @@ export default async function KategoriSayfasi({
             <div className="mt-2 flex flex-wrap gap-2">
               {renkler.map((r) => (
                 <Link
-                  key={r}
-                  href={baglanti(kategori, aranan, "renk", r)}
-                  aria-pressed={aranan.renk === r}
+                  key={r.kod}
+                  href={baglanti(kategori, aranan, "renk", r.kod)}
+                  aria-pressed={aranan.renk === r.kod}
                   className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
-                    aranan.renk === r
+                    aranan.renk === r.kod
                       ? "border-mercan bg-mercan-soluk text-mercan-koyu"
                       : "border-cizgi bg-yuzey text-metin-2 hover:border-metin-3"
                   }`}
                 >
                   <span
                     className="h-3 w-3 rounded-full ring-1 ring-black/10"
-                    style={{ background: PALET[r].c1 }}
+                    style={{ background: r.palet.c1 }}
                   />
-                  {RENK_ADLARI[r]}
+                  {r.ad}
                 </Link>
               ))}
             </div>

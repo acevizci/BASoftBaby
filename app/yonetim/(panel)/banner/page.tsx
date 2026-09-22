@@ -2,6 +2,7 @@ import Link from "next/link";
 import HeroBanner from "@/ui/hero-banner";
 import Katlanir from "@/ui/katlanir";
 import { BANNER_GORSELLERI, BANNER_PALETLERI, bannerSaniyeGetir, tumBannerlar } from "@/server/banner";
+import { BANNER_PALET_ADLARI } from "@/ui/banner-bicim";
 import { bannerCevir, bannerKaydet, bannerSil, bannerSuresiKaydet } from "@/server/yonetim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import PanelBildirim, { ORTAK_HATALAR } from "@/ui/panel-bildirim";
@@ -13,13 +14,6 @@ const GIRDI =
   "rounded-[10px] border-[1.5px] border-cizgi bg-yuzey px-3 py-2 text-sm text-metin outline-none focus:border-mercan";
 const ETIKET = "text-xs font-bold text-metin-2";
 
-const PALET_ADLARI: Record<string, string> = {
-  sari: "Sarı",
-  mint: "Nane",
-  mercan: "Mercan",
-  mavi: "Mavi",
-  krem: "Krem",
-};
 
 function tarihYaz(t: Date | null): string {
   return t ? t.toLocaleDateString("tr-TR") : "—";
@@ -119,7 +113,7 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
                 <span className="min-w-0 flex-1">
                   <span className="font-semibold">{b.baslik}</span>
                   <span className="block text-xs text-metin-3">
-                    {PALET_ADLARI[b.palet] ?? b.palet} · {b.gorsel}
+                    {BANNER_PALET_ADLARI[b.palet] ?? b.palet} · {b.gorsel}
                     {b.dugmeYazi ? ` · ${b.dugmeYazi} → ${b.dugmeLink}` : ""}
                   </span>
                 </span>
@@ -204,7 +198,7 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
               <select name="palet" defaultValue="sari" className={GIRDI}>
                 {BANNER_PALETLERI.map((p) => (
                   <option key={p} value={p}>
-                    {PALET_ADLARI[p]}
+                    {BANNER_PALET_ADLARI[p]}
                   </option>
                 ))}
               </select>

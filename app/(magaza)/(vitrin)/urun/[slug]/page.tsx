@@ -17,7 +17,7 @@ import {
   urunGetir,
   urununBedenleri,
 } from "@/server/katalog";
-import { renginFotograflari, type RenkAdi } from "@/ui/katalog-bicim";
+import { paletCoz, renginFotograflari, type RenkAdi } from "@/ui/katalog-bicim";
 
 export async function generateMetadata({ params }: PageProps<"/urun/[slug]">): Promise<Metadata> {
   const { slug } = await params;
@@ -62,8 +62,8 @@ export default async function UrunSayfasi({
   // sunucuda süzülüyor ve "mavisi" diye bağlantı paylaşılabiliyor (K-48).
   // Adresten gelen değer ürünün kendi renkleriyle doğrulanıyor.
   const seciliRenk: RenkAdi =
-    typeof renk === "string" && (urun.renkler as string[]).includes(renk)
-      ? (renk as RenkAdi)
+    typeof renk === "string" && urun.renkler.some((r) => r.kod === renk)
+      ? renk
       : (urun.varyantlar.find((v) => v.stok > 0) ?? urun.varyantlar[0]).renk;
 
   const galeriFotograflari = renginFotograflari(urun.fotograflar, seciliRenk);
@@ -123,7 +123,7 @@ export default async function UrunSayfasi({
         <UrunGalerisi
           fotograflar={galeriFotograflari}
           gorsel={urun.gorsel}
-          palet={seciliRenk}
+          palet={paletCoz(urun.renkler, seciliRenk)}
           renkler={urun.renkler}
           ad={urun.ad}
         />

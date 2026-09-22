@@ -1,5 +1,5 @@
 import UrunGorseli from "@/ui/urun-gorseli";
-import type { Fotograf, GorselTipi, RenkAdi } from "@/ui/katalog-bicim";
+import type { Fotograf, GorselTipi, Palet } from "@/ui/katalog-bicim";
 
 /**
  * Ürün görseli: fotoğraf varsa fotoğraf, yoksa çizim.
@@ -19,7 +19,7 @@ export default function UrunFoto({
 }: {
   fotograf?: Fotograf;
   gorsel: GorselTipi;
-  palet: RenkAdi;
+  palet: Palet;
   className?: string;
   sizes?: string;
   oncelikli?: boolean;

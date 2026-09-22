@@ -6,7 +6,6 @@ import { siparisGetirPanel } from "@/server/siparis";
 import { belgeBasilabilirMi } from "@/server/siparis-belge";
 import { kunyeGetir } from "@/server/yasal";
 import { tasiyiciAdi } from "@/server/kargo";
-import { RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
@@ -136,7 +135,7 @@ export default async function IrsaliyeSayfasi({
               <tr key={i} className="border-b border-black/10">
                 <td className="py-2">{s.urunAd}</td>
                 <td className="py-2">{s.beden}</td>
-                <td className="py-2">{RENK_ADLARI[s.renk as RenkAdi] ?? s.renkAdi}</td>
+                <td className="py-2">{s.renkAdi}</td>
                 <td className="rakam py-2 text-right">{s.adet} adet</td>
               </tr>
             ))}

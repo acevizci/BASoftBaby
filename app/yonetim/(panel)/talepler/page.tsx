@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { db } from "@/server/veritabani";
 import { talebiCevapla } from "@/server/talep-yonetim";
-import { RENK_ADLARI, fiyatYaz, type RenkAdi } from "@/ui/katalog-bicim";
+import { fiyatYaz } from "@/ui/katalog-bicim";
+import { renkAdlari } from "@/server/renkler";
 import {
   sebepAdi,
   talepDurumAdi,
@@ -29,6 +30,7 @@ export default async function TalepEkrani({ searchParams }: PageProps<"/yonetim/
 
   const { durum, kayit, hata } = await searchParams;
   const secili = typeof durum === "string" ? durum : "acik";
+  const adlar = await renkAdlari();
 
   const kosul =
     secili === "hepsi"
@@ -245,7 +247,7 @@ export default async function TalepEkrani({ searchParams }: PageProps<"/yonetim/
                       )
                       .map((v) => (
                         <option key={v.id} value={v.id}>
-                          {v.beden} · {RENK_ADLARI[v.renk as RenkAdi] ?? v.renk} ({v.stok} adet)
+                          {v.beden} · {adlar[v.renk] ?? v.renk} ({v.stok} adet)
                         </option>
                       ))}
                   </select>

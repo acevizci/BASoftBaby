@@ -4,12 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import SepeteEkle from "@/ui/sepete-ekle";
 import StokBildirimi from "@/ui/stok-bildirimi";
-import {
-  RENK_ADLARI,
-  PALET,
-  type RenkAdi,
-  type Varyant,
-} from "@/ui/katalog-bicim";
+import { renkYaz, type RenkAdi, type RenkSecenegi, type Varyant } from "@/ui/katalog-bicim";
 
 /** Beden adı → boy/kilo. Bedenler veritabanından geldiği için sunucudan
  *  geçiyor: bu bir istemci bileşeni, veritabanına bakamaz (K-56). */
@@ -31,7 +26,7 @@ export default function VaryantSecici({
 }: {
   bedenler: string[];
   olculer: BedenOlculeri;
-  renkler: RenkAdi[];
+  renkler: RenkSecenegi[];
   /** Adres satırından gelen renk; galeri de buna göre süzülüyor (K-48). */
   seciliRenk: RenkAdi;
   varyantlar: Varyant[];
@@ -74,7 +69,7 @@ export default function VaryantSecici({
                 type="button"
                 onClick={() => setBeden(b)}
                 aria-pressed={beden === b}
-                title={bedendeStok ? b : `${b} · ${RENK_ADLARI[renk]} renkte tükendi`}
+                title={bedendeStok ? b : `${b} · ${renkYaz(renkler, renk)} renkte tükendi`}
                 className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
                   beden === b
                     ? `border-mercan bg-mercan-soluk text-mercan-koyu ${bedendeStok ? "" : "line-through"}`
@@ -101,25 +96,25 @@ export default function VaryantSecici({
       </div>
 
       <div>
-        <p className="text-sm font-bold">Renk · {RENK_ADLARI[renk]}</p>
+        <p className="text-sm font-bold">Renk · {renkYaz(renkler, renk)}</p>
         <div className="mt-2 flex flex-wrap gap-2">
           {renkler.map((r) => {
-            const v = bul(varyantlar, beden, r);
+            const v = bul(varyantlar, beden, r.kod);
             const yok = !v || v.stok === 0;
             return (
               <Link
-                key={r}
-                href={`/urun/${slug}?renk=${r}#galeri`}
-                aria-current={renk === r ? "true" : undefined}
-                aria-label={yok ? `${RENK_ADLARI[r]} — bu bedende tükendi` : RENK_ADLARI[r]}
-                title={yok ? `${RENK_ADLARI[r]} · ${beden} bedeninde tükendi` : RENK_ADLARI[r]}
+                key={r.kod}
+                href={`/urun/${slug}?renk=${r.kod}#galeri`}
+                aria-current={renk === r.kod ? "true" : undefined}
+                aria-label={yok ? `${r.ad} — bu bedende tükendi` : r.ad}
+                title={yok ? `${r.ad} · ${beden} bedeninde tükendi` : r.ad}
                 // Yuvarlak bir renge üstü çizili yapılamıyor; karşılığı
                 // çapraz çizgi. Yalnızca soluklaştırmak belirsizdi: "seçili
                 // değil" mi "yok" mu anlaşılmıyordu (K-49).
                 className={`tukenmis block h-9 w-9 rounded-full ring-2 transition ${
-                  renk === r ? "ring-mercan" : "ring-cizgi hover:ring-metin-3"
+                  renk === r.kod ? "ring-mercan" : "ring-cizgi hover:ring-metin-3"
                 } ${yok ? "tukenmis-acik opacity-50" : ""}`}
-                style={{ background: PALET[r].c1 }}
+                style={{ background: r.palet.c1 }}
               />
             );
           })}

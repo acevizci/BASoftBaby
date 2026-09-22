@@ -122,6 +122,21 @@ Beden-boy-kilo tablosu mağazadaki beden rehberinde olduğu gibi ürün
 düzenleme ve stok ekranlarında da var; rakamlar tek kaynaktan geliyor
 (K-55, K-56).
 
+**Yaş grupları da aynı ekranda** (`/yonetim/bedenler`): ana sayfadaki "Yaşa
+göre" kutuları ve süzgeçteki yaş etiketleri buradan ekleniyor, sıralanıyor ve
+kapatılıyor. Grup kodu adresin parçası (`/urunler?yas=6-12`), o yüzden adres
+güvenli hâline çevriliyor; kod değişince bağlı bedenler de taşınıyor. Hiç grup
+yoksa ana sayfadaki bölüm ve süzgeçteki başlık hiç çizilmiyor (K-65).
+
+**Renkler panelden yönetiliyor** (`/yonetim/renkler`): yeni renk ekleme, adını
+ve çizim paletini değiştirme, sıralama, kapatma ve silme. Palet kaydın
+parçası — fotoğrafı olmayan ürünün çizimi bu dört renkle boyanıyor ve form
+canlı önizleme gösteriyor. Kod değiştirilince varyantlar, renge özel
+fotoğraflar, ürün çizimleri ve afişler birlikte taşınıyor; satılmış
+siparişlerin kaydı değişmiyor. Kullanılan renk silinemiyor — kapatılıyor;
+kapalı renk süzgeçten ve formdan düşüyor ama var olan ürünlerde adıyla
+görünmeye devam ediyor. Son açık renk kapatılamıyor (K-66).
+
 **Ödemesi tamamlanmamış ya da iptal edilmiş siparişe kargo etiketi ve fatura
 basılmıyor** — etiket basmak "gönderiyorum" demek, fatura ise satışın
 belgesi. Kural tek modülde (`server/siparis-belge.ts`); bağlantılar

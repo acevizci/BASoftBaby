@@ -24,6 +24,8 @@ const YOLLAR: Record<IkonAdi, string> = {
   urun: "M20 8 12 4 4 8m16 0v8l-8 4-8-4V8m16 0-8 4m0 0L4 8m8 4v8",
   kategori: "M4 5h7v7H4V5Zm9 0h7v7h-7V5ZM4 14h7v5H4v-5Zm9 0h7v5h-7v-5Z",
   beden: "M4 8h16M4 8v8m16-8v8M8 8v3m4-3v4m4-4v3M4 16h16",
+  // Üç halka: paletteki renk noktalarının kendisi.
+  renk: "M9 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm6 0a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-3-5a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z",
   stok: "M4 7l8-4 8 4v10l-8 4-8-4V7Zm8 4v10m0-10 8-4m-8 4L4 7",
   kampanya: "M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1Zm13-2a4 4 0 0 1 0 6m3-9a8 8 0 0 1 0 12",
   banner: "M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm0 11 4-4 3 3 4-5 6 6",

@@ -20,9 +20,7 @@ import { faturaOlustur } from "@/server/fatura";
 import { belgeBasilabilirMi } from "@/server/siparis-belge";
 import { irsaliyeOlustur, irsaliyeSevkiniYaz } from "@/server/irsaliye";
 import { slugYap } from "@/server/slug";
-import { RENK_ADLARI } from "@/ui/katalog-bicim";
-
-const RENK_ADLARI_ANAHTARLARI = Object.keys(RENK_ADLARI);
+import { renkKodlari } from "@/server/renkler";
 import { aramaMetniniTazele } from "@/server/arama";
 import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
 import { stokAdresi, suzgeciCoz as stokSuzgeciniCoz } from "@/server/stok-ekrani";
@@ -88,6 +86,11 @@ export async function urunKaydet(form: FormData): Promise<void> {
   const kategoriSlug = metin(form, "kategori");
   const kategori = await db.category.findUniqueOrThrow({ where: { slug: kategoriSlug } });
 
+  // Çizim rengi boş gelirse listedeki ilk renk: "mint" sabiti renk listesi
+  // panele taşınınca (K-66) silinmiş bir renge işaret edebilirdi.
+  const renkler = await renkKodlari();
+  const paletGirdisi = metin(form, "palet");
+
   const rozetYazi = metin(form, "rozetYazi");
   const alanlar = {
     ad,
@@ -104,7 +107,7 @@ export async function urunKaydet(form: FormData): Promise<void> {
     rozetTon: rozetYazi ? metin(form, "rozetTon") : null,
     rozetYazi: rozetYazi || null,
     gorsel: metin(form, "gorsel") || "zibin",
-    palet: metin(form, "palet") || "mint",
+    palet: renkler.includes(paletGirdisi) ? paletGirdisi : (renkler[0] ?? paletGirdisi),
     aktif: form.get("aktif") === "on",
   };
 
@@ -1229,9 +1232,7 @@ export async function fotografAdiKaydet(veri: FormData): Promise<void> {
 
   // Fotoğrafın gösterdiği renk; boş bırakılırsa her renkte görünüyor (K-48).
   const renkGirdisi = String(veri.get("renk") ?? "").trim();
-  const renk = (RENK_ADLARI_ANAHTARLARI as readonly string[]).includes(renkGirdisi)
-    ? renkGirdisi
-    : null;
+  const renk = (await renkKodlari()).includes(renkGirdisi) ? renkGirdisi : null;
 
   await db.productImage.update({ where: { id }, data: { altMetin, renk } });
   vitriniYenile();

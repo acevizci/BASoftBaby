@@ -2,7 +2,8 @@ import Link from "next/link";
 import { db } from "@/server/veritabani";
 import { planYap, type Hata, type Satir } from "@/server/toplu-urun";
 import { topluOnizle, topluUygula, topluVazgec } from "@/server/toplu-urun-islem";
-import { RENK_ADLARI, fiyatYaz } from "@/ui/katalog-bicim";
+import { fiyatYaz } from "@/ui/katalog-bicim";
+import { renkSecenekleri } from "@/server/renkler";
 import { bedenAdlari } from "@/server/bedenler";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
@@ -17,11 +18,11 @@ const KUCUK_DUGME =
 /**
  * Beklenen sütunlar; ekranda da burada da tek liste.
  *
- * Beden listesi veritabanından geliyor (K-56): panelden yeni bir beden
- * eklendiğinde bu yardım metni de, indirilen şablon da kendiliğinden
- * güncelleniyor.
+ * Beden (K-56) ve renk (K-66) listeleri veritabanından geliyor: panelden
+ * yeni bir beden ya da renk eklendiğinde bu yardım metni de, indirilen şablon
+ * da kendiliğinden güncelleniyor.
  */
-const sutunAciklamalari = (bedenler: string[]): [string, string][] => [
+const sutunAciklamalari = (bedenler: string[], renkler: string[]): [string, string][] => [
   ["Ürün adı", "Zorunlu. Aynı adı taşıyan satırlar tek ürün olur."],
   ["Kategori", "Zorunlu. Panelde açık bir kategorinin adı ya da adresi."],
   ["Fiyat", "Yeni üründe zorunlu. 249,90 ya da 249.90."],
@@ -33,11 +34,11 @@ const sutunAciklamalari = (bedenler: string[]): [string, string][] => [
   ["Üretici", "İsteğe bağlı."],
   ["Özellikler", "Madde madde; aralarına | koy."],
   ["Beden", `Zorunlu. ${bedenler.join(", ")}.`],
-  ["Renk", `Zorunlu. ${Object.values(RENK_ADLARI).join(", ")}.`],
+  ["Renk", `Zorunlu. ${renkler.join(", ")}.`],
   ["Stok", "Zorunlu. Tam sayı."],
   ["SKU", "Boş bırakılırsa üretilir."],
   ["Görsel", "Çizim tipi. Boşsa zıbın."],
-  ["Palet", "Kart rengi. Boşsa nane."],
+  ["Palet", `Kart rengi. Boşsa ${renkler[0] ?? "listedeki ilk renk"}.`],
   ["Aktif", "Evet/Hayır. Boşsa evet."],
 ];
 
@@ -49,7 +50,10 @@ export default async function TopluYukleme({
   await yoneticiGerekli();
 
   const { yukleme, hata, mesaj, urun, varyant } = await searchParams;
-  const SUTUN_ACIKLAMA = sutunAciklamalari(await bedenAdlari());
+  const SUTUN_ACIKLAMA = sutunAciklamalari(
+    await bedenAdlari(),
+    (await renkSecenekleri()).map((r) => r.ad),
+  );
 
   const kayit =
     typeof yukleme === "string"

@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import FotografYonetimi from "@/ui/fotograf-yonetimi";
-import type { RenkAdi } from "@/ui/katalog-bicim";
 import UrunFormu, { UrunKaydetDugmesi } from "@/ui/urun-formu";
 import { db } from "@/server/veritabani";
 import { bedenSirasi, sonSira, bedenler as bedenleriGetir } from "@/server/bedenler";
+import { renkSecenekleri, tumRenkSecenekleri } from "@/server/renkler";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import UrunSilme from "@/ui/urun-silme";
 
@@ -52,12 +52,21 @@ export default async function UrunDuzenle({
 
   // Beden sırası ve yeni varyant eklerken seçilebilecek bedenler
   // veritabanından geliyor (K-56).
-  const [sira, secilebilirBedenler] = await Promise.all([bedenSirasi(), bedenleriGetir()]);
+  const [sira, secilebilirBedenler, secilebilirRenkler, tumRenkler] = await Promise.all([
+    bedenSirasi(),
+    bedenleriGetir(),
+    renkSecenekleri(),
+    // Fotoğraf ataması ve varyant listesi kapalı renkleri de gösteriyor:
+    // kapatılan bir rengin var olan varyantları duruyor, adsız kalmasınlar.
+    tumRenkSecenekleri(),
+  ]);
 
   const sirali = [...urun.variants].sort((a, b) => {
     const fark = sonSira(sira, a.beden) - sonSira(sira, b.beden);
     return fark !== 0 ? fark : a.renk.localeCompare(b.renk, "tr");
   });
+
+  const urunRenkleri = new Set(sirali.map((v) => v.renk));
 
   const eklenen = typeof fkayit === "string" ? Number(fkayit) : undefined;
   const fotografSonucu = fsil === "1" ? "silindi" : fsira === "1" ? "sira" : undefined;
@@ -68,6 +77,7 @@ export default async function UrunDuzenle({
         kaydedildi={kayit === "1"}
         kategoriler={kategoriler.map((k) => ({ slug: k.slug, ad: k.ad }))}
         bedenler={secilebilirBedenler.map((b) => ({ id: b.id, ad: b.ad }))}
+        renkler={secilebilirRenkler}
         urun={{
           slug: urun.slug,
           ad: urun.ad,
@@ -113,7 +123,7 @@ export default async function UrunDuzenle({
           renk: g.renk,
         }))}
         // Fotoğrafa yalnızca ürünün kendi renkleri atanabiliyor.
-        renkler={[...new Set(sirali.map((v) => v.renk))] as RenkAdi[]}
+        renkler={tumRenkler.filter((r) => urunRenkleri.has(r.kod))}
       />
 
       {/* Kaydet düğmesi sayfanın sonunda: form yukarıda bitiyor ama

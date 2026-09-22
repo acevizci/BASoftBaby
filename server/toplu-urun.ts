@@ -24,7 +24,7 @@ import { slugYap } from "@/server/slug";
 import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
 import { aramaMetinleriniTazele } from "@/server/arama";
 import { normalle } from "@/server/arama-metin";
-import { GORSEL_TIPLERI, RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
+import { GORSEL_TIPLERI, type RenkAdi, type RenkSecenegi } from "@/ui/katalog-bicim";
 
 /** Tablodaki bir satırın çözülmüş hâli. */
 export type Satir = {
@@ -112,12 +112,16 @@ function evetMi(ham: string, varsayilan: boolean): boolean {
   return ["evet", "e", "1", "x", "var", "true", "acik", "aktif", "yayinda"].includes(m);
 }
 
-/** Renk hem kodla ("mint") hem görünen adıyla ("Nane") yazılabiliyor. */
-function renkCoz(ham: string): RenkAdi | null {
+/**
+ * Renk hem kodla ("mint") hem görünen adıyla ("Nane") yazılabiliyor.
+ *
+ * Kabul edilen renkler bedenler gibi veritabanından geliyor ve çağıran
+ * tarafından veriliyor: bu modül senkron kalsın diye (K-66).
+ */
+function renkCoz(ham: string, renkler: readonly RenkSecenegi[]): RenkAdi | null {
   const m = anahtar(ham);
   if (!m) return null;
-  const kodlar = Object.keys(RENK_ADLARI) as RenkAdi[];
-  return kodlar.find((k) => k === m || anahtar(RENK_ADLARI[k]) === m) ?? null;
+  return renkler.find((r) => r.kod === m || anahtar(r.ad) === m)?.kod ?? null;
 }
 
 /**
@@ -243,6 +247,8 @@ export function satirlariCoz(
   ham: string[][],
   /** Kabul edilen bedenler, sırasıyla (bkz. server/bedenler.ts). */
   bedenler: readonly string[],
+  /** Kabul edilen renkler, sırasıyla (bkz. server/renkler.ts). */
+  renkler: readonly RenkSecenegi[],
 ): { satirlar: Satir[]; hatalar: Hata[] } {
   const harita = sutunHaritasi(basliklar);
   const hatalar: Hata[] = [];
@@ -295,9 +301,9 @@ export function satirlariCoz(
     }
 
     const renkHam = al(h, "renk");
-    const renk = renkCoz(renkHam);
+    const renk = renkCoz(renkHam, renkler);
     if (!renk) {
-      const secenekler = Object.entries(RENK_ADLARI).map(([k, a]) => `${a} (${k})`);
+      const secenekler = renkler.map((r) => `${r.ad} (${r.kod})`);
       hatalar.push({
         satirNo,
         sutun: "Renk",
@@ -322,7 +328,7 @@ export function satirlariCoz(
     }
 
     const paletHam = al(h, "palet");
-    const palet = paletHam ? renkCoz(paletHam) : "mint";
+    const palet = paletHam ? renkCoz(paletHam, renkler) : (renkler[0]?.kod ?? "");
     if (!palet) {
       hatalar.push({ satirNo, sutun: "Palet", mesaj: `"${paletHam}" tanınmadı.` });
     }
@@ -333,7 +339,7 @@ export function satirlariCoz(
         hatalar.push({
           satirNo,
           sutun: "Beden/Renk",
-          mesaj: `"${ad}" için ${beden} ${RENK_ADLARI[renk]} dosyada birden çok kez var.`,
+          mesaj: `"${ad}" için ${beden} ${renkler.find((r) => r.kod === renk)?.ad ?? renk} dosyada birden çok kez var.`,
         });
       }
       gorulen.add(imza);

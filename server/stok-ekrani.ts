@@ -20,6 +20,7 @@ import "server-only";
  */
 
 import { db } from "@/server/veritabani";
+import { renkAdlari } from "@/server/renkler";
 import { kelimeler } from "@/server/arama-metin";
 
 /** Bu sayı ve altı "azalıyor" sayılıyor; sıfır zaten "bitti". */
@@ -41,6 +42,8 @@ export type StokBedeni = {
   id: string;
   beden: string;
   renk: string;
+  /** Rengin görünen adı; liste burada çözülüyor, ekran sorgu yapmasın (K-66). */
+  renkAdi: string;
   stok: number;
 };
 
@@ -143,6 +146,7 @@ export async function stokSayfasi(s: StokSuzgeci): Promise<StokSayfasi> {
     take: SAYFA_BOYU,
   });
 
+  const adlar = await renkAdlari();
   const urunler: StokUrunu[] = satirlar.map((u) => ({
     id: u.id,
     slug: u.slug,
@@ -151,7 +155,13 @@ export async function stokSayfasi(s: StokSuzgeci): Promise<StokSayfasi> {
     toplam: u.variants.reduce((t, v) => t + v.stok, 0),
     bitenAdedi: u.variants.filter((v) => v.stok === 0).length,
     azalanAdedi: u.variants.filter((v) => v.stok > 0 && v.stok <= AZALAN_ESIK).length,
-    bedenler: u.variants.map((v) => ({ id: v.id, beden: v.beden, renk: v.renk, stok: v.stok })),
+    bedenler: u.variants.map((v) => ({
+      id: v.id,
+      beden: v.beden,
+      renk: v.renk,
+      renkAdi: adlar[v.renk] ?? v.renk,
+      stok: v.stok,
+    })),
   }));
 
   return { urunler, sayfa, sonSayfa, toplamAdet, sayaclar: { sorunlu, biten, hepsi } };

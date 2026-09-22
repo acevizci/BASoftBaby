@@ -208,6 +208,13 @@ yönetiliyor (K-65). `Size.yasKodu` buraya da yabancı anahtarla bağlı değil,
 kodu metin olarak tutuyor — kod adresin parçası (`/urunler?yas=6-12`), o
 yüzden değişince bedenler aynı işlemde taşınıyor.
 
+**Color** — `kod` (tekil), `ad`, `sira`, `aktif` ve çizim paleti (`zemin`,
+`c1`, `c2`, `c3`). Renk listesi panelden yönetiliyor (K-66). `ProductVariant.renk`,
+`ProductImage.renk`, `Product.palet` ve `HeroBanner.palet` buraya yabancı
+anahtarla bağlı değil, kodu metin olarak tutuyor; kod değişince dördü birden
+aynı işlemde taşınıyor, sipariş satırları değişmiyor. Palet kaydın parçası:
+fotoğrafı olmayan ürünün çizimi bu dört renkle boyanıyor.
+
 ### Müşteri ve sipariş
 
 **Customer** *(kuruldu)* — `eposta` (tekil), `adSoyad`, `telefon`,

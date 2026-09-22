@@ -22,7 +22,7 @@ import "server-only";
 import { db } from "@/server/veritabani";
 import { ETIKETLER } from "@/server/onbellek";
 import { updateTag } from "next/cache";
-import { RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
+import { renkAdlari } from "@/server/renkler";
 
 export const EN_DUSUK_PUAN = 1;
 export const EN_YUKSEK_PUAN = 5;
@@ -156,6 +156,7 @@ export async function degerlendirilebilirler(
 
   if (!siparis || siparis.durum !== "teslim") return [];
 
+  const adlar = await renkAdlari();
   return siparis.satirlar
     .filter((s) => !s.yorum && s.variant?.productId)
     .map((s) => ({
@@ -163,7 +164,7 @@ export async function degerlendirilebilirler(
       urunAd: s.urunAd,
       slug: s.slug,
       beden: s.beden,
-      renk: RENK_ADLARI[s.renk as RenkAdi] ?? s.renk,
+      renk: adlar[s.renk] ?? s.renk,
     }));
 }
 

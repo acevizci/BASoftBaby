@@ -97,6 +97,7 @@ export function menuyuKur(
           { yol: "/yonetim/urunler", ad: "Ürünler", ikon: "urun", rozet: s.fotografsiz, ton: "hatirlatma" },
           { yol: "/yonetim/kategoriler", ad: "Kategoriler", ikon: "kategori" },
           { yol: "/yonetim/bedenler", ad: "Bedenler", ikon: "beden" },
+          { yol: "/yonetim/renkler", ad: "Renkler", ikon: "renk" },
           { yol: "/yonetim/stok", ad: "Stok", ikon: "stok", rozet: s.sorunluStok, ton: "hatirlatma" },
         ],
       },

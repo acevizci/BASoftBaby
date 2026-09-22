@@ -10,7 +10,6 @@ import {
   type StokBedeni,
   type StokUrunu,
 } from "@/server/stok-ekrani";
-import { RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
 import { bedenSirasi, sonSira } from "@/server/bedenler";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
@@ -275,7 +274,7 @@ function Bedenler({ bedenler }: { bedenler: StokBedeni[] }) {
         <label key={v.id} className="flex items-center gap-3">
           <span className="flex-1 text-sm">
             {v.beden}
-            <span className="text-metin-3"> · {RENK_ADLARI[v.renk as RenkAdi] ?? v.renk}</span>
+            <span className="text-metin-3"> · {v.renkAdi}</span>
           </span>
           <input
             name={`stok-${v.id}`}

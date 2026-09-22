@@ -1,16 +1,13 @@
 import Link from "next/link";
 import { KISA_LISTE, KRITIK_STOK, panelOzetiGetir } from "@/server/panel-ozet";
-import { RENK_ADLARI, fiyatYaz, type RenkAdi } from "@/ui/katalog-bicim";
+import { fiyatYaz } from "@/ui/katalog-bicim";
+import { renkAdlari } from "@/server/renkler";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import PanelBildirim from "@/ui/panel-bildirim";
 
 export const dynamic = "force-dynamic";
 
 const KART = "rounded-marka border border-cizgi bg-yuzey p-5";
-
-function renkAdi(renk: string): string {
-  return RENK_ADLARI[renk as RenkAdi] ?? renk;
-}
 
 /**
  * Sahibe özel bir sayfaya girmeye çalışan yönetici buraya yollanıyor
@@ -28,6 +25,8 @@ export default async function YonetimOzeti({ searchParams }: PageProps<"/yonetim
 
   const { yetki } = await searchParams;
   const o = await panelOzetiGetir();
+  const adlar = await renkAdlari();
+  const renkAdi = (renk: string) => adlar[renk] ?? renk;
 
   const fark = o.bugunAdet - o.dunAdet;
   const bekleyenIs = o.isler.filter((i) => i.acil);

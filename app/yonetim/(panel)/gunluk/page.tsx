@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { gunlukListe } from "@/server/gunluk";
-import { RENK_ADLARI, fiyatYaz, type RenkAdi } from "@/ui/katalog-bicim";
+import { fiyatYaz } from "@/ui/katalog-bicim";
+import { renkAdlari } from "@/server/renkler";
 import { durumAdi, durumRengi, yontemAdi } from "@/ui/siparis-bicim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
@@ -29,6 +30,7 @@ export default async function GunlukEkrani() {
   await yoneticiGerekli();
 
   const g = await gunlukListe();
+  const adlar = await renkAdlari();
 
   return (
     <div className="flex flex-col gap-5">
@@ -115,7 +117,7 @@ export default async function GunlukEkrani() {
                         )}
                       </td>
                       <td className="py-2">{s.beden}</td>
-                      <td className="py-2">{RENK_ADLARI[s.renk as RenkAdi] ?? s.renk}</td>
+                      <td className="py-2">{adlar[s.renk] ?? s.renk}</td>
                       <td className="rakam py-2 text-right font-bold">{s.adet}</td>
                     </tr>
                   ))}

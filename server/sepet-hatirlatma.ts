@@ -23,7 +23,7 @@ import "server-only";
 import { db } from "@/server/veritabani";
 import { sepetHatirlatmaEpostasi } from "@/server/eposta";
 import { jetonUret } from "@/server/uyelik";
-import { RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
+import { renkAdlari } from "@/server/renkler";
 
 /**
  * Sepet bu kadar süre dokunulmadan kaldıysa bırakılmış sayılıyor.
@@ -77,12 +77,13 @@ export async function birakilanSepetleriHatirlat(): Promise<HatirlatmaSonucu> {
 
     const jeton = await jetonUret(musteri.id, "pazarlama-iptal");
 
+    const adlar = await renkAdlari();
     const sonuc = await sepetHatirlatmaEpostasi(musteri.eposta, {
       adSoyad: musteri.adSoyad,
       satirlar: sepet.satirlar.map((s) => ({
         ad: s.variant.product.ad,
         beden: s.variant.beden,
-        renk: RENK_ADLARI[s.variant.renk as RenkAdi] ?? s.variant.renk,
+        renk: adlar[s.variant.renk] ?? s.variant.renk,
         adet: s.adet,
       })),
       iptalJetonu: jeton,

@@ -16,7 +16,7 @@
 import { db } from "@/server/veritabani";
 import { kargoHesapla, kuponOku, sepetIdOku, type SatisAyari } from "@/server/sepet";
 import { enIyiKampanya, gecerliKampanyalar } from "@/server/kampanya";
-import { RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
+import { renkAdlari } from "@/server/renkler";
 import { takipAdresi, tasiyiciAdi } from "@/server/kargo";
 import { suresiDolanlariKapat } from "@/server/odeme-suresi";
 
@@ -263,7 +263,12 @@ type SiparisSatiriKaydi = {
   fiyatKurus: number;
 };
 
+/**
+ * Renk adları dışarıdan veriliyor: renk listesi artık veritabanında (K-66)
+ * ama bu işlev senkron kalsın diye çağıran okuyup geçiriyor.
+ */
 function siparisYap(
+  adlar: Record<string, string>,
   s: Omit<
     Siparis,
     "satirlar" | "sonOdemeHatasi" | "odemeRef" | "taksit" | "tasiyiciAdi" | "takipAdresi"
@@ -283,7 +288,7 @@ function siparisYap(
     takipAdresi: gonderi ? takipAdresi(gonderi.tasiyici, gonderi.takipNo) : undefined,
     satirlar: s.satirlar.map((k) => ({
       ...k,
-      renkAdi: RENK_ADLARI[k.renk as RenkAdi] ?? k.renk,
+      renkAdi: adlar[k.renk] ?? k.renk,
       araToplamKurus: k.fiyatKurus * k.adet,
     })),
   };
@@ -308,7 +313,7 @@ export async function siparisGetir(numara: string, eposta: string): Promise<Sipa
   if (kayit.eposta.toLowerCase() !== eposta.trim().toLowerCase()) {
     return undefined;
   }
-  return siparisYap(kayit);
+  return siparisYap(await renkAdlari(), kayit);
 }
 
 /** Panel için: e-posta doğrulaması aranmaz, panel zaten şifreli. */
@@ -321,5 +326,5 @@ export async function siparisGetirPanel(numara: string): Promise<Siparis | undef
       gonderiler: { orderBy: { olusturuldu: "desc" }, take: 1 },
     },
   });
-  return kayit ? siparisYap(kayit) : undefined;
+  return kayit ? siparisYap(await renkAdlari(), kayit) : undefined;
 }

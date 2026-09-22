@@ -23,7 +23,7 @@ import "server-only";
  */
 
 import { db } from "@/server/veritabani";
-import { RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
+import { renkAdlari } from "@/server/renkler";
 
 export type Donem = { baslangic: Date; bitis: Date; ad: string };
 
@@ -298,6 +298,7 @@ export async function raporCsv(donem: Donem): Promise<string> {
     "Satır tutarı", "Sipariş ara toplam", "Sipariş indirim", "Sipariş kargo", "Sipariş toplam",
   ];
 
+  const adlar = await renkAdlari();
   const govde = satirlar.flatMap((s) =>
     s.satirlar.map((u) =>
       [
@@ -311,7 +312,7 @@ export async function raporCsv(donem: Donem): Promise<string> {
         s.ilce,
         u.urunAd,
         u.beden,
-        RENK_ADLARI[u.renk as RenkAdi] ?? u.renk,
+        adlar[u.renk] ?? u.renk,
         String(u.adet),
         tutar(u.fiyatKurus),
         tutar(u.adet * u.fiyatKurus),

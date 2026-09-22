@@ -3348,6 +3348,71 @@ olmayanın silindiğini. Hepsi bir de JavaScript kapalı tarayıcıda.
 
 ---
 
+### K-66 · Renkler panelden
+
+Beden (K-56) ve yaş grubu (K-65) tabloya taşındıktan sonra **renk kalan son
+sabit listeydi**: mağazayı işleten kişi "Pudra" ekleyemiyor, "Nane"nin adını
+değiştiremiyordu. Renkler artık `Color` tablosunda ve kendi panel
+ekranından yönetiliyor.
+
+**Renk yalnızca bir ad değil — palet de kaydın parçası.** Fotoğrafı olmayan
+ürünün çizimi dört renkle boyanıyor (zemin, gövde, vurgu, çizgi). Ad panelden
+değişip palet kodda kalsaydı "Pudra" diye eklenen renk nane yeşili çizilirdi.
+O yüzden ad ve palet aynı satırda; formun yanında canlı bir çizim önizlemesi
+duruyor.
+
+**Çizen bileşen artık renk kodu değil paletin kendisini alıyor.**
+`UrunGorseli` eskiden koddaki `PALET` tablosuna bakıyordu; o tablo silindi.
+Bileşen tarayıcıda da çiziliyor, yani sorgu yapamaz — palet veriyle geçiyor.
+Aynı sebeple `Urun` tipi artık çözülmüş paleti (`paletRenkleri`) ve renk
+listesini kod yerine **ad ve palet taşıyan nesnelerle** (`RenkSecenegi`)
+tutuyor.
+
+**Kod değişince dört yer birden taşınıyor:** varyantlar, renge özel ürün
+fotoğrafları, ürünün çizim rengi ve afişler — hepsi aynı işlem içinde. Biri
+atlansaydı o kayıtlar olmayan bir renge bağlı kalır, çizimleri nötr kum
+rengine düşerdi. Sipariş satırlarına kasten dokunulmuyor: satılan şeyin kaydı
+sonradan değişmemeli (K-56'daki gerekçenin aynısı).
+
+**Ana sayfa afişinin tonu katalog rengi değil.** İkisinin adları örtüşüyordu
+ve afişin çizimi katalog paletinden besleniyordu; ama afişin zemini marka
+belirteçlerinden geliyor (`--nane-soluk`) ve koyu temaya uyuyor, katalog rengi
+ise ürünün gerçek rengi. Bağlı kalsalardı katalogdaki "Mavi"yi yeniden
+adlandırmak afişin zeminini de değiştirirdi. Afiş tonları
+[`../ui/banner-bicim.ts`](../ui/banner-bicim.ts) içinde, tanımlandıkları
+CSS'in yanında ayrıldı.
+
+**Kapalı renk ile silinmiş renk farklı.** Kapatmak rengi süzgeçten, ürün
+formundan ve yeni varyanttan düşürüyor; var olan varyantlar duruyor ve ürün
+sayfasında adıyla, doğru paletiyle görünmeye devam ediyor. Bu yüzden ad
+çözümlemesi (`tumRenkSecenekleri`) kapalıları da kapsıyor, seçenek listesi
+(`renkSecenekleri`) kapsamıyor. Son açık renk kapatılamıyor — bedendeki
+kuralın aynısı, renksiz mağazada ürüne varyant eklenemez.
+
+**Silinmiş renk çizimi boş bırakmıyor.** Listede olmayan kod nötr bir kum
+tonuna düşüyor (`VARSAYILAN_PALET`); marka renklerinden biri seçilseydi yanlış
+bir ürün rengi gösterirdi.
+
+**Nasıl denendi.** Üretim derlemesinde gerçek tarayıcıyla: Türkçe harfli ve
+boşluklu kod girip sadeleştiğini ("Açık Pudra" → `acik-pudra`), yeni rengin
+aynı anda ürün formunda + varyant listesinde + mağaza süzgecinde + ürün
+sayfasının renk noktalarında (doğru onaltılık değerle) + toplu yükleme yardım
+metninde ve şablonunda çıktığını, kod değişince varyantın taşındığını,
+kapatılınca süzgeçten ve formdan düştüğü hâlde ürün sayfasında adıyla
+durduğunu, kullanılan rengin silme yerine "kapat" dediğini, kullanılmayanın
+silindiğini. Hepsi bir de JavaScript kapalı tarayıcıda — renk seçici alanı
+kapalıyken düz metin kutusuna düşüyor ve `#rrggbb` yazılabiliyor.
+
+**Nerede:** [`../server/renkler.ts`](../server/renkler.ts),
+[`../server/yonetim-renk.ts`](../server/yonetim-renk.ts),
+[`../app/yonetim/(panel)/renkler/page.tsx`](../app/yonetim/(panel)/renkler/page.tsx),
+[`../ui/katalog-bicim.ts`](../ui/katalog-bicim.ts),
+[`../ui/urun-gorseli.tsx`](../ui/urun-gorseli.tsx),
+[`../ui/banner-bicim.ts`](../ui/banner-bicim.ts),
+[`../db/schema.prisma`](../db/schema.prisma)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

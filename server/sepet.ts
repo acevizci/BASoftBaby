@@ -18,7 +18,8 @@ import {
   gecerliKampanyalar,
   type UygulananKampanya,
 } from "@/server/kampanya";
-import { RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
+import { paletCoz, type Palet } from "@/ui/katalog-bicim";
+import { renkAdlari, tumRenkSecenekleri } from "@/server/renkler";
 import { ETIKETLER, paylasilanOnbellek } from "@/server/onbellek";
 import { girisYapan } from "@/server/uyelik";
 
@@ -37,6 +38,8 @@ export type SepetSatiri = {
   renkAdi: string;
   gorsel: string;
   palet: string;
+  /** Çizimin çözülmüş paleti; renk listesi artık veritabanında (K-66) */
+  paletRenkleri: Palet;
   /** Yüklenmiş ilk fotoğraf; yoksa çizim gösterilir. */
   fotograf?: { id: string; yol: string; kucukYol: string; altMetin: string; genislik: number; yukseklik: number };
   adet: number;
@@ -162,7 +165,7 @@ export async function sepetGetir(): Promise<Sepet> {
 
   const kuponKodu = await kuponOku();
 
-  const [satirlar, ayar] = await Promise.all([
+  const [satirlar, ayar, adlar, renkSecenekleri] = await Promise.all([
     db.cartItem.findMany({
       where: { cartId: id },
       include: {
@@ -173,6 +176,8 @@ export async function sepetGetir(): Promise<Sepet> {
       orderBy: { id: "asc" },
     }),
     ayarlariGetir(),
+    renkAdlari(),
+    tumRenkSecenekleri(),
   ]);
 
   const cikti: SepetSatiri[] = satirlar
@@ -191,9 +196,10 @@ export async function sepetGetir(): Promise<Sepet> {
         ad: s.variant.product.ad,
         beden: s.variant.beden,
         renk: s.variant.renk,
-        renkAdi: RENK_ADLARI[s.variant.renk as RenkAdi] ?? s.variant.renk,
+        renkAdi: adlar[s.variant.renk] ?? s.variant.renk,
         gorsel: s.variant.product.gorsel,
         palet: s.variant.product.palet,
+        paletRenkleri: paletCoz(renkSecenekleri, s.variant.product.palet),
         fotograf: s.variant.product.images[0]
           ? {
               id: s.variant.product.images[0].id,

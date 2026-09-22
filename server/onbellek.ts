@@ -29,6 +29,7 @@ export const ETIKETLER = {
   katalog: "katalog",
   beden: "beden",
   yasGrubu: "yas-grubu",
+  renk: "renk",
   ayarlar: "ayarlar",
   duyuru: "duyuru",
   banner: "banner",

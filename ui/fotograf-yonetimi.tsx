@@ -7,7 +7,7 @@ import {
   fotografSil,
   fotografTasi,
 } from "@/server/yonetim";
-import { RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
+import type { RenkSecenegi } from "@/ui/katalog-bicim";
 import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
 
 /**
@@ -53,7 +53,7 @@ export default function FotografYonetimi({
   slug: string;
   fotograflar: PanelFotografi[];
   /** Ürünün kendi renkleri; fotoğrafa yalnızca bunlardan biri atanabiliyor. */
-  renkler: RenkAdi[];
+  renkler: RenkSecenegi[];
   hata?: string;
   eklenen?: number;
   /**
@@ -175,8 +175,8 @@ export default function FotografYonetimi({
                   >
                     <option value="">Her renk</option>
                     {renkler.map((r) => (
-                      <option key={r} value={r}>
-                        {RENK_ADLARI[r]}
+                      <option key={r.kod} value={r.kod}>
+                        {r.ad}
                       </option>
                     ))}
                   </select>

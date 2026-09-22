@@ -18,7 +18,7 @@ import "server-only";
 
 import { db } from "@/server/veritabani";
 import { stokBildirimEpostasi } from "@/server/eposta";
-import { RENK_ADLARI, type RenkAdi } from "@/ui/katalog-bicim";
+import { renkAdlari } from "@/server/renkler";
 
 /** Aynı adres aynı varyanta iki kez yazılmıyor; ikinci istek sessizce geçiyor. */
 export async function bildirimIste(variantId: string, eposta: string): Promise<boolean> {
@@ -67,13 +67,14 @@ export async function stokBildirimleriniGonder(variantIdler: string[]): Promise<
 
   let gonderilen = 0;
 
+  const adlar = await renkAdlari();
   for (const kayit of bekleyenler) {
     const v = kayit.variant;
     const sonuc = await stokBildirimEpostasi(kayit.eposta, {
       urunAd: v.product.ad,
       slug: v.product.slug,
       beden: v.beden,
-      renk: RENK_ADLARI[v.renk as RenkAdi] ?? v.renk,
+      renk: adlar[v.renk] ?? v.renk,
     });
     if (!sonuc.gonderildi) continue;
 

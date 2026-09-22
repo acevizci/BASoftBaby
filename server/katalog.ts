@@ -7,8 +7,17 @@
 
 import { db } from "@/server/veritabani";
 import { urunIndirimleri, urunKampanyasi, type KampanyaKaydi } from "@/server/kampanya";
-import { type RenkAdi, type RozetTonu, type GorselTipi, type Urun, type Kategori } from "@/ui/katalog-bicim";
+import {
+  paletCoz,
+  type RenkAdi,
+  type RenkSecenegi,
+  type RozetTonu,
+  type GorselTipi,
+  type Urun,
+  type Kategori,
+} from "@/ui/katalog-bicim";
 import { bedenSirasi, sonSira, yasGrubununBedenleri } from "@/server/bedenler";
+import { tumRenkSecenekleri } from "@/server/renkler";
 import { ETIKETLER, paylasilanOnbellek, paylasilanOnbellekli } from "@/server/onbellek";
 import { kelimeler } from "@/server/arama-metin";
 
@@ -53,24 +62,35 @@ type SatirTipi = {
 /**
  * Veritabanı satırını sayfaların beklediği biçime çevirir.
  *
- * `sira` beden sıralamasını taşıyor: beden listesi artık veritabanında
- * olduğu için sıra da oradan geliyor ve çağıran tarafından veriliyor —
- * bu işlev senkron kalsın diye (K-56).
+ * `sira` beden sıralamasını, `renkSecenekleri` renk adlarını ve paletlerini
+ * taşıyor: ikisi de artık veritabanında (K-56, K-66) ama bu işlev senkron
+ * kalsın diye çağıran tarafından veriliyor.
+ *
+ * Renk listesinde kapalı renkler de var: kapatılan bir renkte satılmış
+ * varyantlar duruyor, adsız ve nötr palette görünmemeleri gerekiyor. Kapatma
+ * yeni varyant eklemeyi ve süzgeçte çıkmayı engelliyor, var olanı silmiyor.
  */
 function urunYap(
   satir: SatirTipi,
   kampanyalar: KampanyaKaydi[] = [],
   sira: Map<string, number> = new Map(),
+  renkSecenekleri: RenkSecenegi[] = [],
 ): Urun {
   const varyantlar = [...satir.variants]
     .sort((a, b) => sonSira(sira, a.beden) - sonSira(sira, b.beden))
     .map((v) => ({ id: v.id, beden: v.beden, renk: v.renk as RenkAdi, stok: v.stok }));
 
   // Renk listesi varyantlardan türetilir; ayrı bir sütunda tutulup
-  // varyantlarla çelişmesin diye.
-  const renkler: RenkAdi[] = [];
-  for (const v of varyantlar) {
-    if (!renkler.includes(v.renk)) renkler.push(v.renk);
+  // varyantlarla çelişmesin diye. Sıra renk listesindeki sıra: ürün
+  // sayfasındaki noktalar her üründe aynı düzende dizilsin.
+  const gorulen = new Set<string>();
+  for (const v of varyantlar) gorulen.add(v.renk);
+  const renkler: RenkSecenegi[] = renkSecenekleri.filter((r) => gorulen.has(r.kod));
+  for (const kod of gorulen) {
+    // Listeden silinmiş bir renkte varyant kaldıysa yine de görünüyor.
+    if (!renkler.some((r) => r.kod === kod)) {
+      renkler.push({ kod, ad: kod, palet: paletCoz(renkSecenekleri, kod) });
+    }
   }
 
   const kampanya = urunKampanyasi(kampanyalar, {
@@ -88,6 +108,7 @@ function urunYap(
     kategori: satir.category.slug,
     gorsel: satir.gorsel as GorselTipi,
     palet: satir.palet as RenkAdi,
+    paletRenkleri: paletCoz(renkSecenekleri, satir.palet),
     fotograflar: satir.images.map((g) => ({
       id: g.id,
       yol: g.yol,
@@ -173,13 +194,14 @@ export async function kategoriGetir(slug: string): Promise<Kategori | undefined>
 }
 
 export async function urunGetir(slug: string): Promise<Urun | undefined> {
-  const [satir, kampanyalar, sira] = await Promise.all([
+  const [satir, kampanyalar, sira, renkSecenekleri] = await Promise.all([
     db.product.findUnique({ where: { slug }, include: URUN_ICEREN }),
     urunIndirimleri(),
     bedenSirasi(),
+    tumRenkSecenekleri(),
   ]);
   if (!satir || !satir.aktif) return undefined;
-  return urunYap(satir as SatirTipi, kampanyalar, sira);
+  return urunYap(satir as SatirTipi, kampanyalar, sira, renkSecenekleri);
 }
 
 export type UrunSuzgeci = {
@@ -245,7 +267,7 @@ async function urunleriSorgula(suzgec: UrunSuzgeci = {}): Promise<Urun[]> {
   const yasBedenleri = suzgec.yas ? await yasGrubununBedenleri(suzgec.yas) : [];
   const aranan = suzgec.ara ? kelimeler(suzgec.ara) : [];
 
-  const [satirlar, kampanyalar, sira] = await Promise.all([
+  const [satirlar, kampanyalar, sira, renkSecenekleri] = await Promise.all([
     db.product.findMany({
       where: {
         aktif: true,
@@ -263,9 +285,10 @@ async function urunleriSorgula(suzgec: UrunSuzgeci = {}): Promise<Urun[]> {
     }),
     urunIndirimleri(),
     bedenSirasi(),
+    tumRenkSecenekleri(),
   ]);
   return sirala(
-    satirlar.map((s) => urunYap(s as SatirTipi, kampanyalar, sira)),
+    satirlar.map((s) => urunYap(s as SatirTipi, kampanyalar, sira, renkSecenekleri)),
     suzgec.sirala,
   );
 }
@@ -310,7 +333,7 @@ export const oneCikanUrunler = paylasilanOnbellekli(
 );
 
 async function oneCikanlariSorgula(adet = 8): Promise<Urun[]> {
-  const [satirlar, kampanyalar, sira] = await Promise.all([
+  const [satirlar, kampanyalar, sira, renkSecenekleri] = await Promise.all([
     db.product.findMany({
       where: { aktif: true },
       include: URUN_ICEREN,
@@ -319,8 +342,9 @@ async function oneCikanlariSorgula(adet = 8): Promise<Urun[]> {
     }),
     urunIndirimleri(),
     bedenSirasi(),
+    tumRenkSecenekleri(),
   ]);
-  return satirlar.map((s) => urunYap(s as SatirTipi, kampanyalar, sira));
+  return satirlar.map((s) => urunYap(s as SatirTipi, kampanyalar, sira, renkSecenekleri));
 }
 
 /**
@@ -335,7 +359,7 @@ export function benzerUrunler(urun: Urun, adet = 4): Promise<Urun[]> {
 const benzerleriSorgula = paylasilanOnbellekli(
   async function benzerleriSorgula(slug: string, kategori: string, adet: number): Promise<Urun[]> {
     const urun = { slug, kategori };
-    const [ayni, kampanyalar, sira] = await Promise.all([
+    const [ayni, kampanyalar, sira, renkSecenekleri] = await Promise.all([
     db.product.findMany({
       where: { aktif: true, slug: { not: urun.slug }, category: { slug: urun.kategori } },
       include: URUN_ICEREN,
@@ -343,8 +367,9 @@ const benzerleriSorgula = paylasilanOnbellekli(
     }),
     urunIndirimleri(),
     bedenSirasi(),
+    tumRenkSecenekleri(),
   ]);
-  if (ayni.length >= adet) return ayni.map((s) => urunYap(s as SatirTipi, kampanyalar, sira));
+  if (ayni.length >= adet) return ayni.map((s) => urunYap(s as SatirTipi, kampanyalar, sira, renkSecenekleri));
 
   const digerleri = await db.product.findMany({
     where: {
@@ -355,7 +380,7 @@ const benzerleriSorgula = paylasilanOnbellekli(
     include: URUN_ICEREN,
     take: adet - ayni.length,
   });
-    return [...ayni, ...digerleri].map((s) => urunYap(s as SatirTipi, kampanyalar, sira));
+    return [...ayni, ...digerleri].map((s) => urunYap(s as SatirTipi, kampanyalar, sira, renkSecenekleri));
   },
   ["benzer-urunler"],
   [ETIKETLER.katalog],

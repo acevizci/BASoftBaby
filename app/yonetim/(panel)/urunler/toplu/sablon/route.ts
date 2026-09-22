@@ -10,7 +10,7 @@
  */
 import ExcelJS from "exceljs";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
-import { RENK_ADLARI } from "@/ui/katalog-bicim";
+import { renkSecenekleri } from "@/server/renkler";
 import { bedenAdlari } from "@/server/bedenler";
 
 export const dynamic = "force-dynamic";
@@ -61,7 +61,7 @@ export async function GET(): Promise<Response> {
     ["Yıkama talimatı", "Yeni üründe zorunlu."],
     ["Özellikler", "Madde madde; aralarına | koyun."],
     ["Beden", (await bedenAdlari()).join(", ")],
-    ["Renk", Object.values(RENK_ADLARI).join(", ")],
+    ["Renk", (await renkSecenekleri()).map((r) => r.ad).join(", ")],
     ["Stok", "Zorunlu. Tam sayı."],
     ["SKU", "Boş bırakılırsa kendiliğinden üretilir."],
     ["Aktif", "Evet / Hayır. Boşsa Evet."],

@@ -4,7 +4,7 @@ import UrunFoto from "@/ui/urun-foto";
 import { sepetGetir } from "@/server/sepet";
 import { adetDegistir, kuponKaldir, kuponUygula, satirSil } from "@/server/sepet-islem";
 import GonderDugmesi from "@/ui/gonder-dugmesi";
-import { fiyatYaz, type GorselTipi, type RenkAdi } from "@/ui/katalog-bicim";
+import { fiyatYaz, type GorselTipi } from "@/ui/katalog-bicim";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Sepetim", robots: { index: false } };
@@ -45,7 +45,7 @@ export default async function SepetSayfasi() {
                 <UrunFoto
                   fotograf={s.fotograf}
                   gorsel={s.gorsel as GorselTipi}
-                  palet={s.palet as RenkAdi}
+                  palet={s.paletRenkleri}
                   className="aspect-square w-full rounded-[12px]"
                   sizes="96px"
                 />

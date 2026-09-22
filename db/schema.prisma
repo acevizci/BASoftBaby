@@ -60,6 +60,25 @@ model AgeGroup {
   @@index([aktif, sira])
 }
 
+/// Katalog rengi: adi, cizim paleti ve sirasi. Panelden yonetiliyor (K-66).
+/// ProductVariant.renk buraya yabanci anahtarla bagli degil, kodu metin
+/// olarak tutuyor — siparis satirindaki kopya sonradan degismemeli.
+model Color {
+  id    String  @id @default(cuid())
+  kod   String  @unique
+  ad    String
+  sira  Int     @default(0)
+  aktif Boolean @default(true)
+
+  /// Fotograf yokken cizilen urun gorselinin renkleri
+  zemin String
+  c1    String
+  c2    String
+  c3    String
+
+  @@index([aktif, sira])
+}
+
 model Product {
   id         String   @id @default(cuid())
   slug       String   @unique

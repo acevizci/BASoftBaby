@@ -21,6 +21,7 @@ import {
 } from "@/server/toplu-urun";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { bedenAdlari } from "@/server/bedenler";
+import { renkSecenekleri } from "@/server/renkler";
 
 /** Yükleme dosyası için üst sınır. Birkaç bin satırlık tablo bunun çok altında. */
 const EN_BUYUK_BAYT = 5 * 1024 * 1024;
@@ -45,7 +46,12 @@ export async function topluOnizle(form: FormData): Promise<void> {
   let hatalar: Hata[];
   try {
     const { basliklar, satirlar: ham } = await tabloyuOku(dosya.name, await dosya.arrayBuffer());
-    ({ satirlar, hatalar } = satirlariCoz(basliklar, ham, await bedenAdlari()));
+    ({ satirlar, hatalar } = satirlariCoz(
+      basliklar,
+      ham,
+      await bedenAdlari(),
+      await renkSecenekleri(),
+    ));
   } catch (e) {
     const mesaj = e instanceof Error ? e.message : "Dosya okunamadı.";
     redirect(`/yonetim/urunler/toplu?hata=okuma&mesaj=${encodeURIComponent(mesaj)}`);

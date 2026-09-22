@@ -1,7 +1,7 @@
 import Link from "next/link";
 import UrunFoto from "@/ui/urun-foto";
 import SepeteEkle from "@/ui/sepete-ekle";
-import { PALET, RENK_ADLARI, fiyatYaz, toplamStok, type Urun } from "@/ui/katalog-bicim";
+import { fiyatYaz, toplamStok, type Urun } from "@/ui/katalog-bicim";
 
 const ROZET_SINIFI: Record<string, string> = {
   mint: "bg-nane-soluk text-nane-koyu",
@@ -36,7 +36,7 @@ export default function UrunKarti({ urun }: { urun: Urun }) {
         <UrunFoto
           fotograf={urun.fotograflar[0]}
           gorsel={urun.gorsel}
-          palet={urun.palet}
+          palet={urun.paletRenkleri}
           className={`aspect-square w-full rounded-none ${stok === 0 ? "opacity-65" : ""}`}
           sizes="(min-width: 1024px) 300px, 50vw"
         />
@@ -68,10 +68,10 @@ export default function UrunKarti({ urun }: { urun: Urun }) {
         <ul className="flex gap-1.5" aria-label="Renk seçenekleri">
           {urun.renkler.map((r) => (
             <li
-              key={r}
-              title={RENK_ADLARI[r]}
+              key={r.kod}
+              title={r.ad}
               className="h-3.5 w-3.5 rounded-full ring-1 ring-black/10"
-              style={{ background: PALET[r].c1 }}
+              style={{ background: r.palet.c1 }}
             />
           ))}
         </ul>

@@ -2,7 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import UrunGorseli from "@/ui/urun-gorseli";
 import { bannerSaniyeGetir, yayindakiBannerlar, type Banner } from "@/server/banner";
-import type { GorselTipi, RenkAdi } from "@/ui/katalog-bicim";
+import type { GorselTipi } from "@/ui/katalog-bicim";
+import { bannerPaleti } from "@/ui/banner-bicim";
 
 /** Bir slaytın ekranda durduğu süre, geçiş payı dışarıda kalacak şekilde. */
 const DURMA_ORANI = 0.82;
@@ -71,7 +72,7 @@ function Gorsel({ banner }: { banner: Banner }) {
   return (
     <UrunGorseli
       tip={banner.gorsel as GorselTipi}
-      palet={banner.palet as RenkAdi}
+      palet={bannerPaleti(banner.palet)}
       className="h-28 w-28 rounded-marka"
     />
   );

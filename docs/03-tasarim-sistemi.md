@@ -144,6 +144,8 @@ pastel kalır — gerçek ürün fotoğrafları da beyaz zeminde duracağı içi
 | Kuponlar | Kupon tablosu, yeni kupon formu |
 | Duyuru şeridi | Canlı önizleme, mesaj tablosu, hız ve renk ayarı, yeni mesaj formu |
 | İade yönetimi | İade istatistikleri, talep tablosu, onaylama |
+| Bedenler | Beden listesi ve ölçüleri, yaş grupları, sıralama ok düğmeleriyle |
+| Renkler | Renk listesi, çizim paleti ve canlı çizim önizlemesi |
 
 ### Diğer
 | Ekran | İçerik |
