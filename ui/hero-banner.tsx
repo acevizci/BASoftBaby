@@ -78,7 +78,70 @@ function Gorsel({ banner }: { banner: Banner }) {
   );
 }
 
-function Slayt({ banner, kopya = false }: { banner: Banner; kopya?: boolean }) {
+/**
+ * Resimli banner (K-89): yalnızca resim. Yazı resmin içinde olduğu için
+ * sayfaya ayrıca yazılmıyor; başlık resmin alternatif metni. Bağlantı varsa
+ * resmin tamamı tıklanıyor. Telefon resmi varsa dar ekranda o gösteriliyor —
+ * geniş bir kampanya görseli telefonda okunmayacak kadar küçülüyor.
+ */
+function ResimSlayt({
+  banner,
+  kopya,
+  ilk,
+}: {
+  banner: Banner;
+  kopya: boolean;
+  ilk: boolean;
+}) {
+  const r = banner.resim!;
+  const t = banner.telefonResmi;
+  const resim = (
+    <picture>
+      {t && <source media="(max-width: 639px)" srcSet={t.yol} />}
+      {/* next/image değil: dosyalar yüklenirken zaten küçültülüp webp'ye
+          çevriliyor, iyileştiricinin aylık sınırı var (ürün fotoğraflarıyla aynı). */}
+      <img
+        src={r.yol}
+        srcSet={`${r.kucukYol} 1000w, ${r.yol} ${r.genislik || 2400}w`}
+        sizes="100vw"
+        width={r.genislik || undefined}
+        height={r.yukseklik || undefined}
+        alt={kopya ? "" : banner.baslik}
+        loading={ilk && !kopya ? "eager" : "lazy"}
+        fetchPriority={ilk && !kopya ? "high" : undefined}
+        decoding="async"
+        className="mx-auto block h-auto w-full max-w-[2400px]"
+      />
+    </picture>
+  );
+  return (
+    <article className="hero-slayt" data-resim="1" aria-hidden={kopya || undefined}>
+      {banner.dugmeLink ? (
+        <Link
+          href={banner.dugmeLink}
+          tabIndex={kopya ? -1 : undefined}
+          aria-label={banner.dugmeYazi || banner.baslik || undefined}
+          className="block w-full"
+        >
+          {resim}
+        </Link>
+      ) : (
+        <div className="w-full">{resim}</div>
+      )}
+    </article>
+  );
+}
+
+function Slayt({
+  banner,
+  kopya = false,
+  ilk = false,
+}: {
+  banner: Banner;
+  kopya?: boolean;
+  ilk?: boolean;
+}) {
+  if (banner.resim) return <ResimSlayt banner={banner} kopya={kopya} ilk={ilk} />;
   return (
     <article className="hero-slayt" data-palet={banner.palet} aria-hidden={kopya || undefined}>
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 px-4 py-14 text-center sm:py-20">
@@ -138,8 +201,8 @@ export default async function HeroBanner() {
       )}
 
       <div className="hero-iz">
-        {bannerlar.map((b) => (
-          <Slayt key={b.id} banner={b} />
+        {bannerlar.map((b, i) => (
+          <Slayt key={b.id} banner={b} ilk={i === 0} />
         ))}
         {!tek && <Slayt banner={bannerlar[0]} kopya />}
       </div>

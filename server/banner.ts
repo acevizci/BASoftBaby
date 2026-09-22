@@ -16,7 +16,43 @@ export type Banner = {
   dugmeLink: string;
   palet: string;
   gorsel: string;
+  /** Doluysa banner yalnızca bu resim (K-89). */
+  resim?: BannerResmi;
+  /** Telefonda gösterilecek ayrı resim; yoksa `resim` kullanılıyor. */
+  telefonResmi?: BannerResmi;
 };
+
+export type BannerResmi = { yol: string; kucukYol: string; genislik: number; yukseklik: number };
+
+/** Veritabanı satırından resim alanları; resim yoksa boş. */
+export function bannerResimleri(b: {
+  resimYol: string;
+  resimKucukYol: string;
+  resimGenislik: number;
+  resimYukseklik: number;
+  telefonYol: string;
+  telefonGenislik: number;
+  telefonYukseklik: number;
+}): Pick<Banner, "resim" | "telefonResmi"> {
+  return {
+    resim: b.resimYol
+      ? {
+          yol: b.resimYol,
+          kucukYol: b.resimKucukYol || b.resimYol,
+          genislik: b.resimGenislik,
+          yukseklik: b.resimYukseklik,
+        }
+      : undefined,
+    telefonResmi: b.telefonYol
+      ? {
+          yol: b.telefonYol,
+          kucukYol: b.telefonYol,
+          genislik: b.telefonGenislik,
+          yukseklik: b.telefonYukseklik,
+        }
+      : undefined,
+  };
+}
 
 export const BANNER_PALETLERI = ["sari", "mint", "mercan", "mavi", "krem"] as const;
 export const BANNER_GORSELLERI = [
@@ -61,6 +97,7 @@ async function bannerSorgusu(simdi: Date): Promise<Banner[]> {
     dugmeLink: b.dugmeLink,
     palet: b.palet,
     gorsel: b.gorsel,
+    ...bannerResimleri(b),
   }));
 }
 

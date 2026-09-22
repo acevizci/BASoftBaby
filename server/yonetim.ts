@@ -1091,12 +1091,32 @@ export async function kampanyaSil(veri: FormData): Promise<void> {
 
 /* ── Ana sayfa banner'ı ─────────────────────────────────────────────────── */
 
+/** Banner resmi: ekranın tamamını kaplıyor, ürün fotoğrafından geniş (K-89). */
+const BANNER_OLCU = { buyuk: 2400, kucuk: 1000 };
+const TELEFON_OLCU = { buyuk: 1200, kucuk: 1200 };
+
+/**
+ * Banner ekler.
+ *
+ * İki tür var (K-89):
+ * - **Resim:** banner yalnızca yüklenen resim. Başlık zorunlu değil; varsa
+ *   resmin alternatif metni oluyor. Düğme bağlantısı varsa resmin tamamı o
+ *   bağlantı. Telefon için ayrı bir resim isteğe bağlı.
+ * - **Yazı ve çizim:** eskisi gibi; başlık zorunlu.
+ */
 export async function bannerKaydet(veri: FormData): Promise<void> {
   await yoneticiGerekli();
 
   const id = String(veri.get("id") ?? "").trim();
-  const baslik = String(veri.get("baslik") ?? "").trim().slice(0, 120);
-  if (!baslik) return;
+  const tur = String(veri.get("tur") ?? "yazi") === "resim" ? "resim" : "yazi";
+  // İki türün alanları formda yan yana duruyor; adlar ayrı ki biri ötekini
+  // ezmesin. Resimde "başlık" resmin açıklaması (alternatif metin).
+  const baslik = String(veri.get(tur === "resim" ? "resimAciklama" : "baslik") ?? "")
+    .trim()
+    .slice(0, 120);
+  const hata = (kod: string, ek = "") =>
+    redirect(`/yonetim/banner?hata=${kod}${ek}&ac=yeni-banner#yeni-banner`);
+  if (tur === "yazi" && !baslik) hata("baslik");
 
   const palet = String(veri.get("palet") ?? "sari");
   const gorsel = String(veri.get("gorsel") ?? "amblem");
@@ -1105,17 +1125,53 @@ export async function bannerKaydet(veri: FormData): Promise<void> {
 
   const siraHam = Number(String(veri.get("sira") ?? "0").trim());
 
+  const resimAlanlari: Record<string, string | number> = {};
+  if (tur === "resim") {
+    const dosya = veri.get("resim");
+    const telefon = veri.get("telefonResmi");
+    if (!(dosya instanceof File) || dosya.size === 0) hata("resim-yok");
+    try {
+      const y = await gorselYukle(dosya as File, BANNER_OLCU);
+      Object.assign(resimAlanlari, {
+        resimYol: y.yol,
+        resimKucukYol: y.kucukYol,
+        resimGenislik: y.genislik,
+        resimYukseklik: y.yukseklik,
+      });
+      if (telefon instanceof File && telefon.size > 0) {
+        const t = await gorselYukle(telefon, TELEFON_OLCU);
+        // Telefon için tek boyut yeter; küçük kopya silinsin, depoda öksüz kalmasın.
+        await gorselDosyalariniSil([t.kucukYol]);
+        Object.assign(resimAlanlari, {
+          telefonYol: t.yol,
+          telefonGenislik: t.genislik,
+          telefonYukseklik: t.yukseklik,
+        });
+      }
+    } catch (e) {
+      console.error("Banner resmi yüklenemedi:", e);
+      hata(
+        "resim",
+        `&mesaj=${encodeURIComponent(e instanceof GorselHatasi ? e.message : "Resim yüklenemedi.")}`,
+      );
+    }
+  }
+
   const veriler = {
     baslik,
-    altYazi: String(veri.get("altYazi") ?? "").trim().slice(0, 300),
-    dugmeYazi: String(veri.get("dugmeYazi") ?? "").trim().slice(0, 40),
-    dugmeLink: String(veri.get("dugmeLink") ?? "").trim().slice(0, 200),
+    altYazi:
+      tur === "resim" ? "" : String(veri.get("altYazi") ?? "").trim().slice(0, 300),
+    dugmeYazi: tur === "resim" ? "" : String(veri.get("dugmeYazi") ?? "").trim().slice(0, 40),
+    dugmeLink: String(veri.get(tur === "resim" ? "resimLink" : "dugmeLink") ?? "")
+      .trim()
+      .slice(0, 200),
     palet,
     gorsel,
     sira: Number.isFinite(siraHam) ? Math.trunc(siraHam) : 0,
     aktif: veri.get("aktif") === "on",
     baslangic: tariheCevir(veri.get("baslangic")),
     bitis: tariheCevir(veri.get("bitis")),
+    ...resimAlanlari,
   };
 
   if (id) {
@@ -1150,9 +1206,14 @@ export async function bannerSil(veri: FormData): Promise<void> {
   const id = String(veri.get("id") ?? "");
   if (!id) redirect(`/yonetim/banner?hata=bulunamadi${formSayfaEki(veri)}`);
 
-  const b = await db.heroBanner.findUnique({ where: { id }, select: { id: true } });
+  const b = await db.heroBanner.findUnique({
+    where: { id },
+    select: { id: true, resimYol: true, resimKucukYol: true, telefonYol: true },
+  });
   if (!b) redirect(`/yonetim/banner?hata=bulunamadi${formSayfaEki(veri)}`);
 
+  // Resim dosyaları da gidiyor: kayıt silinince depoda öksüz kalırlardı.
+  await gorselDosyalariniSil([b.resimYol, b.resimKucukYol, b.telefonYol].filter(Boolean));
   await db.heroBanner.delete({ where: { id } });
   vitriniYenile();
   redirect(`/yonetim/banner?kayit=silindi${formSayfaEki(veri)}`);

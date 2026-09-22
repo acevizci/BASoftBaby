@@ -403,6 +403,22 @@ a.serit-mesaj:hover {
   background: linear-gradient(to bottom, var(--yuzey-sicak), var(--zemin));
 }
 
+/* Banner formu: seçilen türün alanları görünüyor. JavaScript yok; :has()
+   desteklemeyen eski tarayıcıda iki grup birden görünür, form yine çalışır. */
+.banner-form:has(input[name="tur"][value="resim"]:checked) .yalniz-yazi,
+.banner-form:has(input[name="tur"][value="yazi"]:checked) .yalniz-resim {
+  display: none;
+}
+
+/* Resimli banner (K-89): resim kendi renkleriyle geliyor, arkada palet
+   gradyanı yok. Slaytlar aynı yükseklikte duruyor (en uzun olanınki);
+   daha kısa resim dikeyde ortalanıyor. */
+.hero-slayt[data-resim="1"] {
+  display: flex;
+  align-items: center;
+  background: var(--zemin);
+}
+
 .hero-noktalar {
   position: absolute;
   bottom: 14px;

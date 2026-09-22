@@ -4244,6 +4244,33 @@ girmek zorundaydı; karttaki noktalar yalnızca süstü.
 
 **Nerede:** [`../ui/urun-karti.tsx`](../ui/urun-karti.tsx)
 
+### K-89 · Banner yalnızca bir resim olabiliyor
+
+Banner başlık, alt yazı, düğme ve hazır çizimlerden (amblem, zıbın, tulum…)
+oluşuyordu; resim yüklenemiyordu. Hazırlanmış bir kampanya görseli banner
+yapılamıyordu.
+
+Yeni banner eklerken tür seçiliyor:
+
+- **Yalnızca resim:** banner yüklenen resmin kendisi. Başlık zorunlu değil;
+  "resmin açıklaması" alternatif metin oluyor. Bağlantı verilirse resmin
+  tamamı tıklanıyor. Resim kırpılmıyor, ekranın genişliğinde olduğu gibi
+  görünüyor (2400 piksele kadar saklanıyor).
+- **Telefon resmi (isteğe bağlı):** geniş bir görsel telefonda yazısı okunmaz
+  hâle geliyor; buraya konan dik görsel dar ekranda (`<picture>`) gösteriliyor.
+- **Yazı ve çizim:** eskisi gibi; başlık zorunlu.
+
+Seçilmeyen türün alanları CSS `:has()` ile gizleniyor, JavaScript yok. İki
+türün alanları ayrı adlarla: biri ötekini ezmesin.
+
+Yükleme ürün fotoğraflarının altyapısını kullanıyor (tarayıcıda küçültme,
+webp, Blob); ölçüler banner'a göre büyütüldü, "kare değil" uyarısı banner'da
+kapalı. Banner silinince resim dosyaları da siliniyor.
+
+**Nerede:** [`../ui/hero-banner.tsx`](../ui/hero-banner.tsx) (`ResimSlayt`),
+[`../server/yonetim.ts`](../server/yonetim.ts) (`bannerKaydet`),
+[`../app/yonetim/(panel)/banner/page.tsx`](../app/yonetim/(panel)/banner/page.tsx)
+
 ---
 
 ## Açık sorular

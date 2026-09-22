@@ -23,7 +23,11 @@ type Sonuc = {
  * yatardı. webp yazamayan tarayıcı (eski Safari) png döndürüyor; o zaman beyaz
  * zemine jpeg yazılıyor, png 1600 pikselde bile birkaç MB tutabiliyor.
  */
-async function kucult(dosya: File): Promise<{ dosya: File; sonuc: Sonuc }> {
+async function kucult(
+  dosya: File,
+  enGenis: number = EN_GENIS,
+  hedefBayt: number = HEDEF_BAYT,
+): Promise<{ dosya: File; sonuc: Sonuc }> {
   const aynen = (g?: number, y?: number) => ({
     dosya,
     sonuc: { ad: dosya.name, once: dosya.size, sonra: dosya.size, genislik: g, yukseklik: y },
@@ -31,10 +35,10 @@ async function kucult(dosya: File): Promise<{ dosya: File; sonuc: Sonuc }> {
   if (!KUCULTULEBILIR.has(dosya.type)) return aynen();
   try {
     const resim = await createImageBitmap(dosya, { imageOrientation: "from-image" });
-    const oran = Math.min(1, EN_GENIS / Math.max(resim.width, resim.height));
+    const oran = Math.min(1, enGenis / Math.max(resim.width, resim.height));
     const genislik = Math.round(resim.width * oran);
     const yukseklik = Math.round(resim.height * oran);
-    if (oran === 1 && dosya.size <= HEDEF_BAYT) {
+    if (oran === 1 && dosya.size <= hedefBayt) {
       resim.close();
       return aynen(genislik, yukseklik);
     }
@@ -61,7 +65,7 @@ async function kucult(dosya: File): Promise<{ dosya: File; sonuc: Sonuc }> {
         tur = "image/jpeg";
         blob = await yaz(tur, kalite);
       }
-      if (blob && blob.size <= HEDEF_BAYT) break;
+      if (blob && blob.size <= hedefBayt) break;
     }
     if (!blob || blob.size >= dosya.size) return aynen(genislik, yukseklik);
 
@@ -77,9 +81,11 @@ async function kucult(dosya: File): Promise<{ dosya: File; sonuc: Sonuc }> {
 }
 
 /** Kartlar ve galeri kare; kare olmayanın kenarları kırpılıyor. */
-function uyari(s: Sonuc): string | null {
+function uyari(s: Sonuc, kare: boolean): string | null {
   if (!s.genislik || !s.yukseklik) return null;
   if (Math.max(s.genislik, s.yukseklik) < 1000) return "küçük, sitede bulanık görünebilir";
+  // Banner kırpılmıyor; kare olmaması orada bir sorun değil (K-89).
+  if (!kare) return null;
   const oran = s.genislik / s.yukseklik;
   if (oran < 0.9 || oran > 1.1) return "kare değil, kartlarda kenarları kırpılır";
   return null;
@@ -104,12 +110,25 @@ export default function DosyaBirak({
   kabul,
   etiket,
   kucult: kucultAcik = false,
+  tekli = false,
+  zorunlu = true,
+  enGenis,
+  hedefBayt,
+  kare = true,
 }: {
   ad: string;
   kabul: string;
   etiket: string;
   /** Fotoğrafları göndermeden önce tarayıcıda küçült. */
   kucult?: boolean;
+  /** Tek dosya: banner resmi gibi (K-89). */
+  tekli?: boolean;
+  zorunlu?: boolean;
+  /** Küçültmenin en uzun kenarı; banner ürün fotoğrafından geniş. */
+  enGenis?: number;
+  hedefBayt?: number;
+  /** Kare olmayan görsel için uyarı; kartlar kare, banner değil. */
+  kare?: boolean;
 }) {
   const girdi = useRef<HTMLInputElement>(null);
   /** Arka arkaya iki seçim yapılırsa yalnızca sonuncusu yazılsın. */
@@ -140,7 +159,7 @@ export default function DosyaBirak({
     setDurum({ tur: "hazirlaniyor", metin: hazirlaniyor });
 
     const islenen: Awaited<ReturnType<typeof kucult>>[] = [];
-    for (const dosya of liste) islenen.push(await kucult(dosya));
+    for (const dosya of liste) islenen.push(await kucult(dosya, enGenis, hedefBayt));
     if (benimSiram !== sira.current) return;
 
     let gonderilen = liste;
@@ -193,8 +212,8 @@ export default function DosyaBirak({
         ref={girdi}
         type="file"
         name={ad}
-        multiple
-        required
+        multiple={!tekli}
+        required={zorunlu}
         accept={kabul}
         onChange={(o) => {
           if (o.target.files) void isle(o.target.files);
@@ -213,7 +232,7 @@ export default function DosyaBirak({
       {sonuclar.length > 0 && (
         <ul className="rakam flex flex-col gap-0.5 text-xs text-metin-3">
           {sonuclar.map((s, i) => {
-            const not = uyari(s);
+            const not = uyari(s, kare);
             return (
               <li key={`${s.ad}-${i}`}>
                 <span className="text-metin-2">{s.ad}</span>

@@ -6,6 +6,7 @@ import { BANNER_PALET_ADLARI } from "@/ui/banner-bicim";
 import { bannerCevir, bannerKaydet, bannerSil, bannerSuresiKaydet } from "@/server/yonetim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import PanelBildirim, { ORTAK_HATALAR } from "@/ui/panel-bildirim";
+import DosyaBirak from "@/ui/dosya-birak";
 import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
 import Sayfalama, { SayfaAlani } from "@/ui/sayfalama";
 import { dilimle, sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
@@ -34,12 +35,21 @@ const BILDIRIMLER: Record<string, string> = {
   kapatildi: "Banner kapatıldı. Ana sayfada görünmüyor.",
 };
 
+const HATALAR: Record<string, string> = {
+  ...ORTAK_HATALAR,
+  baslik: "Yazılı banner'da başlık boş bırakılamaz.",
+  "resim-yok": "Resimli banner için bir resim seç.",
+};
+
+/** Kabul edilen resim biçimleri; ürün fotoğraflarıyla aynı. */
+const RESIM_BICIMLERI = "image/jpeg,image/png,image/webp,image/avif,image/gif";
+
 export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim/banner">) {
   // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor: Next.js yalnızca
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { kayit, hata, ac, sayfa } = await searchParams;
+  const { kayit, hata, ac, sayfa, mesaj } = await searchParams;
   const [bannerlar, saniye] = await Promise.all([tumBannerlar(), bannerSaniyeGetir()]);
 
   const durum = sayfaCoz(sayfa, bannerlar.length, LISTE_BOYU);
@@ -56,7 +66,13 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
         geçer; tek banner varsa sabit durur. Hiç banner yoksa varsayılan tanıtım yazısı görünür.
       </p>
 
-      <PanelBildirim kayit={kayit} hata={hata} bildirimler={BILDIRIMLER} hatalar={ORTAK_HATALAR} />
+      <PanelBildirim kayit={kayit} hata={hata} bildirimler={BILDIRIMLER} hatalar={HATALAR} />
+      {/* Yükleme hatasının metni sunucudan geliyor ("Dosya çok büyük…"). */}
+      {hata === "resim" && (
+        <p className="rounded-marka bg-mercan-soluk px-4 py-3 text-sm font-semibold text-mercan-koyu">
+          Resim yüklenemedi: {typeof mesaj === "string" ? mesaj : "bilinmeyen hata"}
+        </p>
+      )}
 
       <section className="rounded-marka border border-cizgi bg-yuzey p-5">
         <h2 className="text-lg">Şu an mağazada görünen</h2>
@@ -119,11 +135,24 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
             {sayfadakiler.map((b) => (
               <li key={b.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3">
                 <span className="rakam text-xs text-metin-3">{b.sira}</span>
+                {b.resimYol && (
+                  // Küçük önizleme: resimli banner'ın başlığı olmayabiliyor,
+                  // hangisi olduğu resimden anlaşılsın.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={b.resimKucukYol || b.resimYol}
+                    alt=""
+                    className="h-10 w-24 flex-none rounded-md object-cover ring-1 ring-cizgi"
+                  />
+                )}
                 <span className="min-w-0 flex-1">
-                  <span className="font-semibold">{b.baslik}</span>
+                  <span className="font-semibold">
+                    {b.baslik || (b.resimYol ? "Resimli banner" : "—")}
+                  </span>
                   <span className="block text-xs text-metin-3">
-                    {BANNER_PALET_ADLARI[b.palet] ?? b.palet} · {b.gorsel}
-                    {b.dugmeYazi ? ` · ${b.dugmeYazi} → ${b.dugmeLink}` : ""}
+                    {b.resimYol
+                      ? `Resim${b.telefonYol ? " · telefon resmi var" : ""}${b.dugmeLink ? ` → ${b.dugmeLink}` : ""}`
+                      : `${BANNER_PALET_ADLARI[b.palet] ?? b.palet} · ${b.gorsel}${b.dugmeYazi ? ` · ${b.dugmeYazi} → ${b.dugmeLink}` : ""}`}
                   </span>
                 </span>
                 <span className="rakam text-xs text-metin-3">
@@ -173,16 +202,99 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
         eylem
         acik={ac === "yeni-banner" || bannerlar.length === 0}
       >
-        <form action={bannerKaydet} className="flex flex-col gap-4">
+        <form action={bannerKaydet} className="banner-form flex flex-col gap-4">
           {/* Arka arkaya birkaç banner eklenebilsin. */}
           <input type="hidden" name="ac" value="yeni-banner" />
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          {/* Tür: hazır bir kampanya görseli mi, yoksa yazı + çizim mi (K-89).
+              Seçilmeyen türün alanları CSS ile gizleniyor. */}
+          <fieldset className="flex flex-wrap gap-2">
+            <legend className={`${ETIKET} mb-1.5`}>Banner türü</legend>
+            {(
+              [
+                ["resim", "Yalnızca resim", "Kendi hazırladığın görsel; yazı resmin içinde."],
+                ["yazi", "Yazı ve çizim", "Başlık, alt yazı ve düğme; arka plan rengi ve çizim."],
+              ] as const
+            ).map(([deger, ad, aciklama]) => (
+              <label
+                key={deger}
+                className="flex min-w-[220px] flex-1 cursor-pointer items-start gap-2 rounded-marka border border-cizgi p-3 has-[:checked]:border-mercan has-[:checked]:bg-mercan-soluk"
+              >
+                <input
+                  type="radio"
+                  name="tur"
+                  value={deger}
+                  defaultChecked={deger === "resim"}
+                  className="mt-1 accent-[var(--mercan)]"
+                />
+                <span>
+                  <span className="block text-sm font-bold">{ad}</span>
+                  <span className="block text-xs text-metin-3">{aciklama}</span>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+
+          <div className="yalniz-resim grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <DosyaBirak
+                ad="resim"
+                etiket="Banner resmi"
+                kabul={RESIM_BICIMLERI}
+                kucult
+                tekli
+                zorunlu={false}
+                enGenis={2400}
+                hedefBayt={900 * 1024}
+                kare={false}
+              />
+              <span className="text-xs text-metin-3">
+                Ekranın tamamını kaplıyor ve kırpılmıyor; olduğu gibi görünüyor. Geniş bir
+                görsel önerilir, örneğin 2400×800 (3:1).
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <DosyaBirak
+                ad="telefonResmi"
+                etiket="Telefon resmi (isteğe bağlı)"
+                kabul={RESIM_BICIMLERI}
+                kucult
+                tekli
+                zorunlu={false}
+                enGenis={1200}
+                hedefBayt={600 * 1024}
+                kare={false}
+              />
+              <span className="text-xs text-metin-3">
+                Telefonda geniş resim küçülüp yazısı okunmaz hâle geliyor. Buraya daha
+                dik bir görsel koyarsan (örneğin 1080×1080) telefonda o gösterilir.
+              </span>
+            </div>
+
+            <label className="flex flex-col gap-1.5">
+              <span className={ETIKET}>Resmin açıklaması (isteğe bağlı)</span>
+              <input
+                name="resimAciklama"
+                placeholder="Sonbahar koleksiyonu: yüzde 20 indirim"
+                className={GIRDI}
+              />
+              <span className="text-xs text-metin-3">
+                Ekranda görünmüyor; ekran okuyucular ve arama motorları için.
+              </span>
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <span className={ETIKET}>Tıklanınca gideceği sayfa (isteğe bağlı)</span>
+              <input name="resimLink" placeholder="/kiz-cocuk" className={GIRDI} />
+            </label>
+          </div>
+
+          <div className="yalniz-yazi grid gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5 sm:col-span-2">
               <span className={ETIKET}>Başlık</span>
               <input
                 name="baslik"
-                required
                 placeholder="Sonbahar koleksiyonu yayında"
                 className={GIRDI}
               />
@@ -229,6 +341,9 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
               </select>
             </label>
 
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5">
               <span className={ETIKET}>Sıra — küçük olan önce</span>
               <input

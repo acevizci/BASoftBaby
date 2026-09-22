@@ -446,6 +446,19 @@ model HeroBanner {
   palet  String @default("sari")
   gorsel String @default("amblem")
 
+  /// Resimli banner (K-89): doluysa banner yalnızca bu resim; başlık resmin
+  /// alternatif metni, düğme bağlantısı resmin bağlantısı oluyor. Boşsa
+  /// yazı + çizim banner'ı.
+  resimYol       String @default("")
+  resimKucukYol  String @default("")
+  resimGenislik  Int    @default(0)
+  resimYukseklik Int    @default(0)
+  /// Telefonda gösterilen ayrı resim (isteğe bağlı): geniş bir kampanya
+  /// görseli telefonda okunmayacak kadar küçülüyor.
+  telefonYol       String @default("")
+  telefonGenislik  Int    @default(0)
+  telefonYukseklik Int    @default(0)
+
   sira      Int       @default(0)
   aktif     Boolean   @default(true)
   baslangic DateTime?

@@ -141,7 +141,11 @@ async function yaz(dosyaAdi: string, veri: Buffer): Promise<string> {
  * hem müşterinin internetini yiyor. Bu yüzden her fotoğraf en fazla
  * 1400 piksel genişliğe indiriliyor.
  */
-export async function gorselYukle(dosya: File): Promise<Yuklenen> {
+export async function gorselYukle(
+  dosya: File,
+  /** Banner ürün fotoğrafından geniş: ekranın tamamını kaplıyor (K-89). */
+  olcu: { buyuk: number; kucuk: number } = { buyuk: BUYUK_GENISLIK, kucuk: KUCUK_GENISLIK },
+): Promise<Yuklenen> {
   if (dosya.size === 0) throw new GorselHatasi("Dosya boş.");
   if (dosya.size > EN_BUYUK_BAYT) {
     throw new GorselHatasi(
@@ -170,13 +174,13 @@ export async function gorselYukle(dosya: File): Promise<Yuklenen> {
 
   const buyukVeri = await temel
     .clone()
-    .resize({ width: BUYUK_GENISLIK, withoutEnlargement: true })
+    .resize({ width: olcu.buyuk, withoutEnlargement: true })
     .webp({ quality: 82 })
     .toBuffer({ resolveWithObject: true });
 
   const kucukVeri = await temel
     .clone()
-    .resize({ width: KUCUK_GENISLIK, withoutEnlargement: true })
+    .resize({ width: olcu.kucuk, withoutEnlargement: true })
     .webp({ quality: 80 })
     .toBuffer();
 
