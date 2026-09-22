@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { hazirlikRaporu, type Agirlik, type Kontrol } from "@/server/hazirlik";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import { epostaAcikMi, gonderenAdresi } from "@/server/eposta";
+import { denemeEpostasiGonder } from "@/server/eposta-deneme";
+import GonderDugmesi from "@/ui/gonder-dugmesi";
 
 export const dynamic = "force-dynamic";
 
@@ -30,9 +33,10 @@ const ROZET_YAZI: Record<Agirlik, string> = {
  * yumuşatmıyor — açılıştan önce bakılan bir listede en kötü haber en üstte
  * olmalı.
  */
-export default async function HazirlikEkrani() {
+export default async function HazirlikEkrani({ searchParams }: PageProps<"/yonetim/hazirlik">) {
   // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor (K-51).
-  await yoneticiGerekli();
+  const ben = await yoneticiGerekli();
+  const { eposta, sebep, mesaj } = await searchParams;
 
   const rapor = await hazirlikRaporu();
 
@@ -80,8 +84,15 @@ export default async function HazirlikEkrani() {
         </section>
       ))}
 
+      <EpostaDenemesi
+        kime={ben.eposta}
+        sonuc={typeof eposta === "string" ? eposta : undefined}
+        sebep={typeof sebep === "string" ? sebep : undefined}
+        mesaj={typeof mesaj === "string" ? mesaj : undefined}
+      />
+
       <p className="text-xs text-metin-3">
-        Bu ekran yalnızca bakıyor, hiçbir şeyi değiştirmiyor. Her satır düzeltmenin
+        Bu ekran yalnızca bakıyor; değiştirdiği tek şey yok, gönderdiği tek şey deneme e-postası. Her satır düzeltmenin
         yapıldığı ekrana bağlanıyor; anahtar ve hesap isteyenler (kart ödemesi, e-posta
         servisi, alan adı) Vercel ortam değişkenlerinden geliyor ve yeniden dağıtım
         gerektiriyor.
@@ -128,5 +139,88 @@ function Satir({ kontrol }: { kontrol: Kontrol }) {
         </p>
       )}
     </li>
+  );
+}
+
+/**
+ * Resend'in cevabından "ne yapmalıyım" cümlesi.
+ *
+ * Mesajlar Resend'in kendi İngilizce metinleri; en sık üç durum Türkçe
+ * karşılığıyla yazılıyor, gerisinde mesajın kendisi gösteriliyor (K-85).
+ */
+function epostaHataIpucu(sebep: string | undefined, mesaj: string | undefined): string {
+  const m = (mesaj ?? "").toLowerCase();
+  if (sebep === "anahtar-yok") {
+    return "RESEND_ANAHTARI bu dağıtımda tanımlı değil. Vercel'de ekledikten sonra yeniden dağıtım (Redeploy) gerekiyor; ortam değişkenleri ancak yeni dağıtımda koda geçiyor.";
+  }
+  if (m.includes("domain") && (m.includes("not verified") || m.includes("verify"))) {
+    return "Gönderen adresin alan adı Resend'de doğrulanmamış. Resend → Domains'te alan adını ekle, verdiği DNS kayıtlarını (TXT ve MX) alan adının DNS'ine gir ve durumun \"Verified\" olmasını bekle. Gönderen adresin alan adı doğrulanan alan adıyla aynı olmalı.";
+  }
+  if (m.includes("testing emails") || m.includes("own email")) {
+    return "Resend şu an yalnızca kendi hesap adresine deneme gönderimine izin veriyor: alan adı doğrulanmamış. Resend → Domains'te alan adını doğrula.";
+  }
+  if (m.includes("api key") || sebep === "http-401") {
+    return "Resend anahtarı geçersiz ya da yetkisi yetmiyor. Resend → API Keys'te \"Sending access\" ya da \"Full access\" yetkili yeni bir anahtar oluşturup Vercel'de RESEND_ANAHTARI'na yaz ve yeniden dağıt.";
+  }
+  if (sebep === "http-422") {
+    return "Resend isteği reddetti; çoğunlukla gönderen adresin biçimi hatalı. EPOSTA_GONDEREN şu biçimde olmalı: BASoftBaby <siparis@alanadin.com>.";
+  }
+  if (sebep === "ag-hatasi") {
+    return "Resend'e ulaşılamadı. Birkaç dakika sonra yeniden dene.";
+  }
+  return "Resend gönderimi kabul etmedi; sebebi yukarıda Resend'in kendi cümlesiyle yazıyor.";
+}
+
+function EpostaDenemesi({
+  kime,
+  sonuc,
+  sebep,
+  mesaj,
+}: {
+  kime: string;
+  sonuc?: string;
+  sebep?: string;
+  mesaj?: string;
+}) {
+  return (
+    <section id="eposta-denemesi" className={KART}>
+      <h2 className="text-lg">E-posta denemesi</h2>
+      <p className="mt-1 text-sm text-metin-2">
+        Anahtarın tanımlı olması e-postaların gittiği anlamına gelmiyor: gönderen adresin
+        alan adı Resend&apos;de doğrulanmadıysa her gönderim reddediliyor ve bunu ancak
+        müşteri &quot;e-posta gelmedi&quot; deyince fark ediyorsun. Bu düğme{" "}
+        <strong>{kime}</strong> adresine bir deneme gönderiyor ve Resend&apos;in cevabını
+        buraya getiriyor.
+      </p>
+      <p className="mt-2 text-sm text-metin-3">
+        Gönderen: <span className="font-semibold text-metin-2">{gonderenAdresi()}</span>
+        {!epostaAcikMi() && " · anahtar tanımlı değil"}
+      </p>
+
+      {sonuc === "gitti" && (
+        <p className="mt-3 rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">
+          Resend e-postayı kabul etti. Birkaç dakika içinde {kime} gelen kutusuna düşmeli;
+          gelmezse istenmeyen (spam) klasörüne bak.
+        </p>
+      )}
+      {sonuc === "hata" && (
+        <div className="mt-3 rounded-marka bg-mercan-soluk px-4 py-3 text-sm text-mercan-koyu">
+          <p className="font-bold">
+            Gönderilemedi{sebep?.startsWith("http-") ? ` (Resend: ${sebep.slice(5)})` : ""}.
+          </p>
+          {mesaj && <p className="mt-1 font-mono text-xs">{mesaj}</p>}
+          <p className="mt-2">{epostaHataIpucu(sebep, mesaj)}</p>
+        </div>
+      )}
+
+      <form action={denemeEpostasiGonder} className="mt-4">
+        <GonderDugmesi
+          bekleyen="Gönderiliyor…"
+          className="rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi"
+        >
+          Deneme e-postası gönder
+        </GonderDugmesi>
+      </form>
+    </section>
   );
 }

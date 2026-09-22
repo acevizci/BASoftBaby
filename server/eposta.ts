@@ -19,10 +19,20 @@ import { siteAdresi } from "@/server/site";
 
 const UC = "https://api.resend.com/emails";
 
-export type EpostaSonucu = { gonderildi: boolean; sebep?: string };
+export type EpostaSonucu = {
+  gonderildi: boolean;
+  sebep?: string;
+  /** Resend'in kendi hata metni: "The basoftbaby.com domain is not verified…" */
+  mesaj?: string;
+};
 
 export function epostaAcikMi(): boolean {
   return Boolean(process.env.RESEND_ANAHTARI);
+}
+
+/** Gönderen adres; panelde gösteriliyor, alan adı Resend'dekiyle aynı olmalı. */
+export function gonderenAdresi(): string {
+  return gonderen();
 }
 
 function gonderen(): string {
@@ -80,8 +90,17 @@ async function gonder(
     });
 
     if (!cevap.ok) {
-      console.error(`E-posta gönderilemedi (${cevap.status}): ${konu} → ${kime}`);
-      return { gonderildi: false, sebep: `http-${cevap.status}` };
+      // Resend sebebi gövdede yazıyor ("domain is not verified", "API key is
+      // invalid"…). Eskiden atılıyordu; günlükte yalnızca durum kodu kalıyor,
+      // hangi ayarın eksik olduğu anlaşılmıyordu.
+      const mesaj = await cevap
+        .json()
+        .then((g: { message?: string }) => g.message)
+        .catch(() => undefined);
+      console.error(
+        `E-posta gönderilemedi (${cevap.status}${mesaj ? `: ${mesaj}` : ""}): ${konu} → ${kime}`,
+      );
+      return { gonderildi: false, sebep: `http-${cevap.status}`, mesaj };
     }
     return { gonderildi: true };
   } catch (hata) {
@@ -472,5 +491,24 @@ ${bilgi.satirlar.map((s) => `• ${s}`).join("\n")}
 
 Panelden cevaplayabilirsin:
 ${siteAdresi()}/yonetim/talepler`,
+  );
+}
+
+/**
+ * Panelden gönderilen deneme e-postası.
+ *
+ * Anahtar tanımlı olsa da gönderim alan adı doğrulanmadan çalışmıyor ve hata
+ * yalnızca sunucu günlüğüne düşüyordu. Satışa hazırlık ekranındaki düğme bunu
+ * gönderip Resend'in cevabını ekrana getiriyor (K-85).
+ */
+export async function denemeEpostasi(kime: string): Promise<EpostaSonucu> {
+  return gonder(
+    kime,
+    "BASoftBaby deneme e-postası",
+    `Merhaba,
+
+Bu e-posta yönetim panelindeki "Deneme e-postası gönder" düğmesiyle gönderildi. Bunu okuyorsan mağazanın e-postaları çalışıyor: sipariş onayı, ödeme onayı, kargo bildirimi ve şifre sıfırlama bu adresten gidiyor.
+
+Gönderen: ${gonderen()}${await altBilgi()}`,
   );
 }

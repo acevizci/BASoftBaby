@@ -4149,6 +4149,31 @@ Menü küçük bir istemci sarmalayıcısıyla (`usePathname`) gizleniyor; sunuc
 **Nerede:** [`../ui/odemede-gizli.tsx`](../ui/odemede-gizli.tsx),
 [`../ui/ust-cubuk.tsx`](../ui/ust-cubuk.tsx)
 
+### K-85 · E-postanın gerçekten gittiği panelden denenebiliyor
+
+Resend anahtarı tanımlanınca Satışa hazırlık "bildirimler gönderiliyor"
+diyordu. Doğru değildi: gönderen adresin alan adı Resend'de doğrulanmadan her
+gönderim 403 ile reddediliyor. Hata yalnızca sunucu günlüğüne düşüyordu, üstelik
+Resend'in sebebi söyleyen cümlesi atılıp yalnızca durum kodu yazılıyordu. Bunu
+fark etmenin tek yolu müşterinin "e-posta gelmedi" demesiydi.
+
+- Satışa hazırlık ekranında **Deneme e-postası gönder** düğmesi. Paneli açan
+  kişinin kendi adresine gidiyor — başka adres yazılabilseydi panel, mağaza
+  adına herkese e-posta attıran bir form olurdu.
+- Sonuç ekranda: kabul edildiyse "gelen kutusuna ya da spam'e bak",
+  reddedildiyse Resend'in kendi cümlesi ve en sık durumların (alan adı
+  doğrulanmamış, anahtar geçersiz, gönderen biçimi, anahtar bu dağıtımda yok)
+  Türkçe karşılığı.
+- Gönderim hatalarında Resend'in mesajı artık günlüğe de yazılıyor.
+- Ekran gönderen adresi gösteriyor: alan adının Resend'de doğrulanan alan
+  adıyla aynı olması gerekiyor.
+
+Sahte bir Resend sunucusuyla (`EPOSTA_TABAN_ADRES`) iki yol da denendi.
+
+**Nerede:** [`../server/eposta.ts`](../server/eposta.ts) (`denemeEpostasi`),
+[`../server/eposta-deneme.ts`](../server/eposta-deneme.ts),
+[`../app/yonetim/(panel)/hazirlik/page.tsx`](../app/yonetim/(panel)/hazirlik/page.tsx)
+
 ---
 
 ## Açık sorular

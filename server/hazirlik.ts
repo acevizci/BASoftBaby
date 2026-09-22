@@ -214,8 +214,10 @@ export async function hazirlikRaporu(): Promise<HazirlikRaporu> {
           ad: "E-posta servisi",
           tamam: epostaAcikMi(),
           agirlik: "uyari",
+          // "Gönderiliyor" demiyor: anahtar tanımlı olsa da alan adı
+          // doğrulanmadan her gönderim reddediliyor (K-85).
           durum: epostaAcikMi()
-            ? "Resend anahtarı tanımlı; bildirimler gönderiliyor."
+            ? "Resend anahtarı tanımlı. Gerçekten gittiğini aşağıdaki deneme e-postasıyla doğrula."
             : "Resend anahtarı yok; hiçbir e-posta gönderilmiyor.",
           sonuc:
             "Sipariş onayı, ödeme onayı, kargo bildirimi, şifre sıfırlama ve iade bildirimi gitmiyor. Müşteri parayı gönderiyor, karşılığında hiçbir şey almıyor.",
