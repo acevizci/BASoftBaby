@@ -10,18 +10,39 @@ import { fileURLToPath } from "node:url";
  *    Next derlerken kendi çözüyor, düz Node'da ise böyle bir modül yok.
  *    İşaretin amacı sunucu kodunun tarayıcıya sızmasını engellemek — testte
  *    tarayıcı olmadığı için boş bir modül doğru karşılığı.
- * 2. **Sahte bir `DATABASE_URL`.** `server/veritabani.ts` yüklenirken Prisma
- *    istemcisini kuruyor ve adres yoksa hata atıyor. İstemciyi kurmak
- *    bağlanmak demek değil: ilk sorguya kadar hiçbir yere gidilmiyor. Yani
- *    veritabanına dokunmayan saf işlevler veritabanı olmadan sınanabiliyor.
+ *
+ *    Aynı yolla `next/headers` bellekteki bir çerez kutusuna, `next/cache`
+ *    de önbelleksiz bir geçişe bağlanıyor: ikisi de istek bağlamı olmadan
+ *    çalışmıyor. Önbelleğin atlanması testte istenen davranış — sınanan şey
+ *    önbellek değil, stoğun ve paranın doğruluğu (K-77).
+ * 2. **`DATABASE_URL` ayarlanıyor.** `server/veritabani.ts` yüklenirken
+ *    Prisma istemcisini kuruyor ve adres yoksa hata atıyor.
+ *
+ *    - `TEST_DATABASE_URL` tanımlıysa **o** kullanılıyor: veritabanına bağlı
+ *      testler uygulamanın kendi `db` istemcisiyle, yani gerçek kod yoluyla
+ *      çalışıyor (K-77).
+ *    - Tanımlı değilse sahte bir adres yazılıyor. İstemciyi kurmak bağlanmak
+ *      demek değil — ilk sorguya kadar hiçbir yere gidilmiyor — yani saf
+ *      işlevler veritabanı olmadan sınanabiliyor.
+ *
+ *    **Ölçüt hiçbir zaman `DATABASE_URL`in kendisi değil.** Öyle olsaydı
+ *    `npm run build` içindeki test koşusu Vercel'de gerçek mağazanın
+ *    veritabanına sipariş açardı. Ayrı bir değişken istemek bu kazayı
+ *    imkânsız kılıyor.
  */
 
 const BOS = new Set(["server-only", "client-only"]);
 const BOS_MODUL = new URL("./bos-modul.ts", import.meta.url).href;
+const CEREZ_MODUL = new URL("./sahte-headers.ts", import.meta.url).href;
+const ONBELLEK_MODUL = new URL("./sahte-cache.ts", import.meta.url).href;
 
 registerHooks({
   resolve(belirtec, baglam, sonraki) {
     if (BOS.has(belirtec)) return { url: BOS_MODUL, shortCircuit: true };
+    // `next/headers` ve `next/cache` yalnızca istek bağlamında çalışıyor;
+    // testte istek yok.
+    if (belirtec === "next/headers") return { url: CEREZ_MODUL, shortCircuit: true };
+    if (belirtec === "next/cache") return { url: ONBELLEK_MODUL, shortCircuit: true };
     return sonraki(belirtec, baglam);
   },
 });
@@ -30,4 +51,5 @@ registerHooks({
 // dosya taşınırsa test sessizce değil, açık bir hatayla düşsün.
 void fileURLToPath(BOS_MODUL);
 
-process.env.DATABASE_URL ??= "postgresql://test@localhost:5432/yok";
+const testAdresi = process.env.TEST_DATABASE_URL?.trim();
+process.env.DATABASE_URL = testAdresi || "postgresql://test@localhost:5432/yok";

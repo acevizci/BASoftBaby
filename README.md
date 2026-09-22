@@ -145,6 +145,12 @@ arama metni, ödeme süresi ve toplu yükleme süzgeci. Veritabanı gerekmiyor �
 `npm run build` testleri göçlerden **önce** çalıştırıyor: bozuk bir hesap
 veritabanına dokunmadan, dağıtıma çıkmadan duruyor (K-68).
 
+**Veritabanına bağlı testler** ayrıca var (stok yarışı, iptal-stok iadesi,
+iade tutarı) ve yalnızca `TEST_DATABASE_URL` tanımlıyken çalışıyorlar —
+üretime dokunmasınlar diye ölçüt `DATABASE_URL` değil. Yerelde:
+`createdb basoftbaby_test`, göçleri uygula, sonra
+`TEST_DATABASE_URL=postgresql://... npm test` (K-77).
+
 **Müşteriler ekranı** (`/yonetim/musteriler`): hesap açmış müşteriler,
 harcama toplamı (yalnızca ödenmiş siparişler), sipariş geçmişi, adres
 defteri, e-posta doğrulaması ve pazarlama izni. KVKK'nın iki hakkı panelden

@@ -3948,6 +3948,53 @@ açıldı.
 
 ---
 
+### K-77 · Veritabanına bağlı testler: stok yarışı ve iade tutarı
+
+K-68'deki 125 sınav saf mantığı koruyordu; **paranın en kritik kısmı hâlâ
+elle denemeye bağlıydı.** Aynı anda iki kişi son adedi alırsa ne olduğu,
+iptal edilen siparişin stoğunun geri dönüp dönmediği, iade tutarının
+siparişin toplamını aşıp aşmadığı — hiçbiri sınanmıyordu. Dokuz sınav
+eklendi.
+
+**Üretime asla dokunmuyorlar.** Ölçüt `DATABASE_URL` değil, ayrı bir
+`TEST_DATABASE_URL`. Tanımlı değilse bu testler atlanıyor ve sebebini
+yazıyor. `DATABASE_URL` kullanılsaydı `npm run build` içindeki test koşusu
+Vercel'de **gerçek mağazanın veritabanına sipariş açardı.** Ayrı bir değişken
+istemek bu kazayı imkânsız kılıyor.
+
+**Gerçek kod yolu sınanıyor, taklidi değil.** `TEST_DATABASE_URL` varken
+`hazirlik.ts` onu `DATABASE_URL` olarak yazıyor, yani testler uygulamanın
+kendi `db` istemcisiyle `siparisOlustur`, `siparisiIptalEtVeStoguIadeEt` ve
+`iadeTutari` işlevlerini **olduğu gibi** çağırıyor. Sipariş kalemlerini
+sepetten okuduğu için test de gerçek bir `Cart` kuruyor.
+
+**Next.js'in istek bağlamı taklit ediliyor, mantık değil.** `next/headers`
+bellekteki bir çerez kutusuna, `next/cache` de önbelleksiz bir geçişe
+bağlanıyor — ikisi de istek bağlamı olmadan çalışmıyor. Önbelleğin atlanması
+testte istenen davranış: sınanan şey önbellek değil, stoğun doğruluğu; bayat
+bir değerin sınavı yanıltması istenmez.
+
+**En önemli sınav:** on istek aynı anda üç adetlik stoğa saldırıyor, tam
+olarak üçü geçiyor ve stok sıfırda duruyor. Koşullu düşüm (`where stok >=
+adet`) kaldırılsa hepsi geçer, stok eksiye düşer ve olmayan ürün satılırdı.
+İkincisi: iptal iki kez çağrılınca stok iki kez artmıyor — çift tıklama stok
+uydurmuyor.
+
+**Her test kendi verisini kuruyor ve siliyor.** Bütün kayıtlar `T_` önekli
+kimliklerle açılıyor; ortak bir tohuma güvenilseydi testler birbirinin
+sonucunu bozar, sıra değişince anlaşılmaz hatalar çıkardı.
+
+**Nasıl çalıştırılıyor.** Yerelde bir Postgres'te `basoftbaby_test`
+veritabanı açılıp göçler uygulanıyor, sonra
+`TEST_DATABASE_URL=... npm test`. Değişken olmadan `npm test` yalnızca saf
+sınavları koşuyor — Vercel'deki derleme de böyle.
+
+**Nerede:** [`../testler/stok-db.test.ts`](../testler/stok-db.test.ts),
+[`../testler/veritabani.ts`](../testler/veritabani.ts),
+[`../testler/hazirlik.ts`](../testler/hazirlik.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)
