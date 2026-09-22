@@ -4132,6 +4132,23 @@ sayılmıyor.
 **Nerede:** [`../db/migrations/20260922220000_kategori_adi_tekil/migration.sql`](../db/migrations/20260922220000_kategori_adi_tekil/migration.sql),
 [`../testler/kategori-db.test.ts`](../testler/kategori-db.test.ts)
 
+### K-84 · Ödeme sayfasında kategori menüsü yok
+
+Ödeme adımında amaç müşterinin işlemi bitirmesi; kategori şeridi ona vitrine
+dönmenin en kolay yolunu gösteriyordu. Menü (geniş ekrandaki şerit ve telefondaki
+açılır menü) yalnızca `/odeme`'de gizleniyor. Logo, arama, hesap ve sepet
+duruyor: sepete bir şey eklemek isteyen müşterinin geri dönüş yolu kapanmıyor.
+Sipariş onay sayfasında menü geri geliyor — alışveriş bitti, gezinmek serbest.
+
+Hesabım'da menü kalıyor: oradan çoğunlukla alışverişe dönülüyor.
+
+Üst çubuk ortak düzende çiziliyor ve düzen açık sayfanın yolunu bilmiyor.
+Menü küçük bir istemci sarmalayıcısıyla (`usePathname`) gizleniyor; sunucu
+çiziminde de yok, JavaScript kapalıyken de görünmüyor (denendi).
+
+**Nerede:** [`../ui/odemede-gizli.tsx`](../ui/odemede-gizli.tsx),
+[`../ui/ust-cubuk.tsx`](../ui/ust-cubuk.tsx)
+
 ---
 
 ## Açık sorular

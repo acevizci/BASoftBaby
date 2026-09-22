@@ -3,6 +3,7 @@ import Link from "next/link";
 import SepetSayaci from "@/ui/sepet-sayaci";
 import AramaKutusu from "@/ui/arama-kutusu";
 import HesapBaglantisi from "@/ui/hesap-baglantisi";
+import OdemedeGizli from "@/ui/odemede-gizli";
 import { kategorileriGetir } from "@/server/katalog";
 
 /**
@@ -27,6 +28,9 @@ import { kategorileriGetir } from "@/server/katalog";
  * şeritte (geniş ekran). `<details>` kapalıyken içeriğini tarayıcı
  * gizlediği için geniş ekranda "hep açık" hâle getirmenin temiz bir yolu
  * yok; birkaç bağlantının iki kez yazılması bu kadar kırılganlığa değmiyor.
+ *
+ * **Ödeme sayfasında kategori menüsü yok** (K-84): müşteri işlemi bitirmeden
+ * vitrine dağılmasın. Logo, arama, hesap ve sepet duruyor.
  */
 
 const SERIT_BAGLANTISI =
@@ -62,6 +66,7 @@ export default async function UstCubuk() {
 
         {/* Küçük ekran: açılır kategori menüsü */}
         {kategoriler.length > 0 && (
+          <OdemedeGizli>
           <details className="group order-4 w-full sm:hidden">
             <summary className="flex list-none items-center justify-between rounded-full border border-cizgi bg-yuzey px-4 py-2 text-sm font-bold text-metin-2 [&::-webkit-details-marker]:hidden">
               <span>Kategoriler</span>
@@ -87,11 +92,13 @@ export default async function UstCubuk() {
               </Link>
             </nav>
           </details>
+          </OdemedeGizli>
         )}
       </div>
 
       {/* Geniş ekran: tek satırlık kategori şeridi */}
       {kategoriler.length > 0 && (
+        <OdemedeGizli>
         <nav
           aria-label="Kategoriler"
           className="hidden border-t border-cizgi-soluk sm:block"
@@ -114,6 +121,7 @@ export default async function UstCubuk() {
             </div>
           </div>
         </nav>
+        </OdemedeGizli>
       )}
     </header>
   );
