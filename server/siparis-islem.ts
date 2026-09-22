@@ -24,6 +24,7 @@ import { ayarlariGetir, sepetIdOku } from "@/server/sepet";
 import { KUPON_CEREZI } from "@/server/kampanya";
 import { SON_SIPARIS_CEREZI, siparisGetirPanel, siparisOlustur } from "@/server/siparis";
 import { odemeAcikMi, odemeBaslat } from "@/server/odeme";
+import { odemeDurumu } from "@/ui/odeme-bicim";
 import {
   odemeGirisimiKaydet,
   sepetiSiparistenDoldur,
@@ -120,6 +121,22 @@ export async function siparisiTamamla(veri: FormData): Promise<void> {
   const kartMi = temiz(veri, "odemeYontemi") === "kart" && odemeAcikMi();
 
   const ayar = await ayarlariGetir();
+
+  /**
+   * Ödenemeyecek sipariş açılmıyor (K-76).
+   *
+   * Havale bilgisi boşken sipariş alınıyor, stok düşüyor ve müşteriye
+   * "ödeme bilgilerini en kısa sürede e-posta ile ileteceğiz" deniyordu —
+   * e-posta servisi de tanımlı değilken. Müşteri hiç gelmeyecek bir posta
+   * bekliyor, ürün kimseye satılamadan rafta kilitli kalıyordu.
+   *
+   * Satış yolunu açık tutan tek şey ödeme yöntemidir: kart kapalıysa ve
+   * havale bilgisi girilmemişse mağaza sipariş alamaz. Bunu sipariş anında
+   * söylemek, sipariş aldıktan sonra söylememekten iyidir.
+   */
+  if (!kartMi && !odemeDurumu(odemeAcikMi(), ayar.havaleBilgisi).havale) {
+    redirect("/odeme?hata=odeme-yok");
+  }
   const sonuc = await siparisOlustur(girdi, ayar, customerId, kartMi ? "kart" : "havale");
 
   if (!sonuc.tamam) {

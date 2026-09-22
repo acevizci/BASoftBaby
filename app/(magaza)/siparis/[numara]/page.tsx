@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import SiparisKarti from "@/ui/siparis-karti";
 import { ayarlariGetir } from "@/server/sepet";
+import { kunyeGetir } from "@/server/yasal";
 import { SON_SIPARIS_CEREZI, siparisGetirPanel } from "@/server/siparis";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +26,11 @@ export default async function SiparisOnayi({
 
   if (kavanoz.get(SON_SIPARIS_CEREZI)?.value !== numara) notFound();
 
-  const [siparis, ayar] = await Promise.all([siparisGetirPanel(numara), ayarlariGetir()]);
+  const [siparis, ayar, kunye] = await Promise.all([
+    siparisGetirPanel(numara),
+    ayarlariGetir(),
+    kunyeGetir(),
+  ]);
   if (!siparis) notFound();
 
   // Kartla ödemede müşteri buraya iyzico'dan dönüyor. Sonucu adres satırından
@@ -123,8 +128,25 @@ export default async function SiparisOnayi({
             </pre>
           </>
         ) : (
+          /* Havale bilgisi sonradan boşaltılmış olabilir. Eskiden burada
+             "en kısa sürede e-posta ile ileteceğiz" yazıyordu; e-posta
+             servisi tanımlı değilken bu söz tutulamıyordu (K-76). Artık
+             müşteriye ulaşabileceği bir kanal gösteriliyor. */
           <p className="mt-2 text-sm text-metin-2">
-            Ödeme bilgilerini en kısa sürede e-posta ile ileteceğiz.
+            Ödeme bilgileri için bizimle iletişime geç
+            {kunye.destekTelefon && (
+              <>
+                : <span className="rakam font-bold">{kunye.destekTelefon}</span>
+              </>
+            )}
+            {kunye.destekEposta && (
+              <>
+                {kunye.destekTelefon ? " · " : ": "}
+                <span className="font-bold">{kunye.destekEposta}</span>
+              </>
+            )}
+            . Siparişin duruyor, numaran{" "}
+            <span className="rakam font-bold">{siparis.numara}</span>.
           </p>
         )}
       </section>

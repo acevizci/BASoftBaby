@@ -3901,6 +3901,53 @@ yazıldı. Ağırlık sınıflandırması ayrıca sınavla korunuyor.
 
 ---
 
+### K-76 · Ödenemeyecek sipariş açılmıyor
+
+Satın alma yolu baştan sona gerçek tarayıcıda yürünürken çıktı: renk ve
+beden seçimi, sepete ekleme, kupon, adres, havaleyle sipariş, panelde görme,
+ödemeyi onaylama, kargoya verme, müşterinin takip etmesi ve iade talebi —
+hepsi çalışıyordu. **Tek bir yer üç ayrı yalan söylüyordu.**
+
+Havale bilgisi (banka, hesap sahibi, IBAN) satış ayarlarında boşken:
+
+1. Ödeme sayfasındaki havale seçeneği **"Siparişi verdikten sonra banka
+   bilgileri ekranda çıkar"** diyordu. Çıkmıyordu.
+2. Sipariş yine de oluşuyor, **stok düşüyordu**.
+3. Onay sayfası **"Ödeme bilgilerini en kısa sürede e-posta ile
+   ileteceğiz"** diyordu — e-posta servisi de tanımlı değilken. Müşteri hiç
+   gelmeyecek bir posta bekliyor, ürün kimseye satılamadan rafta kilitli
+   kalıyordu.
+
+**Kural:** hiçbir ödeme yöntemi açık değilse sipariş alınmıyor. Kart
+anahtarları yoksa **ve** havale bilgisi girilmemişse ödeme sayfası formu hiç
+çizmiyor; onun yerine "şu anda sipariş alamıyoruz, sepetin duruyor" diyor ve
+künyedeki telefon/e-postayı gösteriyor. Sipariş eylemi de aynı kontrolü
+yapıyor: form kurcalansa bile ödenemeyecek sipariş açılmıyor.
+
+Havale bilgisi boş ama kart açıksa havale seçeneği hiç gösterilmiyor —
+çalışmayan bir seçenek sunmaktansa sunmamak.
+
+**Eski siparişler için de düzeltildi:** havale bilgisi sonradan boşaltılmış
+olabiliyor. Onay sayfası artık tutulamayacak bir söz vermek yerine
+müşteriye ulaşabileceği kanalı gösteriyor.
+
+**Kural tek yerde.** İki yerde ayrı yazılsaydı biri gevşediğinde öteki fark
+etmezdi. [`../ui/odeme-bicim.ts`](../ui/odeme-bicim.ts) saf bir modül:
+kararı verenler kart durumunu ve havale metnini okuyup geçiriyor, kural
+sınavla korunuyor.
+
+**Yürüyüşün geri kalanı temiz çıktı.** Kupon indirimi doğru uygulandı, stok
+düştü, ödenmemiş siparişe belge basılmadı, kargo kaydı siparişi "kargoda"ya
+aldı, müşteri takip numarasını gördü, iade formu doğru ürün ve bedenle
+açıldı.
+
+**Nerede:** [`../ui/odeme-bicim.ts`](../ui/odeme-bicim.ts),
+[`../app/(magaza)/odeme/page.tsx`](../app/(magaza)/odeme/page.tsx),
+[`../server/siparis-islem.ts`](../server/siparis-islem.ts),
+[`../app/(magaza)/siparis/[numara]/page.tsx`](../app/(magaza)/siparis/[numara]/page.tsx)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

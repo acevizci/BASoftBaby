@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { sepetGetir } from "@/server/sepet";
+import { ayarlariGetir, sepetGetir } from "@/server/sepet";
+import { kunyeGetir } from "@/server/yasal";
 import { siparisiTamamla } from "@/server/siparis-islem";
 import { adresleriGetir, EN_KISA_SIFRE, girisYapan } from "@/server/uyelik";
 import { odemeAcikMi } from "@/server/odeme";
+import { odemeDurumu } from "@/ui/odeme-bicim";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import GonderDugmesi from "@/ui/gonder-dugmesi";
 
@@ -27,18 +29,63 @@ const HATALAR: Record<string, string> = {
     "Siparişi tamamlamak için ön bilgilendirme formunu ve mesafeli satış sözleşmesini onaylaman gerekiyor.",
   "cok-istek":
     "Kısa sürede çok fazla sipariş denemesi geldi. Birkaç dakika bekleyip tekrar dene; sepetin duruyor.",
+  "odeme-yok":
+    "Şu anda ödeme alınamıyor, bu yüzden siparişin oluşturulmadı ve sepetin duruyor. Lütfen bizimle iletişime geç.",
   "odeme-baslatilamadi":
     "Ödeme sayfası açılamadı ve siparişin oluşturulmadı; kartından bir tahsilat yapılmadı. Tekrar deneyebilir ya da havale/EFT ile ödeyebilirsin.",
 };
 
 export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">) {
   const { hata, adres: adresSecimi } = await searchParams;
-  const [sepet, musteri] = await Promise.all([sepetGetir(), girisYapan()]);
+  const [sepet, musteri, ayar, kunye] = await Promise.all([
+    sepetGetir(),
+    girisYapan(),
+    ayarlariGetir(),
+    kunyeGetir(),
+  ]);
   // Anahtarlar tanımlı değilse kart seçeneği hiç gösterilmiyor; havale tek
   // başına çalışmaya devam ediyor.
-  const kartAcik = odemeAcikMi();
+  // Havale bilgisi girilmemişse havale gerçek bir seçenek değil: "banka
+  // bilgileri ekranda çıkar" diyen bir seçenek sunup boş ekran göstermek
+  // müşteriye yalan söylemek olurdu (K-76).
+  const odeme = odemeDurumu(odemeAcikMi(), ayar.havaleBilgisi);
+  const kartAcik = odeme.kart;
+  const havaleAcik = odeme.havale;
 
   if (sepet.satirlar.length === 0) redirect("/sepet");
+
+  /**
+   * Hiçbir ödeme yöntemi açık değilse form hiç çizilmiyor.
+   *
+   * Sipariş alıp "ödeme bilgilerini sonra göndeririz" demek, ürünü rafta
+   * kilitleyip müşteriyi beklemeye almak demek (K-76). Bunu baştan söylemek
+   * hem dürüst hem de stoğu boşa harcamıyor.
+   */
+  if (!odeme.alinabilir) {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-12">
+        <h1 className="text-2xl">Şu anda sipariş alamıyoruz</h1>
+        <p className="mt-3 text-sm text-metin-2">
+          Ödeme yöntemlerimiz geçici olarak kapalı. <strong>Sepetin duruyor</strong> —
+          birazdan tekrar denediğinde yerinde olacak.
+        </p>
+        {(kunye.destekTelefon || kunye.destekEposta) && (
+          <p className="mt-4 text-sm text-metin-2">
+            Siparişini hemen vermek istersen bize ulaşabilirsin:{" "}
+            {kunye.destekTelefon && <span className="rakam font-bold">{kunye.destekTelefon}</span>}
+            {kunye.destekTelefon && kunye.destekEposta && " · "}
+            {kunye.destekEposta && <span className="font-bold">{kunye.destekEposta}</span>}
+          </p>
+        )}
+        <Link
+          href="/sepet"
+          className="mt-6 inline-block rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi"
+        >
+          Sepete dön
+        </Link>
+      </div>
+    );
+  }
 
   const hataMetni = typeof hata === "string" ? HATALAR[hata] : undefined;
 
@@ -231,6 +278,7 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
               </label>
             )}
 
+            {havaleAcik && (
             <label
               className={`mt-3 flex items-start gap-3 rounded-[10px] border-[1.5px] p-4 ${
                 kartAcik ? "border-cizgi" : "border-mercan bg-mercan-soluk"
@@ -251,6 +299,7 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
                 </span>
               </span>
             </label>
+            )}
 
             {!kartAcik && (
               <p className="mt-3 text-xs text-metin-3">
