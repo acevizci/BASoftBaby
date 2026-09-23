@@ -1,6 +1,8 @@
 import { db } from "@/server/veritabani";
 import { kampanyaCevir, kampanyaKaydet, kampanyaSil } from "@/server/yonetim";
 import { fiyatYaz } from "@/ui/katalog-bicim";
+import { kampanyaZarari, type ZararliUrun } from "@/server/kar";
+import { ayarlariGetir } from "@/server/sepet";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import PanelBildirim, { ORTAK_HATALAR } from "@/ui/panel-bildirim";
 import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
@@ -62,7 +64,7 @@ export default async function KampanyaEkrani({
     : "/yonetim/kampanyalar";
   const adres = (n: number) => sayfaAdresi(temel, n);
 
-  const [kampanyalar, kategoriler, urunler] = await Promise.all([
+  const [kampanyalar, kategoriler, urunler, maliyetliler, satisAyari] = await Promise.all([
     db.campaign.findMany({
       where: kosul,
       orderBy: { olusturuldu: "desc" },
@@ -75,6 +77,12 @@ export default async function KampanyaEkrani({
       select: { id: true, slug: true, ad: true, aktif: true },
     }),
     db.product.findMany({ orderBy: { ad: "asc" }, select: { id: true, ad: true } }),
+    // Zarar uyarısı için: satıştaki, alış fiyatı girilmiş ürünler (K-113).
+    db.product.findMany({
+      where: { aktif: true, alisFiyatKurus: { not: null } },
+      select: { id: true, ad: true, categoryId: true, fiyatKurus: true, alisFiyatKurus: true },
+    }),
+    ayarlariGetir(),
   ]);
 
   return (
@@ -132,6 +140,7 @@ export default async function KampanyaEkrani({
                           en az {fiyatYaz(k.enAzSepetKurus)} sepet
                         </span>
                       )}
+                      <ZararUyarisi zararlilar={kampanyaZarari(k, maliyetliler, satisAyari.kdvOrani)} tutarMi={k.tip === "tutar"} />
                     </td>
                     <td className="rakam py-2 font-semibold">{degerYaz(k.tip, k.deger)}</td>
                     <td className="py-2 text-metin-2">
@@ -296,5 +305,30 @@ export default async function KampanyaEkrani({
         </form>
       </section>
     </div>
+  );
+}
+
+/**
+ * Kampanya bazı ürünleri maliyetin altına indiriyorsa (K-113). Katlı: tablo
+ * satırını büyütmesin, ama sayısı her zaman görünsün.
+ */
+function ZararUyarisi({ zararlilar, tutarMi }: { zararlilar: ZararliUrun[]; tutarMi: boolean }) {
+  if (zararlilar.length === 0) return null;
+  return (
+    <details className="mt-1 text-xs">
+      <summary className="cursor-pointer font-bold text-mercan-koyu">
+        ⚠ {zararlilar.length} üründe maliyetin altında
+      </summary>
+      <ul className="mt-1 flex flex-col gap-0.5 text-metin-2">
+        {zararlilar.slice(0, 10).map((z) => (
+          <li key={z.ad} className="rakam">
+            {z.ad}: indirimli {fiyatYaz(z.indirimliKurus)} (KDV hariç {fiyatYaz(z.netKurus)}), alış{" "}
+            {fiyatYaz(z.alisKurus)}
+          </li>
+        ))}
+        {zararlilar.length > 10 && <li>…ve {zararlilar.length - 10} ürün daha</li>}
+      </ul>
+      {tutarMi && <p className="mt-1 text-metin-3">Tutar indiriminde sepette yalnızca o ürün varsa.</p>}
+    </details>
   );
 }

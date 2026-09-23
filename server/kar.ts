@@ -173,3 +173,34 @@ export function siparisKari(g: KarGirdisi): SiparisKari {
     eksikler,
   };
 }
+
+// ── Kampanya zarar uyarısı (K-113) ──────────────────────────────────────
+
+export type ZararliUrun = { ad: string; indirimliKurus: number; netKurus: number; alisKurus: number };
+
+/**
+ * Kampanyanın kapsamındaki, indirimli fiyatı (KDV hariç) alış fiyatının
+ * altına düşen ürünler. Tutar indirimi sepete uygulandığı için en kötü
+ * durum, yani sepette yalnızca o ürünün bir adedi varsayılıyor. Alış fiyatı
+ * olmayan ürün hesaba girmiyor.
+ */
+export function kampanyaZarari(
+  k: { tip: string; deger: number; kapsam: string; categoryId: string | null; productId: string | null },
+  urunler: { id: string; ad: string; categoryId: string; fiyatKurus: number; alisFiyatKurus: number | null }[],
+  kdvOrani: number,
+): ZararliUrun[] {
+  return urunler.flatMap((u) => {
+    if (u.alisFiyatKurus === null) return [];
+    if (k.kapsam === "urun" && k.productId !== u.id) return [];
+    if (k.kapsam === "kategori" && k.categoryId !== u.categoryId) return [];
+    const indirim =
+      k.tip === "yuzde"
+        ? Math.floor((u.fiyatKurus * Math.min(Math.max(k.deger, 0), 100)) / 100)
+        : Math.min(Math.max(k.deger, 0), u.fiyatKurus);
+    const indirimliKurus = u.fiyatKurus - indirim;
+    const netKurus = kdvHaric(indirimliKurus, kdvOrani);
+    return netKurus < u.alisFiyatKurus
+      ? [{ ad: u.ad, indirimliKurus, netKurus, alisKurus: u.alisFiyatKurus }]
+      : [];
+  });
+}

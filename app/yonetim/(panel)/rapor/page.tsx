@@ -10,6 +10,8 @@ import {
 } from "@/server/rapor";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import { karRaporu } from "@/server/kar-raporu";
+import KarRaporuBolumu from "@/ui/kar-raporu";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +66,7 @@ export default async function RaporEkrani({ searchParams }: PageProps<"/yonetim/
 
   const aranan = await searchParams;
   const donem = donemCoz(aranan);
-  const r = await raporGetir(donem);
+  const [r, kar] = await Promise.all([raporGetir(donem), karRaporu(donem)]);
 
   const secili = typeof aranan.donem === "string" ? aranan.donem : "bu-ay";
   const elleSecim = Boolean(aranan.baslangic || aranan.bitis);
@@ -191,6 +193,10 @@ export default async function RaporEkrani({ searchParams }: PageProps<"/yonetim/
             <KirilimListesi baslik="Bedenler" satirlar={r.bedenler} />
             <KirilimListesi baslik="Ödeme yöntemi" satirlar={r.odeme} />
           </div>
+
+          {/* Kâr (K-113): ciro kutusundan farklı olarak yalnızca ödemesi
+              alınmış siparişler ve KDV hariç. */}
+          <KarRaporuBolumu r={kar} />
         </>
       )}
     </div>

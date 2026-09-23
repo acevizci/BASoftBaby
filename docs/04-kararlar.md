@@ -4936,6 +4936,44 @@ sabit giderler kapsam dışı.
 
 ---
 
+### K-113 · Satış raporunda kâr; kampanyada zarar uyarısı
+
+**Satış raporuna "Kâr" bölümü eklendi.** Her sipariş, sipariş ekranındaki
+dökümün aynısıyla (`siparisKari`, K-112) hesaplanıp toplanıyor:
+
+- **Toplam:** net satış, maliyet, brüt kâr, kargo, paket, komisyon, katkı
+  payı ve marj; önceki eşit dönemle karşılaştırma. Eksik bilgiyle hesaplanan
+  sipariş sayısı ve sebepleri (sarı uyarı), tahmini değer kullanılan
+  sipariş sayısı.
+- **Yalnızca ödemesi alınmış siparişler.** Ciro kutusu bekleyen havaleleri
+  de sayıyor (ne kadar sipariş geldi); kâr gerçekleşeni soruyor. Bekleyen
+  havale kendiliğinden iptal olabilir.
+- **Ürün ve kategori bazında brüt kâr** (satırın indirim payı düşülmüş, KDV
+  hariç, iade edilen adetler hariç). "En çok satan" ile "en çok kazandıran"
+  ayrı: ilk 8 kâra göre, altında en düşük marjlı 3. Alış fiyatı olmayan satır
+  bu kırılıma girmiyor.
+- **Ödeme yöntemine göre kalan:** kartta komisyon ve taksit farkı düşülmüş;
+  kartın gerçek maliyeti burada görünüyor.
+- **Bedava kargo:** bedava ve ücretli kargolu siparişlerin ortalama kalanı
+  ve ortalama kargo gideri yan yana. Bedava kargo eşiğinin kâra etkisi
+  buradan okunuyor.
+- **Kampanyalar:** kampanya başına sipariş, verilen indirim, kalan, marj.
+- **Zarar eden siparişler** ve kabaca sebebi (maliyetin altında satış,
+  kargo, giderler).
+
+**Kampanya zarar uyarısı:** kampanya listesinde, kampanyanın kapsamındaki
+ürünlerden indirimli fiyatı (KDV hariç) alış fiyatının altına düşenler "⚠ N
+üründe maliyetin altında" diye katlı listeleniyor. Tutar indiriminde en kötü
+durum varsayılıyor (sepette yalnızca o ürün). Liste kaydedilmiş kampanyadan
+hesaplanıyor; kaydettikten sonra listede görünüyor.
+
+**Nerede:** [`../server/kar-raporu.ts`](../server/kar-raporu.ts),
+[`../ui/kar-raporu.tsx`](../ui/kar-raporu.tsx),
+[`../server/kar.ts`](../server/kar.ts) (`kampanyaZarari`),
+[`../testler/kar-raporu.test.ts`](../testler/kar-raporu.test.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)
