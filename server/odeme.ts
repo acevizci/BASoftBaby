@@ -44,9 +44,23 @@ export type OdemeSonucu = {
   saglayiciRef?: string;
   odenenKurus: number;
   taksit: number;
+  /** iyzico'nun kestiği komisyon; cevapta yoksa boş (K-112). */
+  komisyonKurus?: number;
   hata?: string;
   ham: string;
 };
+
+/**
+ * iyzico ödeme cevabındaki komisyon: oran tutarı + işlem ücreti (K-112).
+ * İkisi de yoksa ya da sayı değilse `undefined`: tahmin ayardaki orandan.
+ */
+export function komisyonCoz(sonuc: Record<string, unknown>): number | undefined {
+  const oran = Number(sonuc.iyziCommissionRateAmount);
+  const ucret = Number(sonuc.iyziCommissionFee);
+  if (!Number.isFinite(oran) && !Number.isFinite(ucret)) return undefined;
+  const toplam = (Number.isFinite(oran) ? oran : 0) + (Number.isFinite(ucret) ? ucret : 0);
+  return Math.round(toplam * 100);
+}
 
 export function odemeAcikMi(): boolean {
   return Boolean(process.env.IYZICO_API_ANAHTARI && process.env.IYZICO_GIZLI_ANAHTAR);
@@ -211,6 +225,7 @@ export async function odemeSorgula(jeton: string): Promise<OdemeSonucu> {
       saglayiciRef: metin(sonuc.paymentId) || undefined,
       odenenKurus: Number.isFinite(odenen) ? Math.round(odenen * 100) : 0,
       taksit: Number(sonuc.installment ?? 1) || 1,
+      komisyonKurus: odendi ? komisyonCoz(sonuc) : undefined,
       hata: odendi ? undefined : metin(sonuc.errorMessage) || "Ödeme onaylanmadı.",
       ham,
     };

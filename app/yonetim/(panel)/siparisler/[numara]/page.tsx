@@ -1,4 +1,6 @@
 import Link from "next/link";
+import KarDokumu from "@/ui/kar-dokumu";
+import { siparisKariGetir } from "@/server/siparis-kari";
 import { notFound } from "next/navigation";
 import SiparisKarti from "@/ui/siparis-karti";
 import { siparisGetirPanel } from "@/server/siparis";
@@ -47,7 +49,10 @@ export default async function SiparisDetayi({
   const belge = belgeBasilabilirMi(siparis);
   // Bu siparişin iade kayıtları: borç ve ödendiği an sipariş ekranında da
   // görünmeli, ayrı bir listeye bakmayı gerektirmemeli (K-58).
-  const iadeler = await siparisinIadeleri(siparis.numara);
+  const [iadeler, kar] = await Promise.all([
+    siparisinIadeleri(siparis.numara),
+    siparisKariGetir(siparis.numara),
+  ]);
   const irsaliye = await irsaliyeGetir(siparis.numara);
 
   return (
@@ -188,6 +193,20 @@ export default async function SiparisDetayi({
                 className={`${GIRDI} rakam`}
               />
             </label>
+
+            <label className="flex flex-col gap-1.5">
+              <span className={ETIKET}>Kargo ücreti (₺, KDV hariç, isteğe bağlı)</span>
+              <input
+                name="ucret"
+                inputMode="decimal"
+                defaultValue={
+                  gonderi?.ucretKurus != null ? (gonderi.ucretKurus / 100).toFixed(2).replace(".", ",") : ""
+                }
+                placeholder="boşsa ayardaki ortalama"
+                className={`${GIRDI} rakam`}
+              />
+              <span className="text-xs text-metin-3">Firmaya ödediğin; yalnızca kâr hesabı için.</span>
+            </label>
           </div>
 
           {gonderi && (
@@ -223,6 +242,8 @@ export default async function SiparisDetayi({
 
       {/* İade kayıtları: borç ve ödendiği an siparişin kendi ekranında da
           görünüyor, ayrı listeye bakmayı gerektirmiyor (K-58). */}
+      <KarDokumu kar={kar} iptal={siparis.durum === "iptal"} />
+
       {iadeler.length > 0 && (
         <section className="rounded-marka border border-cizgi bg-yuzey p-5">
           <div className="flex flex-wrap items-baseline justify-between gap-2">

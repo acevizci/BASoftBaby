@@ -34,3 +34,142 @@ export function yuzdeYaz(y: number | null): string {
   if (y === null) return "—";
   return `%${y.toLocaleString("tr-TR", { maximumFractionDigits: 1 })}`;
 }
+
+// ── Sipariş kârı (K-112) ────────────────────────────────────────────────
+
+/** Satış ayarlarındaki giderler; `null` "girilmedi". */
+export type GiderAyari = {
+  kargoGiderKurus: number | null;
+  paketGiderKurus: number | null;
+  hediyePaketGiderKurus: number | null;
+  kartKomisyonOnbinde: number | null;
+  kartKomisyonSabitKurus: number | null;
+};
+
+export type KarSatiri = {
+  adet: number;
+  /** İadesi tamamlanmış adet; bu adetlerin maliyeti stoğa geri döndü. */
+  iadeAdet: number;
+  alisFiyatKurus: number | null;
+  alisTahmini: boolean;
+};
+
+export type KarGirdisi = {
+  kdvOrani: number;
+  toplamKurus: number;
+  /** Tamamlanmış para iadeleri (KDV dahil). */
+  iadeKurus: number;
+  odemeYontemi: string;
+  /** Kartta çekilen tutar; vade farkı yansıtıldıysa toplamdan büyük (K-110). */
+  odenenKurus: number | null;
+  /** iyzico'nun gerçek komisyonu; yoksa ayardaki oranla tahmin. */
+  komisyonKurus: number | null;
+  /** Her gönderinin gerçek ücreti; boşsa ayardaki ortalama. */
+  gonderiUcretleri: (number | null)[];
+  /** Kargo henüz yoksa bir gönderi bekleniyor mu (iptal değil, teslim yolunda). */
+  gonderiBekleniyor: boolean;
+  hediyePaketi: boolean;
+  satirlar: KarSatiri[];
+  gider: GiderAyari;
+};
+
+export type Kalem = { kurus: number | null; tahmini: boolean };
+
+export type SiparisKari = {
+  /** KDV hariç satış: (tahsilat − iade) ÷ (1 + KDV). */
+  netSatisKurus: number;
+  vadeFarkiKurus: number;
+  /** Satılan malın maliyeti; iade edilenler düşülmüş. */
+  maliyet: Kalem & { eksikSatir: number };
+  brutKarKurus: number;
+  kargo: Kalem;
+  paket: Kalem;
+  komisyon: Kalem;
+  /** Brüt kâr − giderler. Girilmeyen giderler sıfır sayılıyor, `eksikler`de yazıyor. */
+  katkiKurus: number;
+  marjYuzde: number | null;
+  /** Hesaba girmeyen ya da eksik giren kalemler, ekranda söylenmek için. */
+  eksikler: string[];
+};
+
+export function siparisKari(g: KarGirdisi): SiparisKari {
+  const eksikler: string[] = [];
+  const netSatisKurus = kdvHaric(Math.max(0, g.toplamKurus - g.iadeKurus), g.kdvOrani);
+  const vadeFarkiKurus =
+    g.odemeYontemi === "kart" && g.odenenKurus !== null ? Math.max(0, g.odenenKurus - g.toplamKurus) : 0;
+
+  // Maliyet: satılıp geri gelmeyen adetler. Alış fiyatı olmayan satırlar
+  // sıfır değil, eksik: kâr şişmesin diye ayrıca söyleniyor.
+  let maliyetKurus = 0;
+  let eksikSatir = 0;
+  let maliyetTahmini = false;
+  for (const s of g.satirlar) {
+    const kalan = Math.max(0, s.adet - s.iadeAdet);
+    if (kalan === 0) continue;
+    if (s.alisFiyatKurus === null) {
+      eksikSatir += 1;
+      continue;
+    }
+    maliyetKurus += s.alisFiyatKurus * kalan;
+    if (s.alisTahmini) maliyetTahmini = true;
+  }
+  if (eksikSatir > 0) eksikler.push(`${eksikSatir} ürünün alış fiyatı yok`);
+
+  // Kargo: her gönderinin gerçek ücreti, yoksa ortalama. Henüz gönderi
+  // yoksa ve bekleniyorsa bir gönderi ortalamayla sayılıyor.
+  const gonderiler = g.gonderiUcretleri.length > 0 ? g.gonderiUcretleri : g.gonderiBekleniyor ? [null] : [];
+  let kargo: Kalem = { kurus: 0, tahmini: false };
+  for (const u of gonderiler) {
+    if (u !== null) kargo = { kurus: (kargo.kurus ?? 0) + u, tahmini: kargo.tahmini };
+    else if (g.gider.kargoGiderKurus !== null) {
+      kargo = { kurus: (kargo.kurus ?? 0) + g.gider.kargoGiderKurus, tahmini: true };
+    } else {
+      kargo = { kurus: null, tahmini: false };
+      break;
+    }
+  }
+  if (kargo.kurus === null) eksikler.push("kargo gideri girilmemiş");
+
+  const paket: Kalem =
+    g.gider.paketGiderKurus === null
+      ? { kurus: null, tahmini: false }
+      : {
+          kurus:
+            g.gider.paketGiderKurus + (g.hediyePaketi ? (g.gider.hediyePaketGiderKurus ?? 0) : 0),
+          tahmini: false,
+        };
+  if (paket.kurus === null) eksikler.push("paket gideri girilmemiş");
+  if (g.hediyePaketi && g.gider.hediyePaketGiderKurus === null) eksikler.push("hediye paketi gideri girilmemiş");
+
+  let komisyon: Kalem = { kurus: 0, tahmini: false };
+  if (g.odemeYontemi === "kart") {
+    if (g.komisyonKurus !== null) komisyon = { kurus: g.komisyonKurus, tahmini: false };
+    else if (g.gider.kartKomisyonOnbinde !== null) {
+      const cekilen = g.odenenKurus ?? g.toplamKurus;
+      komisyon = {
+        kurus: Math.round((cekilen * g.gider.kartKomisyonOnbinde) / 10000) + (g.gider.kartKomisyonSabitKurus ?? 0),
+        tahmini: true,
+      };
+    } else {
+      komisyon = { kurus: null, tahmini: false };
+      eksikler.push("kart komisyonu girilmemiş");
+    }
+  }
+
+  const gelir = netSatisKurus + vadeFarkiKurus;
+  const brutKarKurus = gelir - maliyetKurus;
+  const katkiKurus = brutKarKurus - (kargo.kurus ?? 0) - (paket.kurus ?? 0) - (komisyon.kurus ?? 0);
+
+  return {
+    netSatisKurus,
+    vadeFarkiKurus,
+    maliyet: { kurus: maliyetKurus, tahmini: maliyetTahmini, eksikSatir },
+    brutKarKurus,
+    kargo,
+    paket,
+    komisyon,
+    katkiKurus,
+    marjYuzde: gelir > 0 ? (katkiKurus / gelir) * 100 : null,
+    eksikler,
+  };
+}

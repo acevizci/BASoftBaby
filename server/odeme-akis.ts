@@ -243,6 +243,7 @@ export async function odemeDonusunuIsle(jeton: string): Promise<DonusSonucu> {
       saglayiciRef: sonuc.saglayiciRef ?? null,
       taksit: sonuc.taksit,
       odenenKurus: sonuc.basarili ? sonuc.odenenKurus : null,
+      komisyonKurus: sonuc.basarili ? (sonuc.komisyonKurus ?? null) : null,
       hata,
       hamYanit: sonuc.ham || null,
     },

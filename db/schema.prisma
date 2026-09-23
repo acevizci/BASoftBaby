@@ -231,6 +231,19 @@ model StoreSetting {
   /// Bu tutarın üstünde kargo bedava. Sıfır verilirse kargo hep ücretli.
   bedavaKargoEsigi Int @default(75000)
 
+  /// Kâr hesabının giderleri (K-112). Boşsa "girilmedi": o kalem hesaba
+  /// girmiyor, ekranda eksik diye yazıyor. Sıfır "gider yok" demek.
+  /// Kargo firmasına gönderi başına ödenen ortalama ücret.
+  kargoGiderKurus        Int?
+  /// Sipariş başına paket (kutu, poşet, etiket).
+  paketGiderKurus        Int?
+  /// Hediye paketinin ek maliyeti.
+  hediyePaketGiderKurus  Int?
+  /// Kart komisyonu, on binde (349 = %3,49), ve işlem başı sabit ücret.
+  /// iyzico cevabında gerçek komisyon varsa o kullanılıyor; bunlar yedek.
+  kartKomisyonOnbinde    Int?
+  kartKomisyonSabitKurus Int?
+
   /// Havale/EFT yapacak müşteriye gösterilen banka bilgisi. Boşsa bu ödeme
   /// yöntemi müşteriye hiç sunulmaz.
   havaleBilgisi String @default("")
@@ -630,6 +643,9 @@ model Payment {
   /// baslatildi · basarili · basarisiz
   durum      String  @default("baslatildi")
   tutarKurus Int
+  /// iyzico'nun kestiği komisyon (K-112): ödeme cevabındaki komisyon oranı
+  /// tutarı + işlem ücreti. Boşsa cevapta yoktu; ayardaki oranla tahmin.
+  komisyonKurus Int?
   /// Karttan gerçekten çekilen tutar (K-110). Taksitte vade farkı müşteriye
   /// yansıtılıyorsa sipariş toplamından büyük; fark vade farkı.
   odenenKurus Int?
@@ -706,6 +722,8 @@ model Shipment {
   takipNo  String
   /// Etikette basılan barkod. Takip numarası varsa o, yoksa sipariş numarası.
   barkod   String
+  /// Kargo firmasına ödenen gerçek ücret (K-112); boşsa ayardaki ortalama.
+  ucretKurus Int?
 
   /// Toplayıcı bağlanınca dolacak alanlar.
   saglayici    String?

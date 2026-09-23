@@ -4893,6 +4893,49 @@ marj yüzdesi. Maliyetin altına düşen ürün mercan renginde.
 
 ---
 
+### K-112 · Giderler, iyzico komisyonu ve siparişin kâr dökümü
+
+Sipariş ekranında artık bir "Kâr" bölümü var:
+
+```
+Net satış (KDV hariç, iadeler düşülmüş)
++ taksit vade farkı (varsa, K-110)
+− ürün maliyeti (satış anındaki, iade edilen adetler hariç; K-111)
+= brüt kâr
+− kargo − paket (+ hediye paketi) − ödeme komisyonu
+= kalan (katkı payı) ve marj
+```
+
+**Giderler** (Satış ayarları → "Giderler (kâr hesabı için)", yalnızca
+panelde, KDV hariç): kargo firmasına gönderi başı ortalama, sipariş başı
+paket, hediye paketi eki, kart komisyonu (% ve işlem başı sabit). **Boş kutu
+"girilmedi"**, sıfır "gider yok" demek; ikisi ayrı tutuluyor. Girilmeyen
+kalem hesapta sıfır sayılıyor ama dökümde "girilmedi" yazıyor ve altta sarı
+bir uyarı çıkıyor: eksik bilgiyle hesaplanan kâr kesin gibi görünmesin.
+
+**Gerçek değer ortalamanın önüne geçiyor:**
+
+- **Kargo:** siparişte kargo girilirken isteğe bağlı "kargo ücreti" alanı
+  (`Shipment.ucretKurus`). Boşsa ayardaki ortalama kullanılıyor ve "≈"
+  (tahmini) işaretleniyor. Kargo toplayıcı bağlanınca bu kendiliğinden dolar.
+- **Komisyon:** iyzico ödeme cevabındaki komisyon oranı tutarı ve işlem
+  ücreti ödeme kaydına yazılıyor (`Payment.komisyonKurus`). Cevapta yoksa
+  ayardaki oranla, çekilen tutar üzerinden tahmin ediliyor. Havalede sıfır.
+  iyzico anahtarları gelince sandbox'ta alanların geldiği doğrulanmalı.
+- **Maliyet:** satırdaki alış fiyatı; sonradan yazılmışsa "≈".
+
+KDV oranı, fatura kesildiyse faturadakinden, değilse ayardan alınıyor.
+İptal edilen siparişin kârı hesaplanmıyor. Hesap saf bir işlevde
+(`siparisKari`); rapor da aynısını kullanacak (K-113). Kira, reklam gibi
+sabit giderler kapsam dışı.
+
+**Nerede:** [`../server/kar.ts`](../server/kar.ts) (`siparisKari`),
+[`../server/siparis-kari.ts`](../server/siparis-kari.ts),
+[`../ui/kar-dokumu.tsx`](../ui/kar-dokumu.tsx),
+[`../testler/siparis-kari.test.ts`](../testler/siparis-kari.test.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

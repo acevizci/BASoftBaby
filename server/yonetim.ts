@@ -781,6 +781,8 @@ export async function kargoKaydet(veri: FormData): Promise<void> {
   const numara = String(veri.get("numara") ?? "").trim().toUpperCase();
   const tasiyici = String(veri.get("tasiyici") ?? "").trim();
   const takipNo = String(veri.get("takipNo") ?? "").trim().slice(0, 60);
+  // Kargo firmasına ödenen ücret, kâr hesabı için; boşsa ortalama (K-112).
+  const ucretKurus = kurusaCevir(veri.get("ucret"));
   if (!numara) return;
   if (!TASIYICILAR.some((t) => t.kod === tasiyici)) redirect(`/yonetim/siparisler/${numara}`);
 
@@ -810,6 +812,7 @@ export async function kargoKaydet(veri: FormData): Promise<void> {
         takipNo,
         barkod: takipNo || siparis.numara,
         durum: takipNo ? "verildi" : "hazirlandi",
+        ucretKurus,
       },
     });
   } else {
@@ -820,6 +823,7 @@ export async function kargoKaydet(veri: FormData): Promise<void> {
         takipNo,
         barkod: takipNo || siparis.numara,
         durum: takipNo ? "verildi" : "hazirlandi",
+        ucretKurus,
       },
     });
   }

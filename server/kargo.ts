@@ -72,6 +72,8 @@ export type Gonderi = {
   durum: string;
   etiketAdresi: string | null;
   olusturuldu: Date;
+  /** Kargo firmasına ödenen ücret (K-112). */
+  ucretKurus: number | null;
   takipAdresi?: string;
 };
 
@@ -83,6 +85,7 @@ function gonderiYap(k: {
   durum: string;
   etiketAdresi: string | null;
   olusturuldu: Date;
+  ucretKurus: number | null;
 }): Gonderi {
   return {
     ...k,
@@ -103,6 +106,7 @@ export async function gonderiGetir(numara: string): Promise<Gonderi | undefined>
       durum: true,
       etiketAdresi: true,
       olusturuldu: true,
+      ucretKurus: true,
     },
   });
   return kayit ? gonderiYap(kayit) : undefined;
