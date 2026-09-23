@@ -11,6 +11,7 @@ import { fiyatYaz } from "@/ui/katalog-bicim";
 import { yasGruplari } from "@/server/yas-gruplari";
 import { tonSiniflari } from "@/ui/kategori-tonu";
 import { CAYMA_GUN } from "@/ui/talep-bicim";
+import { SonBakilanlar } from "@/ui/son-bakilan";
 
 /**
  * Ana sayfadaki yaş kutuları yaş grubuna gidiyor, tek bedene değil: "6-12 ay"
@@ -115,6 +116,9 @@ export default async function AnaSayfa() {
           ))}
         </div>
       </section>
+
+      {/* Geri dönen müşteri kaldığı yeri görsün (K-95). */}
+      <SonBakilanlar className="mx-auto max-w-6xl px-4 pb-12" />
 
       <section className="mx-auto max-w-6xl px-4 pb-14">
         <h2 className="text-xl">Kategoriler</h2>

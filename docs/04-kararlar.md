@@ -4383,6 +4383,29 @@ stok bildirimi altyapısı buna hazır.
 [`../server/favori-islem.ts`](../server/favori-islem.ts),
 [`../ui/favori.tsx`](../ui/favori.tsx)
 
+Kalp kartın fotoğraf bağlantısının **yanında**, içinde değil: ilk hâlinde
+bağlantının içindeydi ve giriş yapmamış kullanıcıda bağlantı içinde bağlantı
+oluşuyordu (geçersiz HTML, tarayıcı sayfayı yeniden çiziyordu). Yayına
+çıktıktan sonra bulundu ve bir sonraki gönderimde düzeltildi.
+
+### K-95 · Son baktığın ürünler
+
+Geri dönen müşteri baktığı ürünü yeniden aramak zorundaydı. Ana sayfada ve
+ürün sayfasının altında "Son baktığın ürünler" şeridi var; en son bakılan önce,
+en fazla dört ürün.
+
+- **Liste tarayıcıda tutuluyor**, sunucuya yazılmıyor: hesap gerektirmiyor ve
+  kimin neye baktığı hiçbir yerde kayıtlı değil. Depolama engelliyse (gizli
+  pencere) şerit sessizce çıkmıyor, sayfa bozulmuyor.
+- Açık ürün kendi sayfasında listelenmiyor. Hiç bakılmamışsa şerit başlığıyla
+  birlikte hiç çizilmiyor.
+- Kart verisi `/api/son-bakilanlar` ucundan; vitrin kuralları geçerli —
+  yayından kalkan ya da kategorisi kapanan ürün gelmiyor. Uç yalnızca vitrinde
+  zaten görünen bilgiyi döndürüyor, adres sayısı ve biçimi sınırlı.
+
+**Nerede:** [`../ui/son-bakilan.tsx`](../ui/son-bakilan.tsx),
+[`../app/api/son-bakilanlar/route.ts`](../app/api/son-bakilanlar/route.ts)
+
 ---
 
 ## Açık sorular

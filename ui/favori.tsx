@@ -119,12 +119,7 @@ export function FavoriDugmesi({
   return (
     <button
       type="button"
-      onClick={(o) => {
-        // Kart bağlantının içinde: tıklama ürün sayfasına gitmesin.
-        o.preventDefault();
-        o.stopPropagation();
-        basla(() => cevir(urunId));
-      }}
+      onClick={() => basla(() => cevir(urunId))}
       aria-pressed={dolu}
       aria-label={yuzen ? `${urunAd}: ${yazi.toLowerCase()}` : undefined}
       title={yazi}

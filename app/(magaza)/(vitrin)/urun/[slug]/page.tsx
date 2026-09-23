@@ -19,6 +19,7 @@ import {
 } from "@/server/katalog";
 import { paletCoz, renginFotograflari, type RenkAdi } from "@/ui/katalog-bicim";
 import { FavoriDugmesi } from "@/ui/favori";
+import { SonBakilanKaydet, SonBakilanlar } from "@/ui/son-bakilan";
 
 export async function generateMetadata({ params }: PageProps<"/urun/[slug]">): Promise<Metadata> {
   const { slug } = await params;
@@ -211,6 +212,11 @@ export default async function UrunSayfasi({
           ))}
         </div>
       </section>
+
+      {/* Tarayıcıda tutuluyor; bu ürün de listeye yazılıyor ama kendi
+          sayfasında gösterilmiyor (K-95). */}
+      <SonBakilanKaydet slug={urun.slug} />
+      <SonBakilanlar haric={urun.slug} className="mt-14" />
     </div>
   );
 }

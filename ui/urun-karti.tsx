@@ -89,6 +89,9 @@ export default function UrunKarti({ urun }: { urun: Urun }) {
 
   return (
     <article className="flex flex-col overflow-hidden rounded-marka border border-cizgi bg-yuzey shadow-sm">
+      {/* Fotoğraf bağlantısı ve kalp yan yana, iç içe değil: bağlantının
+          içinde bağlantı ya da düğme geçersiz HTML (K-94). */}
+      <div className="relative">
       <Link href={adres} className="relative block">
         <UrunFoto
           fotograf={fotograf}
@@ -107,17 +110,18 @@ export default function UrunKarti({ urun }: { urun: Urun }) {
         {/* Tükendiği yalnızca en alttaki düğmeye bakınca anlaşılıyordu;
             ızgarada göz önce fotoğrafa gidiyor. Fotoğraf da soluklaşıyor —
             rozet tek başına küçük ekranda gözden kaçıyor (K-49). */}
-        {/* Kalp fotoğrafın sağ alt köşesinde: üst köşeler rozet ve
-            "Tükendi" etiketinin (K-94). */}
-        <span className="absolute bottom-3 right-3">
-          <FavoriDugmesi urunId={urun.id} urunAd={urun.ad} yuzen />
-        </span>
         {stok === 0 && (
           <span className="absolute right-3 top-3 rounded-full bg-metin/85 px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-wide text-white">
             Tükendi
           </span>
         )}
       </Link>
+        {/* Kalp fotoğrafın sağ alt köşesinde: üst köşeler rozet ve
+            "Tükendi" etiketinin (K-94). */}
+        <span className="absolute bottom-3 right-3">
+          <FavoriDugmesi urunId={urun.id} urunAd={urun.ad} yuzen />
+        </span>
+      </div>
 
       <div className="flex flex-1 flex-col gap-2 p-4">
         <Link href={adres} className="font-baslik text-base font-bold leading-snug hover:text-mercan-koyu">
