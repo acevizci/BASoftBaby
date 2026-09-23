@@ -4406,6 +4406,16 @@ en fazla dört ürün.
 **Nerede:** [`../ui/son-bakilan.tsx`](../ui/son-bakilan.tsx),
 [`../app/api/son-bakilanlar/route.ts`](../app/api/son-bakilanlar/route.ts)
 
+### K-96 · Geniş banner'da telefon resmi uyarısı
+
+Resimli banner'da telefon resmi isteğe bağlı (K-89) ve unutulması kolay. Geniş
+bir resim telefonda ekran genişliğine iniyor: 3:1 bir görsel 390 piksellik
+ekranda 130 piksel yükseklikte kalıyor, içindeki yazı okunmuyor. Resmi en az
+2:1 geniş olup telefon resmi olmayan banner'ın satırında sarı bir uyarı ve
+düzenleme bağlantısı var. Kareye yakın resimde ve yazılı banner'da uyarı yok.
+
+**Nerede:** [`../app/yonetim/(panel)/banner/page.tsx`](../app/yonetim/(panel)/banner/page.tsx)
+
 ---
 
 ## Açık sorular

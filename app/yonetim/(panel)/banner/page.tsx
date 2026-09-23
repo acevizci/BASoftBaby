@@ -226,6 +226,27 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
                     </button>
                   </form>
                 </SilmeOnayi>
+                {/* Geniş resim telefonda ekran genişliğine iniyor; 3:1 bir
+                    görsel 390 piksellik ekranda 130 piksel yükseklikte kalıyor
+                    ve içindeki yazı okunmuyor (K-96). */}
+                {b.resimYol &&
+                  !b.telefonYol &&
+                  b.resimYukseklik > 0 &&
+                  b.resimGenislik / b.resimYukseklik >= 2 && (
+                    <p className="w-full rounded-marka bg-sari-soluk px-3 py-2 text-xs text-sari-koyu">
+                      <strong>Telefonda küçük görünebilir.</strong> Resim geniş (
+                      <span className="rakam">
+                        {b.resimGenislik}×{b.resimYukseklik}
+                      </span>
+                      ); telefonda ekran genişliğine inince içindeki yazı okunmayabilir.{" "}
+                      <Link
+                        href={`${sayfaAdresi("/yonetim/banner", durum.sayfa)}${durum.sayfa > 1 ? "&" : "?"}duzenle=${b.id}#banner-${b.id}`}
+                        className="font-bold underline"
+                      >
+                        Telefon resmi ekle
+                      </Link>
+                    </p>
+                  )}
                 {duzenle === b.id && (
                   <div className="mt-2 w-full rounded-marka border border-cizgi-soluk bg-yuzey-sicak p-4">
                     <BannerFormu b={b} />
