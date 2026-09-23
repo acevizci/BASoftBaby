@@ -76,7 +76,7 @@ export default async function BilgilerSayfasi({ searchParams }: PageProps<"/hesa
             className="mt-0.5 h-4 w-4 flex-none accent-[var(--mercan)]"
           />
           <span className="text-sm text-metin-2">
-            Kampanya ve sepet hatırlatma e-postaları
+            Kampanya, sepet hatırlatma ve favori haberi e-postaları
             <span className="block text-xs text-metin-3">
               Kaldırırsan tanıtım e-postası gelmez. Sipariş onayı, kargo bildirimi ve
               şifre sıfırlama gelmeye devam eder; onlar tanıtım değil, işlemin parçası.

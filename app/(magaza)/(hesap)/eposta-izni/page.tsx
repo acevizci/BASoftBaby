@@ -25,8 +25,8 @@ export default async function EpostaIzni({ searchParams }: PageProps<"/eposta-iz
       {kayit ? (
         <>
           <p className="text-sm text-metin-2">
-            <span className="font-bold">{kayit.eposta}</span> adresine artık kampanya ve
-            sepet hatırlatma e-postası gönderilmeyecek.
+            <span className="font-bold">{kayit.eposta}</span> adresine artık kampanya,
+            sepet hatırlatma ve favori haberi e-postası gönderilmeyecek.
           </p>
           <p className="text-sm text-metin-3">
             Sipariş onayı, kargo bildirimi ve şifre sıfırlama gibi alışverişinle ilgili

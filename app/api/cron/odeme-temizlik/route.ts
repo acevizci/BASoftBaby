@@ -5,6 +5,7 @@ import {
 } from "@/server/odeme-suresi";
 import { eskiYuklemeleriTemizle } from "@/server/toplu-urun";
 import { birakilanSepetleriHatirlat } from "@/server/sepet-hatirlatma";
+import { favoriBildirimleriniGonder } from "@/server/favori-bildirimi";
 import { eskiBildirimIsteklerimiTemizle } from "@/server/stok-bildirimi";
 import { eskiGirisSayaclariniTemizle } from "@/server/giris-sinir";
 import { eskiPanelKayitlariniTemizle } from "@/server/yonetim-kimlik";
@@ -40,6 +41,8 @@ export async function GET(istek: NextRequest) {
   // Bırakılan sepet hatırlatması da burada: günde bir kez çalışması yeterli
   // ve Hobby paketinde ikinci bir zamanlı iş yok (K-27).
   const hatirlatma = await birakilanSepetleriHatirlat();
+  // Favorilerde indirim ya da yeniden stoğa giren beden (K-100).
+  const favori = await favoriBildirimleriniGonder();
   // Bir yıldır stoğa girmemiş ürünün bekleyen adresini tutmanın anlamı yok.
   const bildirim = await eskiBildirimIsteklerimiTemizle();
   // Giriş sayaçları: sayaç için gereken şey adresin kendisi değil, aynı
@@ -52,6 +55,7 @@ export async function GET(istek: NextRequest) {
     havaleHatirlatma,
     yukleme,
     hatirlatma,
+    favori,
     bildirim,
     girisSayaci,
     panel,

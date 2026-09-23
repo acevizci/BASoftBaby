@@ -448,6 +448,67 @@ ${iptal}${await altBilgi()}`,
   );
 }
 
+export type FavoriHaberi = {
+  urunAd: string;
+  slug: string;
+  /** Fiyat düştüyse eski ve yeni fiyat. */
+  indirim?: { eskiKurus: number; yeniKurus: number };
+  /** Yeniden stoğa giren bedenler. */
+  gelenBedenler: string[];
+};
+
+/**
+ * Favorilerdeki ürünlerde indirim ya da yeniden stoğa giren beden (K-100).
+ *
+ * Müşteri ürünü kendisi favoriye koymuş olsa da e-posta bir satış
+ * çağrısı: ticari elektronik ileti sayılıyor. Bu yüzden sepet
+ * hatırlatması gibi yalnızca izin verene gidiyor ve altında listeden çıkma
+ * bağlantısı var (K-27). Bir günün bütün haberleri tek e-postada.
+ */
+export async function favoriHaberiEpostasi(
+  kime: string,
+  bilgi: { adSoyad: string; haberler: FavoriHaberi[]; iptalJetonu: string },
+): Promise<EpostaSonucu> {
+  const liste = bilgi.haberler
+    .map((h) => {
+      const satirlar = [`• ${h.urunAd}`];
+      if (h.indirim) {
+        satirlar.push(
+          `  Fiyatı düştü: ${tutar(h.indirim.eskiKurus)} → ${tutar(h.indirim.yeniKurus)}`,
+        );
+      }
+      if (h.gelenBedenler.length > 0) {
+        satirlar.push(`  Yeniden stokta: ${h.gelenBedenler.join(", ")}`);
+      }
+      satirlar.push(`  ${siteAdresi()}/urun/${h.slug}`);
+      return satirlar.join("\n");
+    })
+    .join("\n\n");
+
+  const iptal = `${siteAdresi()}/eposta-izni?jeton=${encodeURIComponent(bilgi.iptalJetonu)}`;
+  const konu =
+    bilgi.haberler.length === 1
+      ? `Favorindeki ${bilgi.haberler[0].urunAd} için güzel haber`
+      : "Favorilerinde güzel haberler var";
+
+  return gonder(
+    kime,
+    konu,
+    `Merhaba ${bilgi.adSoyad},
+
+Favorilerine eklediğin ürünlerde değişiklik var:
+
+${liste}
+
+Bütün favorilerin: ${siteAdresi()}/hesabim/favoriler
+
+Sepete eklemek ürünü ayırmıyor; adet sınırlı olabilir.
+
+Bu e-postaları almak istemiyorsan tek tıkla çıkabilirsin:
+${iptal}${await altBilgi()}`,
+  );
+}
+
 export type StokBildirimi = { urunAd: string; slug: string; beden: string; renk: string };
 
 /**

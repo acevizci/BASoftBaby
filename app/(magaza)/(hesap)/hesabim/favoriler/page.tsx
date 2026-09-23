@@ -39,6 +39,22 @@ export default async function FavorilerSayfasi() {
       ) : (
         <>
           <p className="rakam mt-1 text-sm text-metin-3">{urunler.length} ürün</p>
+          {/* Favori haberleri izne bağlı (K-100); izin yoksa nereden açılacağı yazıyor. */}
+          <p className="mt-2 text-sm text-metin-2">
+            {musteri.pazarlamaIzni && musteri.epostaDogrulandiMi ? (
+              "Fiyatı düşerse ya da tükenen bedeni gelirse e-postayla haber veririz."
+            ) : musteri.pazarlamaIzni ? (
+              "İndirim ve beden haberleri için önce e-posta adresini doğrulaman gerekiyor."
+            ) : (
+              <>
+                Fiyatı düşünce ya da bedeni gelince haber almak istersen{" "}
+                <Link href="/hesabim/bilgiler" className="font-bold text-mercan-koyu underline">
+                  e-posta iznini aç
+                </Link>
+                .
+              </>
+            )}
+          </p>
           <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-3">
             {urunler.map((u) => (
               <UrunKarti key={u.slug} urun={u} />

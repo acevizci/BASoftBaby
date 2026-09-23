@@ -4486,6 +4486,37 @@ sohbeti açıyor.
 
 ---
 
+### K-100 · Favori ürün bildirimleri
+
+Favoriye konan ürün çoğu zaman "indirime girerse alırım" ya da "bedeni
+gelince alırım" demek. Günlük iş (`/api/cron/odeme-temizlik`) favorileri
+tarıyor: fiyatı düşen ya da tükenmiş bir bedeni yeniden stoğa giren ürün
+için müşteriye e-posta gidiyor.
+
+- **Son bakışla karşılaştırma.** Her favori son görülen fiyatı ve stoktaki
+  bedenleri taşıyor (`bakilanFiyatKurus`, `stoktakiBedenler`). Bunlar favoriye
+  eklerken de yazılıyor, yani ekleme ile ilk tarama arasındaki indirim
+  kaçmıyor. Bu özellikten önce eklenmiş kayıtlarda ilk tarama yalnızca
+  durumu yazıyor, herkese birden "yeni" haber gitmiyor.
+- **Ticari ileti kuralları** sepet hatırlatmasıyla aynı (K-27): yalnızca
+  pazarlama izni olan ve e-postasını doğrulamış üyeye gidiyor, altında
+  listeden çıkma bağlantısı var. İzni olmayanın kaydı da güncelleniyor;
+  sonradan izin verdiğinde eski indirim yeni haber gibi gitmiyor.
+- **Günde tek e-posta.** Bir müşterinin bütün haberleri tek e-postada.
+  Gönderilemezse kayıtları güncellenmiyor, ertesi gün yeniden deneniyor.
+- **Haber sayılmayanlar:** fiyat artışı (ama yeni fiyat kaydediliyor; sonra
+  düşerse yine haber gidiyor), hiç stoğu olmayan üründeki indirim ve
+  vitrinde olmayan ürün. Bedene özel fiyatlar karşılaştırmaya girmiyor.
+- İzin metinleri (kayıt, Bilgilerim, listeden çıkma) favori haberlerini de
+  sayıyor. Favorilerim sayfası haber gelip gelmeyeceğini, izin yoksa
+  nereden açılacağını yazıyor.
+
+**Nerede:** [`../server/favori-bildirimi.ts`](../server/favori-bildirimi.ts),
+[`../server/eposta.ts`](../server/eposta.ts) (`favoriHaberiEpostasi`),
+[`../testler/favori-bildirimi.test.ts`](../testler/favori-bildirimi.test.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

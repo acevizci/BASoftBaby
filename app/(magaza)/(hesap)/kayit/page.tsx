@@ -69,7 +69,8 @@ export default async function KayitSayfasi({ searchParams }: PageProps<"/kayit">
             className="mt-0.5 h-4 w-4 flex-none accent-[var(--mercan)]"
           />
           <span className="text-sm text-metin-2">
-            Kampanyalardan ve sepetimde unuttuklarımdan e-postayla haberim olsun.
+            Kampanyalardan, sepetimde unuttuklarımdan ve favorilerimdeki indirimlerden
+            e-postayla haberim olsun.
             <span className="block text-xs text-metin-3">
               İşaretlemesen de siparişinle ilgili e-postalar (onay, kargo) gelir. İstediğin
               an tek tıkla çıkabilirsin.

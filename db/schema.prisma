@@ -998,6 +998,12 @@ model Favorite {
   product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   olusturuldu DateTime @default(now())
 
+  /// Son bakışta görülen fiyat ve stokta olan bedenler (K-100). Günlük
+  /// tarama bunlarla karşılaştırıp indirim ve yeniden stoğa giren bedeni
+  /// buluyor. Fiyat boşsa kayda hiç bakılmamış: ilk tarama yalnızca yazıyor.
+  bakilanFiyatKurus Int?
+  stoktakiBedenler  String[] @default([])
+
   @@unique([customerId, productId])
   @@index([customerId])
 }
