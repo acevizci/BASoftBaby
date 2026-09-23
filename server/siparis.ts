@@ -16,7 +16,7 @@
 import { db } from "@/server/veritabani";
 import { hareketYaz } from "@/server/stok-hareket";
 import { kargoHesapla, kuponOku, sepetIdOku, type SatisAyari } from "@/server/sepet";
-import { enIyiKampanya, gecerliKampanyalar } from "@/server/kampanya";
+import { enIyiKampanya, gecerliKampanyalar, indirimiDagit } from "@/server/kampanya";
 import { renkAdlari } from "@/server/renkler";
 import { takipAdresi, tasiyiciAdi } from "@/server/kargo";
 import { suresiDolanlariKapat } from "@/server/odeme-suresi";
@@ -123,6 +123,12 @@ export async function siparisOlustur(
   const kampanyalar = await gecerliKampanyalar(await kuponOku());
   const kampanya = enIyiKampanya(kampanyalar, indirimSatirlari, araToplamKurus);
   const indirimKurus = kampanya?.indirimKurus ?? 0;
+  // Her satırın indirim payı; yalnızca kampanyanın kapsadığı satırlara (K-109).
+  const paylar = indirimiDagit(
+    kampanyalar.find((k) => k.id === kampanya?.id),
+    indirimSatirlari,
+    indirimKurus,
+  );
 
   const kargoKurus = kargoHesapla(araToplamKurus - indirimKurus, ayar, true);
   const simdi = new Date();
@@ -166,7 +172,7 @@ export async function siparisOlustur(
           kampanyaAdi: kampanya?.ad ?? null,
           kargoKurus,
           toplamKurus: araToplamKurus - indirimKurus + kargoKurus,
-          satirlar: { create: kalemler },
+          satirlar: { create: kalemler.map((k, i) => ({ ...k, indirimKurus: paylar[i] })) },
         },
         select: { numara: true },
       });

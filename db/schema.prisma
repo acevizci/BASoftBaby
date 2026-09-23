@@ -397,6 +397,10 @@ model OrderItem {
   adet       Int
   /// Sipariş anındaki birim fiyat. Sonradan fiyat değişse bile bu değişmez.
   fiyatKurus Int
+  /// Kampanya indiriminin bu satıra düşen payı (satırın tamamı için, K-109).
+  /// Yalnızca kampanyanın kapsadığı satırlara düşüyor. Boşsa eski sipariş:
+  /// pay bilinmiyor, iade eski oransal hesapla yapılıyor.
+  indirimKurus Int?
 
   talepSatirlari OrderRequestItem[]
   yorum          Review?

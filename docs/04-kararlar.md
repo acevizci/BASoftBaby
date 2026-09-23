@@ -4808,6 +4808,36 @@ bedenler. En çok para bağlayan üstte.
 
 ---
 
+### K-109 · Kampanya indirimi satıra yazılıyor; kısmi iade hatası
+
+**Hata:** sipariş yalnızca toplam indirimi tutuyordu. Kısmi iadede indirim
+payı bütün satırlara tutarlarıyla orantılı yayılıyordu (K-58). Kampanya
+bütün sepete uygulanıyorsa bu doğruydu. Ama ürün ya da kategori kampanyasında
+yanlıştı: A'ya %50 kampanya, B indirimsiz, ikisi de 200 ₺, müşteri 300 ₺
+ödüyor. B'yi iade eden 150 ₺ alıyordu (50 ₺ eksik; cayma hakkında yasal
+sorun), A'yı iade eden 150 ₺ alıyordu (mağaza 50 ₺ fazla ödüyor). Test
+veritabanında yeniden üretildi.
+
+**Çözüm:** sipariş anında indirim satırlara dağıtılıyor (`indirimiDagit`) ve
+her satıra yazılıyor (`OrderItem.indirimKurus`). Pay yalnızca kampanyanın
+kapsadığı satırlara, tutarlarıyla orantılı düşüyor. Kuruş yuvarlaması en
+büyük satıra ekleniyor, yani payların toplamı indirime tam eşit. İade satırın
+kendi payını adede bölerek kullanıyor: üç adetten biri iade edilirse payın
+üçte biri.
+
+**Eski siparişler:** indirimsiz olanların payı geçişte kesin olarak 0
+yazıldı. İndirimli eski siparişlerde hangi satırın kampanyaya girdiği
+bilinmiyor; onlar boş kaldı ve eski oransal hesapla iade ediliyor.
+
+Satır payı kâr hesabının da temeli: indirimli ürünün kârı ancak böyle doğru
+çıkıyor.
+
+**Nerede:** [`../server/kampanya.ts`](../server/kampanya.ts) (`indirimiDagit`),
+[`../server/iade.ts`](../server/iade.ts),
+[`../testler/satir-indirimi.test.ts`](../testler/satir-indirimi.test.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

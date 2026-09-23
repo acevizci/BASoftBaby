@@ -21,9 +21,12 @@ import type { Prisma } from "@/db/uretilen/client";
  * tutmuyor. O yüzden iade tutarı satır satır hesaplanıyor:
  *
  * 1. Satır tutarı = birim fiyat × iade edilen adet
- * 2. Kampanya indiriminin o satıra düşen payı çıkarılıyor — indirim bütün
- *    sepete uygulanmıştı, iade edilen kısmı da payını taşımalı. Yoksa
- *    indirimli alınan ürün tam fiyatından iade edilirdi.
+ * 2. Kampanya indiriminin o satıra düşen payı çıkarılıyor. Pay sipariş anında
+ *    satıra yazılıyor ve yalnızca kampanyanın kapsadığı satırlarda var
+ *    (K-109). Eskiden indirim bütün satırlara oranla yayılıyordu: yalnızca
+ *    bir ürüne uygulanan kampanyada indirimsiz ürünü iade eden eksik,
+ *    indirimliyi iade eden fazla para alıyordu. Payı yazılmamış eski
+ *    siparişlerde oransal hesap kalıyor; doğrusu artık bilinmiyor.
  * 3. **Kargo yalnızca siparişin tamamı iade ediliyorsa** ekleniyor. Mesafeli
  *    Sözleşmeler Yönetmeliği'nde cayma hâlinde teslim masrafı da iade
  *    ediliyor; ama üründen birini iade edende gönderi yine yapılmış oluyor.
@@ -72,7 +75,7 @@ export async function iadeTutari(
       indirimKurus: true,
       kargoKurus: true,
       toplamKurus: true,
-      satirlar: { select: { id: true, adet: true, fiyatKurus: true } },
+      satirlar: { select: { id: true, adet: true, fiyatKurus: true, indirimKurus: true } },
     },
   });
   if (!siparis) return undefined;
@@ -100,12 +103,16 @@ export async function iadeTutari(
   let urunKurus = 0;
   let iadeEdilenAdet = 0;
   let toplamAdet = 0;
+  let satirPaylari = 0;
+  const payYazili = siparis.satirlar.every((s) => s.indirimKurus !== null);
 
   for (const s of siparis.satirlar) {
     toplamAdet += s.adet;
     const adet = Math.min(Math.max(istenen.get(s.id) ?? 0, 0), s.adet);
     urunKurus += s.fiyatKurus * adet;
     iadeEdilenAdet += adet;
+    // Satırın payı adede bölünüyor: üç adetten biri iade edilirse payın üçte biri.
+    if (payYazili && adet > 0) satirPaylari += Math.round(((s.indirimKurus ?? 0) * adet) / s.adet);
   }
 
   // Kargo kararı birikimli: bu talep tek başına siparişin tamamını
@@ -116,8 +123,9 @@ export async function iadeTutari(
 
   // İndirim payı: satır tutarının ara toplama oranı kadar. Ara toplam sıfırsa
   // (hepsi bedava) pay da sıfır — bölme yapılmıyor.
-  const indirimPayiKurus =
-    siparis.indirimKurus > 0 && siparis.araToplamKurus > 0
+  const indirimPayiKurus = payYazili
+    ? satirPaylari
+    : siparis.indirimKurus > 0 && siparis.araToplamKurus > 0
       ? Math.round(siparis.indirimKurus * (urunKurus / siparis.araToplamKurus))
       : 0;
 

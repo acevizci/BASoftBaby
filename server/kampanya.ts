@@ -71,6 +71,40 @@ export function kampanyaIndirimi(
 }
 
 /**
+ * İndirimi satırlara dağıtır (K-109).
+ *
+ * Yalnızca kampanyanın kapsadığı satırlar pay alıyor, tutarlarıyla orantılı.
+ * Kuruş yuvarlaması en büyük satıra ekleniyor: payların toplamı indirime
+ * tam eşit. Sipariş anında her satıra yazılıyor; kısmi iade ve kâr hesabı
+ * buradan okuyor. Eskiden iade indirimi bütün satırlara yayıyordu: yalnızca
+ * bir ürüne uygulanan kampanyada indirimsiz ürünü iade eden eksik para
+ * alıyordu.
+ */
+export function indirimiDagit(
+  k: Pick<KampanyaKaydi, "kapsam" | "categoryId" | "productId"> | undefined,
+  satirlar: IndirimSatiri[],
+  indirimKurus: number,
+): number[] {
+  const paylar = satirlar.map(() => 0);
+  if (!k || indirimKurus <= 0) return paylar;
+
+  const kapsanan = satirlar
+    .map((s, i) => ({ i, tutar: s.araToplamKurus }))
+    .filter(({ i }) => kapsamdaMi(k as KampanyaKaydi, satirlar[i]));
+  const taban = kapsanan.reduce((t, s) => t + s.tutar, 0);
+  if (taban <= 0) return paylar;
+
+  let dagitilan = 0;
+  for (const s of kapsanan) {
+    paylar[s.i] = Math.floor((indirimKurus * s.tutar) / taban);
+    dagitilan += paylar[s.i];
+  }
+  const enBuyuk = kapsanan.reduce((a, b) => (b.tutar > a.tutar ? b : a));
+  paylar[enBuyuk.i] += indirimKurus - dagitilan;
+  return paylar;
+}
+
+/**
  * Uyan kampanyalar içinden en çok indireni seçer. Eşitlik olursa listede önce
  * gelen kazanır; çağıranlar listeyi oluşturma tarihine göre sıralı verir, yani
  * sonuç her seferinde aynıdır.
