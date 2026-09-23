@@ -15,6 +15,7 @@ import {
 import { bedenSirasi, sonSira } from "@/server/bedenler";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import Sayfalama from "@/ui/sayfalama";
+import StokSekmeleri from "@/ui/stok-sekmeleri";
 
 export const dynamic = "force-dynamic";
 
@@ -55,18 +56,15 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h1 className="text-2xl">Stok</h1>
-        <Link
-          href="/yonetim/stok/hareketler"
-          className="text-sm font-bold text-mavi-koyu hover:underline"
-        >
-          Stok hareketleri
-        </Link>
-      </div>
+      <h1 className="text-2xl">Stok</h1>
+      <StokSekmeleri secili="/yonetim/stok" />
       <p className="text-sm text-metin-2">
-        Biten ve azalan bedenler önce geliyor. Değiştirip kaydet; sıfır yazdığın beden
-        mağazada seçilemez hale gelir.
+        Biten ve azalan bedenler önce geliyor. Buradaki sayı stoğun kendisi; değiştirip
+        kaydet, sıfır yazdığın beden mağazada seçilemez hale gelir. Gelen malı eklemek için{" "}
+        <Link href="/yonetim/stok/mal-kabul" className="font-bold text-mavi-koyu hover:underline">
+          mal kabulü
+        </Link>
+        .
       </p>
 
       {typeof kayit === "string" && kayit !== "0" && (

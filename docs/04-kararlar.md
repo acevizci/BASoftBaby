@@ -4633,6 +4633,36 @@ kararı ileriye bırakıldı.
 
 ---
 
+### K-104 · Mal kabulü: gelen adet ekleniyor
+
+Stok ekranı stoğun kendisini istiyor. 5 varken 12 gelince kafadan toplayıp
+17 yazmak gerekiyordu. Bu hem hata kaynağıydı hem de ekran açıkken gelen
+siparişi ezmeye açıktı (K-102).
+
+**Stok → Mal kabulü:** ürün ada göre ya da **tam SKU** ile aranıyor (barkod
+okuyucu klavye gibi yazdığı için okutmak yeterli). Her bedene **gelen adet**
+yazılıyor ve stok artırılarak yazılıyor (`increment`), yani arada satış olsa
+da ikisi de doğru kalıyor. SKU ile bulunan beden işaretleniyor ve imleç o
+kutuya geliyor.
+
+- **Tedarikçi, irsaliye no ve not** hareket satırının notuna yazılıyor
+  (K-103). "Bu mal hangi irsaliyeyle geldi" sorusunun cevabı stok
+  hareketlerinde, sebep süzgeci "Mal kabulü".
+- Kayıttan sonra tedarikçi ve irsaliye adreste kalıyor: aynı irsaliyedeki
+  sıradaki ürün yeniden yazmadan eklenebiliyor.
+- Tükenmiş bir bedene mal gelirse "gelince haber ver" bildirimleri gidiyor.
+- Eksi, sıfır, ondalık ve 100.000'den büyük adet kabul edilmiyor. Yazım
+  hatası ("120" yerine "1200000") stoğu uçurmasın.
+
+Stok ekranları artık bir sekme satırıyla bağlı: Stok · Mal kabulü ·
+Hareketler. Menüde tek "Stok" maddesi kalıyor.
+
+**Nerede:** [`../server/mal-kabul.ts`](../server/mal-kabul.ts),
+[`../app/yonetim/(panel)/stok/mal-kabul/page.tsx`](../app/yonetim/(panel)/stok/mal-kabul/page.tsx),
+[`../testler/mal-kabul.test.ts`](../testler/mal-kabul.test.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

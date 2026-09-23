@@ -10,6 +10,7 @@ import { renkAdlari } from "@/server/renkler";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import HareketTablosu from "@/ui/hareket-tablosu";
 import Sayfalama from "@/ui/sayfalama";
+import StokSekmeleri from "@/ui/stok-sekmeleri";
 
 export const dynamic = "force-dynamic";
 
@@ -33,12 +34,8 @@ export default async function StokHareketleri({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h1 className="text-2xl">Stok hareketleri</h1>
-        <Link href="/yonetim/stok" className="text-sm font-bold text-metin-2 hover:underline">
-          Stok ekranı
-        </Link>
-      </div>
+      <h1 className="text-2xl">Stok hareketleri</h1>
+      <StokSekmeleri secili="/yonetim/stok/hareketler" />
       <p className="text-sm text-metin-2">
         Stoğun her değişimi burada: sipariş, iptal, iade, elle düzeltme, mal kabulü, sayım ve
         toplu yükleme. Kim yaptı, sipariş hangisi, sonrasında kaç kaldı.
