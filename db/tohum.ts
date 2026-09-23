@@ -68,6 +68,8 @@ function varyantlar(renkler: string[], bedenler: string[], stoklar: number[]) {
   return cikti;
 }
 
+// Adresler `server/ornek-veri.ts`'te de duruyor: Satışa hazırlık yayında
+// kalan örnek ürünleri oradan buluyor (K-97). Test ikisini karşılaştırıyor.
 const URUNLER: TohumUrun[] = [
   {
     slug: "ayiciklu-organik-body",
@@ -218,6 +220,7 @@ const URUNLER: TohumUrun[] = [
  * Ana sayfadaki dönen banner boş görünmesin diye üç örnek. Panelden
  * düzenlenebilir ya da silinebilir; bir kez yazıldıktan sonra geri gelmezler.
  */
+// Başlıklar `server/ornek-veri.ts`'te de duruyor (K-97).
 const BANNERLAR = [
   {
     baslik: "Minik bedenlere, yumuşacık kumaşlar",

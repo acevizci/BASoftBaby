@@ -6,6 +6,7 @@ import { odemeAcikMi } from "@/server/odeme";
 import { epostaAcikMi } from "@/server/eposta";
 import { depoBagliMi } from "@/server/gorsel-depo";
 import { fiyatYaz } from "@/ui/katalog-bicim";
+import { ORNEK_BANNER_BASLIKLARI, ORNEK_URUN_SLUGLARI } from "@/server/ornek-veri";
 
 /**
  * Satışa hazırlık denetimi.
@@ -56,11 +57,12 @@ export type HazirlikRaporu = {
 };
 
 export async function hazirlikRaporu(): Promise<HazirlikRaporu> {
-  const [ayar, kunye, yasal, sayimlar] = await Promise.all([
+  const [ayar, kunye, yasal, sayimlar, temizlik] = await Promise.all([
     ayarlariGetir(),
     kunyeGetir(),
     yasalSayfalariGetir(),
     katalogSayimlari(),
+    temizlikTaramasi(),
   ]);
 
   const taslakMetinler = yasal.filter((y) => y.taslakMi);
@@ -208,6 +210,47 @@ export async function hazirlikRaporu(): Promise<HazirlikRaporu> {
       ],
     },
     {
+      // Kurulumun örnek verisi ve denemelerden kalan kayıtlar (K-97).
+      baslik: "Temizlik",
+      kontroller: [
+        {
+          ad: "Örnek ürünler",
+          tamam: temizlik.ornekUrunler.length === 0,
+          agirlik: "uyari",
+          durum:
+            temizlik.ornekUrunler.length === 0
+              ? "Kurulumun örnek ürünlerinden yayında olan yok."
+              : `Kurulumun ${temizlik.ornekUrunler.length} örnek ürünü yayında: ${adlariYaz(temizlik.ornekUrunler)}.`,
+          sonuc:
+            "Müşteri gerçek olmayan ürünleri görüyor ve sipariş verebiliyor. Pasife al ya da sil.",
+          yol: "/yonetim/urunler",
+          yolAdi: "Ürünler",
+        },
+        {
+          ad: "Örnek banner'lar",
+          tamam: temizlik.ornekBannerlar.length === 0,
+          agirlik: "uyari",
+          durum:
+            temizlik.ornekBannerlar.length === 0
+              ? "Kurulumun örnek banner'larından yayında olan yok."
+              : `Kurulumun ${temizlik.ornekBannerlar.length} örnek banner'ı yayında: ${adlariYaz(temizlik.ornekBannerlar)}.`,
+          sonuc: "Ana sayfanın en üstünde mağazanın kendi kampanyası yerine örnek yazı dönüyor.",
+          yol: "/yonetim/banner",
+          yolAdi: "Ana sayfa banner'ı",
+        },
+        {
+          ad: "Deneme kayıtları",
+          tamam: temizlik.denemeler.length === 0,
+          agirlik: "bilgi",
+          durum:
+            temizlik.denemeler.length === 0
+              ? "Adında \"deneme\" ya da \"test\" geçen yayında ürün, kategori ya da banner yok."
+              : `Adında "deneme" ya da "test" geçen ${temizlik.denemeler.length} kayıt yayında: ${adlariYaz(temizlik.denemeler)}.`,
+          sonuc: "Denerken açılıp unutulmuş olabilir; gerçekse bu satırı yok say.",
+        },
+      ],
+    },
+    {
       baslik: "Altyapı",
       kontroller: [
         {
@@ -252,6 +295,51 @@ export async function hazirlikRaporu(): Promise<HazirlikRaporu> {
     uyari: hepsi.filter((k) => !k.tamam && k.agirlik === "uyari").length,
     tamamAdedi: hepsi.filter((k) => k.tamam).length,
     toplam: hepsi.length,
+  };
+}
+
+/** Uzun listede ilk beşi ve "ve N tane daha". */
+function adlariYaz(adlar: string[]): string {
+  const ilk = adlar.slice(0, 5).join(", ");
+  return adlar.length > 5 ? `${ilk} ve ${adlar.length - 5} tane daha` : ilk;
+}
+
+/**
+ * Yayında kalmış örnek ve deneme kayıtları (K-97).
+ *
+ * Yalnızca **yayındakiler**: pasife alınmış örnek ürün müşteriye görünmüyor,
+ * silinmesi şart değil. Deneme araması ad üzerinde, büyük-küçük harfe
+ * duyarsız.
+ */
+async function temizlikTaramasi() {
+  const deneme = (alan: string) => ({
+    OR: [
+      { [alan]: { contains: "deneme", mode: "insensitive" as const } },
+      { [alan]: { contains: "test", mode: "insensitive" as const } },
+    ],
+  });
+  const [ornekUrunler, ornekBannerlar, denemeUrun, denemeKategori, denemeBanner] =
+    await Promise.all([
+      db.product.findMany({
+        where: { aktif: true, slug: { in: [...ORNEK_URUN_SLUGLARI] } },
+        select: { ad: true },
+      }),
+      db.heroBanner.findMany({
+        where: { aktif: true, baslik: { in: [...ORNEK_BANNER_BASLIKLARI] } },
+        select: { baslik: true },
+      }),
+      db.product.findMany({ where: { aktif: true, ...deneme("ad") }, select: { ad: true } }),
+      db.category.findMany({ where: { aktif: true, ...deneme("ad") }, select: { ad: true } }),
+      db.heroBanner.findMany({ where: { aktif: true, ...deneme("baslik") }, select: { baslik: true } }),
+    ]);
+  return {
+    ornekUrunler: ornekUrunler.map((u) => u.ad),
+    ornekBannerlar: ornekBannerlar.map((b) => b.baslik),
+    denemeler: [
+      ...denemeUrun.map((u) => `${u.ad} (ürün)`),
+      ...denemeKategori.map((k) => `${k.ad} (kategori)`),
+      ...denemeBanner.map((b) => `${b.baslik} (banner)`),
+    ],
   };
 }
 

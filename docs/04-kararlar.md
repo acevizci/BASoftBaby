@@ -4416,6 +4416,30 @@ düzenleme bağlantısı var. Kareye yakın resimde ve yazılı banner'da uyarı
 
 **Nerede:** [`../app/yonetim/(panel)/banner/page.tsx`](../app/yonetim/(panel)/banner/page.tsx)
 
+### K-97 · Satışa hazırlıkta "Temizlik": örnek ve deneme kayıtları
+
+Kurulum boş mağazayı sekiz örnek ürün ve üç örnek banner'la dolduruyor
+(`db/tohum.ts`). Gerçek ürünler girildikten sonra bunlar kolayca yayında
+unutuluyor; denerken açılan kayıtlar da öyle. Müşteri gerçek olmayan bir ürünü
+sipariş edebiliyordu.
+
+Satışa hazırlık ekranında yeni bir "Temizlik" bölümü, yalnızca **yayındaki**
+kayıtlara bakıyor (pasife alınmış örnek müşteriye görünmüyor):
+
+- **Örnek ürünler** (eksik): yayında kalan tohum ürünleri, adlarıyla.
+- **Örnek banner'lar** (eksik): yayında kalan tohum banner'ları.
+- **Deneme kayıtları** (bakılabilir): adında "deneme" ya da "test" geçen
+  ürün, kategori ve banner. Gerçek bir ad da yakalanabilir, o yüzden uyarı
+  değil bilgi.
+
+Örneklerin adresleri ve başlıkları `server/ornek-veri.ts`'te; bir test
+bunların `db/tohum.ts`'tekilerle aynı kaldığını denetliyor — tohumda bir
+adres değişip liste unutulursa ekran yanlışlıkla "temiz" demesin.
+
+**Nerede:** [`../server/hazirlik.ts`](../server/hazirlik.ts) (`temizlikTaramasi`),
+[`../server/ornek-veri.ts`](../server/ornek-veri.ts),
+[`../testler/ornek-veri.test.ts`](../testler/ornek-veri.test.ts)
+
 ---
 
 ## Açık sorular
