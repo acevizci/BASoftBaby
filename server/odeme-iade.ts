@@ -86,14 +86,23 @@ export async function kartIadesiYap(
   const odeme = await db.payment.findFirst({
     where: { orderId, durum: "basarili", saglayiciRef: { not: null } },
     orderBy: { olusturuldu: "desc" },
-    select: { saglayiciRef: true, tutarKurus: true, guncellendi: true, order: { select: { numara: true } } },
+    select: {
+      saglayiciRef: true,
+      tutarKurus: true,
+      odenenKurus: true,
+      guncellendi: true,
+      order: { select: { numara: true } },
+    },
   });
   if (!odeme?.saglayiciRef) {
     return { tamam: false, hata: "Bu siparişin iyzico ödeme kaydı bulunamadı." };
   }
 
   const tamami = tutarKurus >= odeme.tutarKurus;
-  const fiyat = (tutarKurus / 100).toFixed(2);
+  // Tamamı iade ediliyorsa müşteri ödediğinin tamamını alıyor: taksitte
+  // yansıtılan vade farkı da dahil (K-110).
+  const iade = tamami ? Math.max(tutarKurus, odeme.odenenKurus ?? 0) : tutarKurus;
+  const fiyat = (iade / 100).toFixed(2);
 
   try {
     const sonuc =

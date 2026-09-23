@@ -4838,6 +4838,31 @@ Satır payı kâr hesabının da temeli: indirimli ürünün kârı ancak böyle
 
 ---
 
+### K-110 · Taksitte vade farkı: çekilen tutar kabul ediliyor ve saklanıyor
+
+Kartla ödemede 2/3/6/9 taksit açık. iyzico panelinde taksit vade farkı
+müşteriye yansıtılacak şekilde ayarlıysa karttan çekilen tutar sipariş
+toplamından büyük geliyor. Kod birebir eşitlik istiyordu: ödeme başarısız
+sayılıyor, sipariş iptal ediliyor ve stok geri veriliyordu, **ama para
+karttan çekilmiş oluyordu.** Vade farkını mağaza üstleniyorsa sorun yoktu;
+hangisinin geçerli olduğu kodda görülemiyor, iyzico hesabına bağlı.
+
+- **Kural (`odemeTutariTutuyor`):** tek çekimde birebir; taksitte fazlası
+  kabul; eksik hiçbir durumda kabul değil.
+- **Çekilen tutar saklanıyor** (`Payment.odenenKurus`). Fark vade farkı;
+  kâr hesabı buradan okuyor (K-112).
+- **Tam iadede müşteri ödediğinin tamamını alıyor**, vade farkı dahil.
+  Kısmi iade ürün tutarı üzerinden.
+
+Kart iadesi kodu iyzico anahtarları gelmediği için hâlâ denenmedi (K-58);
+anahtarlar gelince sandbox'ta taksitli bir ödeme ve iadesi denenmeli.
+
+**Nerede:** [`../server/odeme-akis.ts`](../server/odeme-akis.ts),
+[`../server/odeme-iade.ts`](../server/odeme-iade.ts),
+[`../testler/odeme-tutari.test.ts`](../testler/odeme-tutari.test.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

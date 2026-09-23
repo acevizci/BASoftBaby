@@ -625,6 +625,9 @@ model Payment {
   /// baslatildi · basarili · basarisiz
   durum      String  @default("baslatildi")
   tutarKurus Int
+  /// Karttan gerçekten çekilen tutar (K-110). Taksitte vade farkı müşteriye
+  /// yansıtılıyorsa sipariş toplamından büyük; fark vade farkı.
+  odenenKurus Int?
   taksit     Int     @default(1)
   /// Başarısızsa iyzico'nun verdiği sebep; müşteriye gösterilen kısa hâli.
   hata       String?

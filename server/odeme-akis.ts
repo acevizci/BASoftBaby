@@ -34,6 +34,18 @@ export async function odemeGirisimiKaydet(
 }
 
 /**
+ * Çekilen tutar sipariş için kabul edilebilir mi (K-110).
+ *
+ * Tek çekimde birebir. Taksitte fazlası kabul: vade farkı müşteriye
+ * yansıtılmış olabilir (iyzico panelindeki ayara bağlı). Eksik hiçbir
+ * durumda kabul değil.
+ */
+export function odemeTutariTutuyor(odenenKurus: number, toplamKurus: number, taksit: number): boolean {
+  if (odenenKurus === toplamKurus) return true;
+  return taksit > 1 && odenenKurus > toplamKurus;
+}
+
+/**
  * Sipariş iptal edilip stok geri veriliyor.
  *
  * Koşul olarak siparişin durumu da veriliyor: iki dönüş çağrısı yarışırsa
@@ -209,7 +221,10 @@ export async function odemeDonusunuIsle(jeton: string): Promise<DonusSonucu> {
 
   // Tutar tutmuyorsa ödeme başarılı sayılmıyor: eksik çekilmiş bir ödemeyle
   // sipariş hazırlanmaya başlamamalı. Elle bakmak için günlüğe yazılıyor.
-  const tutarTutuyor = sonuc.odenenKurus === girisim.order.toplamKurus;
+  // Taksitte vade farkı müşteriye yansıtılıyorsa çekilen tutar toplamdan
+  // büyük; o fazla kabul (K-110). Eskiden reddediliyordu: para karttan
+  // çekilmiş, sipariş iptal edilmiş oluyordu.
+  const tutarTutuyor = odemeTutariTutuyor(sonuc.odenenKurus, girisim.order.toplamKurus, sonuc.taksit);
   if (sonuc.basarili && !tutarTutuyor) {
     console.error(
       `Ödeme tutarı siparişle uyuşmuyor: ${girisim.order.numara} bekleniyordu ${girisim.order.toplamKurus}, geldi ${sonuc.odenenKurus}`,
@@ -227,6 +242,7 @@ export async function odemeDonusunuIsle(jeton: string): Promise<DonusSonucu> {
       durum: basarili ? "basarili" : "basarisiz",
       saglayiciRef: sonuc.saglayiciRef ?? null,
       taksit: sonuc.taksit,
+      odenenKurus: sonuc.basarili ? sonuc.odenenKurus : null,
       hata,
       hamYanit: sonuc.ham || null,
     },
