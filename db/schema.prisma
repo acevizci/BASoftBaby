@@ -151,6 +151,10 @@ model ProductVariant {
   renk       String
   /// Stok kodu — kargo ve sayımda kullanılır
   sku        String @unique
+  /// Etiketteki barkodun numarası (K-107): "B" + bu sayı. SKU'lar 30
+  /// karaktere varıyor, 50 mm etikete sığınca çizgiler okunamayacak kadar
+  /// inceliyordu; kısa numara çizgileri üç kat kalınlaştırıyor.
+  barkodNo   Int    @unique @default(autoincrement())
   stok       Int    @default(0)
   /// Varyant bazlı fiyat farkı; boşsa ürünün fiyatı geçerli
   fiyatKurus Int?
@@ -159,6 +163,7 @@ model ProductVariant {
   orderItems  OrderItem[]
   bildirimler StockAlert[]
   hareketler  StockMovement[]
+  sayimlar    StockCountLine[]
 
   @@unique([productId, beden, renk])
   @@index([productId])
@@ -824,6 +829,56 @@ model StockMovement {
   @@index([variantId, olusturuldu])
   @@index([productId, olusturuldu])
   @@index([olusturuldu])
+}
+
+/// Stok sayımı (K-107): raftaki gerçek adet sistemle karşılaştırılıyor.
+///
+/// Açılınca kapsamdaki her beden-renk için bir satır yazılıyor. Satır
+/// sayıldığı anda "rafta olması gereken" (stok + kargolanmamış siparişte
+/// ayrılan) da o satıra yazılıyor. Fark buna göre; sayım sürerken gelen
+/// satış iki kez düşülmüyor. Bitirilince farklar stoğa uygulanıyor ve "sayım
+/// farkı" hareketi yazılıyor (K-103).
+model StockCount {
+  id          String    @id @default(cuid())
+  ad          String
+  /// Kategori adresi; boşsa bütün ürünler.
+  kapsam      String    @default("")
+  /// acik · tamam · iptal
+  durum       String    @default("acik")
+  adminId     String?
+  yapan       String    @default("")
+  olusturuldu DateTime  @default(now())
+  bitti       DateTime?
+
+  satirlar StockCountLine[]
+
+  @@index([durum, olusturuldu])
+}
+
+model StockCountLine {
+  id         String          @id @default(cuid())
+  countId    String
+  count      StockCount      @relation(fields: [countId], references: [id], onDelete: Cascade)
+  variantId  String?
+  variant    ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  productId  String
+  urunAd     String
+  beden      String
+  renk       String
+  sku        String
+  fiyatKurus Int
+
+  /// Rafta sayılan; boşsa henüz sayılmadı.
+  sayilan   Int?
+  /// Sayıldığı an sistemdeki stok ve kargolanmamış siparişte ayrılan adet.
+  sistem    Int?
+  ayrilan   Int?
+  sayildi   DateTime?
+  /// Bitirilirken stoğa uygulanan fark (sayılan − sistem − ayrılan).
+  uygulanan Int?
+
+  @@index([countId])
+  @@index([variantId])
 }
 
 /// "Stoka girince haber ver" isteği.

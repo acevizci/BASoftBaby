@@ -23,6 +23,7 @@ import { db } from "@/server/veritabani";
 import { renkAdlari } from "@/server/renkler";
 import { kelimeler } from "@/server/arama-metin";
 import { hareketYaz, type Yapan } from "@/server/stok-hareket";
+import { barkodNoCoz } from "@/server/barkod";
 
 /** Bu sayı ve altı "azalıyor" sayılıyor; sıfır zaten "bitti". */
 export const AZALAN_ESIK = 3;
@@ -117,11 +118,28 @@ function durumKosulu(durum: StokDurumu): Record<string, unknown> {
 
 function kosulYap(s: StokSuzgeci): Record<string, unknown> {
   const aranan = kelimeler(s.ara);
+  const ara = s.ara.trim();
   return {
     ...durumKosulu(s.durum),
-    // Her kelime ayrı aranıyor ve hepsi bulunmak zorunda (K-35).
-    ...(aranan.length > 0
-      ? { AND: aranan.map((k) => ({ aramaMetni: { contains: k } })) }
+    // Her kelime ayrı aranıyor ve hepsi bulunmak zorunda (K-35). Barkod
+    // okutulduysa SKU ya da beden kimliği tam eşleşiyor (K-107).
+    ...(ara
+      ? {
+          OR: [
+            ...(aranan.length > 0 ? [{ AND: aranan.map((k) => ({ aramaMetni: { contains: k } })) }] : []),
+            {
+              variants: {
+                some: {
+                  OR: [
+                    { sku: { equals: ara, mode: "insensitive" } },
+                    { id: ara },
+                    ...(barkodNoCoz(ara) !== undefined ? [{ barkodNo: barkodNoCoz(ara) }] : []),
+                  ],
+                },
+              },
+            },
+          ],
+        }
       : {}),
   };
 }

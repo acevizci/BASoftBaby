@@ -8,6 +8,7 @@ const SEKMELER = [
   ["/yonetim/stok", "Stok"],
   ["/yonetim/stok/mal-kabul", "Mal kabulü"],
   ["/yonetim/stok/siparis-listesi", "Sipariş listesi"],
+  ["/yonetim/stok/sayim", "Sayım"],
   ["/yonetim/stok/hareketler", "Hareketler"],
 ] as const;
 

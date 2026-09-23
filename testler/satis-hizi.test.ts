@@ -119,10 +119,11 @@ describe("satış hızı (veritabanı)", { skip: atlamaSebebi }, () => {
     const bizim = liste.filter((s) => [variantId, bekleyen.variantId].includes(s.variantId));
     assert.deepEqual(
       bizim.map((s) => [s.variantId, s.oneri, s.bekleyen]),
+      // İkisi de tükenmiş: önerisi büyük olan önce.
       [
         [variantId, 9, 0],
         [bekleyen.variantId, 2, 2],
-      ].sort((a, b) => (a[0] === variantId ? -1 : 1)),
+      ],
     );
     await db.stockAlert.deleteMany({ where: { variantId: bekleyen.variantId } });
   });

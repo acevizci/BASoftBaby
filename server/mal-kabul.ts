@@ -17,6 +17,7 @@ import { kelimeler } from "@/server/arama-metin";
 import { renkAdlari } from "@/server/renkler";
 import { bedenSirasi, sonSira } from "@/server/bedenler";
 import { hareketYaz, type Yapan } from "@/server/stok-hareket";
+import { barkodNoCoz } from "@/server/barkod";
 
 export type KabulBedeni = { id: string; beden: string; renk: string; renkAdi: string; stok: number; sku: string };
 export type KabulUrunu = { id: string; slug: string; ad: string; aktif: boolean; bedenler: KabulBedeni[] };
@@ -34,8 +35,16 @@ export async function kabulIcinAra(
   const metin = ara.trim();
   if (!metin) return { urunler: [] };
 
+  // Etiketteki barkod bedenin kısa numarasını taşıyor (K-107); SKU ve
+  // beden kimliği de tanınıyor.
   const skuile = await db.productVariant.findFirst({
-    where: { sku: { equals: metin, mode: "insensitive" } },
+    where: {
+      OR: [
+        { sku: { equals: metin, mode: "insensitive" } },
+        { id: metin },
+        ...(barkodNoCoz(metin) !== undefined ? [{ barkodNo: barkodNoCoz(metin) }] : []),
+      ],
+    },
     select: { id: true, productId: true },
   });
 

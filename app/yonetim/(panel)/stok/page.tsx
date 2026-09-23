@@ -16,6 +16,7 @@ import { bedenSirasi, sonSira } from "@/server/bedenler";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import Sayfalama from "@/ui/sayfalama";
 import StokSekmeleri from "@/ui/stok-sekmeleri";
+import BarkodOkuyucu from "@/ui/barkod-okuyucu";
 import { gunYaz, satisHizlari, type Hiz } from "@/server/satis-hizi";
 
 export const dynamic = "force-dynamic";
@@ -120,7 +121,7 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
         <input
           name="ara"
           defaultValue={suzgec.ara}
-          placeholder="Ürün ara"
+          placeholder="Ürün ara ya da barkod okut"
           className={`${GIRDI} min-w-[200px] flex-1`}
         />
         <button
@@ -129,6 +130,7 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
         >
           Ara
         </button>
+        <BarkodOkuyucu alan="ara" />
         {suzgec.ara && (
           <Link href={adres({ ara: "" })} className={`${ROZET} border-cizgi text-metin-2 hover:border-metin-3`}>
             Temizle
@@ -276,6 +278,12 @@ function Urun({
             className="font-bold text-mavi-koyu hover:underline"
           >
             hareketler
+          </Link>
+          <Link
+            href={`/yonetim/stok/etiketler?urun=${encodeURIComponent(urun.slug)}`}
+            className="font-bold text-mavi-koyu hover:underline"
+          >
+            etiket
           </Link>
         </span>
       </div>

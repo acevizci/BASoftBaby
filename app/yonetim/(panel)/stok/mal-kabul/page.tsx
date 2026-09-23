@@ -4,6 +4,7 @@ import { malKabulKaydet } from "@/server/mal-kabul-islem";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import StokSekmeleri from "@/ui/stok-sekmeleri";
 import GonderDugmesi from "@/ui/gonder-dugmesi";
+import BarkodOkuyucu from "@/ui/barkod-okuyucu";
 
 export const dynamic = "force-dynamic";
 
@@ -74,6 +75,7 @@ export default async function MalKabul({ searchParams }: PageProps<"/yonetim/sto
         >
           Ara
         </button>
+        <BarkodOkuyucu alan="ara" />
       </form>
 
       {ara && urunler.length === 0 && (

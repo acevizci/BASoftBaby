@@ -4729,6 +4729,56 @@ stoksuz süre 9,00003'ü 10'a çıkarıyordu.
 
 ---
 
+### K-107 · Stok sayımı ve barkod
+
+**Sayım (Stok → Sayım).** Bütün ürünler ya da tek bir kategori için sayım
+açılıyor. Her beden-renk bir satır. Raftaki adet giriliyor ve ekran farkı
+gösteriyor. "Sayımı bitir" farkları listeleyip onay istiyor. Onaylanınca
+farklar stoğa uygulanıyor ve her biri "sayım farkı" hareketi olarak kalıyor
+(K-103). Geçmiş sayımlar eksik ve fazla adetleri ile farkın satış fiyatıyla
+tutarını gösteriyor: kayıp ve fire takibi için.
+
+İki incelik:
+
+- **Rafta olması gereken = stok + kargolanmamış siparişte ayrılan.** Sipariş
+  stoğu sipariş anında düşürüyor ama ürün raftan paketlenince çıkıyor.
+  Hazırlanmayı bekleyen siparişlerin ürünleri hesaba katılmasaydı sayım her
+  seferinde "fazla" der ve stoğu yanlış yükseltirdi.
+- **Fark satırın sayıldığı ana göre.** Sayım saatler sürebilir. Her satırın
+  beklenen değeri o satır kaydedildiği an yazılıyor. Bitirirken fark şimdiki
+  stoğa **ekleniyor**, yani sayımdan sonra gelen satışlar korunuyor. Stok
+  eksiye düşmüyor; uygulanan fark satırda ayrıca duruyor. Sayılmayan
+  satırlara dokunulmuyor. Bir sayım iki kez bitirilemiyor, vazgeçilen sayım
+  stoğa dokunmuyor.
+
+**Barkod.** Code 128 kodlayıcı (`server/barkod.ts`) kütüphane eklemeden
+yazıldı ve bağımsız bir kodlayıcıyla (JsBarcode) bütün yazdırılabilir ASCII
+karakterlerde bit bit karşılaştırıldı. Test, sabit bir referans çıktıyı
+saklıyor.
+
+- **Etiket barkodu bedenin kısa numarasını taşıyor** (`barkodNo`, "B123").
+  SKU'lar 30 karaktere varıyor ve 50 mm etikete sığınca çizgi başına
+  0,13 mm kalıyordu. Bu, telefon kamerası ve 203 dpi etiket yazıcısı için
+  fazla ince. Kısa numara çizgileri üç kat kalınlaştırıyor. Var olan bedenler
+  numarasını geçişte sırayla aldı. SKU etikette yazı olarak da duruyor.
+- **Etiketler (Stok → ürünün yanında "etiket"):** 50×30 mm; ürün, beden,
+  renk, fiyat, barkod. "Her bedenden bir" ya da "stok kadar" (mal kabulünden
+  sonra). Tarayıcının yazdır komutuyla basılıyor.
+- **Okutma:** el okuyucu klavye gibi yazıyor, yani arama kutusuna okutmak
+  yeterli. Stok ekranı, mal kabulü ve sayım barkod numarasını, SKU'yu ve
+  beden kimliğini tanıyor; tam eşleşmede yalnızca o beden geliyor ve imleç
+  onun kutusuna gidiyor. Telefonda "📷 Kamerayla okut" düğmesi tarayıcının
+  kendi `BarcodeDetector`'ını kullanıyor. Android Chrome'da var, iPhone
+  Safari'de yok; orada düğme hiç çıkmıyor.
+
+**Nerede:** [`../server/sayim.ts`](../server/sayim.ts),
+[`../server/barkod.ts`](../server/barkod.ts),
+[`../ui/barkod-okuyucu.tsx`](../ui/barkod-okuyucu.tsx),
+[`../testler/sayim-db.test.ts`](../testler/sayim-db.test.ts),
+[`../testler/barkod.test.ts`](../testler/barkod.test.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)
