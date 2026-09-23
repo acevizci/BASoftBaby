@@ -108,6 +108,8 @@ export async function siparisOlustur(
       renk: s.variant.renk,
       adet: s.adet,
       fiyatKurus,
+      // Satış anındaki maliyet; sonradan değişse de bu kalıyor (K-111).
+      alisFiyatKurus: s.variant.product.alisFiyatKurus,
     };
   });
 

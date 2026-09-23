@@ -40,6 +40,7 @@ import {
 import { kargoyaVerildiEpostasi } from "@/server/eposta";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { hareketYaz } from "@/server/stok-hareket";
+import { maliyetiGecmiseYaz } from "@/server/maliyet";
 import { siparisiIptalEtVeStoguIadeEt } from "@/server/odeme-akis";
 
 /**
@@ -129,6 +130,9 @@ export async function urunKaydet(form: FormData): Promise<void> {
       data: alanlar,
       select: { id: true },
     });
+    // İlk kez girilen alış fiyatı maliyeti bilinmeyen eski satışlara tahmini
+    // olarak yazılıyor (K-111).
+    await maliyetiGecmiseYaz(guncel.id, alanlar.alisFiyatKurus);
     await aramaMetniniTazele(guncel.id);
     vitriniYenile();
     redirect(`/yonetim/urunler/${eskiSlug}?kayit=1`);

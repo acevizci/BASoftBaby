@@ -2,6 +2,8 @@ import Link from "next/link";
 import { db } from "@/server/veritabani";
 import { topluUrunIslemi } from "@/server/yonetim";
 import { fiyatYaz } from "@/ui/katalog-bicim";
+import { birimMarj, yuzdeYaz } from "@/server/kar";
+import { ayarlariGetir } from "@/server/sepet";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
 import Sayfalama, { SayfaAlani } from "@/ui/sayfalama";
@@ -64,7 +66,7 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
   const toplamAdet = await db.product.count({ where: kosul });
   const durum = sayfaCoz(sayfa, toplamAdet, LISTE_BOYU);
 
-  const [urunler, fotografsizAdedi] = await Promise.all([
+  const [urunler, fotografsizAdedi, satisAyari] = await Promise.all([
     db.product.findMany({
       where: kosul,
       include: {
@@ -78,6 +80,7 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
       take: durum.boy,
     }),
     db.product.count({ where: { images: { none: {} } } }),
+    ayarlariGetir(),
   ]);
 
   // Kategori süzgeci ve toplu taşıma için: kapalı kategoriler de listede,
@@ -284,7 +287,15 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
                     <p className="text-xs text-metin-3">{u.ozet}</p>
                   </td>
                   <td className="px-4 py-3 text-metin-2">{u.category.ad}</td>
-                  <td className="rakam px-4 py-3">{fiyatYaz(u.fiyatKurus)}</td>
+                  <td className="rakam px-4 py-3">
+                    {fiyatYaz(u.fiyatKurus)}
+                    {/* Brüt marj, KDV hariç satışa göre (K-111). */}
+                    {u.alisFiyatKurus !== null && (
+                      <MarjNotu
+                        marj={birimMarj(u.fiyatKurus, u.alisFiyatKurus, satisAyari.kdvOrani).marjYuzde}
+                      />
+                    )}
+                  </td>
                   <td className="rakam px-4 py-3">
                     {stok === 0 ? (
                       <span className="font-bold text-mercan-koyu">tükendi</span>
@@ -406,5 +417,13 @@ export default async function UrunListesi({ searchParams }: PageProps<"/yonetim/
         </p>
       )}
     </div>
+  );
+}
+
+function MarjNotu({ marj }: { marj: number | null }) {
+  return (
+    <span className={`block text-xs ${marj !== null && marj < 0 ? "font-bold text-mercan-koyu" : "text-metin-3"}`}>
+      marj {yuzdeYaz(marj)}
+    </span>
   );
 }

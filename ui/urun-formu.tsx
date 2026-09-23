@@ -12,6 +12,7 @@ import {
   type RenkSecenegi,
 } from "@/ui/katalog-bicim";
 import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
+import { birimMarj, yuzdeYaz } from "@/server/kar";
 
 type Varyant = { id: string; beden: string; renk: string; stok: number };
 
@@ -60,6 +61,7 @@ export default function UrunFormu({
   fotografVar = false,
   kaydedildi,
   varOlanVaryant,
+  kdvOrani = 10,
 }: {
   urun?: FormUrunu;
   kategoriler: { slug: string; ad: string }[];
@@ -75,7 +77,11 @@ export default function UrunFormu({
    * değiştirilmedi, hangisi olduğu burada.
    */
   varOlanVaryant?: string;
+  /** Satış ayarlarındaki KDV oranı; marj göstergesi için (K-111). */
+  kdvOrani?: number;
 }) {
+  const marj =
+    urun && urun.alisFiyatKurus !== null ? birimMarj(urun.fiyatKurus, urun.alisFiyatKurus, kdvOrani) : null;
   const yeni = !urun;
 
   return (
@@ -159,7 +165,7 @@ export default function UrunFormu({
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <span className={ETIKET}>Alış fiyatı (₺)</span>
+              <span className={ETIKET}>Alış fiyatı (₺, KDV hariç)</span>
               <input
                 name="alisFiyat"
                 inputMode="decimal"
@@ -167,8 +173,18 @@ export default function UrunFormu({
                 placeholder="maliyet, isteğe bağlı"
                 className={`${GIRDI} rakam`}
               />
-              {/* Rafta bekleyen paranın hesabı için (K-108). */}
-              <span className="text-xs text-metin-3">Yalnızca panelde görünür.</span>
+              {/* Kâr hesabı için; KDV hariç, satış fiyatı KDV dahil (K-111). */}
+              <span className="text-xs text-metin-3">
+                Faturadaki KDV hariç birim fiyat. Yalnızca panelde görünür.
+              </span>
+              {marj && (
+                <span
+                  className={`rakam text-xs font-bold ${marj.karKurus < 0 ? "text-mercan-koyu" : "text-nane-koyu"}`}
+                >
+                  KDV hariç satış {fiyatYaz(marj.netSatisKurus)} · birim brüt kâr{" "}
+                  {fiyatYaz(marj.karKurus)} · marj {yuzdeYaz(marj.marjYuzde)}
+                </span>
+              )}
             </label>
 
             <label className="flex items-center gap-2 self-end pb-2">

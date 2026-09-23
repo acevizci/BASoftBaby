@@ -10,6 +10,7 @@ import Link from "next/link";
 import HareketTablosu from "@/ui/hareket-tablosu";
 import { urunHareketleri } from "@/server/stok-hareket";
 import { renkAdlari } from "@/server/renkler";
+import { ayarlariGetir } from "@/server/sepet";
 import { kategoriEtiketleri } from "@/ui/kategori-etiketi";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +27,7 @@ export default async function UrunDuzenle({
   const { kayit, fhata, fkayit, fsil, fsira, hata, renk: renkParam, varolan } =
     await searchParams;
 
-  const [urun, kategoriler] = await Promise.all([
+  const [urun, kategoriler, satisAyari] = await Promise.all([
     db.product.findUnique({
       where: { slug },
       include: {
@@ -36,6 +37,7 @@ export default async function UrunDuzenle({
       },
     }),
     db.category.findMany({ orderBy: { sira: "asc" } }),
+    ayarlariGetir(),
   ]);
   if (!urun) notFound();
 
@@ -92,6 +94,7 @@ export default async function UrunDuzenle({
       <UrunFormu
         kaydedildi={kayit === "1"}
         varOlanVaryant={typeof varolan === "string" ? varolan.slice(0, 80) : undefined}
+        kdvOrani={satisAyari.kdvOrani}
         kategoriler={kategoriler.map((k) => ({
           slug: k.slug,
           ad: kategoriEtiketleri(kategoriler).get(k.slug) ?? k.ad,

@@ -4863,6 +4863,36 @@ anahtarlar gelince sandbox'ta taksitli bir ödeme ve iadesi denenmeli.
 
 ---
 
+### K-111 · Satış anındaki maliyet, KDV ayrımı ve marj
+
+**Maliyet siparişe yazılıyor** (`OrderItem.alisFiyatKurus`). Alış fiyatı
+yalnızca ürünün bugünkü kaydındaydı; fiyatı değiştirmek geçmiş kârı da
+değiştirirdi. Artık satış anındaki alış fiyatı satıra kopyalanıyor, sonradan
+değişse de kalıyor.
+
+**Eski satışlar:** geçişte bugünkü alış fiyatıyla dolduruldu ve "tahmini"
+diye işaretlendi (`alisTahmini`). Alış fiyatı sonradan **ilk kez**
+girildiğinde (ürün ekranı ya da toplu yükleme), maliyeti bilinmeyen eski
+satışlar da aynı şekilde tahmini doluyor. Maliyeti zaten yazılı satırlara
+dokunulmuyor. Alış fiyatı olmayan ürünün maliyeti boş kalıyor, sıfır
+sayılmıyor: yoksa kâr şişerdi.
+
+**KDV:** satış fiyatları KDV dahil (K-20), alış fiyatları **KDV hariç**
+giriliyor; alanın adında ve açıklamasında bu yazıyor. Karşılaştırmadan önce
+satış, faturadaki ayrıştırmayla aynı yuvarlamayla KDV'den arındırılıyor
+(`server/kar.ts`). Oran satış ayarlarındaki mağaza geneli oran. Kargo
+bedelinin KDV'si ayrı bir konu; muhasebeciye sorulmalı, şimdilik aynı oran.
+
+**Marj:** ürün ekranında alış fiyatının altında "KDV hariç satış · birim
+brüt kâr · marj" (kayıtlı değerlerle), ürün listesinde fiyatın altında
+marj yüzdesi. Maliyetin altına düşen ürün mercan renginde.
+
+**Nerede:** [`../server/kar.ts`](../server/kar.ts),
+[`../server/maliyet.ts`](../server/maliyet.ts),
+[`../testler/maliyet.test.ts`](../testler/maliyet.test.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

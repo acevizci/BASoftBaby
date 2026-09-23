@@ -98,8 +98,8 @@ model Product {
 
   fiyatKurus     Int
   eskiFiyatKurus Int?
-  /// Alış fiyatı (maliyet, K-108). Yalnızca panelde; rafta bekleyen paranın
-  /// hesabı için. Mağazaya hiç gitmiyor: katalog ürünü alan alan eşliyor.
+  /// Alış fiyatı (maliyet, K-108), KDV hariç (K-111). Yalnızca panelde;
+  /// mağazaya hiç gitmiyor: katalog ürünü alan alan eşliyor.
   alisFiyatKurus Int?
 
   // Bebek tekstilinde yasal zorunluluk (bkz. docs/01-kurulus-plani.md § 3)
@@ -401,6 +401,11 @@ model OrderItem {
   /// Yalnızca kampanyanın kapsadığı satırlara düşüyor. Boşsa eski sipariş:
   /// pay bilinmiyor, iade eski oransal hesapla yapılıyor.
   indirimKurus Int?
+  /// Sipariş anındaki birim alış fiyatı, KDV hariç (K-111). Alış fiyatı
+  /// sonradan değişse de bu değişmez. Boşsa maliyet bilinmiyor.
+  alisFiyatKurus Int?
+  /// Alış fiyatı sipariş anında değil sonradan, o günkü değerle yazıldıysa.
+  alisTahmini    Boolean @default(false)
 
   talepSatirlari OrderRequestItem[]
   yorum          Review?
