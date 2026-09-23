@@ -3,6 +3,9 @@ import UstCubuk from "@/ui/ust-cubuk";
 import AltBilgi from "@/ui/alt-bilgi";
 import { FavoriSaglayici } from "@/ui/favori";
 import { favoriIdleri } from "@/server/favori";
+import { kunyeGetir } from "@/server/yasal";
+import { whatsappNumarasi } from "@/server/whatsapp";
+import WhatsappDugmesi from "@/ui/whatsapp-dugmesi";
 
 /**
  * Mağaza çerçevesi: duyuru şeridi, üst çubuk ve alt bilgi.
@@ -18,13 +21,16 @@ import { favoriIdleri } from "@/server/favori";
 export default async function MagazaDuzeni({ children }: LayoutProps<"/">) {
   // Favoriler bir kez okunup bütün kartlara dağılıyor (K-94). Üst çubuk zaten
   // her sayfada oturumu okuduğu için bu sayfayı dinamikleştirmiyor.
-  const favoriler = await favoriIdleri();
+  const [favoriler, kunye] = await Promise.all([favoriIdleri(), kunyeGetir()]);
+  // WhatsApp düğmesi künyedeki destek telefonu cep numarasıysa çıkıyor (K-99).
+  const whatsapp = whatsappNumarasi(kunye.destekTelefon);
   return (
     <FavoriSaglayici ilk={favoriler}>
       <DuyuruSeridi />
       <UstCubuk />
       <main className="flex-1">{children}</main>
       <AltBilgi />
+      {whatsapp && <WhatsappDugmesi numara={whatsapp} />}
     </FavoriSaglayici>
   );
 }

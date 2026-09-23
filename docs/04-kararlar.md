@@ -4463,6 +4463,29 @@ birlikte bir kutu çıkıyor; irsaliyede de "Hediye paketi" ve not yazıyor.
 
 ---
 
+### K-99 · WhatsApp destek düğmesi
+
+Bebek giyiminde en sık soru "hangi beden olur": müşteri e-posta yazmaya
+üşeniyor, telefonla aramak istemiyor. Mağazanın her sayfasında sağ altta
+yeşil bir WhatsApp düğmesi var; `wa.me` bağlantısıyla hazır bir mesajla
+sohbeti açıyor.
+
+- **Numara** künyedeki destek telefonundan geliyor, ayrı ayar yok. Yalnızca
+  cep numarası (5xx) kabul ediliyor, her yazılış biçimi ("0555 …",
+  "+90 555 …") aynı numaraya çevriliyor. Sabit hatla WhatsApp çoğu zaman
+  açılmıyor; o durumda ya da alan boşsa düğme hiç çıkmıyor. Panelde alanın
+  altında bu yazıyor.
+- **Ürün sayfasında** hazır mesaj ürünün adını ve adresini taşıyor; ad
+  tıklandığı anda sayfa başlığından okunuyor.
+- **Ödeme sayfasında** çizilmiyor: formun üstüne binmesin, müşteri işlemi
+  yarıda bırakmasın (K-84 ile aynı gerekçe).
+
+**Nerede:** [`../ui/whatsapp-dugmesi.tsx`](../ui/whatsapp-dugmesi.tsx),
+[`../server/whatsapp.ts`](../server/whatsapp.ts),
+[`../testler/whatsapp.test.ts`](../testler/whatsapp.test.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

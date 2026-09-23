@@ -226,6 +226,9 @@ export default async function YasalEkrani({ searchParams }: PageProps<"/yonetim/
               defaultValue={kunye.destekTelefon}
               className={`${GIRDI} rakam`}
             />
+            <span className="text-xs text-metin-3">
+              Cep numarasıysa mağazada sağ altta WhatsApp düğmesi çıkar.
+            </span>
           </label>
 
           <label className="flex flex-col gap-1.5">
