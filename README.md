@@ -5,8 +5,9 @@ Online bebek kıyafetleri ve aksesuarları mağazası.
 > **Yol haritasındaki yedi adımın kodu da yazıldı.** Proje iskeleti ve marka
 > sistemi, katalog vitrini, yönetim paneli, sepet ve sipariş, üyelik, kampanya
 > motoru, kartla ödeme, e-postalar, kargo ve fatura, yasal metinler, SEO ve
-> ölçümleme. Geriye dış hesaplar kaldı: iyzico, Resend, kargo toplayıcısı ve
-> e-arşiv sağlayıcısı. Hiçbiri tanımlı değilken de mağaza çalışıyor — sipariş
+> ölçümleme. Site `basoftbaby.com` adresinde yayında ve e-postalar (Resend)
+> çalışıyor. Geriye dış hesaplar kaldı: iyzico, kargo toplayıcısı ve e-arşiv
+> sağlayıcısı. Hiçbiri tanımlı değilken de mağaza çalışıyor — sipariş
 > alınıyor, kargoya veriliyor, fatura kesiliyor. Veriler Neon Postgres'te, panelden girilen her değişiklik
 > anında mağazaya yansıyor. Sırada ödeme (iyzico) ve kargo var; ikisi de şirket
 > evrakına bağlı.
@@ -673,18 +674,23 @@ içindeki "Açık sorular").
 - [x] Ürün, kategori, beden ve stok yönetimi; Excel/CSV ile toplu ürün yükleme
 - [x] Değerlendirmeler, "gelince haber ver", bırakılan sepet hatırlatması
 - [x] Satış raporu (dönem, grafik, kırılımlar, CSV) ve günün işi ekranı
-- [x] Panel kullanıcıları, şifre sıfırlama, giriş denemesi sınırı
+- [x] Panel kullanıcıları (davetle, e-posta doğrulamalı), şifre sıfırlama, giriş denemesi sınırı
 - [x] Yardım sayfaları (beden, kargo, iade, SSS) ve yasal metin altyapısı
 - [x] SEO: sitemap, robots, yapısal veri, canonical adresler
 - [x] Erişilebilirlik: iki temada WCAG AA kontrast denetimi
 - [x] JavaScript kapalı tarayıcıda çalışan tam satın alma akışı
+- [x] Favoriler ve son baktığın ürünler
+- [x] Renge göre ürün fotoğrafları (kartta renk noktası fotoğrafı değiştiriyor), kapak seçimi
+- [x] Resimli banner (ayrı telefon resmiyle), düzenleme ve sıralama
+- [x] Yaş grubunu kategoriye bağlama, kategori süzgeci, kapalı kategorinin ürünlerini gizleme
+- [x] E-posta: yayında; Satışa hazırlık ekranından deneme gönderimi
 
 ### Dışarıdan bir şey bekleyenler
 
-- [ ] **Gerçek ürünlerin ve fotoğraflarının girilmesi** — ürün görselleri hâlâ çizim
+- [ ] **Gerçek ürünlerin ve fotoğraflarının girilmesi** — başladı; ilk ürünler fotoğraflarıyla yayında. Kalan örnek ürünleri Satışa hazırlık ekranı gösteriyor
 - [ ] **Havale hesabının panele girilmesi** (A-07) — doldurulana kadar müşteri parayı nereye yatıracağını göremiyor
-- [ ] **Alan adı** (A-02) — `SITE_URL` buna bağlı
-- [ ] **E-posta servisi anahtarı** (A-09) — alan adına bağlı; anahtar yokken e-postalar gönderilmiyor, akışlar çalışıyor
+- [x] **Alan adı** (A-02) — `basoftbaby.com` yayında. Vercel'de `SITE_URL` tanımlı olmalı; Satışa hazırlık'taki "Alan adı" satırı kontrol ediyor
+- [x] **E-posta servisi** (A-09) — Resend anahtarı tanımlı, alan adı doğrulandı, e-postalar gelen kutusuna düşüyor
 - [ ] **Şirket kuruluşu** (A-03) — iyzico sanal POS, künye ve vergi bilgileri buna bağlı
 - [ ] **Yasal metinlerin avukat onayı** (A-05) — dördü de taslak işaretli, arama motorlarına kapalı
 - [ ] **Kargo toplayıcısı ve fatura sağlayıcısı hesapları** (A-11) — ikisi de şirkete bağlı

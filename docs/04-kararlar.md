@@ -4426,10 +4426,12 @@ hemen hepsinde kod hazır ve denendi; eksik olan koddan başka bir şey.
 
 ## Bekleyenler
 
-### A-02 · Alan adı
-Araştırılıyor. Açılış için gerekli. Alındığında Vercel'e bağlanıp `SITE_URL`
-ortam değişkeni tanımlanacak: sitemap, canonical adresler ve yapısal veri
-tek değişkenle birlikte düzeliyor (K-16).
+### A-02 · Alan adı  ·  kapandı
+**23 Eylül 2026 itibarıyla kapandı.** `basoftbaby.com` alındı ve site Vercel'de
+bu adreste yayında. `SITE_URL` ortam değişkeni `https://www.basoftbaby.com`
+olmalı: sitemap, canonical adresler ve yapısal veri buna bakıyor (K-16).
+Tanımlı olup olmadığını Satışa hazırlık ekranındaki "Alan adı" satırı
+söylüyor.
 
 ### A-03 · Şirket ve vergi levhası
 Hazırlıklara başlandı. iyzico sanal POS başvurusu bununla yapılıyor. Ödeme
@@ -4488,13 +4490,16 @@ yazılıyor (değeri asla yazılmıyor), hiç yoksa yeniden dağıtım ve ortam
 işaretleri hatırlatılıyor. Depo bağlıyken yazma başarısız olursa kütüphanenin
 hatası da panelde görünüyor, günlüklerde kalmıyor.
 
-### A-09 · E-posta servisi
-**20 Eylül 2026'da kodu bitti (K-18), anahtarı bekliyor.** Şifre sıfırlama,
-e-posta doğrulaması, sipariş ve ödeme onayı yazıldı ve denendi. Çalışması için
-Resend'de hesap açılıp `RESEND_ANAHTARI` Vercel'e girilmeli; gönderen adresin
-alan adının Resend'de doğrulanması gerektiği için alan adına (A-02) bağlı.
-Anahtar tanımlanana kadar e-postalar gönderilmiyor, akışlar çalışmaya devam
-ediyor.
+### A-09 · E-posta servisi  ·  kapandı
+**23 Eylül 2026'da kapandı.** Resend anahtarı Vercel'e girildi, `basoftbaby.com`
+Resend'de doğrulandı; Satışa hazırlık ekranından gönderilen deneme e-postası
+gelen kutusuna düştü, spam'e değil (K-85, K-86). İlk denemedeki
+`401 API key is invalid` hatası, anahtar Vercel'e yeniden girilip dağıtım
+yenilenince çözüldü.
+
+Kalan tek ayrıntı: gönderen `siparis@basoftbaby.com`. Müşteri e-postaya
+"yanıtla" derse cevap bu adrese gidiyor; bu adreste bir posta kutusu yoksa
+müşteri mesajları kayboluyor.
 
 ### A-12 · Uyanık tutma servisi
 **Bölge sorusu kapandı:** işlev de veritabanı da Frankfurt'ta (K-30). Kalan iş
