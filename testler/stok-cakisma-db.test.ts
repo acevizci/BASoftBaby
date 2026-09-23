@@ -94,6 +94,7 @@ describe("stok ezilmesi (veritabanı)", { skip: atlamaSebebi }, () => {
       kategori: urun.category.ad,
       fiyatKurus: null,
       eskiFiyatKurus: null,
+      alisFiyatKurus: null,
       ozet: "yeni özet",
       aciklama: "",
       kumasIcerigi: "",

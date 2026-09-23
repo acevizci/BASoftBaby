@@ -98,6 +98,9 @@ model Product {
 
   fiyatKurus     Int
   eskiFiyatKurus Int?
+  /// Alış fiyatı (maliyet, K-108). Yalnızca panelde; rafta bekleyen paranın
+  /// hesabı için. Mağazaya hiç gitmiyor: katalog ürünü alan alan eşliyor.
+  alisFiyatKurus Int?
 
   // Bebek tekstilinde yasal zorunluluk (bkz. docs/01-kurulus-plani.md § 3)
   kumasIcerigi   String

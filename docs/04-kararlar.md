@@ -4779,6 +4779,35 @@ saklıyor.
 
 ---
 
+### K-108 · Alış fiyatı ve satmayan stok raporu
+
+Rafta bekleyen para görünmüyordu.
+
+**Alış fiyatı** (`Product.alisFiyatKurus`, isteğe bağlı): ürün ekranında
+"Alış fiyatı" alanı, toplu yüklemede "Alış fiyatı" (ya da "Maliyet")
+sütunu. Boş hücre var olan değeri silmiyor. **Mağazaya hiç gitmiyor:**
+katalog ürünü alan alan eşliyor; ürün sayfasının HTML'inde geçmediği
+tarayıcıda denetlendi.
+
+**Stok → Satmayanlar:** son 60/90/180 günde hiç satmamış, stoğu olan
+bedenler. En çok para bağlayan üstte.
+
+- **Yeni gelen "satmıyor" sayılmıyor:** pencere içinde stoğa giriş olduysa
+  (mal kabulü, yeni beden, toplu yükleme, sayım fazlası; iade ve iptal
+  sayılmıyor) ya da ürün pencereden yeni açıldıysa listede değil.
+- Son satış (iptal edilmemiş sipariş) ve son giriş tarihleri yazıyor.
+- Bağlı para alış fiyatıyla. Alış fiyatı girilmemiş olanlar satış fiyatıyla
+  ayrı bir toplamda ve satırda "satış fiyatıyla" diye işaretli; iki temel
+  karışmıyor.
+- CSV. İndirime alınan ürün için favorisine ekleyenlere zaten haber gidiyor
+  (K-100).
+
+**Nerede:** [`../server/satmayan.ts`](../server/satmayan.ts),
+[`../app/yonetim/(panel)/stok/satmayanlar/page.tsx`](../app/yonetim/(panel)/stok/satmayanlar/page.tsx),
+[`../testler/satmayan.test.ts`](../testler/satmayan.test.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

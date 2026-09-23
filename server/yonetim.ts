@@ -109,6 +109,7 @@ export async function urunKaydet(form: FormData): Promise<void> {
     categoryId: kategori.id,
     fiyatKurus,
     eskiFiyatKurus: kurusaCevir(form.get("eskiFiyat")),
+    alisFiyatKurus: kurusaCevir(form.get("alisFiyat")),
     kumasIcerigi: metin(form, "kumasIcerigi"),
     yikamaTalimati: metin(form, "yikamaTalimati"),
     ozellikler: metin(form, "ozellikler")

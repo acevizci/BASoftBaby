@@ -106,6 +106,7 @@ export default async function UrunDuzenle({
           kategoriSlug: urun.category.slug,
           fiyatKurus: urun.fiyatKurus,
           eskiFiyatKurus: urun.eskiFiyatKurus,
+          alisFiyatKurus: urun.alisFiyatKurus,
           kumasIcerigi: urun.kumasIcerigi,
           yikamaTalimati: urun.yikamaTalimati,
           ozellikler: urun.ozellikler,

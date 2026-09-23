@@ -34,6 +34,8 @@ export type Satir = {
   kategori: string;
   fiyatKurus: number | null;
   eskiFiyatKurus: number | null;
+  /** Alış fiyatı (K-108); boşsa var olan değer değişmiyor. */
+  alisFiyatKurus: number | null;
   ozet: string;
   aciklama: string;
   kumasIcerigi: string;
@@ -98,6 +100,7 @@ const SUTUNLAR = {
   kategori: ["kategori"],
   fiyat: ["fiyat", "satis fiyati"],
   eskiFiyat: ["eski fiyat", "liste fiyati"],
+  alisFiyat: ["alis fiyati", "maliyet", "alis"],
   ozet: ["ozet", "kisa aciklama"],
   aciklama: ["aciklama"],
   kumasIcerigi: ["kumas icerigi", "kumas"],
@@ -339,6 +342,12 @@ export function satirlariCoz(
       hatalar.push({ satirNo, sutun: "Eski fiyat", mesaj: `"${eskiHam}" fiyat olarak okunamadı.` });
     }
 
+    const alisHam = al(h, "alisFiyat");
+    const alisFiyatKurus = alisHam ? kurusaCevir(alisHam) : null;
+    if (alisHam && alisFiyatKurus === null) {
+      hatalar.push({ satirNo, sutun: "Alış fiyatı", mesaj: `"${alisHam}" fiyat olarak okunamadı.` });
+    }
+
     const bedenHam = al(h, "beden");
     const beden = bedenCoz(bedenHam, bedenler);
     if (!beden) {
@@ -405,6 +414,7 @@ export function satirlariCoz(
       kategori: al(h, "kategori"),
       fiyatKurus,
       eskiFiyatKurus,
+      alisFiyatKurus,
       ozet: al(h, "ozet"),
       aciklama: al(h, "aciklama"),
       kumasIcerigi: al(h, "kumasIcerigi"),
@@ -610,6 +620,7 @@ export async function planiUygula(
           categoryId: kategori?.id,
           fiyatKurus: ilkDolu("fiyatKurus") ?? undefined,
           eskiFiyatKurus: grup.map((s) => s.eskiFiyatKurus).find((f) => f !== null) ?? undefined,
+          alisFiyatKurus: grup.map((s) => s.alisFiyatKurus).find((f) => f !== null) ?? undefined,
           ozet: ilkDolu("ozet"),
           aciklama: ilkDolu("aciklama"),
           kumasIcerigi: ilkDolu("kumasIcerigi"),
@@ -641,6 +652,7 @@ export async function planiUygula(
                 categoryId: kategori!.id,
                 fiyatKurus: alanlar.fiyatKurus!,
                 eskiFiyatKurus: alanlar.eskiFiyatKurus ?? null,
+                alisFiyatKurus: alanlar.alisFiyatKurus ?? null,
                 ozet: alanlar.ozet ?? "",
                 aciklama: alanlar.aciklama || null,
                 kumasIcerigi: alanlar.kumasIcerigi!,

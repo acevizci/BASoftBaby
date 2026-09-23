@@ -27,6 +27,7 @@ const sutunAciklamalari = (bedenler: string[], renkler: string[]): [string, stri
   ["Kategori", "Zorunlu. Panelde açık bir kategorinin adı ya da adresi."],
   ["Fiyat", "Yeni üründe zorunlu. 249,90 ya da 249.90."],
   ["Eski fiyat", "İsteğe bağlı. Üstü çizili gösterilen fiyat."],
+  ["Alış fiyatı", "İsteğe bağlı. Maliyet; yalnızca panelde, satmayan stok raporunda."],
   ["Özet", "Kartta ve ürün sayfasının başında görünen tek cümle."],
   ["Açıklama", "İsteğe bağlı, uzun metin."],
   ["Kumaş içeriği", "Yeni üründe zorunlu — bebek tekstilinde yasal."],

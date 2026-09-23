@@ -22,6 +22,7 @@ export type FormUrunu = {
   kategoriSlug: string;
   fiyatKurus: number;
   eskiFiyatKurus: number | null;
+  alisFiyatKurus: number | null;
   kumasIcerigi: string;
   yikamaTalimati: string;
   ozellikler: string[];
@@ -155,6 +156,19 @@ export default function UrunFormu({
                 placeholder="boş bırakılabilir"
                 className={`${GIRDI} rakam`}
               />
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <span className={ETIKET}>Alış fiyatı (₺)</span>
+              <input
+                name="alisFiyat"
+                inputMode="decimal"
+                defaultValue={kurusYaz(urun?.alisFiyatKurus ?? null)}
+                placeholder="maliyet, isteğe bağlı"
+                className={`${GIRDI} rakam`}
+              />
+              {/* Rafta bekleyen paranın hesabı için (K-108). */}
+              <span className="text-xs text-metin-3">Yalnızca panelde görünür.</span>
             </label>
 
             <label className="flex items-center gap-2 self-end pb-2">

@@ -16,20 +16,20 @@ import { bedenAdlari } from "@/server/bedenler";
 export const dynamic = "force-dynamic";
 
 const BASLIKLAR = [
-  "Ürün adı", "Kategori", "Fiyat", "Eski fiyat", "Özet", "Açıklama",
+  "Ürün adı", "Kategori", "Fiyat", "Eski fiyat", "Alış fiyatı", "Özet", "Açıklama",
   "Kumaş içeriği", "Yıkama talimatı", "Üretici", "Özellikler",
   "Beden", "Renk", "Stok", "SKU", "Görsel", "Palet", "Aktif",
 ];
 
 const ORNEKLER = [
   [
-    "Organik zıbın", "Zıbın & Body", "249,90", "", "Pamuklu, dikişsiz omuzlu zıbın", "",
+    "Organik zıbın", "Zıbın & Body", "249,90", "", "120,00", "Pamuklu, dikişsiz omuzlu zıbın", "",
     "%100 organik pamuk", "30°C'de ters yüz yıkayın", "",
     "Dikişsiz omuz|Çıtçıtlı",
     "0-3 ay", "Nane", "12", "", "zibin", "Nane", "Evet",
   ],
   [
-    "Organik zıbın", "Zıbın & Body", "249,90", "", "", "", "", "", "", "",
+    "Organik zıbın", "Zıbın & Body", "249,90", "", "", "", "", "", "", "", "",
     "3-6 ay", "Nane", "8", "", "", "", "",
   ],
 ];
@@ -57,6 +57,7 @@ export async function GET(): Promise<Response> {
     ["Ürün adı", "Zorunlu. Aynı adı taşıyan satırlar tek ürün olur."],
     ["Kategori", "Zorunlu. Panelde açık bir kategorinin adı ya da adresi."],
     ["Fiyat", "Yeni üründe zorunlu. 249,90 ya da 249.90 yazılabilir."],
+    ["Alış fiyatı", "İsteğe bağlı. Maliyet; mağazada görünmez, satmayan stok raporunda kullanılır."],
     ["Kumaş içeriği", "Yeni üründe zorunlu — bebek tekstilinde yasal."],
     ["Yıkama talimatı", "Yeni üründe zorunlu."],
     ["Özellikler", "Madde madde; aralarına | koyun."],
