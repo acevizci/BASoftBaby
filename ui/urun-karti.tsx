@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import UrunFoto from "@/ui/urun-foto";
 import SepeteEkle from "@/ui/sepete-ekle";
+import { FavoriDugmesi } from "@/ui/favori";
 import {
   fiyatYaz,
   paletCoz,
@@ -106,6 +107,11 @@ export default function UrunKarti({ urun }: { urun: Urun }) {
         {/* Tükendiği yalnızca en alttaki düğmeye bakınca anlaşılıyordu;
             ızgarada göz önce fotoğrafa gidiyor. Fotoğraf da soluklaşıyor —
             rozet tek başına küçük ekranda gözden kaçıyor (K-49). */}
+        {/* Kalp fotoğrafın sağ alt köşesinde: üst köşeler rozet ve
+            "Tükendi" etiketinin (K-94). */}
+        <span className="absolute bottom-3 right-3">
+          <FavoriDugmesi urunId={urun.id} urunAd={urun.ad} yuzen />
+        </span>
         {stok === 0 && (
           <span className="absolute right-3 top-3 rounded-full bg-metin/85 px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-wide text-white">
             Tükendi

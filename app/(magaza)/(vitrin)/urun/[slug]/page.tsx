@@ -18,6 +18,7 @@ import {
   urununBedenleri,
 } from "@/server/katalog";
 import { paletCoz, renginFotograflari, type RenkAdi } from "@/ui/katalog-bicim";
+import { FavoriDugmesi } from "@/ui/favori";
 
 export async function generateMetadata({ params }: PageProps<"/urun/[slug]">): Promise<Metadata> {
   const { slug } = await params;
@@ -132,6 +133,9 @@ export default async function UrunSayfasi({
           <div>
             <h1 className="text-2xl sm:text-3xl">{urun.ad}</h1>
             <p className="mt-1 text-sm text-metin-2">{urun.ozet}</p>
+            <div className="mt-3">
+              <FavoriDugmesi urunId={urun.id} urunAd={urun.ad} />
+            </div>
             {/* Hiç değerlendirme yoksa puan satırı hiç yok: "0,0 puan"
                 yazmak, olmayan bir bilgiyi varmış gibi göstermek olurdu. */}
             {urun.yorumSayisi > 0 && (

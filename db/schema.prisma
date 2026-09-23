@@ -136,6 +136,7 @@ model Product {
   images    ProductImage[]
   campaigns Campaign[]
   yorumlar  Review[]
+  favoriler Favorite[]
 
   @@index([categoryId, aktif])
   @@index([aramaMetni])
@@ -500,6 +501,7 @@ model Customer {
   siparisler Order[]
   jetonlar   CustomerToken[]
   sepetler   Cart[]
+  favoriler  Favorite[]
 }
 
 /// Tek kullanımlık e-posta jetonu: şifre sıfırlama ve e-posta doğrulama.
@@ -980,4 +982,18 @@ model AdminSession {
 
   @@index([adminId])
   @@index([biter])
+}
+
+/// Müşterinin favorileri (K-94). Hesap silinince gidiyor; ürün silinince de
+/// o satır gidiyor, favori listesinde var olmayan bir ürün kalmıyor.
+model Favorite {
+  id          String   @id @default(cuid())
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  olusturuldu DateTime @default(now())
+
+  @@unique([customerId, productId])
+  @@index([customerId])
 }

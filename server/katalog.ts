@@ -390,6 +390,38 @@ function sirala(urunler: Urun[], nasil?: string): Urun[] {
   }
 }
 
+/**
+ * Verilen ürünler, verilen sırayla: favoriler ve son bakılanlar (K-94, K-95).
+ *
+ * Vitrin kuralları geçerli: yayında olmayan ürün ya da kapalı kategorinin
+ * ürünü gelmiyor (K-82). Bilinmeyen kimlikler sessizce atlanıyor — silinmiş
+ * bir ürün listeyi bozmasın.
+ */
+export async function urunleriSec(
+  secim: { idler: string[] } | { sluglar: string[] },
+): Promise<Urun[]> {
+  const anahtarlar = "idler" in secim ? secim.idler : secim.sluglar;
+  if (anahtarlar.length === 0) return [];
+  const [satirlar, kampanyalar, sira, renkSecenekleri] = await Promise.all([
+    db.product.findMany({
+      where: {
+        aktif: true,
+        category: { aktif: true },
+        ...("idler" in secim ? { id: { in: secim.idler } } : { slug: { in: secim.sluglar } }),
+      },
+      include: URUN_ICEREN,
+    }),
+    urunIndirimleri(),
+    bedenSirasi(),
+    tumRenkSecenekleri(),
+  ]);
+  const yer = new Map(anahtarlar.map((k, i) => [k, i]));
+  const anahtar = (u: { id: string; slug: string }) => ("idler" in secim ? u.id : u.slug);
+  return satirlar
+    .sort((a, b) => (yer.get(anahtar(a)) ?? 0) - (yer.get(anahtar(b)) ?? 0))
+    .map((s) => urunYap(s as SatirTipi, kampanyalar, sira, renkSecenekleri));
+}
+
 /** Ana sayfadaki "Bu haftanın favorileri" şeridi. */
 export const oneCikanUrunler = paylasilanOnbellekli(
   oneCikanlariSorgula,

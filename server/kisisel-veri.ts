@@ -25,6 +25,7 @@ export type KisiselVeri = {
   siparisler: unknown[];
   talepler: unknown[];
   degerlendirmeler: unknown[];
+  favoriler: unknown[];
   oturumlar: { adet: number; sonGorulme: Date | null };
 };
 
@@ -87,6 +88,13 @@ export async function kisiselVeriyiTopla(customerId: string): Promise<KisiselVer
     },
   });
 
+  // Favoriler de hesaba ait bir kayıt (K-94); hesap silinince gidiyor.
+  const favoriler = await db.favorite.findMany({
+    where: { customerId },
+    orderBy: { olusturuldu: "desc" },
+    select: { olusturuldu: true, product: { select: { ad: true } } },
+  });
+
   const { adresler, siparisler, ...hesap } = musteri;
 
   return {
@@ -101,6 +109,7 @@ export async function kisiselVeriyiTopla(customerId: string): Promise<KisiselVer
     siparisler: siparisler.map(({ talepler, ...s }) => ({ ...s, talepler })),
     talepler: siparisler.flatMap((s) => s.talepler.map((t) => ({ ...t, siparis: s.numara }))),
     degerlendirmeler,
+    favoriler: favoriler.map((f) => ({ urun: f.product.ad, eklendi: f.olusturuldu })),
     oturumlar: { adet: oturumlar._count._all, sonGorulme: oturumlar._max.sonGorulme },
   };
 }
@@ -110,8 +119,8 @@ export type SilmeSonucu = { silinen: number; kalanSiparis: number };
 /**
  * Hesabı siler.
  *
- * Silinenler: oturumlar, e-posta jetonları, adres defteri, stok bildirimi
- * istekleri ve hesabın kendisi (ilişkiler şemada `Cascade`).
+ * Silinenler: oturumlar, e-posta jetonları, adres defteri, favoriler, stok
+ * bildirimi istekleri ve hesabın kendisi (ilişkiler şemada `Cascade`).
  *
  * Silinmeyenler: siparişler ve faturalar — yasal saklama süresi doluncaya
  * kadar duruyorlar, ama hesapla bağları kopuyor (`SetNull`). Sepetler de

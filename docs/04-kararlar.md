@@ -4356,6 +4356,33 @@ sırayla diziliyor; yani kapak yapılan fotoğraf kendi renginin de ilki oluyor.
 **Nerede:** [`../server/yonetim.ts`](../server/yonetim.ts) (`bannerTasi`, `fotografTasi`, `fotografEkle`),
 [`../ui/fotograf-yonetimi.tsx`](../ui/fotograf-yonetimi.tsx)
 
+### K-94 · Favoriler
+
+Bebek kıyafetinde müşteri çoğunlukla bakıp sonra karar veriyor; beğendiğini
+bir yere koyamayınca ertesi gün yeniden arıyordu.
+
+- Her ürün kartında fotoğrafın sağ alt köşesinde kalp, ürün sayfasında
+  "Favorilere ekle" düğmesi. Tıklayınca sayfa değişmiyor; kalp hemen doluyor,
+  sunucu reddederse geri dönüyor.
+- **Yalnızca üyelerde.** Giriş yoksa kalp giriş sayfasına götürüyor ve dönüşte
+  aynı sayfaya geliyor. Hesapsız favori cihazdan cihaza taşınmazdı.
+- Hesabım → **Favorilerim**: en son eklenen önce. Yayından kalkan ya da
+  kategorisi kapanan ürün listede görünmüyor ama kaydı duruyor; yeniden
+  yayına girince geri geliyor.
+- Liste mağaza düzeninde bir kez okunup bağlamla bütün kartlara dağılıyor;
+  her kart ayrı sormuyor. Üst çubuk zaten her sayfada oturumu okuduğu için
+  sayfalar yavaşlamıyor.
+- Kimlik oturumdan: başkasının listesine ürün eklenemiyor.
+- KVKK: "Verilerim" dosyasında favoriler de var; hesap silinince favoriler de
+  gidiyor.
+
+Favorideki ürün indirime girince ya da stoğa gelince e-posta henüz yok;
+stok bildirimi altyapısı buna hazır.
+
+**Nerede:** [`../server/favori.ts`](../server/favori.ts),
+[`../server/favori-islem.ts`](../server/favori-islem.ts),
+[`../ui/favori.tsx`](../ui/favori.tsx)
+
 ---
 
 ## Açık sorular
