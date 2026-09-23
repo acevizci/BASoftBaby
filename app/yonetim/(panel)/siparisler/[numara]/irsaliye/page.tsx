@@ -150,6 +150,19 @@ export default async function IrsaliyeSayfasi({
           </tfoot>
         </table>
 
+        {/* Hediye notu irsaliyede (K-98): paketleyen kişi karta ne
+            yazacağını buradan okuyor; irsaliyede zaten fiyat yok. */}
+        {siparis.hediyePaketi && (
+          <div className="mt-4 rounded border border-black/30 p-3 text-sm">
+            <p className="font-bold">Hediye paketi</p>
+            {siparis.hediyeNotu ? (
+              <p className="mt-1 whitespace-pre-line">Not: {siparis.hediyeNotu}</p>
+            ) : (
+              <p className="mt-1">Not yok.</p>
+            )}
+          </div>
+        )}
+
         {(irsaliye.tasiyici || irsaliye.takipNo) && (
           <p className="rakam mt-4 text-xs">
             Taşıyıcı: {tasiyiciAdi(irsaliye.tasiyici)}

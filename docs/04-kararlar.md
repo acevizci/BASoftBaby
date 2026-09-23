@@ -4442,6 +4442,27 @@ adres değişip liste unutulursa ekran yanlışlıkla "temiz" demesin.
 
 ---
 
+### K-98 · Hediye paketi seçeneği
+
+Duyuru şeridi "ücretsiz hediye paketi" diyordu ama paket yalnızca sipariş
+notuna yazılarak istenebiliyordu; not gözden kaçınca paket de kaçıyordu.
+
+Ödeme formunda artık bir "🎁 Hediye paketi olsun" kutusu var. İşaretlenince
+bir hediye notu alanı açılıyor (en fazla 200 karakter, paketin içine konacak
+kart). Alan CSS `:has` ile açılıp kapanıyor — JavaScript gerekmiyor. Kutu
+işaretli değilse not kaydedilmiyor.
+
+Sipariş `hediyePaketi` ve `hediyeNotu` alanlarını taşıyor. Panelde sipariş
+listesinde ve Günün işi'nde "🎁 hediye" rozeti, sipariş ekranında notla
+birlikte bir kutu çıkıyor; irsaliyede de "Hediye paketi" ve not yazıyor.
+İrsaliyede zaten fiyat yok, paketin içine konabilir.
+
+**Nerede:** [`../server/siparis.ts`](../server/siparis.ts),
+[`../app/(magaza)/odeme/page.tsx`](../app/(magaza)/odeme/page.tsx),
+[`../testler/stok-db.test.ts`](../testler/stok-db.test.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

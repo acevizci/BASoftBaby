@@ -322,6 +322,10 @@ model Order {
   il        String
   postaKodu String
   not       String @default("")
+  /// Hediye paketi istendi mi; notu paketin içine konuyor, irsaliyede
+  /// yazıyor (K-98). Fiyat irsaliyede zaten yok.
+  hediyePaketi Boolean @default(false)
+  hediyeNotu   String  @default("")
 
   araToplamKurus Int
   /// Uygulanan kampanyanın indirimi. İndirimler üst üste binmez (K-02).

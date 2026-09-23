@@ -34,6 +34,8 @@ const girdi = () => ({
   il: "İstanbul",
   postaKodu: "34000",
   not: "",
+  hediyePaketi: false,
+  hediyeNotu: "",
   sozlesmeOnayi: new Date(),
 });
 
@@ -46,6 +48,31 @@ async function siparisVer(variantId: string, adet: number) {
 describe("stok ve iade (veritabanı)", { skip: atlamaSebebi }, () => {
   before(temizle);
   after(temizle);
+
+  it("hediye paketi ve notu siparişe yazılıyor; paket yoksa not yazılmıyor (K-98)", async () => {
+    const { variantId } = await urunKur(5);
+    await sepetKur(variantId, 1);
+    const hediyeli = await siparisOlustur(
+      { ...girdi(), hediyePaketi: true, hediyeNotu: "Minik Ada'ya sevgilerle" },
+      AYAR,
+    );
+    await sepetKur(variantId, 1);
+    const hediyesiz = await siparisOlustur(
+      { ...girdi(), hediyePaketi: false, hediyeNotu: "unutulmuş not" },
+      AYAR,
+    );
+    assert.ok(hediyeli.tamam && hediyesiz.tamam);
+    const [a, b] = await Promise.all(
+      [hediyeli, hediyesiz].map((s) =>
+        testDb().order.findUniqueOrThrow({
+          where: { numara: s.tamam ? s.numara : "" },
+          select: { hediyePaketi: true, hediyeNotu: true },
+        }),
+      ),
+    );
+    assert.deepEqual(a, { hediyePaketi: true, hediyeNotu: "Minik Ada'ya sevgilerle" });
+    assert.deepEqual(b, { hediyePaketi: false, hediyeNotu: "" });
+  });
 
   it("sipariş stoğu düşürüyor", async () => {
     const { variantId } = await urunKur(5);

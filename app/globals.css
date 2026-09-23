@@ -403,6 +403,12 @@ a.serit-mesaj:hover {
   background: linear-gradient(to bottom, var(--yuzey-sicak), var(--zemin));
 }
 
+/* Ödeme: hediye notu yalnızca "Hediye paketi olsun" işaretliyken (K-98).
+   :has() desteklemeyen tarayıcıda not hep görünür; form yine çalışır. */
+.hediye-alani:not(:has(input[name="hediye"]:checked)) .hediye-notu {
+  display: none;
+}
+
 /* Banner formu: seçilen türün alanları görünüyor. JavaScript yok; :has()
    desteklemeyen eski tarayıcıda iki grup birden görünür, form yine çalışır. */
 .banner-form:has(input[name="tur"][value="resim"]:checked) .yalniz-yazi,

@@ -247,10 +247,43 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
                 <input
                   name="not"
                   maxLength={500}
-                  placeholder="Hediye paketi olsun, zile basmayın gibi"
+                  placeholder="Zile basmayın, kapıya bırakın gibi"
                   className={GIRDI}
                 />
               </label>
+
+              {/* Hediye paketi ayrı bir seçenek (K-98): duyuru şeridi
+                  "ücretsiz" diyordu ama istemenin tek yolu nota yazmaktı ve
+                  paketlerken gözden kaçıyordu. Not yalnızca kutu işaretliyken
+                  görünüyor (CSS :has; eski tarayıcıda hep açık). */}
+              <div className="hediye-alani flex flex-col gap-3 rounded-[10px] border border-cizgi bg-zemin-2 p-4 sm:col-span-2">
+                <label className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    name="hediye"
+                    className="mt-0.5 h-4 w-4 accent-[var(--mercan)]"
+                  />
+                  <span>
+                    <span className="block text-sm font-bold">🎁 Hediye paketi olsun</span>
+                    <span className="block text-xs text-metin-3">
+                      Ücretsiz. Paketin içinde fiyat yazan hiçbir belge olmaz.
+                    </span>
+                  </span>
+                </label>
+                <label className="hediye-notu flex flex-col gap-1.5">
+                  <span className={ETIKET}>Hediye notu (isteğe bağlı)</span>
+                  <textarea
+                    name="hediyeNotu"
+                    maxLength={200}
+                    rows={2}
+                    placeholder="Minik Ada'ya sevgilerle, Ayşe teyzesi"
+                    className={GIRDI}
+                  />
+                  <span className="text-xs text-metin-3">
+                    Karta yazılıp paketin içine konur. En fazla 200 karakter.
+                  </span>
+                </label>
+              </div>
             </div>
           </section>
 

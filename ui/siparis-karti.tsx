@@ -120,6 +120,14 @@ export default function SiparisKarti({
             </p>
           )}
         </div>
+        {siparis.hediyePaketi && (
+          <div className="rounded-[10px] bg-mercan-soluk px-3 py-2 sm:col-span-2">
+            <p className="text-xs font-bold text-mercan-koyu">🎁 Hediye paketi</p>
+            {siparis.hediyeNotu && (
+              <p className="mt-1 whitespace-pre-line text-metin-2">“{siparis.hediyeNotu}”</p>
+            )}
+          </div>
+        )}
         {siparis.not && (
           <div className="sm:col-span-2">
             <p className="text-xs font-bold text-metin-2">Sipariş notu</p>

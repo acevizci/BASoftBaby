@@ -58,6 +58,7 @@ export type SiparisSatiri = {
    * "Kaç gündür yolda" sorusunun cevabı buradan (K-59).
    */
   kargoyaVerildi: Date | null;
+  hediyePaketi: boolean;
 };
 
 export type AramaSonucu = {
@@ -188,6 +189,7 @@ export async function siparisleriAra(s: SiparisSuzgeci): Promise<AramaSonucu> {
         odemeDurumu: true,
         odemeYontemi: true,
         hatirlatildi: true,
+        hediyePaketi: true,
         gonderiler: {
           orderBy: { olusturuldu: "asc" },
           take: 1,

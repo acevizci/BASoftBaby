@@ -76,6 +76,8 @@ export async function siparisiTamamla(veri: FormData): Promise<void> {
     il: temiz(veri, "il"),
     postaKodu: temiz(veri, "postaKodu"),
     not: temiz(veri, "not").slice(0, 500),
+    hediyePaketi: veri.get("hediye") !== null,
+    hediyeNotu: temiz(veri, "hediyeNotu").slice(0, 200),
   };
 
   if (eksikMi(girdi)) redirect("/odeme?hata=eksik");

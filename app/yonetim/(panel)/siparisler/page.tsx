@@ -306,6 +306,14 @@ export default async function SiparisListesi({ searchParams }: PageProps<"/yonet
                     <td className="rakam px-4 py-3 text-metin-2">{tarihYaz(s.olusturuldu)}</td>
                     <td className="px-4 py-3">
                       {s.adSoyad}
+                      {s.hediyePaketi && (
+                        <span
+                          title="Hediye paketi"
+                          className="ml-1.5 rounded-full bg-mercan-soluk px-1.5 py-0.5 text-xs font-bold text-mercan-koyu"
+                        >
+                          🎁 hediye
+                        </span>
+                      )}
                       <span className="block text-xs text-metin-3">
                         {s.ilce} / {s.il}
                       </span>

@@ -41,6 +41,9 @@ export type SiparisGirdisi = {
   il: string;
   postaKodu: string;
   not: string;
+  /** Hediye paketi ve paketin içine konacak not (K-98). */
+  hediyePaketi: boolean;
+  hediyeNotu: string;
 };
 
 export type SiparisSonucu =
@@ -155,6 +158,8 @@ export async function siparisOlustur(
           il: girdi.il,
           postaKodu: girdi.postaKodu,
           not: girdi.not,
+          hediyePaketi: girdi.hediyePaketi,
+          hediyeNotu: girdi.hediyePaketi ? girdi.hediyeNotu : "",
           araToplamKurus,
           indirimKurus,
           kampanyaAdi: kampanya?.ad ?? null,
@@ -212,6 +217,8 @@ export type Siparis = {
   il: string;
   postaKodu: string;
   not: string;
+  hediyePaketi: boolean;
+  hediyeNotu: string;
   araToplamKurus: number;
   indirimKurus: number;
   kampanyaAdi: string | null;
