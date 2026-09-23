@@ -29,6 +29,16 @@ describe("sabah özeti metni", () => {
     ozet: { isler: [], azalanlar: [], azalanToplam: 0, bekleyenler: [], bekleyenToplam: 0, eksikler: [] },
   };
 
+  it("dünün kalanı sipariş satırının altında (K-114)", () => {
+    const { metin } = sabahMetni({
+      ...bos,
+      dunAdet: 2,
+      dunKurus: 50000,
+      dunKar: { katkiKurus: 12345, marjYuzde: 27.25, eksik: 1, siparis: 2 },
+    });
+    assert.match(metin, /Kalan \(katkı payı, ödemesi alınan 2 sipariş\): 123,45 ₺, marj %27,3 \(1 siparişte eksik bilgi\)/);
+  });
+
   it("sipariş de iş de yoksa gönderilmiyor", () => {
     assert.equal(soylenecekVarMi(bos), false);
     const bitecek = { urunAd: "Zıbın", beden: "0-3 ay", renk: "Beyaz", stok: 2, gun: 1.6 };
@@ -73,6 +83,7 @@ describe("sabah özeti metni", () => {
     assert.match(metin, /Zıbın — 0-3 ay, Beyaz: 1 adet kaldı/);
     assert.match(metin, /toplam 4 beden/);
     assert.doesNotMatch(metin, /7 gün içinde/);
+    assert.doesNotMatch(metin, /Kalan/);
   });
 });
 

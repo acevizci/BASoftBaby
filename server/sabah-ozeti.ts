@@ -23,6 +23,7 @@ import { panelOzetiGetir, type PanelOzeti } from "@/server/panel-ozet";
 import { siteAdresi } from "@/server/site";
 import { renkAdlari } from "@/server/renkler";
 import { satisHizlari } from "@/server/satis-hizi";
+import { karRaporu } from "@/server/kar-raporu";
 
 /** Türkiye 2016'dan beri yaz saati uygulamıyor: sabit UTC+3. */
 const TR_FARK = 3 * 60 * 60 * 1000;
@@ -51,6 +52,8 @@ export type SabahVerisi = {
   siparisler: DununSiparisi[];
   /** Satış hızına göre 7 gün içinde bitecek bedenler (K-106). */
   bitecekler: Bitecek[];
+  /** Dünün ödemesi alınmış siparişlerinin kalanı (K-114); sipariş yoksa boş. */
+  dunKar?: { katkiKurus: number; marjYuzde: number | null; eksik: number; siparis: number };
   ozet: Pick<
     PanelOzeti,
     "isler" | "azalanlar" | "azalanToplam" | "bekleyenler" | "bekleyenToplam" | "eksikler"
@@ -91,8 +94,13 @@ export function sabahMetni(v: SabahVerisi): { konu: string; metin: string } {
           `• ${s.numara} · ${s.adSoyad} · ${tutar(s.toplamKurus)}${s.hediyePaketi ? " · 🎁 hediye" : ""}`,
       );
     if (v.dunAdet > EN_COK_SIPARIS) satirlar.push(`… ve ${v.dunAdet - EN_COK_SIPARIS} sipariş daha`);
+    const kar = v.dunKar
+      ? `\nKalan (katkı payı, ödemesi alınan ${v.dunKar.siparis} sipariş): ${tutar(v.dunKar.katkiKurus)}` +
+        (v.dunKar.marjYuzde !== null ? `, marj %${v.dunKar.marjYuzde.toLocaleString("tr-TR", { maximumFractionDigits: 1 })}` : "") +
+        (v.dunKar.eksik > 0 ? ` (${v.dunKar.eksik} siparişte eksik bilgi)` : "")
+      : "";
     bolumler.push(
-      `Dün (${gunAdi}): ${v.dunAdet} sipariş, ${tutar(v.dunKurus)}\n\n${satirlar.join("\n")}`,
+      `Dün (${gunAdi}): ${v.dunAdet} sipariş, ${tutar(v.dunKurus)}${kar}\n\n${satirlar.join("\n")}`,
     );
   }
 
@@ -150,7 +158,7 @@ export function sabahMetni(v: SabahVerisi): { konu: string; metin: string } {
 async function veriTopla(simdi: Date): Promise<SabahVerisi> {
   const { bas, son } = dununAraligi(simdi);
   const kosul = { durum: { not: "iptal" }, olusturuldu: { gte: bas, lt: son } };
-  const [toplam, siparisler, ozet, adlar, hizlar] = await Promise.all([
+  const [toplam, siparisler, ozet, adlar, hizlar, kar] = await Promise.all([
     db.order.aggregate({ where: kosul, _count: true, _sum: { toplamKurus: true } }),
     db.order.findMany({
       where: kosul,
@@ -161,6 +169,7 @@ async function veriTopla(simdi: Date): Promise<SabahVerisi> {
     panelOzetiGetir(),
     renkAdlari(),
     satisHizlari(undefined, simdi),
+    karRaporu({ baslangic: bas, bitis: son, ad: "dün" }),
   ]);
   const yakin = [...hizlar.entries()]
     .filter(([, h]) => h.stok > 0 && h.kacGun !== null && h.kacGun <= 7)
@@ -186,6 +195,10 @@ async function veriTopla(simdi: Date): Promise<SabahVerisi> {
     dunKurus: toplam._sum.toplamKurus ?? 0,
     siparisler,
     bitecekler,
+    dunKar:
+      kar.siparis > 0
+        ? { katkiKurus: kar.katkiKurus, marjYuzde: kar.marjYuzde, eksik: kar.eksikSiparis, siparis: kar.siparis }
+        : undefined,
     ozet: { ...ozet, azalanlar: ozet.azalanlar.map(renk), bekleyenler: ozet.bekleyenler.map(renk) },
   };
 }

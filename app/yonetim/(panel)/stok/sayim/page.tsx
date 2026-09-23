@@ -70,7 +70,8 @@ export default async function Sayimlar() {
                 <th className="px-4 py-3">Durum</th>
                 <th className="px-4 py-3 text-right">Sayılan</th>
                 <th className="px-4 py-3 text-right">Eksik / fazla</th>
-                <th className="px-4 py-3 text-right">Fark tutarı</th>
+                <th className="px-4 py-3 text-right">Fark (satış)</th>
+                <th className="px-4 py-3 text-right">Fark (alış)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-cizgi-soluk">
@@ -97,6 +98,13 @@ export default async function Sayimlar() {
                     className={`rakam px-4 py-3 text-right font-bold ${s.ozet.farkKurus < 0 ? "text-mercan-koyu" : ""}`}
                   >
                     {fiyatYaz(s.ozet.farkKurus)}
+                  </td>
+                  <td
+                    className={`rakam px-4 py-3 text-right ${s.ozet.farkMaliyetKurus < 0 ? "text-mercan-koyu" : ""}`}
+                    title={s.ozet.maliyetsizFark ? `${s.ozet.maliyetsizFark} farklı satırın alış fiyatı yok` : undefined}
+                  >
+                    {fiyatYaz(s.ozet.farkMaliyetKurus)}
+                    {s.ozet.maliyetsizFark > 0 && "*"}
                   </td>
                 </tr>
               ))}

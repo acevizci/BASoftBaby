@@ -4974,6 +4974,38 @@ hesaplanıyor; kaydettikten sonra listede görünüyor.
 
 ---
 
+### K-114 · İade/değişim kargosu, stok değeri, fire ve sabah özetinde kâr
+
+**İade ve değişim kargosu.** Cayma hakkında müşteri paketi mağazanın
+anlaşmalı kargo koduyla gönderiyor; ücreti mağaza ödüyor. Değişimde bir de
+yerine gönderilen paket var. Satış ayarlarındaki giderlere "iade kargosu,
+paket başı" eklendi. Siparişin kârında her tamamlanmış iade ya da değişim
+talebi bir dönüş kargosu, her değişim de ayrıca bir gönderi (ortalama kargo
+gideriyle) olarak düşüyor ve "≈" işaretleniyor. İade/değişim olup gider
+girilmemişse eksik diye söyleniyor. Rapor toplamında ayrı satır.
+
+**Stok değeri.** Stok ekranının üstünde "raftaki mal (alış fiyatıyla)" ve
+ay başına göre değişim. Ay başındaki değer, bu ayın stok hareketleri
+bugünkü stoktan geri alınarak bulunuyor ve bugünkü alış fiyatıyla
+değerleniyor. Alış fiyatı olmayan adet ayrıca yazıyor.
+
+**Fire.** Sayım açılırken her satıra alış fiyatı da kopyalanıyor. Sayım
+listesi ve sayım ekranı farkı hem satış fiyatıyla hem **alış fiyatıyla**
+(gerçek kayıp) gösteriyor; alış fiyatı olmayan farklı satırlar hariç
+tutulup sayısı yazılıyor.
+
+**Sabah özeti** (K-101): dünün sipariş satırının altında ödemesi alınmış
+siparişlerin kalanı (katkı payı) ve marjı; eksik bilgili sipariş varsa
+sayısı. Hesap rapordakiyle aynı (`karRaporu`, K-113).
+
+**Nerede:** [`../server/kar.ts`](../server/kar.ts),
+[`../server/stok-degeri.ts`](../server/stok-degeri.ts),
+[`../server/sayim.ts`](../server/sayim.ts),
+[`../server/sabah-ozeti.ts`](../server/sabah-ozeti.ts),
+[`../testler/stok-degeri.test.ts`](../testler/stok-degeri.test.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

@@ -34,6 +34,7 @@ export type KarRaporu = {
   kargoKurus: number;
   paketKurus: number;
   komisyonKurus: number;
+  iadeKargoKurus: number;
   katkiKurus: number;
   marjYuzde: number | null;
   oncekiKatkiKurus: number;
@@ -117,6 +118,7 @@ export async function karRaporu(donem: Donem): Promise<KarRaporu> {
     kargoKurus: 0,
     paketKurus: 0,
     komisyonKurus: 0,
+    iadeKargoKurus: 0,
     katkiKurus: 0,
     marjYuzde: null,
     oncekiKatkiKurus: 0,
@@ -151,6 +153,7 @@ export async function karRaporu(donem: Donem): Promise<KarRaporu> {
     r.kargoKurus += k.kargo.kurus ?? 0;
     r.paketKurus += k.paket.kurus ?? 0;
     r.komisyonKurus += k.komisyon.kurus ?? 0;
+    r.iadeKargoKurus += k.iadeKargo.kurus ?? 0;
     r.katkiKurus += k.katkiKurus;
     if (k.eksikler.length > 0) {
       r.eksikSiparis += 1;

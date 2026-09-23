@@ -42,6 +42,8 @@ export type GiderAyari = {
   kargoGiderKurus: number | null;
   paketGiderKurus: number | null;
   hediyePaketGiderKurus: number | null;
+  /** İade/değişimde geri gelen paketin kargosu (K-114). */
+  iadeKargoGiderKurus: number | null;
   kartKomisyonOnbinde: number | null;
   kartKomisyonSabitKurus: number | null;
 };
@@ -69,6 +71,10 @@ export type KarGirdisi = {
   /** Kargo henüz yoksa bir gönderi bekleniyor mu (iptal değil, teslim yolunda). */
   gonderiBekleniyor: boolean;
   hediyePaketi: boolean;
+  /** Tamamlanmış iade ve değişim talepleri: her biri bir dönüş kargosu (K-114). */
+  iadeTalebi: number;
+  /** Tamamlanmış değişim talepleri: yerine gönderilen paket ayrıca kargo. */
+  degisimTalebi: number;
   satirlar: KarSatiri[];
   gider: GiderAyari;
 };
@@ -85,6 +91,8 @@ export type SiparisKari = {
   kargo: Kalem;
   paket: Kalem;
   komisyon: Kalem;
+  /** Dönüş kargoları ve değişimde yeniden gönderim (K-114). */
+  iadeKargo: Kalem;
   /** Brüt kâr − giderler. Girilmeyen giderler sıfır sayılıyor, `eksikler`de yazıyor. */
   katkiKurus: number;
   marjYuzde: number | null;
@@ -156,9 +164,24 @@ export function siparisKari(g: KarGirdisi): SiparisKari {
     }
   }
 
+  // İade ve değişim: müşterinin geri gönderdiği her paketin kargosu, değişimde
+  // yerine gönderilen paketin kargosu da (ortalama gönderi ücretiyle).
+  let iadeKargo: Kalem = { kurus: 0, tahmini: false };
+  if (g.iadeTalebi > 0 || g.degisimTalebi > 0) {
+    const donus = g.iadeTalebi > 0 ? g.gider.iadeKargoGiderKurus : 0;
+    const yeniden = g.degisimTalebi > 0 ? g.gider.kargoGiderKurus : 0;
+    if (donus === null || yeniden === null) {
+      iadeKargo = { kurus: null, tahmini: false };
+      eksikler.push("iade/değişim kargo gideri girilmemiş");
+    } else {
+      iadeKargo = { kurus: g.iadeTalebi * donus + g.degisimTalebi * yeniden, tahmini: true };
+    }
+  }
+
   const gelir = netSatisKurus + vadeFarkiKurus;
   const brutKarKurus = gelir - maliyetKurus;
-  const katkiKurus = brutKarKurus - (kargo.kurus ?? 0) - (paket.kurus ?? 0) - (komisyon.kurus ?? 0);
+  const katkiKurus =
+    brutKarKurus - (kargo.kurus ?? 0) - (paket.kurus ?? 0) - (komisyon.kurus ?? 0) - (iadeKargo.kurus ?? 0);
 
   return {
     netSatisKurus,
@@ -168,6 +191,7 @@ export function siparisKari(g: KarGirdisi): SiparisKari {
     kargo,
     paket,
     komisyon,
+    iadeKargo,
     katkiKurus,
     marjYuzde: gelir > 0 ? (katkiKurus / gelir) * 100 : null,
     eksikler,

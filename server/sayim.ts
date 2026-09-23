@@ -64,7 +64,7 @@ export async function sayimAc(bilgi: { ad: string; kapsam: string; yapan?: Yapan
       sku: true,
       fiyatKurus: true,
       productId: true,
-      product: { select: { ad: true, fiyatKurus: true } },
+      product: { select: { ad: true, fiyatKurus: true, alisFiyatKurus: true } },
     },
   });
   const sayim = await db.stockCount.create({
@@ -82,6 +82,7 @@ export async function sayimAc(bilgi: { ad: string; kapsam: string; yapan?: Yapan
           renk: v.renk,
           sku: v.sku,
           fiyatKurus: v.fiyatKurus ?? v.product.fiyatKurus,
+          alisFiyatKurus: v.product.alisFiyatKurus,
         })),
       },
     },
@@ -153,12 +154,31 @@ export type SayimOzeti = {
   fazlaAdet: number;
   /** Farkların satış fiyatıyla tutarı; eksi kayıp. */
   farkKurus: number;
+  /** Farkların alış fiyatıyla tutarı (K-114): gerçek kayıp. Alış fiyatı olan satırlar. */
+  farkMaliyetKurus: number;
+  /** Farklı olup alış fiyatı olmayan satır sayısı. */
+  maliyetsizFark: number;
 };
 
 export function ozetCikar(
-  satirlar: { sayilan: number | null; sistem: number | null; ayrilan: number | null; fiyatKurus: number }[],
+  satirlar: {
+    sayilan: number | null;
+    sistem: number | null;
+    ayrilan: number | null;
+    fiyatKurus: number;
+    alisFiyatKurus?: number | null;
+  }[],
 ): SayimOzeti {
-  const o: SayimOzeti = { toplam: satirlar.length, sayilan: 0, farkli: 0, eksikAdet: 0, fazlaAdet: 0, farkKurus: 0 };
+  const o: SayimOzeti = {
+    toplam: satirlar.length,
+    sayilan: 0,
+    farkli: 0,
+    eksikAdet: 0,
+    fazlaAdet: 0,
+    farkKurus: 0,
+    farkMaliyetKurus: 0,
+    maliyetsizFark: 0,
+  };
   for (const s of satirlar) {
     const f = satirFarki(s);
     if (f === null) continue;
@@ -168,6 +188,8 @@ export function ozetCikar(
     if (f < 0) o.eksikAdet += -f;
     else o.fazlaAdet += f;
     o.farkKurus += f * s.fiyatKurus;
+    if (s.alisFiyatKurus === null || s.alisFiyatKurus === undefined) o.maliyetsizFark += 1;
+    else o.farkMaliyetKurus += f * s.alisFiyatKurus;
   }
   return o;
 }
@@ -232,7 +254,9 @@ export async function sayimlar() {
   const liste = await db.stockCount.findMany({
     orderBy: { olusturuldu: "desc" },
     take: 30,
-    include: { satirlar: { select: { sayilan: true, sistem: true, ayrilan: true, fiyatKurus: true } } },
+    include: {
+      satirlar: { select: { sayilan: true, sistem: true, ayrilan: true, fiyatKurus: true, alisFiyatKurus: true } },
+    },
   });
   return liste.map(({ satirlar, ...s }) => ({ ...s, ozet: ozetCikar(satirlar) }));
 }

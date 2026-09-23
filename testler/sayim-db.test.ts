@@ -31,8 +31,22 @@ describe("sayım hesabı", () => {
         { sayilan: 3, sistem: 3, ayrilan: 0, fiyatKurus: 100 },
         { sayilan: null, sistem: null, ayrilan: null, fiyatKurus: 100 },
       ]),
-      { toplam: 4, sayilan: 3, farkli: 2, eksikAdet: 1, fazlaAdet: 3, farkKurus: -1000 + 1500 },
+      {
+        toplam: 4,
+        sayilan: 3,
+        farkli: 2,
+        eksikAdet: 1,
+        fazlaAdet: 3,
+        farkKurus: -1000 + 1500,
+        farkMaliyetKurus: 0,
+        maliyetsizFark: 2,
+      },
     );
+  });
+
+  it("fire alış fiyatıyla: 2 eksik × 60 ₺ = −120 ₺ (K-114)", () => {
+    const o = ozetCikar([{ sayilan: 3, sistem: 5, ayrilan: 0, fiyatKurus: 20000, alisFiyatKurus: 6000 }]);
+    assert.deepEqual([o.farkKurus, o.farkMaliyetKurus, o.maliyetsizFark], [-40000, -12000, 0]);
   });
 
   it("form: boş alan sayılmamış demek; sıfır geçerli", () => {

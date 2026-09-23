@@ -36,6 +36,7 @@ export default function KarRaporuBolumu({ r }: { r: KarRaporu }) {
             <Satir ad="Kargo" kurus={-r.kargoKurus} />
             <Satir ad="Paket" kurus={-r.paketKurus} />
             <Satir ad="Ödeme komisyonu" kurus={-r.komisyonKurus} />
+            {r.iadeKargoKurus > 0 && <Satir ad="İade/değişim kargosu" kurus={-r.iadeKargoKurus} />}
             <Satir ad="Kalan (katkı payı)" kurus={r.katkiKurus} kalin />
           </dl>
           <div className="flex flex-col gap-2">

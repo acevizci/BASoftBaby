@@ -75,11 +75,16 @@ export default async function Sayim({ params, searchParams }: PageProps<"/yoneti
         </p>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-5">
         <Kutu ad="Sayılan" deger={`${ozet.sayilan} / ${ozet.toplam}`} />
         <Kutu ad="Eksik" deger={`${ozet.eksikAdet} adet`} ton={ozet.eksikAdet ? "mercan" : undefined} />
         <Kutu ad="Fazla" deger={`${ozet.fazlaAdet} adet`} ton={ozet.fazlaAdet ? "nane" : undefined} />
-        <Kutu ad="Fark tutarı" deger={fiyatYaz(ozet.farkKurus)} ton={ozet.farkKurus < 0 ? "mercan" : undefined} />
+        <Kutu ad="Fark (satış fiyatıyla)" deger={fiyatYaz(ozet.farkKurus)} ton={ozet.farkKurus < 0 ? "mercan" : undefined} />
+        <Kutu
+          ad={ozet.maliyetsizFark ? `Fark (alışla; ${ozet.maliyetsizFark} satır hariç)` : "Fark (alış fiyatıyla)"}
+          deger={fiyatYaz(ozet.farkMaliyetKurus)}
+          ton={ozet.farkMaliyetKurus < 0 ? "mercan" : undefined}
+        />
       </div>
 
       {!acik && (

@@ -32,6 +32,7 @@ export async function giderAyariKaydet(form: FormData): Promise<void> {
     kargoGiderKurus: kurus(form, "kargoGider"),
     paketGiderKurus: kurus(form, "paketGider"),
     hediyePaketGiderKurus: kurus(form, "hediyePaketGider"),
+    iadeKargoGiderKurus: kurus(form, "iadeKargoGider"),
     kartKomisyonOnbinde: onbinde(form, "kartKomisyon"),
     kartKomisyonSabitKurus: kurus(form, "kartSabit"),
   };

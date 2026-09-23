@@ -60,6 +60,7 @@ export default function KarDokumu({ kar, iptal }: { kar?: SiparisKari; iptal?: b
         {satir("Kargo", kar.kargo)}
         {satir("Paket", kar.paket)}
         {satir("Ödeme komisyonu", kar.komisyon)}
+        {(kar.iadeKargo.kurus === null || kar.iadeKargo.kurus > 0) && satir("İade/değişim kargosu", kar.iadeKargo)}
         <div className="flex justify-between gap-3 border-t border-cizgi-soluk pt-1.5 font-bold">
           <dt>Kalan (katkı payı)</dt>
           <dd className={`rakam ${kar.katkiKurus < 0 ? "text-mercan-koyu" : ""}`}>{fiyatYaz(kar.katkiKurus)}</dd>
@@ -74,7 +75,7 @@ export default function KarDokumu({ kar, iptal }: { kar?: SiparisKari; iptal?: b
           </Link>
         </p>
       )}
-      {(kar.maliyet.tahmini || kar.kargo.tahmini || kar.komisyon.tahmini) && (
+      {(kar.maliyet.tahmini || kar.kargo.tahmini || kar.komisyon.tahmini || kar.iadeKargo.tahmini) && (
         <p className="mt-2 text-xs text-metin-3">≈ tahmini: ortalama ya da sonradan yazılmış değer.</p>
       )}
     </section>

@@ -16,6 +16,7 @@ export async function giderAyari(): Promise<GiderAyari> {
       kargoGiderKurus: true,
       paketGiderKurus: true,
       hediyePaketGiderKurus: true,
+      iadeKargoGiderKurus: true,
       kartKomisyonOnbinde: true,
       kartKomisyonSabitKurus: true,
     },
@@ -24,6 +25,7 @@ export async function giderAyari(): Promise<GiderAyari> {
     kargoGiderKurus: a?.kargoGiderKurus ?? null,
     paketGiderKurus: a?.paketGiderKurus ?? null,
     hediyePaketGiderKurus: a?.hediyePaketGiderKurus ?? null,
+    iadeKargoGiderKurus: a?.iadeKargoGiderKurus ?? null,
     kartKomisyonOnbinde: a?.kartKomisyonOnbinde ?? null,
     kartKomisyonSabitKurus: a?.kartKomisyonSabitKurus ?? null,
   };
@@ -58,6 +60,10 @@ export const KAR_SECIMI = {
   },
   gonderiler: { select: { ucretKurus: true } },
   iadeler: { where: { durum: "tamamlandi" }, select: { tutarKurus: true } },
+  talepler: {
+    where: { durum: "tamamlandi", tur: { in: ["iade", "degisim"] as string[] } },
+    select: { tur: true },
+  },
 } as const;
 
 type KarSiparisi = {
@@ -75,6 +81,7 @@ type KarSiparisi = {
   odemeler: { odenenKurus: number | null; komisyonKurus: number | null }[];
   gonderiler: { ucretKurus: number | null }[];
   iadeler: { tutarKurus: number }[];
+  talepler: { tur: string }[];
 };
 
 /** Kayıttan kâr; iptal edilmiş siparişin kârı yok. */
@@ -92,6 +99,8 @@ export function kayittanKar(s: KarSiparisi, kdvOrani: number, gider: GiderAyari)
     gonderiUcretleri: s.gonderiler.map((g) => g.ucretKurus),
     gonderiBekleniyor: true,
     hediyePaketi: s.hediyePaketi,
+    iadeTalebi: s.talepler.length,
+    degisimTalebi: s.talepler.filter((t) => t.tur === "degisim").length,
     satirlar: s.satirlar.map((x) => ({
       adet: x.adet,
       iadeAdet: x.talepSatirlari.reduce((t, r) => t + r.adet, 0),

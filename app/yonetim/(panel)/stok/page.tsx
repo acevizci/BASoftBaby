@@ -17,6 +17,8 @@ import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import Sayfalama from "@/ui/sayfalama";
 import StokSekmeleri from "@/ui/stok-sekmeleri";
 import BarkodOkuyucu from "@/ui/barkod-okuyucu";
+import { stokDegeri, type StokDegeri } from "@/server/stok-degeri";
+import { fiyatYaz } from "@/ui/katalog-bicim";
 import { gunYaz, satisHizlari, type Hiz } from "@/server/satis-hizi";
 
 export const dynamic = "force-dynamic";
@@ -47,9 +49,10 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
   const parametreler = await searchParams;
   const suzgec = suzgeciCoz(parametreler);
   const { kayit } = parametreler;
-  const [{ urunler, sayfa, sonSayfa, toplamAdet, sayaclar }, cakismalar] = await Promise.all([
+  const [{ urunler, sayfa, sonSayfa, toplamAdet, sayaclar }, cakismalar, deger] = await Promise.all([
     stokSayfasi(suzgec),
     cakismaAyrintisi(cakismalariCoz(parametreler.cakisma)),
+    stokDegeri(),
   ]);
   const [sira, hizlar] = await Promise.all([
     bedenSirasi(),
@@ -64,6 +67,7 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
     <div className="flex flex-col gap-5">
       <h1 className="text-2xl">Stok</h1>
       <StokSekmeleri secili="/yonetim/stok" />
+      <StokDegeriKutusu d={deger} />
       <p className="text-sm text-metin-2">
         Biten ve azalan bedenler önce geliyor. Buradaki sayı stoğun kendisi; değiştirip
         kaydet, sıfır yazdığın beden mağazada seçilemez hale gelir. Gelen malı eklemek için{" "}
@@ -373,5 +377,32 @@ function HizNotu({ hiz, stok }: { hiz?: Hiz; stok: number }) {
     >
       {gunYaz(hiz)}
     </span>
+  );
+}
+
+/** Raftaki malın maliyetle değeri ve ay başına göre değişim (K-114). */
+function StokDegeriKutusu({ d }: { d: StokDegeri }) {
+  if (d.adet === 0) {
+    return d.alissizAdet > 0 ? (
+      <p className="text-xs text-metin-3">
+        Raftaki malın değerini görmek için ürünlere alış fiyatı gir.
+      </p>
+    ) : null;
+  }
+  const fark = d.degerKurus - d.ayBasiKurus;
+  return (
+    <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 rounded-marka border border-cizgi bg-yuzey px-4 py-3 text-sm">
+      <span>
+        Raftaki mal (alış fiyatıyla): <b className="rakam">{fiyatYaz(d.degerKurus)}</b>
+        <span className="rakam text-metin-3"> · {d.adet} adet</span>
+      </span>
+      <span className={`rakam text-xs ${fark >= 0 ? "text-nane-koyu" : "text-mercan-koyu"}`}>
+        ay başına göre {fark >= 0 ? "+" : "−"}
+        {fiyatYaz(Math.abs(fark))}
+      </span>
+      {d.alissizAdet > 0 && (
+        <span className="rakam text-xs text-metin-3">{d.alissizAdet} adedin alış fiyatı yok, değere girmedi</span>
+      )}
+    </div>
   );
 }

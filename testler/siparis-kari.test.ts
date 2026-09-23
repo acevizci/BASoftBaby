@@ -13,6 +13,7 @@ const GIDER = {
   kargoGiderKurus: 7500,
   paketGiderKurus: 500,
   hediyePaketGiderKurus: 300,
+  iadeKargoGiderKurus: 4000,
   kartKomisyonOnbinde: 900,
   kartKomisyonSabitKurus: 0,
 };
@@ -26,6 +27,8 @@ const temel = (): KarGirdisi => ({
   gonderiUcretleri: [],
   gonderiBekleniyor: true,
   hediyePaketi: false,
+  iadeTalebi: 0,
+  degisimTalebi: 0,
   satirlar: [{ adet: 2, iadeAdet: 0, alisFiyatKurus: 11000, alisTahmini: false }],
   gider: GIDER,
 });
@@ -60,6 +63,16 @@ describe("sipariş kârı", () => {
     });
     assert.equal(k.netSatisKurus, 22718);
     assert.equal(k.maliyet.kurus, 11000);
+  });
+
+  it("iade dönüş kargosu, değişimde yeniden gönderim de gider (K-114)", () => {
+    const k = siparisKari({ ...temel(), iadeTalebi: 2, degisimTalebi: 1 });
+    // 2 dönüş × 40 + 1 yeniden gönderim × 75
+    assert.deepEqual(k.iadeKargo, { kurus: 15500, tahmini: true });
+    assert.equal(k.katkiKurus, 10938 - 15500);
+    const eksik = siparisKari({ ...temel(), iadeTalebi: 1, gider: { ...GIDER, iadeKargoGiderKurus: null } });
+    assert.deepEqual(eksik.eksikler, ["iade/değişim kargo gideri girilmemiş"]);
+    assert.equal(siparisKari(temel()).iadeKargo.kurus, 0);
   });
 
   it("eksik bilgi sıfır sayılıyor ama söyleniyor", () => {

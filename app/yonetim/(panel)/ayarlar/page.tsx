@@ -216,6 +216,8 @@ export default async function AyarEkrani({ searchParams }: PageProps<"/yonetim/a
             aciklama="Kutu, poşet, etiket." />
           <GiderKutusu ad="hediyePaketGider" etiket="Hediye paketi ek (₺)" deger={bosYaz(gider.hediyePaketGiderKurus)}
             aciklama="Hediye paketi istenen siparişte pakete eklenir." />
+          <GiderKutusu ad="iadeKargoGider" etiket="İade kargosu, paket başı (₺)" deger={bosYaz(gider.iadeKargoGiderKurus)}
+            aciklama="Müşterinin geri gönderdiği paket; değişimde yeniden gönderim gönderi ücretiyle." />
           <GiderKutusu
             ad="kartKomisyon"
             etiket="Kart komisyonu (%)"

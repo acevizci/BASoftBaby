@@ -239,6 +239,9 @@ model StoreSetting {
   paketGiderKurus        Int?
   /// Hediye paketinin ek maliyeti.
   hediyePaketGiderKurus  Int?
+  /// İade ve değişimde müşterinin geri gönderdiği paketin kargosu (anlaşmalı
+  /// kodla mağaza ödüyor, K-114).
+  iadeKargoGiderKurus    Int?
   /// Kart komisyonu, on binde (349 = %3,49), ve işlem başı sabit ücret.
   /// iyzico cevabında gerçek komisyon varsa o kullanılıyor; bunlar yedek.
   kartKomisyonOnbinde    Int?
@@ -900,6 +903,8 @@ model StockCountLine {
   renk       String
   sku        String
   fiyatKurus Int
+  /// Sayım açıldığındaki alış fiyatı; farkın maliyetle karşılığı (K-114).
+  alisFiyatKurus Int?
 
   /// Rafta sayılan; boşsa henüz sayılmadı.
   sayilan   Int?
