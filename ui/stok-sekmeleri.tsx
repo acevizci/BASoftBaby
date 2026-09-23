@@ -7,6 +7,7 @@ import Link from "next/link";
 const SEKMELER = [
   ["/yonetim/stok", "Stok"],
   ["/yonetim/stok/mal-kabul", "Mal kabulü"],
+  ["/yonetim/stok/siparis-listesi", "Sipariş listesi"],
   ["/yonetim/stok/hareketler", "Hareketler"],
 ] as const;
 

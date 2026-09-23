@@ -25,11 +25,15 @@ describe("sabah özeti metni", () => {
     dunAdet: 0,
     dunKurus: 0,
     siparisler: [],
+    bitecekler: [],
     ozet: { isler: [], azalanlar: [], azalanToplam: 0, bekleyenler: [], bekleyenToplam: 0, eksikler: [] },
   };
 
   it("sipariş de iş de yoksa gönderilmiyor", () => {
     assert.equal(soylenecekVarMi(bos), false);
+    const bitecek = { urunAd: "Zıbın", beden: "0-3 ay", renk: "Beyaz", stok: 2, gun: 1.6 };
+    assert.equal(soylenecekVarMi({ ...bos, bitecekler: [bitecek] }), true);
+    assert.match(sabahMetni({ ...bos, bitecekler: [bitecek] }).metin, /Zıbın — 0-3 ay, Beyaz: 2 adet, ~2 gün/);
     assert.equal(soylenecekVarMi({ ...bos, dunAdet: 1 }), true);
     const is = { ad: "Hazırlanacak", adet: 2, adres: "/yonetim/siparisler", acil: true, aciklama: "" };
     assert.equal(soylenecekVarMi({ ...bos, ozet: { ...bos.ozet, isler: [is] } }), true);
@@ -68,6 +72,7 @@ describe("sabah özeti metni", () => {
     assert.doesNotMatch(metin, /Fotoğrafsız/);
     assert.match(metin, /Zıbın — 0-3 ay, Beyaz: 1 adet kaldı/);
     assert.match(metin, /toplam 4 beden/);
+    assert.doesNotMatch(metin, /7 gün içinde/);
   });
 });
 

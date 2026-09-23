@@ -16,6 +16,7 @@ import { bedenSirasi, sonSira } from "@/server/bedenler";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import Sayfalama from "@/ui/sayfalama";
 import StokSekmeleri from "@/ui/stok-sekmeleri";
+import { gunYaz, satisHizlari, type Hiz } from "@/server/satis-hizi";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +50,11 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
     stokSayfasi(suzgec),
     cakismaAyrintisi(cakismalariCoz(parametreler.cakisma)),
   ]);
-  const sira = await bedenSirasi();
+  const [sira, hizlar] = await Promise.all([
+    bedenSirasi(),
+    // Sayfadaki bedenlerin "kaç gün yeter" tahmini (K-106).
+    satisHizlari(urunler.flatMap((u) => u.bedenler.map((b) => b.id))),
+  ]);
 
   const adres = (degisiklik: Partial<typeof suzgec>) =>
     stokAdresi({ ...suzgec, sayfa: 1, ...degisiklik });
@@ -183,7 +188,13 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
             <input type="hidden" name="sayfa" value={String(sayfa)} />
 
             {urunler.map((u) => (
-              <Urun key={u.id} urun={u} hepsiAcik={suzgec.durum === "hepsi"} sira={sira} />
+              <Urun
+                key={u.id}
+                urun={u}
+                hepsiAcik={suzgec.durum === "hepsi"}
+                sira={sira}
+                hizlar={hizlar}
+              />
             ))}
 
             <button
@@ -216,9 +227,11 @@ function Urun({
   urun,
   hepsiAcik,
   sira,
+  hizlar,
 }: {
   urun: StokUrunu;
   hepsiAcik: boolean;
+  hizlar: Map<string, Hiz>;
   /** Beden sırası; liste veritabanından geliyor (K-56). */
   sira: Map<string, number>;
 }) {
@@ -279,7 +292,7 @@ function Urun({
         </p>
       ) : (
         <>
-          {sorunlu.length > 0 && <Bedenler bedenler={sorunlu} />}
+          {sorunlu.length > 0 && <Bedenler bedenler={sorunlu} hizlar={hizlar} />}
 
           {/* Süzgeçliyken düzeltilecek bedenler açık, stoğu yerinde olanlar
               katlanmış duruyor: aradığın beden kapalı bölümün içinde kalmasın
@@ -287,7 +300,7 @@ function Urun({
               formun içindeler, yani "kaydet" hepsini gönderiyor (K-44). */}
           {saglam.length > 0 &&
             (hepsiAcik || sorunlu.length === 0 ? (
-              <Bedenler bedenler={saglam} />
+              <Bedenler bedenler={saglam} hizlar={hizlar} />
             ) : (
               <details className="group mt-3">
                 <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 text-xs font-bold text-metin-2 hover:text-metin [&::-webkit-details-marker]:hidden">
@@ -296,7 +309,7 @@ function Urun({
                     ▾
                   </span>
                 </summary>
-                <Bedenler bedenler={saglam} />
+                <Bedenler bedenler={saglam} hizlar={hizlar} />
               </details>
             ))}
         </>
@@ -305,7 +318,7 @@ function Urun({
   );
 }
 
-function Bedenler({ bedenler }: { bedenler: StokBedeni[] }) {
+function Bedenler({ bedenler, hizlar }: { bedenler: StokBedeni[]; hizlar: Map<string, Hiz> }) {
   return (
     <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {bedenler.map((v) => (
@@ -316,6 +329,7 @@ function Bedenler({ bedenler }: { bedenler: StokBedeni[] }) {
           <span className="flex-1 text-sm">
             {v.beden}
             <span className="text-metin-3"> · {v.renkAdi}</span>
+            <HizNotu hiz={hizlar.get(v.id)} stok={v.stok} />
           </span>
           <input
             name={`stok-${v.id}`}
@@ -336,3 +350,20 @@ function Bedenler({ bedenler }: { bedenler: StokBedeni[] }) {
   );
 }
 
+/**
+ * "~4 gün yeter" notu (K-106). Bir hafta ve altı mercan: sabit eşiğin
+ * yakalayamadığı, çok satan ve yakında bitecek beden.
+ */
+function HizNotu({ hiz, stok }: { hiz?: Hiz; stok: number }) {
+  // Yalnızca tahmin varken: her bedende "satış yok" yazmak gürültü.
+  if (!hiz || stok === 0 || hiz.kacGun === null) return null;
+  const yakin = hiz.kacGun !== null && hiz.kacGun <= 7;
+  return (
+    <span
+      className={`rakam block text-xs ${yakin ? "font-bold text-mercan-koyu" : "text-metin-3"}`}
+      title={`Son 30 günde ${hiz.satilan} satış`}
+    >
+      {gunYaz(hiz)}
+    </span>
+  );
+}

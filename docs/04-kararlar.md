@@ -4690,6 +4690,45 @@ alıyordu. Artık:
 
 ---
 
+### K-106 · Satış hızı, "kaç gün yeter" ve sipariş listesi
+
+Sabit "3 ve altı azalıyor" eşiği (`AZALAN_ESIK`) her ürüne aynı
+davranıyordu: günde 2 satan zıbın için 3 adet yarın biter, ayda 1 satan
+şapka için 3 adet üç ay yeter. Uyarılar yanlış ürünlere gidiyordu.
+
+**Tahmin** (`server/satis-hizi.ts`): son 30 günün satışı (iptaller hariç)
+beden-renk başına **stoklu geçen gün** sayısına bölünüyor. Kaç gün yeteceği
+bundan hesaplanıyor.
+
+- **Stoksuz günler sayılmıyor**, yoksa tükenmiş ürün "az satıyor" görünürdü.
+  Stoksuz süre stok hareketlerinden (K-103) şimdiki stoktan geriye yürünerek
+  bulunuyor. Hareket kaydından önceki günler için bilgi yok ve o günler
+  stoklu sayılıyor. Yani yayına çıktıktan sonraki ilk 30 gün tahmin biraz
+  düşük kalıyor.
+- **Az veride sahte kesinlik yok:** 30 günde 3'ten az satan beden için gün
+  yazılmıyor.
+
+**Nerede görünüyor:**
+
+- **Stok ekranında** her bedenin altında "~4 gün". Bir hafta ve altı mercan
+  renginde. Tahmin yoksa (satış yok ya da az veri) hiçbir şey yazmıyor.
+- **Stok → Sipariş listesi:** "şundan şu kadar al". Öneri = günlük hız ×
+  hedef gün + "gelince haber ver" diyenler − stok. Hedef 7/14/30/60/90 gün
+  seçiliyor (adreste). Önce tükenenler (önerisi büyük olan önce), sonra en
+  önce bitecekler geliyor. Hiç satmamış ama haber bekleyeni olan beden de
+  listede. Tedarikçiye göndermek için CSV (SKU'larla).
+- **Sabah özetinde** "satış hızına göre 7 gün içinde bitecekler" (en fazla
+  beş). Tek başına bu da özetin gönderilmesi için yeterli bir sebep.
+
+Önerinin tavanı yüzde bire yuvarlanıp alınıyor. Yoksa birkaç saniyelik
+stoksuz süre 9,00003'ü 10'a çıkarıyordu.
+
+**Nerede:** [`../server/satis-hizi.ts`](../server/satis-hizi.ts),
+[`../app/yonetim/(panel)/stok/siparis-listesi/page.tsx`](../app/yonetim/(panel)/stok/siparis-listesi/page.tsx),
+[`../testler/satis-hizi.test.ts`](../testler/satis-hizi.test.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

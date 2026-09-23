@@ -22,6 +22,7 @@ import { sabahOzetiEpostasi, type EpostaSonucu } from "@/server/eposta";
 import { panelOzetiGetir, type PanelOzeti } from "@/server/panel-ozet";
 import { siteAdresi } from "@/server/site";
 import { renkAdlari } from "@/server/renkler";
+import { satisHizlari } from "@/server/satis-hizi";
 
 /** Türkiye 2016'dan beri yaz saati uygulamıyor: sabit UTC+3. */
 const TR_FARK = 3 * 60 * 60 * 1000;
@@ -41,11 +42,15 @@ export type DununSiparisi = {
   hediyePaketi: boolean;
 };
 
+export type Bitecek = { urunAd: string; beden: string; renk: string; stok: number; gun: number };
+
 export type SabahVerisi = {
   gun: Date;
   dunAdet: number;
   dunKurus: number;
   siparisler: DununSiparisi[];
+  /** Satış hızına göre 7 gün içinde bitecek bedenler (K-106). */
+  bitecekler: Bitecek[];
   ozet: Pick<
     PanelOzeti,
     "isler" | "azalanlar" | "azalanToplam" | "bekleyenler" | "bekleyenToplam" | "eksikler"
@@ -61,7 +66,7 @@ function tutar(kurus: number): string {
 
 /** Gönderilecek bir şey var mı: dün sipariş ya da bekleyen iş. */
 export function soylenecekVarMi(v: SabahVerisi): boolean {
-  return v.dunAdet > 0 || v.ozet.isler.some((i) => i.acil);
+  return v.dunAdet > 0 || v.ozet.isler.some((i) => i.acil) || v.bitecekler.length > 0;
 }
 
 /** E-postanın konusu ve düz metni. */
@@ -95,6 +100,14 @@ export function sabahMetni(v: SabahVerisi): { konu: string; metin: string } {
   if (isler.length > 0) {
     bolumler.push(
       `Bugün bekleyenler:\n\n${isler.map((i) => `• ${i.ad}: ${i.adet}\n  ${site}${i.adres}`).join("\n")}`,
+    );
+  }
+
+  if (v.bitecekler.length > 0) {
+    bolumler.push(
+      `Satış hızına göre 7 gün içinde bitecekler:\n\n${v.bitecekler
+        .map((b) => `• ${b.urunAd} — ${b.beden}, ${b.renk}: ${b.stok} adet, ~${Math.max(1, Math.round(b.gun))} gün`)
+        .join("\n")}\n  ${site}/yonetim/stok/siparis-listesi`,
     );
   }
 
@@ -137,7 +150,7 @@ export function sabahMetni(v: SabahVerisi): { konu: string; metin: string } {
 async function veriTopla(simdi: Date): Promise<SabahVerisi> {
   const { bas, son } = dununAraligi(simdi);
   const kosul = { durum: { not: "iptal" }, olusturuldu: { gte: bas, lt: son } };
-  const [toplam, siparisler, ozet, adlar] = await Promise.all([
+  const [toplam, siparisler, ozet, adlar, hizlar] = await Promise.all([
     db.order.aggregate({ where: kosul, _count: true, _sum: { toplamKurus: true } }),
     db.order.findMany({
       where: kosul,
@@ -147,7 +160,24 @@ async function veriTopla(simdi: Date): Promise<SabahVerisi> {
     }),
     panelOzetiGetir(),
     renkAdlari(),
+    satisHizlari(undefined, simdi),
   ]);
+  const yakin = [...hizlar.entries()]
+    .filter(([, h]) => h.stok > 0 && h.kacGun !== null && h.kacGun <= 7)
+    .sort(([, a], [, b]) => (a.kacGun ?? 0) - (b.kacGun ?? 0))
+    .slice(0, 5);
+  const yakinVaryantlar = yakin.length
+    ? await db.productVariant.findMany({
+        where: { id: { in: yakin.map(([id]) => id) }, product: { aktif: true } },
+        select: { id: true, beden: true, renk: true, product: { select: { ad: true } } },
+      })
+    : [];
+  const bitecekler: Bitecek[] = yakin.flatMap(([id, h]) => {
+    const v = yakinVaryantlar.find((x) => x.id === id);
+    return v
+      ? [{ urunAd: v.product.ad, beden: v.beden, renk: adlar[v.renk] ?? v.renk, stok: h.stok, gun: h.kacGun ?? 0 }]
+      : [];
+  });
   // Özet renk kodlarını taşıyor ("mavi"); e-postada panelde görünen ad.
   const renk = <T extends { renk: string }>(x: T): T => ({ ...x, renk: adlar[x.renk] ?? x.renk });
   return {
@@ -155,6 +185,7 @@ async function veriTopla(simdi: Date): Promise<SabahVerisi> {
     dunAdet: toplam._count,
     dunKurus: toplam._sum.toplamKurus ?? 0,
     siparisler,
+    bitecekler,
     ozet: { ...ozet, azalanlar: ozet.azalanlar.map(renk), bekleyenler: ozet.bekleyenler.map(renk) },
   };
 }
