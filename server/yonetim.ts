@@ -25,7 +25,14 @@ import { formSayfaEki, tasimaSayfaEki } from "@/ui/sayfalama-bicim";
 import { formAramaEki } from "@/ui/panel-arama-bicim";
 import { aramaMetniniTazele } from "@/server/arama";
 import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
-import { stokAdresi, suzgeciCoz as stokSuzgeciniCoz } from "@/server/stok-ekrani";
+import { renkAdlari } from "@/server/renkler";
+import {
+  cakismaAdresi,
+  stokAdresi,
+  stokDegisiklikleri,
+  stoklariYaz,
+  suzgeciCoz as stokSuzgeciniCoz,
+} from "@/server/stok-ekrani";
 import {
   suzgecAdresi as siparisSuzgecAdresi,
   suzgeciCoz as siparisSuzgeciniCoz,
@@ -269,6 +276,14 @@ export async function topluUrunIslemi(form: FormData): Promise<void> {
   redirect(donus(`toplu=sil&adet=${silinecekler.length}&atlanan=${atlananlar}`));
 }
 
+/**
+ * Ürüne yeni beden-renk ekler.
+ *
+ * Eskiden "ekle / güncelle"ydi: var olan bir birleşim girilirse stoğunun
+ * üzerine yazıyordu — arada satılanlar da geri geliyordu, üstelik ekrandaki
+ * adet 0 varsayılanıyla kalırsa stok sessizce sıfırlanıyordu. Artık var
+ * olana dokunulmuyor; stok değişikliği stok ekranından (K-102).
+ */
 export async function varyantEkle(form: FormData): Promise<void> {
   await yoneticiGerekli();
 
@@ -278,14 +293,23 @@ export async function varyantEkle(form: FormData): Promise<void> {
   const stok = Number(metin(form, "stok") || "0");
 
   const urun = await db.product.findUniqueOrThrow({ where: { slug } });
-  const varyant = await db.productVariant.upsert({
+  const varOlan = await db.productVariant.findUnique({
     where: { productId_beden_renk: { productId: urun.id, beden, renk } },
-    update: { stok: Math.max(0, stok) },
-    create: {
+    select: { id: true },
+  });
+  if (varOlan) {
+    const adlar = await renkAdlari();
+    redirect(
+      `/yonetim/urunler/${slug}?varolan=${encodeURIComponent(`${beden} · ${adlar[renk] ?? renk}`)}`,
+    );
+  }
+
+  const varyant = await db.productVariant.create({
+    data: {
       productId: urun.id,
       beden,
       renk,
-      stok: Math.max(0, stok),
+      stok: Number.isInteger(stok) ? Math.max(0, stok) : 0,
       sku: `${slug}-${beden.replace(/\s/g, "")}-${renk}`,
     },
     select: { id: true },
@@ -307,23 +331,19 @@ export async function varyantSil(form: FormData): Promise<void> {
   redirect(`/yonetim/urunler/${slug}?kayit=1`);
 }
 
-/** Stok ekranı: tek seferde birçok varyantın adedini günceller. */
+/**
+ * Stok ekranı: tek seferde birçok varyantın adedini günceller.
+ *
+ * Yalnızca değiştirilen satırlar yazılıyor ve her biri ekran açıldığında
+ * görülen değerle koşullu: arada sipariş gelip stok değiştiyse o satır
+ * yazılmıyor, ekran uyarıyor (K-102).
+ */
 export async function stoklariKaydet(form: FormData): Promise<void> {
   await yoneticiGerekli();
 
-  const islemler = [];
-  const idler: string[] = [];
-  for (const [ad, deger] of form.entries()) {
-    if (!ad.startsWith("stok-")) continue;
-    const id = ad.slice(5);
-    const adet = Number(String(deger));
-    if (!Number.isFinite(adet) || adet < 0) continue;
-    islemler.push(db.productVariant.update({ where: { id }, data: { stok: Math.trunc(adet) } }));
-    idler.push(id);
-  }
-  await db.$transaction(islemler);
+  const { yazilan, cakisan } = await stoklariYaz(stokDegisiklikleri(form.entries()));
   // Stok yazıldıktan sonra: bekleyen varsa ve artık stok varsa haber gidiyor.
-  await stokBildirimleriniGonder(idler);
+  await stokBildirimleriniGonder(yazilan);
   vitriniYenile();
 
   // Kaldığı süzgeç ve sayfaya dönülüyor. Değerler forma gizli alan olarak
@@ -336,7 +356,9 @@ export async function stoklariKaydet(form: FormData): Promise<void> {
     sayfa: String(form.get("sayfa") ?? ""),
   });
   const adres = stokAdresi(suzgec);
-  redirect(`${adres}${adres.includes("?") ? "&" : "?"}kayit=1`);
+  const sonuc = new URLSearchParams({ kayit: String(yazilan.length) });
+  if (cakisan.length > 0) sonuc.set("cakisma", cakismaAdresi(cakisan));
+  redirect(`${adres}${adres.includes("?") ? "&" : "?"}${sonuc.toString()}`);
 }
 
 export async function duyuruEkle(form: FormData): Promise<void> {

@@ -35,7 +35,8 @@ export default async function TalepEkrani({ searchParams }: PageProps<"/yonetim/
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { durum, kayit, hata, sayfa, ara } = await searchParams;
+  const parametreler = await searchParams;
+  const { durum, kayit, hata, sayfa, ara } = parametreler;
   const secili = typeof durum === "string" ? durum : "acik";
   const arama = aramaCoz(ara);
   const adlar = await renkAdlari();
@@ -151,6 +152,13 @@ export default async function TalepEkrani({ searchParams }: PageProps<"/yonetim/
       {kayit === "1" && (
         <p className="rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">
           Kaydedildi, müşteriye e-posta gönderildi.
+        </p>
+      )}
+      {hata === "stok" && (
+        <p className="rounded-marka bg-mercan-soluk px-4 py-3 text-sm font-semibold text-mercan-koyu">
+          Değişim tamamlanmadı: seçtiğin bedenden {String(parametreler.mevcut ?? "?")} adet var,{" "}
+          {String(parametreler.gereken ?? "?")} gerekiyor. Stoğu düzeltip yeniden dene ya da başka
+          bir beden seç. Hiçbir şey değişmedi, müşteriye e-posta gitmedi.
         </p>
       )}
       {hata === "1" && (

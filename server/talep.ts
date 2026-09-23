@@ -261,18 +261,39 @@ export async function talepAc(girdi: TalepGirdisi): Promise<TalepSonucu> {
  * - **Değişim tamamlanınca** eski ürün stoğa giriyor, yerine gönderilen
  *   varyantın stoğu düşüyor. Para hareketi yok. Yeni varyant verilmezse
  *   yalnızca geri gelen stoğa ekleniyor — mağaza sahibi elle düzeltebilsin
- *   diye engellenmiyor, ama panel bunu soruyor.
+ *   diye engellenmiyor, ama panel bunu soruyor. Seçilen bedenin stoğu
+ *   yetmiyorsa talep **tamamlanmıyor**: eskiden düşüm sessizce atlanıyor,
+ *   talep yine "tamamlandı" oluyordu; kargoya çıkan ürün stokta hâlâ
+ *   duruyor, olmayan mal satılıyordu (K-102).
  *
- * Hepsi tek işlem içinde: yarıda kalan bir sonuçlandırma, stoğu artmış ama
- * parası kaydedilmemiş bir sipariş bırakırdı.
+ * Hepsi tek işlem içinde, durum değişikliği dahil: yarıda kalan bir
+ * sonuçlandırma, stoğu artmış ama parası kaydedilmemiş ya da "tamamlandı"
+ * görünüp stoğu hiç düşmemiş bir talep bırakırdı.
  */
+export type SonuclandirmaHatasi = {
+  hata: "stok";
+  /** Seçilen bedenin mevcut stoğu (geri gelen dahil) ve gereken adet. */
+  mevcut: number;
+  gereken: number;
+};
+
+/** Değişimde gönderilecek bedenin stoğu yetmedi; işlem geri alınıyor. */
+class YetersizStok extends Error {
+  constructor(
+    readonly mevcut: number,
+    readonly gereken: number,
+  ) {
+    super("Değişim için stok yetersiz.");
+  }
+}
+
 export async function talebiSonuclandir(
   id: string,
   yeniDurum: "onaylandi" | "reddedildi" | "tamamlandi",
   cevap: string,
   /** Değişimde yerine gönderilen varyant. */
   yeniVaryantId?: string,
-): Promise<{ numara: string; tur: string } | undefined> {
+): Promise<{ numara: string; tur: string } | SonuclandirmaHatasi | undefined> {
   const talep = await db.orderRequest.findUnique({
     where: { id },
     select: {
@@ -295,18 +316,30 @@ export async function talebiSonuclandir(
     return { numara: talep.order.numara, tur: talep.tur };
   }
 
-  await db.orderRequest.update({
-    where: { id },
-    data: { durum: yeniDurum, cevap: cevap.slice(0, 2000) },
-  });
+  const durumVerisi = { durum: yeniDurum, cevap: cevap.slice(0, 2000) };
+
+  if (yeniDurum === "tamamlandi" && (talep.tur === "iade" || talep.tur === "degisim")) {
+    try {
+      await urunGeriGeldi(
+        talep.order.id,
+        id,
+        talep.tur,
+        talep.satirlar,
+        durumVerisi,
+        yeniVaryantId,
+      );
+    } catch (e) {
+      if (e instanceof YetersizStok) return { hata: "stok", mevcut: e.mevcut, gereken: e.gereken };
+      throw e;
+    }
+    return { numara: talep.order.numara, tur: talep.tur };
+  }
+
+  await db.orderRequest.update({ where: { id }, data: durumVerisi });
 
   if (talep.tur === "iptal" && yeniDurum === "onaylandi") {
     await siparisiIptalEtVeStoguIadeEt(talep.order.id);
     return { numara: talep.order.numara, tur: talep.tur };
-  }
-
-  if (yeniDurum === "tamamlandi" && (talep.tur === "iade" || talep.tur === "degisim")) {
-    await urunGeriGeldi(talep.order.id, id, talep.tur, talep.satirlar, yeniVaryantId);
   }
 
   return { numara: talep.order.numara, tur: talep.tur };
@@ -327,11 +360,20 @@ async function urunGeriGeldi(
     orderItemId: string;
     orderItem: { variantId: string | null; fiyatKurus: number };
   }[],
+  durumVerisi: { durum: string; cevap: string },
   yeniVaryantId?: string,
 ): Promise<void> {
   const geriGelen: string[] = [];
 
   await db.$transaction(async (islem) => {
+    // Durum işlemin içinde ve koşullu: aynı anda iki "tamamlandı" stoğu iki
+    // kez artırmasın; stok yetmezse durum da geri alınsın.
+    const { count } = await islem.orderRequest.updateMany({
+      where: { id: requestId, durum: { not: durumVerisi.durum } },
+      data: durumVerisi,
+    });
+    if (count === 0) return;
+
     for (const s of satirlar) {
       if (!s.orderItem.variantId) continue; // Ürünü silinmiş satır
       await islem.productVariant.update({
@@ -345,10 +387,17 @@ async function urunGeriGeldi(
       // Yerine gönderilen varyantın stoğu düşüyor; sıfırın altına inmiyor.
       if (yeniVaryantId) {
         const toplamAdet = satirlar.reduce((t, s) => t + s.adet, 0);
-        await islem.productVariant.updateMany({
+        const { count: dustu } = await islem.productVariant.updateMany({
           where: { id: yeniVaryantId, stok: { gte: toplamAdet } },
           data: { stok: { decrement: toplamAdet } },
         });
+        if (dustu === 0) {
+          const v = await islem.productVariant.findUnique({
+            where: { id: yeniVaryantId },
+            select: { stok: true },
+          });
+          throw new YetersizStok(v?.stok ?? 0, toplamAdet);
+        }
       }
       return; // Değişimde para hareketi yok.
     }

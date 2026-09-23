@@ -49,7 +49,8 @@ export default async function TopluYukleme({
   // değişen parçayı çiziyor. Her sayfa kendisi soruyor (K-51).
   await yoneticiGerekli();
 
-  const { yukleme, hata, mesaj, urun, varyant } = await searchParams;
+  const { yukleme, hata, mesaj, urun, varyant, atlanan, atlananlar } = await searchParams;
+  const renkAdi = new Map((await renkSecenekleri()).map((r) => [r.kod, r.ad]));
   const SUTUN_ACIKLAMA = sutunAciklamalari(
     await bedenAdlari(),
     (await renkSecenekleri()).map((r) => r.ad),
@@ -80,6 +81,30 @@ export default async function TopluYukleme({
         <p className="rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">
           Yüklendi: {urun} ürün, {varyant} beden-renk satırı işlendi.
         </p>
+      )}
+      {/* Önizlemeden sonra stoğu değişen satırlar yazılmadı (K-102). */}
+      {typeof atlanan === "string" && (
+        <div className="rounded-marka border border-sari bg-sari-soluk px-4 py-3 text-sm">
+          <p className="font-bold text-sari-koyu">
+            {atlanan} beden-rengin stoğu yazılmadı: önizlemeden sonra değişti
+          </p>
+          <p className="mt-1 text-metin-2">
+            Arada sipariş, iptal ya da başka bir kayıt stoğu değiştirdi; dosyadaki sayı onu
+            silerdi. Ürünün öteki bilgileri yazıldı. Stoğu stok ekranından kontrol et.
+          </p>
+          {typeof atlananlar === "string" && (
+            <ul className="mt-2 list-disc pl-5 text-metin-2">
+              {atlananlar.split("\n").map((a) => {
+                const [ad, beden, renk] = a.split(" · ");
+                return (
+                  <li key={a}>
+                    {ad} · {beden} · {renkAdi.get(renk) ?? renk}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       )}
       {hata === "dosya" && <Uyari>Bir dosya seçilmedi.</Uyari>}
       {hata === "buyuk" && <Uyari>Dosya çok büyük. En fazla 4 MB.</Uyari>}
@@ -224,6 +249,55 @@ export default async function TopluYukleme({
                 </tbody>
               </table>
             </div>
+
+            {/* Var olan bedenlerde stok ne olacak: dosya eskiyse (sayım
+                dün yapılmış, bugün satış olmuş) burada görünüyor (K-102). */}
+            {plan.stokDegisimleri.length > 0 && (
+              <details className="group mt-5">
+                <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 text-sm font-bold text-metin-2 hover:text-metin [&::-webkit-details-marker]:hidden">
+                  {plan.stokDegisimleri.length} var olan beden-rengin stoğu değişecek
+                  <span aria-hidden="true" className="transition group-open:rotate-180">
+                    ▾
+                  </span>
+                </summary>
+                <p className="mt-2 text-xs text-metin-3">
+                  Dosyadaki sayı şimdiki stoğun yerine geçer. Dosya hazırlandıktan sonra satış
+                  olduysa sayı eskidir; kontrol et. Bu ekran açıkken satış olursa o satırın
+                  stoğu yazılmaz.
+                </p>
+                <table className="mt-2 w-full max-w-lg text-sm">
+                  <thead className="border-b border-cizgi text-left text-xs text-metin-3">
+                    <tr>
+                      <th className="py-1.5 pr-3">Ürün</th>
+                      <th className="py-1.5 pr-3">Beden · renk</th>
+                      <th className="py-1.5 pr-3 text-right">Şimdi</th>
+                      <th className="py-1.5 text-right">Dosyada</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-cizgi-soluk">
+                    {plan.stokDegisimleri.slice(0, 100).map((d) => (
+                      <tr key={`${d.ad}|${d.beden}|${d.renk}`}>
+                        <td className="py-1.5 pr-3">{d.ad}</td>
+                        <td className="py-1.5 pr-3">
+                          {d.beden} · {renkAdi.get(d.renk) ?? d.renk}
+                        </td>
+                        <td className="rakam py-1.5 pr-3 text-right">{d.simdi}</td>
+                        <td
+                          className={`rakam py-1.5 text-right font-bold ${d.yeni < d.simdi ? "text-mercan-koyu" : "text-nane-koyu"}`}
+                        >
+                          {d.yeni}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {plan.stokDegisimleri.length > 100 && (
+                  <p className="mt-1 text-xs text-metin-3">
+                    …ve {plan.stokDegisimleri.length - 100} satır daha.
+                  </p>
+                )}
+              </details>
+            )}
 
             <div className="mt-5 flex flex-wrap items-center gap-3">
               {hatalar.length === 0 && !kayit.uygulandi && (

@@ -4548,6 +4548,46 @@ Kurallar:
 
 ---
 
+### K-102 · Stok ezilmesi: görülen sayı körü körüne yazılmıyor
+
+Stok üç yerden **mutlak sayı** olarak yazılıyordu: stok ekranı, ürün
+formundaki "Ekle / güncelle" ve toplu yükleme. Üçünde de ekrana ya da dosyaya
+bakıldığı an ile kaydedildiği an arasında sipariş gelirse, kaydetme o satışı
+siliyor ve satılan ürün stoğa "geri geliyordu" — olmayan mal satılıyordu.
+Stok ekranı uzun süre açık kalan bir ekran olduğu için bu kolayca yaşanıyordu.
+
+- **Stok ekranı** her satırda ekranın açıldığı andaki değeri gizli alanda
+  taşıyor. Yalnızca **değiştirilen** satırlar yazılıyor ve yazma "stok hâlâ o
+  değerde" koşuluyla. Tutmayan satır yazılmıyor; ekran hangisi olduğunu, ne
+  yazıldığını ve şimdiki değeri gösteriyor.
+- **Ürün formundaki düğme artık yalnızca "Ekle".** Var olan bir beden-renk
+  girilirse stoğuna dokunulmuyor, uyarı çıkıyor. Eskiden adet kutusu 0
+  varsayılanıyla kalırsa stok sessizce sıfırlanıyordu.
+- **Toplu yükleme** önizleme anındaki stoğu kaydediyor (`anlikStok`). Onayda
+  stok bundan farklıysa o satırın stoğu yazılmıyor (ürünün öteki bilgileri
+  yazılıyor) ve sonuç ekranı hangileri olduğunu listeliyor. Önizleme de var
+  olan bedenlerde "şimdi → dosyada" tablosunu gösteriyor: dosya dün
+  hazırlanıp bugün yükleniyorsa eskiliği burada görülüyor.
+- **Değişim talebi:** yerine gönderilecek bedenin stoğu yetmiyorsa düşüm
+  sessizce atlanıyor, talep yine "tamamlandı" oluyordu. Artık talep
+  tamamlanmıyor; durum değişikliği, geri gelen stok ve düşüm tek işlemde,
+  hepsi geri alınıyor ve ekran kaç adet olduğunu, kaç gerektiğini yazıyor.
+  Müşteriye e-posta gitmiyor. Aynı talebi iki kez "tamamlandı" yapmak da
+  stoğu iki kez oynatmıyor (koşullu durum güncellemesi).
+
+**Test dosyaları artık sırayla çalışıyor** (`--test-concurrency=1`).
+Veritabanı testlerinin her dosyası `temizle()` ile bütün `T_` kayıtlarını
+siliyor; dosyalar paralel çalışınca biri ötekinin o an kullandığı ürünü
+siliyor, testler ara sıra anlamsız bir Prisma hatasıyla düşüyordu. Yerelde
+süre uzadı; Vercel'deki derlemede veritabanı testleri zaten atlanıyor (K-77).
+
+**Nerede:** [`../server/stok-ekrani.ts`](../server/stok-ekrani.ts)
+(`stokDegisiklikleri`, `stoklariYaz`), [`../server/toplu-urun.ts`](../server/toplu-urun.ts),
+[`../server/talep.ts`](../server/talep.ts),
+[`../testler/stok-cakisma-db.test.ts`](../testler/stok-cakisma-db.test.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

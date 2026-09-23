@@ -3,6 +3,8 @@ import { stoklariKaydet } from "@/server/yonetim";
 import {
   AZALAN_ESIK,
   SAYFA_BOYU,
+  cakismaAyrintisi,
+  cakismalariCoz,
   stokAdresi,
   stokSayfasi,
   suzgeciCoz,
@@ -42,7 +44,10 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
   const parametreler = await searchParams;
   const suzgec = suzgeciCoz(parametreler);
   const { kayit } = parametreler;
-  const { urunler, sayfa, sonSayfa, toplamAdet, sayaclar } = await stokSayfasi(suzgec);
+  const [{ urunler, sayfa, sonSayfa, toplamAdet, sayaclar }, cakismalar] = await Promise.all([
+    stokSayfasi(suzgec),
+    cakismaAyrintisi(cakismalariCoz(parametreler.cakisma)),
+  ]);
   const sira = await bedenSirasi();
 
   const adres = (degisiklik: Partial<typeof suzgec>) =>
@@ -56,10 +61,38 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
         mağazada seçilemez hale gelir.
       </p>
 
-      {kayit === "1" && (
+      {typeof kayit === "string" && kayit !== "0" && (
         <p className="rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">
-          Stoklar kaydedildi. Düzelttiğin bedenler &quot;sorunlular&quot; listesinden çıkar.
+          {kayit === "1" ? "1 bedenin" : `${kayit} bedenin`} stoğu kaydedildi. Düzelttiğin
+          bedenler &quot;sorunlular&quot; listesinden çıkar.
         </p>
+      )}
+      {kayit === "0" && cakismalar.length === 0 && (
+        <p className="rounded-marka bg-yuzey-sicak px-4 py-3 text-sm text-metin-2">
+          Hiçbir sayı değişmemiş; kaydedilecek bir şey yoktu.
+        </p>
+      )}
+
+      {/* Ekran açıkken sipariş gelip stok değiştiyse o satır yazılmadı
+          (K-102). Hangisi olduğu, ne yazıldığı ve şimdiki değer burada. */}
+      {cakismalar.length > 0 && (
+        <div className="rounded-marka border border-sari bg-sari-soluk px-4 py-3 text-sm">
+          <p className="font-bold text-sari-koyu">
+            {cakismalar.length} bedenin stoğu sen düzenlerken değişti, o satırlar kaydedilmedi
+          </p>
+          <p className="mt-1 text-metin-2">
+            Arada sipariş, iptal ya da başka bir kayıt stoğu değiştirdi; yazdığın sayı onu
+            silerdi. Şimdiki değere bakıp gerekiyorsa yeniden kaydet.
+          </p>
+          <ul className="mt-2 flex flex-col gap-1">
+            {cakismalar.map((c) => (
+              <li key={c.id} className="rakam">
+                <b>{c.ad}</b> · {c.beden} · {c.renkAdi}: ekranda {c.onceki} vardı, sen{" "}
+                {c.yeni} yazdın, şu an <b>{c.simdi}</b>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {/* Düz GET formu: JavaScript kapalıyken de çalışıyor, sonuç adresi
@@ -265,6 +298,9 @@ function Bedenler({ bedenler }: { bedenler: StokBedeni[] }) {
     <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {bedenler.map((v) => (
         <label key={v.id} className="flex items-center gap-3">
+          {/* Ekranın açıldığı andaki değer: kaydederken arada değişip
+              değişmediği buna bakılarak anlaşılıyor (K-102). */}
+          <input type="hidden" name={`once-${v.id}`} value={v.stok} />
           <span className="flex-1 text-sm">
             {v.beden}
             <span className="text-metin-3"> · {v.renkAdi}</span>

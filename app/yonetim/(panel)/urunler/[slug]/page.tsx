@@ -19,7 +19,8 @@ export default async function UrunDuzenle({
   await yoneticiGerekli();
 
   const { slug } = await params;
-  const { kayit, fhata, fkayit, fsil, fsira, hata, renk: renkParam } = await searchParams;
+  const { kayit, fhata, fkayit, fsil, fsira, hata, renk: renkParam, varolan } =
+    await searchParams;
 
   const [urun, kategoriler] = await Promise.all([
     db.product.findUnique({
@@ -86,6 +87,7 @@ export default async function UrunDuzenle({
     <div className="flex flex-col gap-6">
       <UrunFormu
         kaydedildi={kayit === "1"}
+        varOlanVaryant={typeof varolan === "string" ? varolan.slice(0, 80) : undefined}
         kategoriler={kategoriler.map((k) => ({
           slug: k.slug,
           ad: kategoriEtiketleri(kategoriler).get(k.slug) ?? k.ad,

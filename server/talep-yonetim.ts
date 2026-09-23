@@ -54,6 +54,11 @@ export async function talebiCevapla(form: FormData): Promise<void> {
 
   const sonuclanan = await talebiSonuclandir(id, sonuc as Sonuc, cevap, yeniVaryantId);
   if (!sonuclanan) redirect(donus(form, "hata=1"));
+  // Değişimde gönderilecek bedenin stoğu yetmedi: hiçbir şey yazılmadı,
+  // müşteriye de e-posta gitmiyor (K-102).
+  if ("hata" in sonuclanan) {
+    redirect(donus(form, `hata=stok&mevcut=${sonuclanan.mevcut}&gereken=${sonuclanan.gereken}`));
+  }
 
   await talepCevabiEpostasi(kayit.order.eposta, {
     numara: kayit.order.numara,

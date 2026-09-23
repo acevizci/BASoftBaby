@@ -13,11 +13,13 @@ import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
 import { TUM_ETIKETLER } from "@/server/onbellek";
 import {
+  anlikStokAl,
   planiUygula,
   satirlariCoz,
   tabloyuOku,
   type Hata,
   type Satir,
+  type UygulamaSonucu,
 } from "@/server/toplu-urun";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { bedenAdlari } from "@/server/bedenler";
@@ -70,6 +72,8 @@ export async function topluOnizle(form: FormData): Promise<void> {
       satirlar: satirlar as unknown as object,
       hatalar: hatalar as unknown as object,
       satirSayisi: satirlar.length,
+      // Onayda "arada satış oldu mu" diye bakılacak (K-102).
+      anlikStok: await anlikStokAl(satirlar),
     },
     select: { id: true },
   });
@@ -87,9 +91,9 @@ export async function topluUygula(form: FormData): Promise<void> {
 
   const satirlar = kayit.satirlar as unknown as Satir[];
 
-  let sonuc: { urun: number; varyant: number };
+  let sonuc: UygulamaSonucu;
   try {
-    sonuc = await planiUygula(satirlar);
+    sonuc = await planiUygula(satirlar, kayit.anlikStok as Record<string, number> | null);
   } catch (e) {
     const mesaj = e instanceof Error ? e.message : "Yazma sırasında hata oldu.";
     redirect(
@@ -99,7 +103,19 @@ export async function topluUygula(form: FormData): Promise<void> {
 
   await db.productImport.update({ where: { id }, data: { uygulandi: new Date() } });
   vitriniYenile();
-  redirect(`/yonetim/urunler/toplu?urun=${sonuc.urun}&varyant=${sonuc.varyant}`);
+  const p = new URLSearchParams({ urun: String(sonuc.urun), varyant: String(sonuc.varyant) });
+  if (sonuc.atlanan.length > 0) {
+    p.set("atlanan", String(sonuc.atlanan.length));
+    // Adres uzamasın: ilk yirmisi yazılıyor, sayı zaten tamamını söylüyor.
+    p.set(
+      "atlananlar",
+      sonuc.atlanan
+        .slice(0, 20)
+        .map((a) => `${a.ad} · ${a.beden} · ${a.renk}`)
+        .join("\n"),
+    );
+  }
+  redirect(`/yonetim/urunler/toplu?${p.toString()}`);
 }
 
 export async function topluVazgec(form: FormData): Promise<void> {

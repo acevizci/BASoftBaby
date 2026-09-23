@@ -779,6 +779,10 @@ model ProductImport {
   /// hata varsa uygulama düğmesi hiç çıkmıyor.
   hatalar     Json
   satirSayisi Int
+  /// Önizleme anında var olan beden-renklerin stoğu ("slug|beden|renk" →
+  /// adet). Onayda stok bundan farklıysa arada satış olmuş demek; o satırın
+  /// stoğu yazılmıyor (K-102).
+  anlikStok   Json?
   uygulandi   DateTime?
   olusturuldu DateTime  @default(now())
 

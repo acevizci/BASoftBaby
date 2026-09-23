@@ -58,11 +58,38 @@ export type UrunOzeti = {
   yeniVaryant: number;
 };
 
+/** Var olan bir beden-renkte stoğun ne olacağı; önizlemede gösteriliyor (K-102). */
+export type StokDegisimi = { ad: string; beden: string; renk: string; simdi: number; yeni: number };
+
 export type Plan = {
   satirlar: Satir[];
   hatalar: Hata[];
   urunler: UrunOzeti[];
+  stokDegisimleri: StokDegisimi[];
 };
+
+/** Anlık stok haritasının anahtarı. */
+export function stokAnahtari(slug: string, beden: string, renk: string): string {
+  return `${slug}|${beden}|${renk}`;
+}
+
+/**
+ * Dosyadaki var olan beden-renklerin şu anki stoğu.
+ *
+ * Önizlemede kaydediliyor: onay anında stok bundan farklıysa arada sipariş
+ * gelmiş demek ve dosyadaki sayı o satışı geri getirir — o satır yazılmıyor
+ * (K-102).
+ */
+export async function anlikStokAl(satirlar: Satir[]): Promise<Record<string, number>> {
+  const sluglar = [...new Set(satirlar.map((s) => slugYap(s.ad)))];
+  const varyantlar = await db.productVariant.findMany({
+    where: { product: { slug: { in: sluglar } } },
+    select: { beden: true, renk: true, stok: true, product: { select: { slug: true } } },
+  });
+  return Object.fromEntries(
+    varyantlar.map((v) => [stokAnahtari(v.product.slug, v.beden, v.renk), v.stok]),
+  );
+}
 
 /** Tabloda beklenen sütunlar. İlk ad şablonda yazan ad; ötekiler kabul edilen yazımlar. */
 const SUTUNLAR = {
@@ -438,11 +465,16 @@ export async function planYap(satirlar: Satir[]): Promise<Plan> {
   const sluglar = [...gruplar.keys()];
   const varOlanlar = await db.product.findMany({
     where: { slug: { in: sluglar } },
-    select: { id: true, slug: true, variants: { select: { beden: true, renk: true } } },
+    select: {
+      id: true,
+      slug: true,
+      variants: { select: { beden: true, renk: true, stok: true } },
+    },
   });
   const varOlan = new Map(varOlanlar.map((u) => [u.slug, u]));
 
   const urunler: UrunOzeti[] = [];
+  const stokDegisimleri: StokDegisimi[] = [];
 
   for (const [slug, grup] of gruplar) {
     const ilk = grup[0];
@@ -502,11 +534,18 @@ export async function planYap(satirlar: Satir[]): Promise<Plan> {
     );
     const yeniVaryant = grup.filter((s) => !eskiVaryantlar.has(`${s.beden}|${s.renk}`)).length;
 
+    for (const s of grup) {
+      const v = mevcut?.variants.find((v) => v.beden === s.beden && v.renk === s.renk);
+      if (v && v.stok !== s.stok) {
+        stokDegisimleri.push({ ad: ilk.ad, beden: s.beden, renk: s.renk, simdi: v.stok, yeni: s.stok });
+      }
+    }
+
     urunler.push({ ad: ilk.ad, slug, yeniMi, varyant: grup.length, yeniVaryant });
   }
 
   hatalar.sort((a, b) => a.satirNo - b.satirNo);
-  return { satirlar, hatalar, urunler };
+  return { satirlar, hatalar, urunler, stokDegisimleri };
 }
 
 // ── Uygulama ───────────────────────────────────────────────────────────────
@@ -518,7 +557,17 @@ export async function planYap(satirlar: Satir[]): Promise<Plan> {
  * bırakıyor: yalnızca stok yazılmış bir dosya ürünün açıklamasını
  * süpürmesin.
  */
-export async function planiUygula(satirlar: Satir[]): Promise<{ urun: number; varyant: number }> {
+export type UygulamaSonucu = {
+  urun: number;
+  varyant: number;
+  /** Önizlemeden sonra stoğu değiştiği için stoğu yazılmayan satırlar (K-102). */
+  atlanan: { ad: string; beden: string; renk: string }[];
+};
+
+export async function planiUygula(
+  satirlar: Satir[],
+  anlikStok?: Record<string, number> | null,
+): Promise<UygulamaSonucu> {
   const plan = await planYap(satirlar);
   if (plan.hatalar.length > 0) {
     throw new Error("Dosyada düzeltilmemiş hata var; hiçbir şey yazılmadı.");
@@ -535,6 +584,7 @@ export async function planiUygula(satirlar: Satir[]): Promise<{ urun: number; va
   }
 
   let varyantSayisi = 0;
+  const atlanan: UygulamaSonucu["atlanan"] = [];
   const yazilanVaryantlar: string[] = [];
   const yazilanUrunler = new Set<string>();
 
@@ -605,11 +655,24 @@ export async function planiUygula(satirlar: Satir[]): Promise<{ urun: number; va
         for (const s of grup) {
           // SKU boşsa üretiliyor; var olan varyantın kendi kodu korunuyor.
           const sku = s.sku || `${slug}-${s.beden.replace(/\s/g, "")}-${s.renk}`;
-          await islem.productVariant.upsert({
-            where: { productId_beden_renk: { productId: urun.id, beden: s.beden, renk: s.renk } },
-            update: s.sku ? { stok: s.stok, sku } : { stok: s.stok },
-            create: { productId: urun.id, beden: s.beden, renk: s.renk, stok: s.stok, sku },
+          const anahtar_ = { productId: urun.id, beden: s.beden, renk: s.renk };
+          const eskiVaryant = await islem.productVariant.findUnique({
+            where: { productId_beden_renk: anahtar_ },
+            select: { id: true, stok: true },
           });
+          if (!eskiVaryant) {
+            await islem.productVariant.create({ data: { ...anahtar_, stok: s.stok, sku } });
+          } else {
+            // Önizlemede görülen stok değiştiyse arada satış olmuş: dosyadaki
+            // sayı o satışı geri getirir. Stok yazılmıyor, SKU yine yazılıyor.
+            const gorulen = anlikStok?.[stokAnahtari(slug, s.beden, s.renk)];
+            const degismis = gorulen !== undefined && gorulen !== eskiVaryant.stok;
+            if (degismis) atlanan.push({ ad: ilk.ad, beden: s.beden, renk: s.renk });
+            await islem.productVariant.update({
+              where: { id: eskiVaryant.id },
+              data: { ...(degismis ? {} : { stok: s.stok }), ...(s.sku ? { sku } : {}) },
+            });
+          }
           varyantSayisi += 1;
           yazilanUrunler.add(urun.id);
           yazilanVaryantlar.push(
@@ -639,7 +702,7 @@ export async function planiUygula(satirlar: Satir[]): Promise<{ urun: number; va
   });
   await stokBildirimleriniGonder(idler.map((v) => v.id));
 
-  return { urun: gruplar.size, varyant: varyantSayisi };
+  return { urun: gruplar.size, varyant: varyantSayisi, atlanan };
 }
 
 /**

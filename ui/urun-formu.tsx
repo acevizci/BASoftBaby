@@ -58,6 +58,7 @@ export default function UrunFormu({
   renkler = [],
   fotografVar = false,
   kaydedildi,
+  varOlanVaryant,
 }: {
   urun?: FormUrunu;
   kategoriler: { slug: string; ad: string }[];
@@ -68,6 +69,11 @@ export default function UrunFormu({
   /** Ürünün yüklenmiş fotoğrafı var mı; varsa çizim hiç görünmüyor (K-71). */
   fotografVar?: boolean;
   kaydedildi?: boolean;
+  /**
+   * "Ekle" ile zaten var olan bir beden-renk girildi (K-102): stoğu
+   * değiştirilmedi, hangisi olduğu burada.
+   */
+  varOlanVaryant?: string;
 }) {
   const yeni = !urun;
 
@@ -353,6 +359,16 @@ export default function UrunFormu({
             </div>
           )}
 
+          {varOlanVaryant && (
+            <p className="mt-4 rounded-marka bg-sari-soluk px-4 py-3 text-sm text-sari-koyu">
+              <b>{varOlanVaryant}</b> zaten var; stoğu değiştirilmedi. Adedi değiştirmek için{" "}
+              <Link href="/yonetim/stok?durum=hepsi" className="font-bold underline">
+                stok ekranını
+              </Link>{" "}
+              kullan.
+            </p>
+          )}
+
           <form action={varyantEkle} className="mt-5 flex flex-wrap items-end gap-3">
             <input type="hidden" name="slug" value={urun.slug} />
             <label className="flex flex-col gap-1.5">
@@ -389,7 +405,7 @@ export default function UrunFormu({
               type="submit"
               className="rounded-full bg-nane-koyu px-5 py-2.5 text-sm font-bold text-white"
             >
-              Ekle / güncelle
+              Ekle
             </button>
           </form>
 

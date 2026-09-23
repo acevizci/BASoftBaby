@@ -166,3 +166,106 @@ export async function stokSayfasi(s: StokSuzgeci): Promise<StokSayfasi> {
 
   return { urunler, sayfa, sonSayfa, toplamAdet, sayaclar: { sorunlu, biten, hepsi } };
 }
+
+// ── Kaydetme ──────────────────────────────────────────────────────────────
+
+/**
+ * Stok formundan tek bir bedenin değişikliği.
+ *
+ * `onceki` ekran açıldığında görülen değer. Stok bu değerle **koşullu**
+ * yazılıyor: arada sipariş gelip stok düştüyse satır yazılmıyor. Yoksa
+ * ekran açıkken satılan ürün "Kaydet"le geri geliyor ve olmayan mal
+ * satılıyordu (K-102).
+ */
+export type StokDegisikligi = { id: string; onceki: number; yeni: number };
+
+/**
+ * Formdan yalnızca **değiştirilen** bedenleri çıkarır.
+ *
+ * Dokunulmayan satır hiç yazılmıyor: ekrandaki yirmi bedenden birini
+ * düzelten kişi ötekilerin o arada değişen stoğunu ezmesin. Geçersiz sayı
+ * ya da önceki değeri olmayan satır atlanıyor.
+ */
+export function stokDegisiklikleri(girdiler: Iterable<[string, unknown]>): StokDegisikligi[] {
+  const degerler = new Map<string, string>();
+  for (const [ad, deger] of girdiler) degerler.set(ad, String(deger));
+
+  const sonuc: StokDegisikligi[] = [];
+  for (const [ad, ham] of degerler) {
+    if (!ad.startsWith("stok-")) continue;
+    const id = ad.slice(5);
+    const oncekiHam = degerler.get(`once-${id}`);
+    if (oncekiHam === undefined || ham.trim() === "") continue;
+    const yeni = Number(ham);
+    const onceki = Number(oncekiHam);
+    if (!Number.isInteger(yeni) || yeni < 0 || !Number.isInteger(onceki)) continue;
+    if (yeni === onceki) continue;
+    sonuc.push({ id, onceki, yeni });
+  }
+  return sonuc;
+}
+
+/**
+ * Değişiklikleri koşullu yazar: stok hâlâ ekranda görülen değerdeyse.
+ * Tutmayanlar yazılmıyor, çakışma olarak dönüyor.
+ */
+export async function stoklariYaz(
+  degisiklikler: StokDegisikligi[],
+): Promise<{ yazilan: string[]; cakisan: StokCakismasi[] }> {
+  const yazilan: string[] = [];
+  const cakisan: StokCakismasi[] = [];
+  await db.$transaction(async (islem) => {
+    for (const d of degisiklikler) {
+      const { count } = await islem.productVariant.updateMany({
+        where: { id: d.id, stok: d.onceki },
+        data: { stok: d.yeni },
+      });
+      if (count === 1) yazilan.push(d.id);
+      else cakisan.push(d);
+    }
+  });
+  return { yazilan, cakisan };
+}
+
+/** Yazılamayan satır: kişinin yazdığı ve ekranda gördüğü değer. */
+export type StokCakismasi = { id: string; onceki: number; yeni: number };
+
+/** Çakışmalar adres satırında taşınıyor: `id:önceki:yeni` virgülle. */
+export function cakismaAdresi(c: StokCakismasi[]): string {
+  return c
+    .slice(0, 50)
+    .map((x) => `${x.id}:${x.onceki}:${x.yeni}`)
+    .join(",");
+}
+
+export function cakismalariCoz(ham: unknown): StokCakismasi[] {
+  if (typeof ham !== "string" || ham === "") return [];
+  return ham
+    .split(",")
+    .slice(0, 50)
+    .map((p) => p.split(":"))
+    .filter((p) => p.length === 3 && /^[\w-]+$/.test(p[0]))
+    .map(([id, o, y]) => ({ id, onceki: Number(o), yeni: Number(y) }))
+    .filter((x) => Number.isInteger(x.onceki) && Number.isInteger(x.yeni));
+}
+
+/** Çakışan satırların bugünkü hâli, ekranda uyarı için. */
+export async function cakismaAyrintisi(
+  c: StokCakismasi[],
+): Promise<(StokCakismasi & { ad: string; beden: string; renkAdi: string; simdi: number })[]> {
+  if (c.length === 0) return [];
+  const [varyantlar, adlar] = await Promise.all([
+    db.productVariant.findMany({
+      where: { id: { in: c.map((x) => x.id) } },
+      select: { id: true, beden: true, renk: true, stok: true, product: { select: { ad: true } } },
+    }),
+    renkAdlari(),
+  ]);
+  return c.flatMap((x) => {
+    const v = varyantlar.find((v) => v.id === x.id);
+    if (!v) return [];
+    return [
+      { ...x, ad: v.product.ad, beden: v.beden, renkAdi: adlar[v.renk] ?? v.renk, simdi: v.stok },
+    ];
+  });
+}
