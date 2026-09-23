@@ -158,6 +158,7 @@ model ProductVariant {
   cartItems   CartItem[]
   orderItems  OrderItem[]
   bildirimler StockAlert[]
+  hareketler  StockMovement[]
 
   @@unique([productId, beden, renk])
   @@index([productId])
@@ -786,6 +787,42 @@ model ProductImport {
   uygulandi   DateTime?
   olusturuldu DateTime  @default(now())
 
+  @@index([olusturuldu])
+}
+
+/// Stok hareketi (K-103): stoğun her değişimi bir satır.
+///
+/// "Dün 8'di, bugün 3; 5'i nereye gitti" sorusunun cevabı. Stoğu değiştiren
+/// her yol (sipariş, iptal, iade, değişim, elle düzeltme, mal kabulü, sayım,
+/// toplu yükleme) aynı yardımcıdan geçiyor ve satırı stok değişikliğiyle
+/// **aynı işlemde** yazıyor: biri olup öteki olmamıyor.
+///
+/// Ürün adı, beden ve renk kopyalanıyor: beden silinse de geçmiş okunabilsin.
+model StockMovement {
+  id        String          @id @default(cuid())
+  variantId String?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  productId String
+  urunAd    String
+  beden     String
+  renk      String
+
+  /// Artı giriş, eksi çıkış; `sonra` hareketten sonraki stok.
+  degisim Int
+  sonra   Int
+  /// siparis · iptal · iade · degisim-geri · degisim · duzeltme · mal-kabul ·
+  /// sayim · toplu · yeni · silindi
+  sebep     String
+  siparisNo String?
+  /// Panelden yapıldıysa kim; müşteri ya da zamanlı iş yaptıysa boş.
+  adminId   String?
+  yapan     String  @default("")
+  not       String  @default("")
+
+  olusturuldu DateTime @default(now())
+
+  @@index([variantId, olusturuldu])
+  @@index([productId, olusturuldu])
   @@index([olusturuldu])
 }
 

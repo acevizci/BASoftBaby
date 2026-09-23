@@ -145,6 +145,11 @@ export async function renkKaydet(veri: FormData): Promise<void> {
         where: { renk: mevcut.kod },
         data: { renk: kod },
       });
+      // Stok geçmişi de renk koduyla okunuyor (K-103).
+      await islem.stockMovement.updateMany({
+        where: { renk: mevcut.kod },
+        data: { renk: kod },
+      });
       await islem.product.updateMany({
         where: { palet: mevcut.kod },
         data: { palet: kod },

@@ -1,3 +1,4 @@
+import { hareketYaz, type Yapan } from "@/server/stok-hareket";
 import "server-only";
 import { db } from "@/server/veritabani";
 import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
@@ -51,12 +52,16 @@ export async function odemeGirisimiKaydet(
  * duruyor, panelin "iade bekleyenler" listesine düşüyor. Ödenmemişse eskisi
  * gibi `bekliyor`.
  */
-export async function siparisiIptalEtVeStoguIadeEt(orderId: string): Promise<void> {
+export async function siparisiIptalEtVeStoguIadeEt(
+  orderId: string,
+  /** Panelden iptal edildiyse kim; stok hareketine yazılıyor (K-103). */
+  yapan?: Yapan,
+): Promise<void> {
   const iadeEdilen = await db.$transaction(async (islem) => {
     // Ödeme durumu iptalden önce okunuyor: sonrası çok geç.
     const oncesi = await islem.order.findUnique({
       where: { id: orderId },
-      select: { odemeDurumu: true },
+      select: { odemeDurumu: true, numara: true },
     });
     const parasiAlindi = oncesi?.odemeDurumu === "odendi";
 
@@ -97,6 +102,23 @@ export async function siparisiIptalEtVeStoguIadeEt(orderId: string): Promise<voi
       });
       idler.push(satir.variantId);
     }
+    // Stok hareketi iptalle aynı işlemde (K-103).
+    await hareketYaz(
+      islem,
+      satirlar.flatMap((s) =>
+        s.variantId
+          ? [
+              {
+                variantId: s.variantId,
+                degisim: s.adet,
+                sebep: "iptal" as const,
+                siparisNo: oncesi?.numara,
+                yapan,
+              },
+            ]
+          : [],
+      ),
+    );
     return idler;
   });
 

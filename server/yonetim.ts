@@ -39,6 +39,8 @@ import {
 } from "@/server/siparis-arama";
 import { kargoyaVerildiEpostasi } from "@/server/eposta";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import { hareketYaz } from "@/server/stok-hareket";
+import { siparisiIptalEtVeStoguIadeEt } from "@/server/odeme-akis";
 
 /**
  * Kaydedildikten sonra dönülecek adres; katlanır bölüm açık kalsın diye.
@@ -285,7 +287,7 @@ export async function topluUrunIslemi(form: FormData): Promise<void> {
  * olana dokunulmuyor; stok değişikliği stok ekranından (K-102).
  */
 export async function varyantEkle(form: FormData): Promise<void> {
-  await yoneticiGerekli();
+  const ben = await yoneticiGerekli();
 
   const slug = metin(form, "slug");
   const beden = metin(form, "beden");
@@ -304,15 +306,20 @@ export async function varyantEkle(form: FormData): Promise<void> {
     );
   }
 
-  const varyant = await db.productVariant.create({
-    data: {
-      productId: urun.id,
-      beden,
-      renk,
-      stok: Number.isInteger(stok) ? Math.max(0, stok) : 0,
-      sku: `${slug}-${beden.replace(/\s/g, "")}-${renk}`,
-    },
-    select: { id: true },
+  const ilkStok = Number.isInteger(stok) ? Math.max(0, stok) : 0;
+  const varyant = await db.$transaction(async (islem) => {
+    const v = await islem.productVariant.create({
+      data: {
+        productId: urun.id,
+        beden,
+        renk,
+        stok: ilkStok,
+        sku: `${slug}-${beden.replace(/\s/g, "")}-${renk}`,
+      },
+      select: { id: true },
+    });
+    await hareketYaz(islem, [{ variantId: v.id, degisim: ilkStok, sebep: "yeni", yapan: ben }]);
+    return v;
   });
   await stokBildirimleriniGonder([varyant.id]);
   vitriniYenile();
@@ -322,11 +329,17 @@ export async function varyantEkle(form: FormData): Promise<void> {
 }
 
 export async function varyantSil(form: FormData): Promise<void> {
-  await yoneticiGerekli();
+  const ben = await yoneticiGerekli();
 
   const id = metin(form, "id");
   const slug = metin(form, "slug");
-  await db.productVariant.delete({ where: { id } });
+  await db.$transaction(async (islem) => {
+    // Silinen stok da geçmişte görünsün (K-103); satır bedenin adını
+    // kopyaladığı için beden gidince de okunuyor.
+    const v = await islem.productVariant.findUnique({ where: { id }, select: { stok: true } });
+    if (v) await hareketYaz(islem, [{ variantId: id, degisim: -v.stok, sebep: "silindi", yapan: ben }]);
+    await islem.productVariant.delete({ where: { id } });
+  });
   vitriniYenile();
   redirect(`/yonetim/urunler/${slug}?kayit=1`);
 }
@@ -339,9 +352,9 @@ export async function varyantSil(form: FormData): Promise<void> {
  * yazılmıyor, ekran uyarıyor (K-102).
  */
 export async function stoklariKaydet(form: FormData): Promise<void> {
-  await yoneticiGerekli();
+  const ben = await yoneticiGerekli();
 
-  const { yazilan, cakisan } = await stoklariYaz(stokDegisiklikleri(form.entries()));
+  const { yazilan, cakisan } = await stoklariYaz(stokDegisiklikleri(form.entries()), ben);
   // Stok yazıldıktan sonra: bekleyen varsa ve artık stok varsa haber gidiyor.
   await stokBildirimleriniGonder(yazilan);
   vitriniYenile();
@@ -439,7 +452,7 @@ export async function seritAyariKaydet(form: FormData): Promise<void> {
  * form kurcalanıp durum alanına rastgele metin yazılamaz.
  */
 export async function siparisDurumuKaydet(veri: FormData): Promise<void> {
-  await yoneticiGerekli();
+  const ben = await yoneticiGerekli();
 
   const numara = String(veri.get("numara") ?? "").trim().toUpperCase();
   const durum = String(veri.get("durum") ?? "");
@@ -455,8 +468,25 @@ export async function siparisDurumuKaydet(veri: FormData): Promise<void> {
   // müşterinin süresi baştan başlamamalı.
   const oncesi = await db.order.findUnique({
     where: { numara },
-    select: { teslimTarihi: true },
+    select: { id: true, durum: true, teslimTarihi: true },
   });
+  if (!oncesi) return;
+
+  // İptal edilmiş sipariş yeniden açılamıyor: stoğu geri verildi, açılırsa
+  // ürünler stoktan düşmeden "hazırlanıyor"a geçerdi (K-103).
+  if (oncesi.durum === "iptal" && durum !== "iptal") {
+    redirect(`/yonetim/siparisler/${numara}?hata=iptal-acilmaz`);
+  }
+
+  // Panelden iptal de müşterinin iptali gibi: stok geri veriliyor, parası
+  // alınmışsa iade kaydı açılıyor. Eskiden yalnızca durum yazılıyordu; stok
+  // kayboluyor, alınan paranın borcu hiçbir yerde görünmüyordu (K-103).
+  if (durum === "iptal" && oncesi.durum !== "iptal") {
+    await siparisiIptalEtVeStoguIadeEt(oncesi.id, ben);
+    await db.order.update({ where: { numara }, data: { kargoTakipNo: kargoTakipNo || null } });
+    vitriniYenile();
+    redirect(`/yonetim/siparisler/${numara}?kayit=iptal`);
+  }
 
   await db.order.update({
     where: { numara },
@@ -464,7 +494,7 @@ export async function siparisDurumuKaydet(veri: FormData): Promise<void> {
       durum,
       odemeDurumu,
       kargoTakipNo: kargoTakipNo || null,
-      ...(durum === "teslim" && !oncesi?.teslimTarihi ? { teslimTarihi: new Date() } : {}),
+      ...(durum === "teslim" && !oncesi.teslimTarihi ? { teslimTarihi: new Date() } : {}),
     },
   });
 
@@ -485,7 +515,10 @@ export async function topluDurumDegistir(veri: FormData): Promise<void> {
   await yoneticiGerekli();
 
   const durum = String(veri.get("durum") ?? "");
-  if (!(DURUMLAR as readonly string[]).includes(durum)) redirect("/yonetim/siparisler");
+  // Toplu iptal yok: her iptal stok ve para hareketi, tek tek bakılacak iş.
+  if (!(DURUMLAR as readonly string[]).includes(durum) || durum === "iptal") {
+    redirect("/yonetim/siparisler");
+  }
 
   const numaralar = veri
     .getAll("secili")
@@ -509,8 +542,10 @@ export async function topluDurumDegistir(veri: FormData): Promise<void> {
         ).map((s) => s.numara)
       : [];
 
+  // İptal edilmiş siparişler atlanıyor: yeniden açılırsa ürünleri stoktan
+  // düşmeden hazırlanmaya geçerdi (K-103).
   const sonuc = await db.order.updateMany({
-    where: { numara: { in: numaralar } },
+    where: { numara: { in: numaralar }, durum: { not: "iptal" } },
     data: { durum },
   });
 

@@ -30,7 +30,7 @@ function donus(form: FormData, ek: string): string {
 }
 
 export async function talebiCevapla(form: FormData): Promise<void> {
-  await yoneticiGerekli();
+  const ben = await yoneticiGerekli();
 
   const id = String(form.get("id") ?? "").trim();
   const sonuc = String(form.get("sonuc") ?? "");
@@ -52,7 +52,7 @@ export async function talebiCevapla(form: FormData): Promise<void> {
   });
   if (!kayit) redirect(donus(form, "hata=1"));
 
-  const sonuclanan = await talebiSonuclandir(id, sonuc as Sonuc, cevap, yeniVaryantId);
+  const sonuclanan = await talebiSonuclandir(id, sonuc as Sonuc, cevap, yeniVaryantId, ben);
   if (!sonuclanan) redirect(donus(form, "hata=1"));
   // Değişimde gönderilecek bedenin stoğu yetmedi: hiçbir şey yazılmadı,
   // müşteriye de e-posta gitmiyor (K-102).

@@ -14,6 +14,7 @@
  */
 
 import { db } from "@/server/veritabani";
+import { hareketYaz } from "@/server/stok-hareket";
 import { kargoHesapla, kuponOku, sepetIdOku, type SatisAyari } from "@/server/sepet";
 import { enIyiKampanya, gecerliKampanyalar } from "@/server/kampanya";
 import { renkAdlari } from "@/server/renkler";
@@ -176,6 +177,17 @@ export async function siparisOlustur(
           data: { kullanim: { increment: 1 } },
         });
       }
+
+      // Stok hareketi siparişle aynı işlemde (K-103).
+      await hareketYaz(
+        islem,
+        kalemler.map((k) => ({
+          variantId: k.variantId,
+          degisim: -k.adet,
+          sebep: "siparis" as const,
+          siparisNo: siparis.numara,
+        })),
+      );
 
       await islem.cartItem.deleteMany({ where: { cartId } });
       return siparis.numara;

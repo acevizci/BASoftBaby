@@ -21,6 +21,7 @@
 import ExcelJS from "exceljs";
 import { db } from "@/server/veritabani";
 import { slugYap } from "@/server/slug";
+import { hareketYaz, type Yapan } from "@/server/stok-hareket";
 import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
 import { aramaMetinleriniTazele } from "@/server/arama";
 import { normalle } from "@/server/arama-metin";
@@ -567,6 +568,7 @@ export type UygulamaSonucu = {
 export async function planiUygula(
   satirlar: Satir[],
   anlikStok?: Record<string, number> | null,
+  yapan?: Yapan,
 ): Promise<UygulamaSonucu> {
   const plan = await planYap(satirlar);
   if (plan.hatalar.length > 0) {
@@ -661,7 +663,11 @@ export async function planiUygula(
             select: { id: true, stok: true },
           });
           if (!eskiVaryant) {
-            await islem.productVariant.create({ data: { ...anahtar_, stok: s.stok, sku } });
+            const yeni = await islem.productVariant.create({
+              data: { ...anahtar_, stok: s.stok, sku },
+              select: { id: true },
+            });
+            await hareketYaz(islem, [{ variantId: yeni.id, degisim: s.stok, sebep: "toplu", yapan }]);
           } else {
             // Önizlemede görülen stok değiştiyse arada satış olmuş: dosyadaki
             // sayı o satışı geri getirir. Stok yazılmıyor, SKU yine yazılıyor.
@@ -672,6 +678,11 @@ export async function planiUygula(
               where: { id: eskiVaryant.id },
               data: { ...(degismis ? {} : { stok: s.stok }), ...(s.sku ? { sku } : {}) },
             });
+            if (!degismis) {
+              await hareketYaz(islem, [
+                { variantId: eskiVaryant.id, degisim: s.stok - eskiVaryant.stok, sebep: "toplu", yapan },
+              ]);
+            }
           }
           varyantSayisi += 1;
           yazilanUrunler.add(urun.id);

@@ -22,6 +22,7 @@ import "server-only";
 import { db } from "@/server/veritabani";
 import { renkAdlari } from "@/server/renkler";
 import { kelimeler } from "@/server/arama-metin";
+import { hareketYaz, type Yapan } from "@/server/stok-hareket";
 
 /** Bu sayı ve altı "azalıyor" sayılıyor; sıfır zaten "bitti". */
 export const AZALAN_ESIK = 3;
@@ -211,6 +212,7 @@ export function stokDegisiklikleri(girdiler: Iterable<[string, unknown]>): StokD
  */
 export async function stoklariYaz(
   degisiklikler: StokDegisikligi[],
+  yapan?: Yapan,
 ): Promise<{ yazilan: string[]; cakisan: StokCakismasi[] }> {
   const yazilan: string[] = [];
   const cakisan: StokCakismasi[] = [];
@@ -223,6 +225,13 @@ export async function stoklariYaz(
       if (count === 1) yazilan.push(d.id);
       else cakisan.push(d);
     }
+    // Stok hareketi aynı işlemde (K-103).
+    await hareketYaz(
+      islem,
+      degisiklikler
+        .filter((d) => yazilan.includes(d.id))
+        .map((d) => ({ variantId: d.id, degisim: d.yeni - d.onceki, sebep: "duzeltme" as const, yapan })),
+    );
   });
   return { yazilan, cakisan };
 }

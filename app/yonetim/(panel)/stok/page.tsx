@@ -55,7 +55,15 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
 
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="text-2xl">Stok</h1>
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <h1 className="text-2xl">Stok</h1>
+        <Link
+          href="/yonetim/stok/hareketler"
+          className="text-sm font-bold text-mavi-koyu hover:underline"
+        >
+          Stok hareketleri
+        </Link>
+      </div>
       <p className="text-sm text-metin-2">
         Biten ve azalan bedenler önce geliyor. Değiştirip kaydet; sıfır yazdığın beden
         mağazada seçilemez hale gelir.
@@ -252,6 +260,12 @@ function Urun({
             </span>
           )}
           <span className="rakam text-metin-3">toplam {urun.toplam} adet</span>
+          <Link
+            href={`/yonetim/stok/hareketler?urun=${encodeURIComponent(urun.slug)}`}
+            className="font-bold text-mavi-koyu hover:underline"
+          >
+            hareketler
+          </Link>
         </span>
       </div>
 

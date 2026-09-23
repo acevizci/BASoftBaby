@@ -25,6 +25,7 @@ import "server-only";
 
 import { db } from "@/server/veritabani";
 import { siparisiIptalEtVeStoguIadeEt } from "@/server/odeme-akis";
+import { hareketYaz, type Yapan } from "@/server/stok-hareket";
 import { iadeKaydiAc, iadeTutari } from "@/server/iade";
 import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
 import { CAYMA_GUN, TALEP_TURLERI, type TalepTuru } from "@/ui/talep-bicim";
@@ -293,6 +294,8 @@ export async function talebiSonuclandir(
   cevap: string,
   /** Değişimde yerine gönderilen varyant. */
   yeniVaryantId?: string,
+  /** Paneli kullanan; stok hareketine yazılıyor (K-103). */
+  yapan?: Yapan,
 ): Promise<{ numara: string; tur: string } | SonuclandirmaHatasi | undefined> {
   const talep = await db.orderRequest.findUnique({
     where: { id },
@@ -327,6 +330,7 @@ export async function talebiSonuclandir(
         talep.satirlar,
         durumVerisi,
         yeniVaryantId,
+        yapan,
       );
     } catch (e) {
       if (e instanceof YetersizStok) return { hata: "stok", mevcut: e.mevcut, gereken: e.gereken };
@@ -338,7 +342,7 @@ export async function talebiSonuclandir(
   await db.orderRequest.update({ where: { id }, data: durumVerisi });
 
   if (talep.tur === "iptal" && yeniDurum === "onaylandi") {
-    await siparisiIptalEtVeStoguIadeEt(talep.order.id);
+    await siparisiIptalEtVeStoguIadeEt(talep.order.id, yapan);
     return { numara: talep.order.numara, tur: talep.tur };
   }
 
@@ -362,6 +366,7 @@ async function urunGeriGeldi(
   }[],
   durumVerisi: { durum: string; cevap: string },
   yeniVaryantId?: string,
+  yapan?: Yapan,
 ): Promise<void> {
   const geriGelen: string[] = [];
 
@@ -373,6 +378,10 @@ async function urunGeriGeldi(
       data: durumVerisi,
     });
     if (count === 0) return;
+    const { numara: siparisNo } = await islem.order.findUniqueOrThrow({
+      where: { id: orderId },
+      select: { numara: true },
+    });
 
     for (const s of satirlar) {
       if (!s.orderItem.variantId) continue; // Ürünü silinmiş satır
@@ -382,6 +391,23 @@ async function urunGeriGeldi(
       });
       geriGelen.push(s.orderItem.variantId);
     }
+    // Stok hareketi aynı işlemde (K-103).
+    await hareketYaz(
+      islem,
+      satirlar.flatMap((s) =>
+        s.orderItem.variantId
+          ? [
+              {
+                variantId: s.orderItem.variantId,
+                degisim: s.adet,
+                sebep: tur === "degisim" ? ("degisim-geri" as const) : ("iade" as const),
+                siparisNo,
+                yapan,
+              },
+            ]
+          : [],
+      ),
+    );
 
     if (tur === "degisim") {
       // Yerine gönderilen varyantın stoğu düşüyor; sıfırın altına inmiyor.
@@ -398,6 +424,9 @@ async function urunGeriGeldi(
           });
           throw new YetersizStok(v?.stok ?? 0, toplamAdet);
         }
+        await hareketYaz(islem, [
+          { variantId: yeniVaryantId, degisim: -toplamAdet, sebep: "degisim", siparisNo, yapan },
+        ]);
       }
       return; // Değişimde para hareketi yok.
     }

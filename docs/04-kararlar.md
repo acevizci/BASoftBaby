@@ -4588,6 +4588,51 @@ süre uzadı; Vercel'deki derlemede veritabanı testleri zaten atlanıyor (K-77)
 
 ---
 
+### K-103 · Stok hareket geçmişi ve panelden iptal
+
+Stokta yalnızca "şu an kaç tane" vardı. "Dün 8'di, bugün 3; 5'i nereye
+gitti" sorusunun cevabı, sayım farkını ya da yanlış girişi bulmanın yolu
+yoktu.
+
+**`StockMovement` tablosu.** Stoğun her değişimi bir satır: beden-renk
+(ürün adı, beden ve renk kopyalanıyor, beden silinse de okunuyor), değişim
+(+/−), sonraki stok, sebep, sipariş numarası, yapan kullanıcı ve not.
+Sebepler: sipariş, sipariş iptali, iade, değişimde geri gelen ve gönderilen,
+elle düzeltme, mal kabulü, sayım farkı, toplu yükleme, yeni beden, beden
+silindi.
+
+**Stoğu değiştiren her yol aynı yardımcıdan geçiyor** (`hareketYaz`) ve
+satırı stokla **aynı veritabanı işleminde** yazıyor: sipariş, iptal (ödeme
+süresi dolan, kart başlatılamayan, talep ya da panelden iptal edilen), iade
+ve değişim, stok ekranı, ürün formunda beden ekleme ve silme, toplu yükleme.
+`sonra` işlemin içinden okunuyor, aynı anda gelen iki sipariş doğru sırayı
+gösteriyor. Bir test, hareketlerin toplamının stokla tuttuğunu denetliyor.
+
+**Ekranlar:** Stok → "Stok hareketleri" (ürün, sebep ve tarih süzgeci,
+sayfalı, giriş/çıkış toplamı, aynı süzgeçle CSV). Stok ekranında her ürünün
+yanında "hareketler", ürün düzenleme ekranında son 15 hareket.
+
+**İnceleme sırasında bulunan hata: panelden iptal stoğu geri vermiyordu.**
+Sipariş ekranında durum "İptal" yapılınca yalnızca durum yazılıyordu. Ürünler
+stoğa dönmüyor, parası alınmışsa iade kaydı açılmıyordu. Artık müşterinin
+iptaliyle aynı yoldan geçiyor (`siparisiIptalEtVeStoguIadeEt`, K-57/K-58).
+İptal edilmiş sipariş panelden **yeniden açılamıyor**: stoğu geri verildiği
+için açılırsa ürünler stoktan düşmeden hazırlanmaya geçerdi. Toplu durum
+değişikliği iptal edilmiş siparişleri atlıyor, toplu iptal ise yok.
+
+Renk kodu değişince hareketlerdeki kod da güncelleniyor; beden adı değişince
+güncellenmiyor (o gün hangi adla satıldıysa o).
+
+**Açık:** Tablo zamanla büyüyor. Yoğun bir mağazada yılda birkaç yüz bin
+satır, Postgres için sorun değil. İki yıldan eski satırları özetleyip silme
+kararı ileriye bırakıldı.
+
+**Nerede:** [`../server/stok-hareket.ts`](../server/stok-hareket.ts),
+[`../app/yonetim/(panel)/stok/hareketler/page.tsx`](../app/yonetim/(panel)/stok/hareketler/page.tsx),
+[`../testler/stok-hareket-db.test.ts`](../testler/stok-hareket-db.test.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

@@ -59,6 +59,12 @@ export default async function SiparisDetayi({
         </Link>
       </div>
 
+      {hata === "iptal-acilmaz" && (
+        <p className="rounded-marka border border-sari bg-sari-soluk px-4 py-3 text-sm text-sari-koyu">
+          İptal edilmiş sipariş yeniden açılamıyor: ürünleri stoğa geri verildi. Müşteri yine
+          istiyorsa yeni sipariş vermesi gerekiyor.
+        </p>
+      )}
       {hata === "odenmedi" && (
         <p className="rounded-marka border border-sari bg-sari-soluk px-4 py-3 text-sm text-sari-koyu">
           Ödemesi tamamlanmamış siparişe fatura kesilmiyor. Havale geldiyse aşağıdan
@@ -72,7 +78,9 @@ export default async function SiparisDetayi({
             ? "Kargo bilgisi kaydedildi. Takip numarası girildiyse müşteriye e-posta gitti."
             : kayit === "fatura"
               ? "Fatura kaydı güncellendi."
-              : "Kaydedildi."}
+              : kayit === "iptal"
+                ? "Sipariş iptal edildi, ürünleri stoğa geri döndü. Parası alındıysa iade kaydı açıldı."
+                : "Kaydedildi."}
         </p>
       )}
 

@@ -55,6 +55,7 @@ export async function temizle(): Promise<void> {
   await db.payment.deleteMany({ where: { order: { id: onek } } });
   await db.shipment.deleteMany({ where: { order: { id: onek } } });
   await db.order.deleteMany({ where: { id: onek } });
+  await db.stockMovement.deleteMany({ where: { productId: onek } });
   await db.productVariant.deleteMany({ where: { id: onek } });
   await db.productImage.deleteMany({ where: { id: onek } });
   await db.product.deleteMany({ where: { id: onek } });

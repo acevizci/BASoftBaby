@@ -82,7 +82,7 @@ export async function topluOnizle(form: FormData): Promise<void> {
 }
 
 export async function topluUygula(form: FormData): Promise<void> {
-  await yoneticiGerekli();
+  const ben = await yoneticiGerekli();
 
   const id = String(form.get("id") ?? "").trim();
   const kayit = await db.productImport.findUnique({ where: { id } });
@@ -93,7 +93,7 @@ export async function topluUygula(form: FormData): Promise<void> {
 
   let sonuc: UygulamaSonucu;
   try {
-    sonuc = await planiUygula(satirlar, kayit.anlikStok as Record<string, number> | null);
+    sonuc = await planiUygula(satirlar, kayit.anlikStok as Record<string, number> | null, ben);
   } catch (e) {
     const mesaj = e instanceof Error ? e.message : "Yazma sırasında hata oldu.";
     redirect(

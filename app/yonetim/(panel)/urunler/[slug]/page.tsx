@@ -6,6 +6,10 @@ import { bedenSirasi, sonSira, bedenler as bedenleriGetir } from "@/server/beden
 import { renkSecenekleri, tumRenkSecenekleri } from "@/server/renkler";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import UrunSilme from "@/ui/urun-silme";
+import Link from "next/link";
+import HareketTablosu from "@/ui/hareket-tablosu";
+import { urunHareketleri } from "@/server/stok-hareket";
+import { renkAdlari } from "@/server/renkler";
 import { kategoriEtiketleri } from "@/ui/kategori-etiketi";
 
 export const dynamic = "force-dynamic";
@@ -151,6 +155,8 @@ export default async function UrunDuzenle({
           (K-61). Silme bölümü en altta kalmaya devam ediyor (K-53). */}
       <UrunKaydetDugmesi />
 
+      <StokGecmisi productId={urun.id} slug={urun.slug} />
+
       <UrunSilme
         slug={urun.slug}
         ad={urun.ad}
@@ -160,5 +166,30 @@ export default async function UrunDuzenle({
         onayHatasi={hata === "onay"}
       />
     </div>
+  );
+}
+
+/** Ürünün son stok hareketleri (K-103); tamamı hareketler ekranında. */
+async function StokGecmisi({ productId, slug }: { productId: string; slug: string }) {
+  const [satirlar, adlar] = await Promise.all([urunHareketleri(productId), renkAdlari()]);
+  return (
+    <section className="rounded-marka border border-cizgi bg-yuzey p-5">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <h2 className="text-lg">Son stok hareketleri</h2>
+        <Link
+          href={`/yonetim/stok/hareketler?urun=${encodeURIComponent(slug)}`}
+          className="text-sm font-bold text-mavi-koyu hover:underline"
+        >
+          Hepsi
+        </Link>
+      </div>
+      {satirlar.length === 0 ? (
+        <p className="mt-2 text-sm text-metin-3">Bu ürünün henüz kayıtlı stok hareketi yok.</p>
+      ) : (
+        <div className="mt-3">
+          <HareketTablosu satirlar={satirlar} renkAdlari={adlar} urunGoster={false} />
+        </div>
+      )}
+    </section>
   );
 }
