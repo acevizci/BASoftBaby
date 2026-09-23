@@ -509,6 +509,18 @@ ${iptal}${await altBilgi()}`,
   );
 }
 
+/**
+ * Panel kullanıcılarına sabah özeti (K-101). Metni `server/sabah-ozeti.ts`
+ * kuruyor; burada yalnızca imza ekleniyor.
+ */
+export async function sabahOzetiEpostasi(
+  kime: string,
+  konu: string,
+  metin: string,
+): Promise<EpostaSonucu> {
+  return gonder(kime, konu, `${metin}${await altBilgi()}`);
+}
+
 export type StokBildirimi = { urunAd: string; slug: string; beden: string; renk: string };
 
 /**

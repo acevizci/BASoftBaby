@@ -399,3 +399,11 @@ export async function tumOturumlariKapat(): Promise<void> {
   await yonetimOturumuKapat();
   redirect("/yonetim/giris?cikis=1");
 }
+
+/** Sabah özeti e-postasını açar ya da kapatır; yalnızca kendi hesabı (K-101). */
+export async function sabahOzetiniAyarla(form: FormData): Promise<void> {
+  const ben = await yoneticiGerekli();
+  const acik = form.get("sabahOzeti") !== null;
+  await db.adminUser.update({ where: { id: ben.id }, data: { sabahOzeti: acik } });
+  redirect(`/yonetim/hesabim?kayit=${acik ? "sabah-acik" : "sabah-kapali"}`);
+}

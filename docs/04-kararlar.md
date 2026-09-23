@@ -4517,6 +4517,37 @@ için müşteriye e-posta gidiyor.
 
 ---
 
+### K-101 · Sabah özeti e-postası
+
+Mağaza sahibi güne panelden değil telefonundan başlıyor. Günlük iş her sabah
+Türkiye saatiyle 06:00'da (`0 3 * * *` UTC) panel kullanıcılarına tek bir
+e-posta gönderiyor:
+
+- **Dün:** sipariş sayısı ve ciro (iptal hariç), ilk on sipariş (numara, ad,
+  tutar, 🎁 hediye işareti). "Dün" Türkiye saatine göre çiziliyor; sunucu
+  UTC'de çalıştığı için sabit +3 kullanılıyor (Türkiye yaz saati
+  uygulamıyor).
+- **Bugün bekleyenler, azalan stok, "gelince haber ver" diyenler, kurulum
+  eksikleri.** Hepsi panelin özet ekranıyla aynı kaynaktan
+  (`panelOzetiGetir`), yani iki yerde iki ayrı sayı çıkmıyor. Yalnızca
+  bekleyen işler yazılıyor, her birinin yanında panel bağlantısı var.
+
+Kurallar:
+
+- **Alıcılar:** açık ve davetini kabul etmiş (e-postası doğrulanmış)
+  kullanıcılar. Her kullanıcı panelde Hesabım ekranından kapatabiliyor
+  (`sabahOzeti`, varsayılan açık).
+- **Günde bir kez.** `CRON_SECRET` tanımlı değilse uç herkese açık. Son
+  gönderim tutuluyor ve 20 saat dolmadan ikinci e-posta gitmiyor.
+- **Söylenecek bir şey yoksa gönderilmiyor:** dün sipariş gelmemişse ve
+  bekleyen iş de yoksa e-posta yok.
+
+**Nerede:** [`../server/sabah-ozeti.ts`](../server/sabah-ozeti.ts),
+[`../app/yonetim/(panel)/hesabim/page.tsx`](../app/yonetim/(panel)/hesabim/page.tsx),
+[`../testler/sabah-ozeti.test.ts`](../testler/sabah-ozeti.test.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

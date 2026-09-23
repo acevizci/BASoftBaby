@@ -6,6 +6,7 @@ import {
 import { eskiYuklemeleriTemizle } from "@/server/toplu-urun";
 import { birakilanSepetleriHatirlat } from "@/server/sepet-hatirlatma";
 import { favoriBildirimleriniGonder } from "@/server/favori-bildirimi";
+import { sabahOzetiniGonder } from "@/server/sabah-ozeti";
 import { eskiBildirimIsteklerimiTemizle } from "@/server/stok-bildirimi";
 import { eskiGirisSayaclariniTemizle } from "@/server/giris-sinir";
 import { eskiPanelKayitlariniTemizle } from "@/server/yonetim-kimlik";
@@ -50,6 +51,9 @@ export async function GET(istek: NextRequest) {
   const girisSayaci = await eskiGirisSayaclariniTemizle();
   // Süresi geçmiş panel oturumları ve harcanmış sıfırlama jetonları (K-48).
   const panel = await eskiPanelKayitlariniTemizle();
+  // Panel kullanıcılarına sabah özeti; en sonda, yukarıdaki temizlikten
+  // sonraki durumu anlatsın (K-101). İş 03:00 UTC'de, Türkiye'de 06:00.
+  const sabah = await sabahOzetiniGonder();
   return NextResponse.json({
     temizlenen,
     havaleHatirlatma,
@@ -59,5 +63,6 @@ export async function GET(istek: NextRequest) {
     bildirim,
     girisSayaci,
     panel,
+    sabah,
   });
 }

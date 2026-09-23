@@ -949,6 +949,11 @@ model AdminUser {
   /// bekliyor": e-postanın o kişiye ait olduğu kanıtlanmadı, giriş yapamıyor
   /// (K-87).
   epostaDogrulandi DateTime?
+  /// Sabah özeti e-postası (K-101): dünün satışı ve bugünün işleri. Her
+  /// kullanıcı kendi Hesabım ekranından kapatabiliyor. Son gönderim, aynı
+  /// gün ikinci kez gönderilmesin diye tutuluyor.
+  sabahOzeti           Boolean   @default(true)
+  sabahOzetiGonderildi DateTime?
 
   oturumlar AdminSession[]
   jetonlar  AdminToken[]
