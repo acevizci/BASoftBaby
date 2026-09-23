@@ -262,9 +262,15 @@ export default function UrunFormu({
               <input
                 name="rozetYazi"
                 defaultValue={urun?.rozetYazi ?? ""}
-                placeholder="Çok satan, %20, Son 3 adet"
+                placeholder="Çok satan, %20, Yeni sezon"
                 className={GIRDI}
               />
+              {/* Stoğa bağlı yazıyı elle yazmak, stok değişince yalan
+                  söyleyen bir rozet demek (K-105). */}
+              <span className="text-xs text-metin-3">
+                &quot;Son 2 adet&quot; yazma: seçilen beden azaldığında ürün sayfası bunu
+                kendiliğinden yazıyor.
+              </span>
             </label>
             <label className="flex flex-col gap-1.5">
               <span className={ETIKET}>Rozet rengi</span>

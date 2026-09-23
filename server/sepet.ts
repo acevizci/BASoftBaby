@@ -48,6 +48,11 @@ export type SepetSatiri = {
   araToplamKurus: number;
   /** Elde kalan adet; sepetteki adet bunu aşamaz */
   stok: number;
+  /**
+   * Stok azaldığı için adet bu okumada düşürüldüyse müşterinin koyduğu
+   * adet (K-105). Düşürme kayda da yazıldığı için bir kez görünüyor.
+   */
+  azaltildi?: number;
 };
 
 export type Sepet = {
@@ -69,6 +74,8 @@ export type Sepet = {
   bedavayaKalanKurus: number;
   /** Stoğu yetmeyen satır var mı — ödeme adımı bunu engeller */
   sorunluMu: boolean;
+  /** Satıştan kalktığı için bu okumada sepetten çıkarılan ürün sayısı (K-105). */
+  cikarilan: number;
 };
 
 const BOS_SEPET: Sepet = {
@@ -82,6 +89,7 @@ const BOS_SEPET: Sepet = {
   toplamKurus: 0,
   bedavayaKalanKurus: 0,
   sorunluMu: false,
+  cikarilan: 0,
 };
 
 /** Okuma amaçlı: çerez yoksa sepet yaratmaz, boş sepet döner. */
@@ -180,13 +188,29 @@ export async function sepetGetir(): Promise<Sepet> {
     tumRenkSecenekleri(),
   ]);
 
+  // Yayından kalkan ürün sepetten çıkarılıyor ve bir kez söyleniyor.
+  // Eskiden yalnızca gizleniyordu: müşteri ürünün nereye gittiğini
+  // bilmiyordu, kayıt da sepette sonsuza kadar kalıyordu (K-105).
+  const pasifler = satirlar.filter((s) => !s.variant.product.aktif).map((s) => s.id);
+  if (pasifler.length > 0) await db.cartItem.deleteMany({ where: { id: { in: pasifler } } });
+
+  // Stok sepetteki adedin altına düştüyse adet **kayıtta da** düşürülüyor.
+  // Eskiden yalnızca ekranda düşüyordu: sepet "1" gösterirken kayıtta 3
+  // kalıyor, ödeme "elde 1 adet kaldı, adedi düşür" diye reddediyordu —
+  // müşteri ekranda zaten 1 görüyordu (K-105).
+  const azalanlar = satirlar.filter(
+    (s) => s.variant.product.aktif && s.variant.stok > 0 && s.adet > s.variant.stok,
+  );
+  for (const s of azalanlar) {
+    await db.cartItem.update({ where: { id: s.id }, data: { adet: s.variant.stok } });
+  }
+
   const cikti: SepetSatiri[] = satirlar
-    // Ürün yayından kaldırıldıysa sepette görünmesin
     .filter((s) => s.variant.product.aktif)
     .map((s) => {
       const fiyat = fiyatHesapla(s.variant.product.fiyatKurus, s.variant.fiyatKurus);
-      // Stok azaldıysa satırı stoğa çekip göster; müşteri şaşırmasın diye
-      // kaydı silmiyoruz, ekranda uyarı çıkıyor.
+      // Tükenen satır sepette kalıyor, ekranda "tükendi" yazıyor: müşteri
+      // ne olduğunu görsün, kendisi çıkarsın.
       const adet = Math.min(s.adet, s.variant.stok);
       return {
         variantId: s.variantId,
@@ -214,6 +238,7 @@ export async function sepetGetir(): Promise<Sepet> {
         fiyatKurus: fiyat,
         araToplamKurus: fiyat * adet,
         stok: s.variant.stok,
+        azaltildi: s.variant.stok > 0 && s.adet > s.variant.stok ? s.adet : undefined,
       };
     });
 
@@ -248,6 +273,7 @@ export async function sepetGetir(): Promise<Sepet> {
     toplamKurus: indirimliAraToplam + kargoKurus,
     bedavayaKalanKurus: kargoKurus > 0 && kalan > 0 ? kalan : 0,
     sorunluMu: cikti.some((s) => s.stok === 0 || s.adet === 0),
+    cikarilan: pasifler.length,
   };
 }
 

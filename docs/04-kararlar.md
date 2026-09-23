@@ -4663,6 +4663,33 @@ Hareketler. Menüde tek "Stok" maddesi kalıyor.
 
 ---
 
+### K-105 · Sepette stok tutarsızlığı ve "son adet" uyarısı
+
+**"Son N adet" zaten vardı.** Ürün sayfası seçilen beden-renkte stok 3 ve
+altındaysa "Son 2 adet" yazıyordu, sepet de öyle. Tek eksik ürün formundaki
+rozet ipucuydu: "Son 3 adet" örneği elle rozet yazmaya yönlendiriyordu. Stok
+değişince yalan söyleyen bir rozet oluyor. İpucu değişti, altına "bunu yazma,
+kendiliğinden çıkıyor" notu eklendi.
+
+**Sepette bulunan hata:** stok, sepetteki adedin altına düşünce adet yalnızca
+**ekranda** stoğa indiriliyordu, kayıtta eski adet kalıyordu. Müşteri sepette
+"1" görüyor, ödemede ise "elde 1 adet kaldı, sepetteki adedi düşür" hatası
+alıyordu. Artık:
+
+- Adet **kayıtta da** düşürülüyor ve satırda bir kez "Sepetine 4 adet
+  koymuştun, stokta 2 kaldı; adedi 2 olarak güncelledik" yazıyor. Ödeme
+  artık geçiyor.
+- Satıştan kalkan ürün eskiden sessizce gizleniyordu, kaydı da sepette
+  sonsuza kadar kalıyordu. Artık sepetten çıkarılıyor ve bir kez "artık
+  satışta olmadığı için çıkarıldı" deniyor.
+- Tükenen satır eskisi gibi sepette kalıyor ve "tükendi" yazıyor: müşteri ne
+  olduğunu görsün, kendisi çıkarsın.
+
+**Nerede:** [`../server/sepet.ts`](../server/sepet.ts) (`sepetGetir`),
+[`../testler/sepet-stok-db.test.ts`](../testler/sepet-stok-db.test.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

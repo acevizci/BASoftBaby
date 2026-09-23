@@ -17,7 +17,9 @@ export default async function SepetSayfasi() {
       <div className="mx-auto max-w-2xl px-4 py-16 text-center">
         <h1 className="text-2xl sm:text-3xl">Sepetin boş</h1>
         <p className="mt-3 text-metin-2">
-          Beğendiğin ürünü sepete eklediğinde burada görünecek.
+          {sepet.cikarilan > 0
+            ? "Sepetindeki ürün artık satışta olmadığı için çıkarıldı."
+            : "Beğendiğin ürünü sepete eklediğinde burada görünecek."}
         </p>
         <Link
           href="/urunler"
@@ -33,6 +35,11 @@ export default async function SepetSayfasi() {
     <div className="mx-auto max-w-5xl px-4 py-8">
       <h1 className="text-2xl sm:text-3xl">Sepetim</h1>
       <p className="mt-1 text-sm text-metin-2">{sepet.toplamAdet} ürün</p>
+      {sepet.cikarilan > 0 && (
+        <p className="mt-3 rounded-marka bg-sari-soluk px-4 py-3 text-sm text-sari-koyu">
+          Sepetindeki {sepet.cikarilan} ürün artık satışta olmadığı için çıkarıldı.
+        </p>
+      )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
         <ul className="flex flex-col gap-3">
@@ -69,6 +76,11 @@ export default async function SepetSayfasi() {
                 {s.stok === 0 ? (
                   <p className="text-sm font-bold text-mercan-koyu">
                     Bu ürün tükendi, siparişe giremez. Satırı kaldırman gerekiyor.
+                  </p>
+                ) : s.azaltildi ? (
+                  <p className="text-sm font-semibold text-mercan-koyu">
+                    Sepetine {s.azaltildi} adet koymuştun, stokta {s.stok} kaldı; adedi {s.stok}{" "}
+                    olarak güncelledik.
                   </p>
                 ) : s.stok <= 3 ? (
                   <p className="text-sm font-semibold text-mercan-koyu">Son {s.stok} adet</p>
