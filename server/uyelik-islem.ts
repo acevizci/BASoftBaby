@@ -13,6 +13,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
 import { islemSinirla } from "@/server/istek-siniri";
+import { izinDegisti } from "@/server/iys";
 import {
   epostayiDogrulanmisSay,
   girisYapan,
@@ -86,6 +87,7 @@ export async function kayitOl(veri: FormData): Promise<void> {
     select: { id: true },
   });
 
+  if (izin) await izinDegisti(eposta, true);
   await dogrulamaGonder(musteri.id, eposta, adSoyad);
   await oturumAc(musteri.id);
   // Üye olmadan doldurulmuş sepet varsa artık sahibi belli.
@@ -154,7 +156,7 @@ export async function bilgileriKaydet(veri: FormData): Promise<void> {
   const izin = veri.get("pazarlamaIzni") === "on";
   const onceki = await db.customer.findUnique({
     where: { id: musteri.id },
-    select: { pazarlamaIzni: true, pazarlamaIzniTarihi: true },
+    select: { pazarlamaIzni: true, pazarlamaIzniTarihi: true, eposta: true },
   });
 
   await db.customer.update({
@@ -168,6 +170,8 @@ export async function bilgileriKaydet(veri: FormData): Promise<void> {
         : null,
     },
   });
+  // İzin değiştiyse İYS'ye bildirilecek kayıt (K-125).
+  if (onceki && onceki.pazarlamaIzni !== izin) await izinDegisti(onceki.eposta, izin);
   revalidatePath("/", "layout");
   redirect("/hesabim/bilgiler?kayit=bilgi");
 }

@@ -137,7 +137,10 @@ export const BOLUMLER: Bolum[] = [
     ad: "Müşteriler",
     ikon: "musteri",
     ozetSayaclar: ["yorum"],
-    alt: [{ yol: "/yonetim/yorumlar", ad: "Değerlendirmeler", anahtar: "yorum puan", sayac: "yorum", ton: "hatirlatma" }],
+    alt: [
+      { yol: "/yonetim/yorumlar", ad: "Değerlendirmeler", anahtar: "yorum puan", sayac: "yorum", ton: "hatirlatma" },
+      { yol: "/yonetim/bulten", ad: "E-bülten", anahtar: "bulten kampanya duyuru eposta iys izin" },
+    ],
   },
   {
     yol: "/yonetim/kampanyalar",

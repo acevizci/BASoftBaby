@@ -234,6 +234,20 @@ export async function jetonUret(customerId: string, tur: JetonTuru): Promise<str
 }
 
 /**
+ * Çok sayıda müşteri için "listeden çık" jetonu (e-bülten, K-125). Tek tek
+ * `jetonUret` çağırmak bin alıcıda bin sorgu demekti; hepsi tek yazımda.
+ */
+export async function topluIptalJetonu(customerIds: string[]): Promise<Map<string, string>> {
+  const tur = "pazarlama-iptal" satisfies JetonTuru;
+  const biter = new Date(Date.now() + JETONLAR[tur].saat * 60 * 60 * 1000);
+  const jetonlar = new Map(customerIds.map((id) => [id, randomBytes(32).toString("base64url")]));
+  await db.customerToken.createMany({
+    data: [...jetonlar].map(([customerId, jeton]) => ({ id: jetonOzeti(jeton), customerId, tur, biter })),
+  });
+  return jetonlar;
+}
+
+/**
  * Jetonu harcar: geçerliyse hesabın id'sini döndürür ve jetonu kullanılmış
  * işaretler. Aynı bağlantı ikinci kez çalışmaz.
  */

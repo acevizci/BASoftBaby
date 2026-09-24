@@ -21,6 +21,7 @@ import "server-only";
  */
 
 import { db } from "@/server/veritabani";
+import { izinDegisti } from "@/server/iys";
 import { sepetHatirlatmaEpostasi } from "@/server/eposta";
 import { jetonUret } from "@/server/uyelik";
 import { renkAdlari } from "@/server/renkler";
@@ -104,8 +105,15 @@ export async function birakilanSepetleriHatirlat(): Promise<HatirlatmaSonucu> {
 
 /** Listeden çıkma: jeton geçerliyse izni kapatır. */
 export async function pazarlamaIzniniKapat(customerId: string): Promise<void> {
+  const onceki = await db.customer.findUnique({
+    where: { id: customerId },
+    select: { eposta: true, pazarlamaIzni: true },
+  });
+  if (!onceki) return;
   await db.customer.update({
     where: { id: customerId },
     data: { pazarlamaIzni: false, pazarlamaIzniTarihi: null },
   });
+  // Ret de İYS'ye bildiriliyor (K-125).
+  if (onceki.pazarlamaIzni) await izinDegisti(onceki.eposta, false);
 }

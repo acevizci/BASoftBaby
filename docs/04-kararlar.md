@@ -5375,6 +5375,50 @@ kontrol edilmeli.
 [`../ui/olcum-olayi.tsx`](../ui/olcum-olayi.tsx),
 [`../app/yonetim/(panel)/ayarlar/olcum/page.tsx`](../app/yonetim/(panel)/ayarlar/olcum/page.tsx)
 
+### K-125 · E-bülten ve İYS
+
+Üye olurken ve hesap ayarında ticari ileti izni zaten alınıyordu (6563
+sayılı kanun), ama izin verenlere kampanya duyurusu göndermenin bir yolu
+yoktu. İzinler İleti Yönetim Sistemi'ne (İYS) de bildirilmiyordu; bu
+bildirilmeden ticari ileti göndermek idari para cezası sebebi.
+
+**İzin kaydı.** İznin her değişikliği ayrı bir kayıt (`ConsentEvent`): üye
+olurken onay, hesap ayarından açma/kapatma, e-postadaki "listeden çık", hesap
+silme (izinliyse ret). Göçle birlikte bugüne kadarki izinli müşteriler için
+izin tarihiyle onay kaydı açıldı. Hesap silinse de kayıt kalıyor, yalnızca
+adres ve karar: izni ispat gönderenin yükümlülüğü.
+
+**İYS'ye bildirme** (Müşteriler › E-bülten):
+- "İYS dosyasını indir": bildirilmemiş kayıtlar, İYS'nin alan adlarıyla
+  (`type, source, recipient, status, consentDate, recipientType`; e-posta,
+  web sitesi kaynağı, bireysel alıcı, Türkiye saati). Aynı adresin yalnızca
+  son kararı gidiyor: önce onay sonra ret verene onay bildirilmesin.
+- Dosya iys.org.tr'de toplu yükleme ekranına yüklendikten sonra "Yükledim,
+  bildirildi say". İşaret, dosyadaki en yeni kayda kadar; arada gelen yeni
+  kayıt bir sonraki dosyaya kalıyor.
+- İYS API'si marka hesabı ve anahtar istiyor; hesap açılınca bu ekran
+  kendiliğinden gönderen hâle getirilebilir. O zamana kadar dosya yolu.
+
+**Bülten gönderimi:**
+- Alıcı yalnızca izin vermiş **ve** e-postasını doğrulamış müşteri
+  (doğrulanmamış adres başkasının olabilir, K-14). Ekran ikisini ayrı sayıyor.
+- "Önce kendime deneme gönder": yalnızca yöneticinin adresine.
+- Gerçek gönderim "Markam İYS'ye kayıtlı ve izinleri yükledim" kutusu
+  işaretlenmeden gitmiyor.
+- Her e-postada kişiye özel çıkış bağlantısı ve **tek tıkla çıkış başlığı**
+  (`List-Unsubscribe` + `List-Unsubscribe-Post`, RFC 8058). Gmail ve Yahoo
+  2024'ten beri toplu gönderenden bunu istiyor; yoksa e-postalar spama
+  düşüyor. Gelen kutusundaki "Aboneliği iptal et" `/api/eposta-izni`'ye POST
+  atıyor, izin kapanıyor, İYS için ret kaydı düşüyor.
+- Resend'in toplu ucuyla 100'erli parçalar; çıkış jetonları tek yazımda
+  üretiliyor. Aynı form iki kez gönderilemiyor (formdaki anahtar bültenin
+  kimliği). Gönderilenler geçmişi: kaç kişiden kaçına gitti.
+
+**Nerede:** [`../server/bulten-islem.ts`](../server/bulten-islem.ts),
+[`../server/iys.ts`](../server/iys.ts), [`../server/iys-bicim.ts`](../server/iys-bicim.ts),
+[`../app/yonetim/(panel)/bulten/page.tsx`](../app/yonetim/(panel)/bulten/page.tsx),
+[`../app/api/eposta-izni/route.ts`](../app/api/eposta-izni/route.ts)
+
 ---
 
 ## Açık sorular

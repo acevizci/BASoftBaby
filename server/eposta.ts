@@ -136,6 +136,80 @@ async function gonder(
   }
 }
 
+export type TopluEposta = {
+  kime: string;
+  konu: string;
+  metin: string;
+  /** Tek tıkla listeden çıkma adresi (RFC 8058); Gmail ve Yahoo toplu gönderende istiyor. */
+  iptalAdresi: string;
+};
+
+/** Resend'in toplu ucu bir istekte en çok 100 e-posta alıyor. */
+export const TOPLU_PARCA = 100;
+
+/**
+ * E-bülten gönderimi (K-125): Resend'in toplu ucuyla, 100'erli parçalar.
+ * Bir parça başarısız olursa öteki parçalar yine gidiyor; dönen sayı
+ * gerçekten gönderilen.
+ */
+export async function topluGonder(liste: TopluEposta[]): Promise<{ gonderilen: number; mesaj?: string }> {
+  if (!epostaAcikMi()) return { gonderilen: 0, mesaj: "RESEND_ANAHTARI tanımlı değil." };
+  const taban = process.env.EPOSTA_TABAN_ADRES?.trim();
+  const uc = taban ? `${taban.replace(/\/$/, "")}/emails/batch` : `${UC}/batch`;
+  let gonderilen = 0;
+  let mesaj: string | undefined;
+  for (let i = 0; i < liste.length; i += TOPLU_PARCA) {
+    const parca = liste.slice(i, i + TOPLU_PARCA);
+    try {
+      const cevap = await fetch(uc, {
+        method: "POST",
+        headers: { authorization: `Bearer ${resendAnahtari()}`, "content-type": "application/json" },
+        body: JSON.stringify(
+          parca.map((e) => ({
+            from: gonderen(),
+            to: [e.kime],
+            subject: e.konu,
+            text: e.metin.trim(),
+            html: htmlYap(e.metin),
+            headers: {
+              "List-Unsubscribe": `<${e.iptalAdresi}>`,
+              "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+            },
+          })),
+        ),
+      });
+      if (cevap.ok) gonderilen += parca.length;
+      else {
+        mesaj = await cevap
+          .json()
+          .then((g: { message?: string }) => g.message)
+          .catch(() => `HTTP ${cevap.status}`);
+        console.error(`Toplu e-posta parçası gönderilemedi: ${mesaj}`);
+      }
+    } catch (hata) {
+      mesaj = "Ağ hatası";
+      console.error("Toplu e-posta parçası gönderilemedi:", hata);
+    }
+  }
+  return { gonderilen, mesaj };
+}
+
+/** E-bülten gövdesi: selam, mağazanın metni, çıkış bağlantısı, künye. */
+export async function bultenMetni(adSoyad: string, metin: string, iptalSayfasi: string): Promise<string> {
+  const ad = adSoyad.trim().split(/\s+/)[0] || "";
+  return `Merhaba${ad ? ` ${ad}` : ""},
+
+${metin.trim()}
+
+Bu e-postayı, kampanya ve yeniliklerden haberdar olmak istediğini söylediğin için alıyorsun. Almak istemiyorsan tek tıkla çıkabilirsin:
+${iptalSayfasi}${await altBilgi()}`;
+}
+
+/** Deneme gönderimi: bülten yöneticinin kendi adresine, gerçek alıcılara değil. */
+export async function bultenDenemesi(kime: string, konu: string, metin: string): Promise<EpostaSonucu> {
+  return gonder(kime, `[Deneme] ${konu}`, metin);
+}
+
 /** Her e-postanın altına giden imza; künye doluysa oradan. */
 async function altBilgi(): Promise<string> {
   const kunye = await kunyeGetir();

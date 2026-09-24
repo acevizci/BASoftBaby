@@ -17,6 +17,7 @@ import "server-only";
  */
 
 import { db } from "@/server/veritabani";
+import { izinDegisti } from "@/server/iys";
 
 export type KisiselVeri = {
   disaAktarim: { tarih: string; aciklama: string };
@@ -132,7 +133,7 @@ export type SilmeSonucu = { silinen: number; kalanSiparis: number };
 export async function hesabiSil(customerId: string): Promise<SilmeSonucu> {
   const musteri = await db.customer.findUniqueOrThrow({
     where: { id: customerId },
-    select: { eposta: true },
+    select: { eposta: true, pazarlamaIzni: true },
   });
 
   const kalanSiparis = await db.order.count({ where: { customerId } });
@@ -147,6 +148,8 @@ export async function hesabiSil(customerId: string): Promise<SilmeSonucu> {
     });
 
     await islem.customer.delete({ where: { id: customerId } });
+    // Silinen hesabın izni de geri alınmış sayılıyor; İYS'ye ret gidiyor (K-125).
+    if (musteri.pazarlamaIzni) await izinDegisti(musteri.eposta, false, islem);
   });
 
   return { silinen: 1, kalanSiparis };

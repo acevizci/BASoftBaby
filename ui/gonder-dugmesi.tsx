@@ -18,18 +18,25 @@ export default function GonderDugmesi({
   bekleyen,
   className = "",
   devreDisi = false,
+  name,
+  value,
 }: {
   children: React.ReactNode;
   /** Gönderim sürerken yazılacak metin; verilmezse aynı metin kalıyor. */
   bekleyen?: React.ReactNode;
   className?: string;
   devreDisi?: boolean;
+  /** Bir formda birden çok düğme varsa hangisine basıldığı. */
+  name?: string;
+  value?: string;
 }) {
   const { pending } = useFormStatus();
 
   return (
     <button
       type="submit"
+      name={name}
+      value={value}
       disabled={devreDisi || pending}
       aria-busy={pending}
       className={`${className} ${pending ? "opacity-70" : ""}`}

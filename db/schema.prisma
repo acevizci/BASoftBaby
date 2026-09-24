@@ -1200,3 +1200,39 @@ model ErrorLog {
 
   @@index([son])
 }
+
+/// Ticari ileti izninin her değişikliği (K-125). 6563 sayılı kanunun
+/// yönetmeliği izinleri İleti Yönetim Sistemi'ne (İYS) üç iş günü içinde
+/// bildirmeyi istiyor; ret de bildiriliyor. Müşteri hesabını silse de kayıt
+/// kalıyor: izin ispatı gönderenin yükümlülüğü (hukuki yükümlülük, KVKK
+/// m. 5/2-ç), yalnızca adres ve karar tutuluyor.
+model ConsentEvent {
+  id            String    @id @default(cuid())
+  eposta        String
+  /// ONAY · RET (İYS'nin kendi değerleri)
+  durum         String
+  /// İYS'nin izin kaynağı kodu: HS_WEB = web sitesi
+  kaynak        String    @default("HS_WEB")
+  tarih         DateTime  @default(now())
+  /// İYS'ye yüklendi diye işaretlendiği an; boşsa bildirilmedi.
+  iysBildirildi DateTime?
+
+  @@index([iysBildirildi])
+  @@index([eposta])
+}
+
+/// Panelden gönderilen e-bülten (K-125).
+model Newsletter {
+  id          String    @id @default(cuid())
+  konu        String
+  metin       String
+  /// gonderiliyor · gonderildi · yarim (bir kısmı gönderilemedi)
+  durum       String    @default("gonderiliyor")
+  alici       Int       @default(0)
+  gonderilen  Int       @default(0)
+  yapan       String    @default("")
+  olusturuldu DateTime  @default(now())
+  bitti       DateTime?
+
+  @@index([olusturuldu])
+}
