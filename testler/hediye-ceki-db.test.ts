@@ -6,6 +6,9 @@ import { siparisOlustur } from "@/server/siparis";
 import { siparisiIptalEtVeStoguIadeEt } from "@/server/odeme-akis";
 import { HEDIYE_CEKI_CEREZI } from "@/server/hediye-ceki";
 import type { SatisAyari } from "@/server/sepet";
+import { iadeKaydiAc, iadeyiTamamla } from "@/server/iade";
+import { siparisKariGetir } from "@/server/siparis-kari";
+import { kdvHaric } from "@/server/kar";
 
 /**
  * Hediye çeki (K-137): bakiye sipariş işleminde düşüyor, ödenmeden iptalde
@@ -188,5 +191,27 @@ describe("hediye çeki (veritabanı)", { skip: atlamaSebebi }, () => {
     const { sonuc } = await cekleSiparis(cek.kod, { yalnizCek: true });
     assert.ok(!sonuc.tamam && sonuc.sebep === "cek");
     assert.equal(await bakiye(cek.id), 5000);
+  });
+
+  it("kısmi iadede çek kısmı kârdan hemen, para kısmı gönderilince düşüyor", async () => {
+    const cek = await cekKur(5000);
+    const { sonuc } = await cekleSiparis(cek.kod);
+    assert.ok(sonuc.tamam);
+    const s = await testDb().order.update({
+      where: { numara: sonuc.numara },
+      data: { odemeDurumu: "odendi" },
+    });
+    // 149,90 ₺'nin yarısı iade: 99,90 ₺ parayla, 50 ₺ çekle ödenmişti.
+    const iadeId = await iadeKaydiAc(s.id, 7495);
+    assert.ok(iadeId);
+    const iade = await testDb().refund.findUniqueOrThrow({ where: { id: iadeId } });
+    assert.equal(iade.tutarKurus + iade.hediyeCekiKurus, 7495);
+    assert.equal(iade.hediyeCekiKurus, 2500);
+
+    const once = await siparisKariGetir(sonuc.numara);
+    assert.equal(once?.netSatisKurus, kdvHaric(14990 - 2500, AYAR.kdvOrani));
+    await iadeyiTamamla(iadeId);
+    const sonra = await siparisKariGetir(sonuc.numara);
+    assert.equal(sonra?.netSatisKurus, kdvHaric(14990 - 7495, AYAR.kdvOrani));
   });
 });

@@ -5758,6 +5758,9 @@ hediye edeni zorluyor. Hediye çeki bu soruyu alana bırakıyor.
   Elle iade tutarında da aynı hata vardı, o da düzeldi.
 - İptal edilen çekli siparişin sayfası "hesabına gönderildi" yerine "çek
   bakiyene geri yüklendi" diyor; panelde iadenin çek kısmı ayrı yazıyor.
+- Kâr: iadenin çek kısmı kayıt açılır açılmaz satıştan düşüyor (bakiyeye o
+  anda dönüyor); para kısmı eskisi gibi gönderilince. Eskiden çek kısmı da
+  para iadesi tamamlanana kadar bekliyordu, kâr bir süre yüksek görünüyordu.
 
 **Bilerek yapılmayan:** çekin sitede **satılması**. Satılan çekin bedeli
 tahsil ediliyor ve belgelenmesi gerekiyor; bu e-arşiv faturaya ve şirket

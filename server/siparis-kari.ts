@@ -60,7 +60,9 @@ export const KAR_SECIMI = {
     select: { odenenKurus: true, komisyonKurus: true },
   },
   gonderiler: { select: { ucretKurus: true } },
-  iadeler: { where: { durum: "tamamlandi" }, select: { tutarKurus: true, hediyeCekiKurus: true } },
+  // Bütün iade kayıtları: para kısmı tamamlanınca, çek kısmı kayıt açılır
+  // açılmaz (bakiyeye o anda dönüyor, K-137) satıştan düşüyor.
+  iadeler: { select: { durum: true, tutarKurus: true, hediyeCekiKurus: true } },
   talepler: {
     where: { durum: "tamamlandi", tur: { in: ["iade", "degisim"] as string[] } },
     select: { tur: true },
@@ -82,7 +84,7 @@ type KarSiparisi = {
   }[];
   odemeler: { odenenKurus: number | null; komisyonKurus: number | null }[];
   gonderiler: { ucretKurus: number | null }[];
-  iadeler: { tutarKurus: number; hediyeCekiKurus: number }[];
+  iadeler: { durum: string; tutarKurus: number; hediyeCekiKurus: number }[];
   talepler: { tur: string }[];
 };
 
@@ -95,8 +97,11 @@ export function kayittanKar(s: KarSiparisi, kdvOrani: number, gider: GiderAyari)
     kdvOrani: s.fatura?.kdvOrani ?? kdvOrani,
     toplamKurus: s.toplamKurus,
     hediyeCekiKurus: s.hediyeCekiKurus,
-    // Çek bakiyesine dönen iade de satıştan düşüyor (K-137).
-    iadeKurus: s.iadeler.reduce((t, i) => t + i.tutarKurus + i.hediyeCekiKurus, 0),
+    // Para iadesi gönderilince, çek bakiyesine dönen kısım hemen (K-137).
+    iadeKurus: s.iadeler.reduce(
+      (t, i) => t + (i.durum === "tamamlandi" ? i.tutarKurus : 0) + i.hediyeCekiKurus,
+      0,
+    ),
     odemeYontemi: s.odemeYontemi,
     odenenKurus: odeme?.odenenKurus ?? null,
     komisyonKurus: odeme?.komisyonKurus ?? null,

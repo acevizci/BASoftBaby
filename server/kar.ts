@@ -61,7 +61,7 @@ export type KarGirdisi = {
   toplamKurus: number;
   /** Hediye çekiyle ödenen kısım (K-137); kart çekimi kalan üzerinden. */
   hediyeCekiKurus?: number;
-  /** Tamamlanmış para iadeleri (KDV dahil). */
+  /** Tamamlanmış para iadeleri ve çek bakiyesine dönenler (KDV dahil). */
   iadeKurus: number;
   odemeYontemi: string;
   /** Kartta çekilen tutar; vade farkı yansıtıldıysa toplamdan büyük (K-110). */
