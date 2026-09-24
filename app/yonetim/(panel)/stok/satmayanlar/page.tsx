@@ -3,7 +3,6 @@ import { PENCERELER, pencereCoz, satmayanlar } from "@/server/satmayan";
 import { renkAdlari } from "@/server/renkler";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { fiyatYaz } from "@/ui/katalog-bicim";
-import StokSekmeleri from "@/ui/stok-sekmeleri";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +25,6 @@ export default async function Satmayanlar({ searchParams }: PageProps<"/yonetim/
   return (
     <div className="flex flex-col gap-5">
       <h1 className="text-2xl">Satmayan stok</h1>
-      <StokSekmeleri secili="/yonetim/stok/satmayanlar" />
       <p className="text-sm text-metin-2">
         Son {gun} günde hiç satmamış, stoğu olan bedenler; en çok para bağlayan üstte. Bu süre
         içinde yeni mal gelen ya da yeni açılan ürünler sayılmıyor. İndirime aldığın ürünü

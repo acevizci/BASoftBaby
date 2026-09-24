@@ -15,7 +15,6 @@ import {
 import { bedenSirasi, sonSira } from "@/server/bedenler";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import Sayfalama from "@/ui/sayfalama";
-import StokSekmeleri from "@/ui/stok-sekmeleri";
 import BarkodOkuyucu from "@/ui/barkod-okuyucu";
 import { stokDegeri, type StokDegeri } from "@/server/stok-degeri";
 import { fiyatYaz } from "@/ui/katalog-bicim";
@@ -66,7 +65,6 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
   return (
     <div className="flex flex-col gap-5">
       <h1 className="text-2xl">Stok</h1>
-      <StokSekmeleri secili="/yonetim/stok" />
       <StokDegeriKutusu d={deger} />
       <p className="text-sm text-metin-2">
         Biten ve azalan bedenler önce geliyor. Buradaki sayı stoğun kendisi; değiştirip

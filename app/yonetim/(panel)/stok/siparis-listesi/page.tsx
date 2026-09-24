@@ -2,7 +2,6 @@ import Link from "next/link";
 import { EN_AZ_SATIS, PENCERE_GUN, gunYaz, siparisListesi } from "@/server/satis-hizi";
 import { renkAdlari } from "@/server/renkler";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
-import StokSekmeleri from "@/ui/stok-sekmeleri";
 import { HEDEFLER, hedefCoz } from "./hedef";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +25,6 @@ export default async function SiparisListesi({
   return (
     <div className="flex flex-col gap-5">
       <h1 className="text-2xl">Sipariş listesi</h1>
-      <StokSekmeleri secili="/yonetim/stok/siparis-listesi" />
       <p className="text-sm text-metin-2">
         Son {PENCERE_GUN} günün satışına göre stoğun seçtiğin süre yetmesi için ne kadar
         alman gerektiği. Stoksuz geçen günler hıza katılmıyor; &quot;gelince haber ver&quot;

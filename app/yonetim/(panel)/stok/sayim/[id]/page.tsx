@@ -12,7 +12,6 @@ import { sayimBitirEylem, sayimIptalEylem, sayimKaydet } from "@/server/sayim-is
 import { renkAdlari } from "@/server/renkler";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { fiyatYaz } from "@/ui/katalog-bicim";
-import StokSekmeleri from "@/ui/stok-sekmeleri";
 import GonderDugmesi from "@/ui/gonder-dugmesi";
 import BarkodOkuyucu from "@/ui/barkod-okuyucu";
 import Sayfalama from "@/ui/sayfalama";
@@ -61,7 +60,6 @@ export default async function Sayim({ params, searchParams }: PageProps<"/yoneti
   return (
     <div className="flex flex-col gap-5">
       <h1 className="text-2xl">{sayim.ad}</h1>
-      <StokSekmeleri secili="/yonetim/stok/sayim" />
 
       {tek("bitti") && (
         <p className="rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">

@@ -2,6 +2,7 @@ import { menuSayaclari } from "@/server/panel-menu";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { yonetimCikisi } from "@/server/yonetim-kimlik-islem";
 import PanelMenu from "@/ui/panel-menu";
+import BolumSekmeleri from "@/ui/bolum-sekmeleri";
 import { acikBolumler, menuDarMi, menuyuCevir } from "@/server/panel-gorunum";
 
 /**
@@ -39,7 +40,11 @@ export default async function YonetimDuzeni({ children }: LayoutProps<"/yonetim"
         gorunumuCevir={menuyuCevir}
       />
 
-      <main className="min-w-0">{children}</main>
+      <main className="min-w-0">
+        {/* Bölümün sayfaları sekme olarak; telefonda ve dar menüde (K-116). */}
+        <BolumSekmeleri dar={dar} />
+        {children}
+      </main>
     </div>
   );
 }

@@ -2,7 +2,6 @@ import Link from "next/link";
 import { kabulIcinAra } from "@/server/mal-kabul";
 import { malKabulKaydet } from "@/server/mal-kabul-islem";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
-import StokSekmeleri from "@/ui/stok-sekmeleri";
 import GonderDugmesi from "@/ui/gonder-dugmesi";
 import BarkodOkuyucu from "@/ui/barkod-okuyucu";
 
@@ -31,7 +30,6 @@ export default async function MalKabul({ searchParams }: PageProps<"/yonetim/sto
   return (
     <div className="flex flex-col gap-5">
       <h1 className="text-2xl">Mal kabulü</h1>
-      <StokSekmeleri secili="/yonetim/stok/mal-kabul" />
       <p className="text-sm text-metin-2">
         Gelen malın <b>adedini</b> yaz; mevcut stoğun üzerine eklenir. Toplama yapmana gerek
         yok, arada gelen siparişler de korunur. Tedarikçi ve irsaliye bilgisi stok

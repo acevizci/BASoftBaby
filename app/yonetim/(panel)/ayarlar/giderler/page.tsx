@@ -45,7 +45,7 @@ export default async function GiderAyarlari({ searchParams }: PageProps<"/yoneti
         className="flex flex-col gap-4 rounded-marka border border-cizgi bg-yuzey p-5"
       >
         <div>
-          <h2 className="text-lg">Giderler (kâr hesabı için)</h2>
+          <h2 className="text-lg">Siparişe bağlı giderler</h2>
           <p className="mt-1 text-xs text-metin-3">
             Yalnızca panelde, siparişin ve raporun kâr dökümünde kullanılır; müşteri görmez.
             Bilmediğin kutuyu boş bırak: o kalem hesaba girmez ve dökümde &quot;girilmedi&quot;

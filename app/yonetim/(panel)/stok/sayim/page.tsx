@@ -4,7 +4,6 @@ import { sayimlar } from "@/server/sayim";
 import { sayimBaslat } from "@/server/sayim-islem";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { fiyatYaz } from "@/ui/katalog-bicim";
-import StokSekmeleri from "@/ui/stok-sekmeleri";
 import GonderDugmesi from "@/ui/gonder-dugmesi";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +25,6 @@ export default async function Sayimlar() {
   return (
     <div className="flex flex-col gap-5">
       <h1 className="text-2xl">Sayım</h1>
-      <StokSekmeleri secili="/yonetim/stok/sayim" />
       <p className="text-sm text-metin-2">
         Raftaki gerçek adedi gir, sistemle farkları gör, onaylayınca stok düzeltilsin. Kargoya
         verilmemiş siparişlerin ürünleri hâlâ rafta olduğu için hesaba katılıyor. Sayım sürerken

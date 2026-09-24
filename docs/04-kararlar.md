@@ -5097,6 +5097,31 @@ olduğunu denetliyor: gizli sayfa ya da kırık bağlantı kalmıyor.
 
 ---
 
+### K-117 · Bölüm sekmeleri menü ağacından
+
+Stok ekranlarında elle yazılmış bir sekme satırı vardı (K-104). Öteki
+bölümlerde yoktu; telefonda menü kapalı bir kutu olduğu için örneğin
+Ayarlar'ın altı sayfası arasında geçmek menüyü her seferinde açmayı
+gerektiriyordu.
+
+Artık panel düzeni, açık sayfanın bölümünün sayfalarını sekme olarak
+kendiliğinden gösteriyor (`BolumSekmeleri`): Siparişler, Ürünler, Stok,
+Müşteriler, Vitrin, Raporlar ve Ayarlar için. Sekmeler menü ağacından
+(K-116) çıkıyor; yeni bir alt sayfa eklemek ağaca bir satır eklemek.
+
+- **Yalnızca telefonda ve menü daraltılmışken.** Geniş ekranda aynı
+  bağlantılar yan menüde bölümün altında duruyor; ikinci kez göstermek
+  gürültü olurdu.
+- Sekme satırı yatay kayıyor; seçili sekme ekranın dışındaysa görünür alana
+  getiriliyor. `nav` bölgesi "Ayarlar sayfaları" gibi adlandırılmış, seçili
+  sekmede `aria-current`.
+- Stok sayfalarındaki eski sekme bileşeni kaldırıldı.
+
+**Nerede:** [`../ui/bolum-sekmeleri.tsx`](../ui/bolum-sekmeleri.tsx),
+[`../app/yonetim/(panel)/layout.tsx`](../app/yonetim/(panel)/layout.tsx)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)
