@@ -5299,6 +5299,42 @@ bütün işlemler ve uçlar yeniden tek tek denetlendi. Beş yer açıktı:
 [`../server/sepet-islem.ts`](../server/sepet-islem.ts),
 [`../app/(magaza)/siparis-takip/page.tsx`](../app/(magaza)/siparis-takip/page.tsx)
 
+### K-123 · Google Alışveriş (Merchant Center) ürün beslemesi
+
+Ürünler Google Alışveriş sekmesinde ve aramadaki ürün kutularında **ücretsiz**
+listelenebiliyor; reklamsız trafiğin en ucuz yolu. Bunun için Google'ın
+okuyacağı ürün listesi `/google-urunler.xml` adresinde (RSS 2.0, Google'ın
+`g:` alanlarıyla), saatte bir yenileniyor.
+
+- **Her beden-renk ayrı ürün** (Google'ın giyim kuralı), `item_group_id` ile
+  bağlı; bedeni, rengi, stoğu ve o rengin fotoğrafı ayrı. Bağlantı o renkle
+  açılıyor (`?renk=`, K-48).
+- **Fiyat ürün sayfasıyla aynı kuraldan:** kampanya varsa indirimli fiyat
+  `sale_price`, liste fiyatı `price`; yoksa elle girilmiş eski fiyat. Google
+  sayfadakiyle beslemedekini karşılaştırıyor, ayrışırsa ürünü reddediyor.
+- **Yaş grubu bedenden** ("0-3 ay" → newborn, "6-9 ay" → infant, "18-24 ay"
+  ve "2-3 yaş" → toddler), **cinsiyet kategori adından** (Erkek/Kız Çocuk,
+  yoksa unisex). Google kategorisi 182 (Bebek ve Küçük Çocuk Giyimi), marka
+  BASoftBaby, GTIN yok (`identifier_exists: no`; barkodlar iç numara, K-107).
+- **Fotoğrafsız ürün girmiyor:** Google çizimi kabul etmiyor. Vitrin
+  kuralları geçerli; yayında olmayan ürün ve kapalı kategori yok.
+- Satışa hazırlık ekranında besleme adresi ve beslemede olmayan fotoğrafsız
+  ürün sayısı yazıyor.
+
+**Mağaza sahibinin yapacağı (bir kez):** Merchant Center hesabı açıp alan
+adını doğrulamak; kargo ve iade koşullarını hesap ayarlarına girmek (kargo
+ücreti eşiğe bağlı olduğu için beslemeye yazılmadı, hesap ayarı daha doğru);
+ürün kaynağı olarak "zamanlanmış getirme" ile bu adresi eklemek.
+
+**Yan düzeltme:** `tamAdres` zaten tam olan adresin önüne site adresini
+ekliyordu. Yayında fotoğraflar Vercel Blob'un tam adresinde olduğu için ürün
+sayfasının yapısal verisinde Google'a `https://site/https://blob…` gibi bozuk
+resim adresleri gidiyordu. Tam adres artık olduğu gibi dönüyor.
+
+**Nerede:** [`../server/urun-beslemesi.ts`](../server/urun-beslemesi.ts),
+[`../app/google-urunler.xml/route.ts`](../app/google-urunler.xml/route.ts),
+[`../server/site.ts`](../server/site.ts)
+
 ---
 
 ## Açık sorular

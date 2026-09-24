@@ -7,6 +7,7 @@ import { epostaAcikMi } from "@/server/eposta";
 import { depoBagliMi } from "@/server/gorsel-depo";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import { ORNEK_BANNER_BASLIKLARI, ORNEK_URUN_SLUGLARI } from "@/server/ornek-veri";
+import { tamAdres } from "@/server/site";
 
 /**
  * Satışa hazırlık denetimi.
@@ -273,6 +274,21 @@ export async function hazirlikRaporu(): Promise<HazirlikRaporu> {
             ? "Vercel Blob bağlı; yüklenen fotoğraflar kalıcı."
             : "Depo bağlı değil; fotoğraflar yalnızca bu sunucuda duruyor.",
           sonuc: "Yeni dağıtımda yerel dosyalar kayboluyor.",
+        },
+        {
+          // K-123. Beslemenin kendisi hep hazır; Merchant Center'a bir kez
+          // tanıtılması mağaza sahibinin işi, burası adresi veriyor.
+          ad: "Google Alışveriş beslemesi",
+          tamam: sayimlar.fotografsiz === 0,
+          agirlik: "bilgi",
+          durum:
+            `Adres: ${tamAdres("/google-urunler.xml")} — Merchant Center'da "zamanlanmış getirme" olarak eklenir.` +
+            (sayimlar.fotografsiz > 0
+              ? ` ${sayimlar.fotografsiz} ürün fotoğrafsız olduğu için beslemede yok.`
+              : ""),
+          sonuc: "Google fotoğrafsız ürünü kabul etmiyor; fotoğraf eklenince kendiliğinden beslemeye giriyor.",
+          yol: "/yonetim/urunler?eksik=fotograf",
+          yolAdi: "Fotoğrafsız ürünler",
         },
         {
           ad: "Alan adı",

@@ -22,7 +22,12 @@ export function siteAdresi(): string {
   return "http://localhost:3000";
 }
 
-/** Mutlak adres üretir: `/urun/x` → `https://site/urun/x` */
+/**
+ * Mutlak adres üretir: `/urun/x` → `https://site/urun/x`. Zaten tam olan
+ * adres (yayında Vercel Blob'daki fotoğraflar) olduğu gibi dönüyor; önüne
+ * site adresi eklenince Google'a bozuk resim adresi gidiyordu (K-123).
+ */
 export function tamAdres(yol: string): string {
+  if (/^https?:\/\//i.test(yol)) return yol;
   return `${siteAdresi()}${yol.startsWith("/") ? yol : `/${yol}`}`;
 }
