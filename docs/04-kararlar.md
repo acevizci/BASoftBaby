@@ -5795,6 +5795,30 @@ orijinal suluboya logoyu verdi ve istenen, ona sadık kalmak.
 kaynak [`../assets/logo-kaynak.webp`](../assets/logo-kaynak.webp)
 
 
+### K-139 · Vercel fonksiyon deposu sınırı
+
+Vercel ücretsiz planda saklanan yayınların sunucu fonksiyonlarına toplam 10 GB
+tanıyor ("Function Storage"); sınır dolunca yeni yayın durabiliyor, Vercel de
+eski yayınları kendiliğinden silmeye başlıyor. 24 Eylül 2026'da doldu.
+
+**Sebep iki tane:**
+- **Yayın sayısı.** Her değişiklik hem çalışma dalına (`claude/…`) hem `main`e
+  gönderiliyordu; Vercel ikisi için ayrı yayın açıyordu. Üç günde ~90 değişiklik,
+  yani ~180 yayın.
+- **Yayın boyu.** Bir fonksiyon ~61 MB'tı; bunun ~28 MB'ı sharp'ın hiç
+  kullanılmayan musl ve WebAssembly ikilileri.
+
+**Yapılan:**
+- `vercel.json`: `claude/*` dallarında yayın kapalı; yalnızca `main` yayınlanıyor.
+- `next.config.ts`: kullanılmayan sharp ikilileri fonksiyon paketinin dışında.
+  En büyük fonksiyon 61 → 32,5 MB.
+
+**Mağaza sahibinin yapacağı:** Vercel'de eski yayınları silmek (Deployments →
+seç → Delete) ya da Vercel'in kendiliğinden temizlemesini beklemek. Silinen
+yayının yerinin boşalması Vercel tarafında gecikebiliyor; birkaç gün düşmezse
+Vercel desteğine yazılmalı.
+
+
 ---
 
 ## Açık sorular

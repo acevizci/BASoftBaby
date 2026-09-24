@@ -9,6 +9,20 @@ const nextConfig: NextConfig = {
    */
   serverExternalPackages: ["iyzipay"],
 
+  /**
+   * Vercel'in fonksiyon deposu sınırı (K-139). sharp kurulurken başka
+   * platformların ikili dosyalarını da getiriyor (Alpine için musl, tarayıcı
+   * için WebAssembly); Vercel glibc Linux'ta çalışıyor, bunlar hiç
+   * yüklenmiyor ama her fonksiyonun paketine giriyordu: yayın başına ~28 MB.
+   */
+  outputFileTracingExcludes: {
+    "*": [
+      "node_modules/@img/sharp-libvips-linuxmusl-x64/**",
+      "node_modules/@img/sharp-linuxmusl-x64/**",
+      "node_modules/@img/sharp-wasm32/**",
+    ],
+  },
+
   /** Güvenlik başlıkları her cevapta (K-120). */
   async headers() {
     return [
