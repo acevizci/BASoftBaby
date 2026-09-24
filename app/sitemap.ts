@@ -4,6 +4,7 @@ import { kategorileriGetir, urunleriGetir } from "@/server/katalog";
 import { yasalSayfalariGetir } from "@/server/yasal";
 import { tamAdres } from "@/server/site";
 import { db } from "@/server/veritabani";
+import { yayindakiRehberler } from "@/server/rehber";
 
 /**
  * Site haritası. Yalnızca herkese açık sayfalar: ana sayfa, kategoriler,
@@ -19,11 +20,12 @@ import { db } from "@/server/veritabani";
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [kategoriler, urunler, yasal, tarihler] = await Promise.all([
+  const [kategoriler, urunler, yasal, tarihler, rehberler] = await Promise.all([
     kategorileriGetir(),
     urunleriGetir(),
     yasalSayfalariGetir(),
     db.product.findMany({ where: { aktif: true }, select: { slug: true, guncellendi: true, category: { select: { slug: true } } } }),
+    yayindakiRehberler(),
   ]);
 
   // Son değişiklik tarihi (K-128): Google değişen sayfayı öncelikle yeniden
@@ -51,6 +53,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly" as const,
       priority: 0.7,
       images: u.fotograflar.slice(0, 10).map((f) => tamAdres(f.yol)),
+    })),
+    // Rehber yazıları (K-132).
+    ...(rehberler.length > 0
+      ? [{ url: tamAdres("/rehber"), lastModified: new Date(rehberler[0].guncellendi), changeFrequency: "weekly" as const, priority: 0.6 }]
+      : []),
+    ...rehberler.map((r) => ({
+      url: tamAdres(`/rehber/${r.slug}`),
+      lastModified: new Date(r.guncellendi),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
     })),
     ...BILGI_SAYFALARI.map((s) => ({
       url: tamAdres(s.yol),

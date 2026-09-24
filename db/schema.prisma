@@ -1260,3 +1260,25 @@ model ProductRedirect {
   hedef       String
   olusturuldu DateTime @default(now())
 }
+
+/// Rehber yazısı (K-132): "Hastane çantası listesi", "Yenidoğan ihtiyaç
+/// listesi" gibi. Bebek mağazalarının arama trafiğinin büyük kısmı bu tür
+/// yazılardan geliyor. Metin kategori rehberiyle aynı biçimde (K-130).
+model Article {
+  id          String    @id @default(cuid())
+  /// Başlıktan bir kez üretiliyor, sonra değişmiyor (K-24 gibi).
+  slug        String    @unique
+  baslik      String
+  /// Liste kartında ve arama sonucunda görünen açıklama.
+  ozet        String    @default("")
+  metin       String    @default("")
+  /// Yazının altında kart olarak gösterilen ürünler, sırasıyla.
+  urunSluglari String[] @default([])
+  yayinda     Boolean   @default(false)
+  /// İlk yayına alındığı an; listedeki sıra ve yapısal verideki tarih.
+  yayinTarihi DateTime?
+  olusturuldu DateTime  @default(now())
+  guncellendi DateTime  @updatedAt
+
+  @@index([yayinda, yayinTarihi])
+}

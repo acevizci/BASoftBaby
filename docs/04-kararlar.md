@@ -5569,6 +5569,40 @@ yalnızca boşsa yazılıyor.
 [`../app/api/ziyaretci/route.ts`](../app/api/ziyaretci/route.ts),
 [`../app/(magaza)/layout.tsx`](../app/(magaza)/layout.tsx)
 
+### K-132 · Rehber yazıları
+
+Bebek mağazalarının Google'dan gelen ziyaretçisinin büyük kısmı ürün
+aramasından değil sorudan geliyor: "hastane çantasına ne konur", "yenidoğan
+ihtiyaç listesi", "bebek kaç kat giydirilir". Mağazada bu sorulara cevap veren
+bir yer yoktu.
+
+- **Mağazada `/rehber`:** yazı listesi ve her yazının sayfası. Alt bilgide
+  Yardım altında "Rehber" bağlantısı. Sayfalar önbellekten (K-131); panelde
+  kaydedilince düşüyor.
+- **Panelde Vitrin › Rehber yazıları:** başlık, kısa açıklama (arama
+  sonucunda görünen), metin, yazının altında gösterilecek ürünler, yayında /
+  taslak. Adres başlıktan bir kez üretiliyor ve sabit kalıyor.
+- **Metin biçimi** kategori rehberiyle aynı (K-130), üstüne **bağlantı**:
+  `[yazı](/adres)`. Yazıdan kategori ve ürün sayfalarına bağlantı hem müşteriyi
+  ürüne götürüyor hem Google'a sitenin yapısını anlatıyor. Yalnızca site içi
+  ve https adresi bağlantı oluyor; `javascript:` gibi adresler düz yazı kalıyor.
+  Kategori rehberlerinde de bağlantı artık çalışıyor.
+- **Yazının altında ürün kartları:** panelde ürün adresleri yazılıyor;
+  yayından kalkan ürün sessizce atlanıyor.
+- **Arama motorları için:** `Article` ve sayfa yolu yapısal verisi, yayın ve
+  güncelleme tarihi, paylaşım kartı (K-127), site haritası, yayına alınınca
+  IndexNow bildirimi (K-129). Kısa açıklama boşsa metnin başı kullanılıyor.
+- `rehber` adresi kategoriye verilemiyor (ayrılmış adresler).
+
+**Mağaza sahibinin yapacağı:** yazı. Önerilen ilk başlıklar: Hastane çantası
+listesi; Yenidoğan ihtiyaç listesi; Bebek bedenleri: hangi ay hangi beden;
+Mevsime göre bebek giydirme; Organik pamuk neden önemli; Bebek kıyafeti
+yıkama. Her biri 600-1500 kelime, içinden ilgili kategori ve ürünlere bağlantı.
+
+**Nerede:** [`../server/rehber.ts`](../server/rehber.ts),
+[`../server/rehber-islem.ts`](../server/rehber-islem.ts),
+`app/(magaza)/rehber/`, [`../app/yonetim/(panel)/rehber/page.tsx`](../app/yonetim/(panel)/rehber/page.tsx)
+
 ---
 
 ## Açık sorular

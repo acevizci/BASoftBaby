@@ -150,6 +150,7 @@ export const BOLUMLER: Bolum[] = [
       { yol: "/yonetim/kampanyalar", ad: "Kampanyalar", anahtar: "indirim kupon kod" },
       { yol: "/yonetim/banner", ad: "Ana sayfa banner", anahtar: "afis slider gorsel" },
       { yol: "/yonetim/duyuru", ad: "Duyuru şeridi", anahtar: "bildirim ust serit" },
+      { yol: "/yonetim/rehber", ad: "Rehber yazıları", anahtar: "blog yazi makale icerik seo" },
     ],
   },
   {

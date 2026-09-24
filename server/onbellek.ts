@@ -35,6 +35,7 @@ export const ETIKETLER = {
   banner: "banner",
   kampanya: "kampanya",
   yasal: "yasal",
+  rehber: "rehber",
 } as const;
 
 export const TUM_ETIKETLER = Object.values(ETIKETLER);

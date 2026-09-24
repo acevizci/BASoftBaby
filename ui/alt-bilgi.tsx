@@ -52,6 +52,11 @@ export default async function AltBilgi({ cerezTercihi = false }: { cerezTercihi?
         <div className="flex flex-col gap-2">
           <p className="text-sm font-bold">Yardım</p>
           <ul className="flex flex-col gap-1.5 text-sm">
+            <li>
+              <Link href="/rehber" className={BAG}>
+                Rehber
+              </Link>
+            </li>
             {BILGI_SAYFALARI.map((s) => (
               <li key={s.yol}>
                 <Link href={s.yol} className={BAG}>

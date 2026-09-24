@@ -460,7 +460,11 @@ export default async function KategoriSayfasi({
       {/* Rehber yazısı yalnızca ilk sayfada: ikinci sayfada tekrarlanırsa
           aynı metin iki adreste olur (K-130). */}
       {!tumu && durum.sayfa === 1 && bilgi?.rehberMetni && (
-        <RehberMetni baslik={`${bilgi.ad} seçerken`} metin={bilgi.rehberMetni} />
+        <RehberMetni
+          baslik={`${bilgi.ad} seçerken`}
+          metin={bilgi.rehberMetni}
+          className="mt-12 max-w-3xl border-t border-cizgi-soluk pt-8 text-sm"
+        />
       )}
     </div>
   );
