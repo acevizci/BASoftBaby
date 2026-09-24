@@ -61,7 +61,7 @@ export default function KarRaporuBolumu({ r }: { r: KarRaporu }) {
               <p className="rounded-marka bg-sari-soluk px-3 py-2 text-xs text-sari-koyu">
                 {r.eksikSiparis} sipariş eksik bilgiyle hesaplandı ({r.eksikSebepler.join(", ")}). Girilmeyen
                 kalem sıfır sayıldı; kâr olduğundan yüksek görünüyor olabilir.{" "}
-                <Link href="/yonetim/ayarlar#giderler" className="font-bold underline">
+                <Link href="/yonetim/ayarlar/giderler" className="font-bold underline">
                   Giderler
                 </Link>
               </p>

@@ -36,5 +36,5 @@ export async function giderAyariKaydet(form: FormData): Promise<void> {
     kartKomisyonSabitKurus: kurus(form, "kartSabit"),
   };
   await db.storeSetting.upsert({ where: { id: "tek" }, update: veri, create: { id: "tek", ...veri } });
-  redirect("/yonetim/ayarlar?kayit=gider#giderler");
+  redirect("/yonetim/ayarlar/giderler?kayit=1");
 }

@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import { BOLUM_CEREZI } from "@/ui/panel-menu-bicim";
 
 /**
  * Panel menüsünün daraltılmış olup olmadığı.
@@ -39,4 +40,18 @@ export async function menuyuCevir(): Promise<void> {
 
   // Düzen sunucuda çiziliyor; yeni genişlik görünsün.
   revalidatePath("/yonetim", "layout");
+}
+
+/**
+ * Elle açılmış menü bölümleri (K-116), virgülle ayrılmış bölüm adresleri.
+ * Açık sayfanın bölümü zaten her zaman açık; bu yalnızca "gitmeden bak"
+ * için açılanlar. Tarayıcı yazıyor (`ui/panel-menu.tsx`), sunucu okuyor:
+ * ilk boyamada doğru bölümler açık, sıçrama yok.
+ */
+export async function acikBolumler(): Promise<string[]> {
+  const ham = (await cookies()).get(BOLUM_CEREZI)?.value ?? "";
+  return decodeURIComponent(ham)
+    .split(",")
+    .filter((y) => /^\/yonetim(\/[a-z-]+)*$/.test(y))
+    .slice(0, 20);
 }

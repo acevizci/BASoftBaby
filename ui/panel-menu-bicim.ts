@@ -1,68 +1,239 @@
 /**
  * Panel menüsünün yapısı ve "hangi madde açık" kuralı.
  *
- * Prisma'ya bulaşmayan saf modül: menü artık istemci bileşeni (K-51) ve
+ * Prisma'ya bulaşmayan saf modül: menü istemci bileşeni (K-51) ve
  * `server-only` işaretli `server/panel-menu.ts`'i içeri alamıyor. Sayaçları
- * hesaplayan sorgular orada kaldı, burada yalnızca biçim var.
+ * hesaplayan sorgular orada kaldı; yapı burada, çünkü sekmeler ve hızlı
+ * atlama da aynı ağacı kullanıyor (K-116).
  */
 
 /**
  * Menü ikonlarının anahtarları.
  *
- * İkon kütüphanesi eklenmedi: altı-yedi ikon için bir paket kurmak, sayfaya
+ * İkon kütüphanesi eklenmedi: birkaç ikon için bir paket kurmak, sayfaya
  * inen JavaScript'i artırmak ve tema uyumunu dışarı emanet etmek demekti.
  * Yollar `ui/panel-ikon.tsx` içinde, `currentColor` ile çizildikleri için
  * açık/koyu temada kendiliğinden doğru renkte duruyorlar (K-60).
  */
 export type IkonAdi =
   | "ozet"
-  | "gunluk"
   | "siparis"
+  | "urun"
+  | "stok"
+  | "musteri"
+  | "vitrin"
+  | "rapor"
+  | "ayar";
+
+/**
+ * Rozetin tonu. `bekleyen`: müşteri cevap bekliyor, geciktikçe zarar veriyor
+ * — dikkat çeken renk. `hatirlatma`: mağazanın kendi işi, bugün yapılmazsa
+ * kimse beklemiyor — sessiz renk. Hepsi kırmızı olsaydı hiçbiri kırmızı
+ * olmazdı.
+ */
+export type RozetTonu = "bekleyen" | "hatirlatma";
+
+/** Sayaçların adları; değerleri sunucuda hesaplanıyor (`server/panel-menu.ts`). */
+export type SayacAdi =
+  | "siparis"
+  | "hazirlanacak"
   | "talep"
   | "iade"
   | "yorum"
-  | "musteri"
-  | "rapor"
-  | "kar"
-  | "urun"
-  | "kategori"
-  | "beden"
-  | "renk"
-  | "stok"
-  | "kampanya"
-  | "banner"
-  | "duyuru"
-  | "ayar"
-  | "yasal"
-  | "kullanici"
-  | "hazirlik"
-  | "tani";
+  | "fotografsiz"
+  | "sorunluStok";
 
-export type MenuMaddesi = {
+export type Sayaclar = Record<SayacAdi, number>;
+
+export type AltMadde = {
+  yol: string;
+  ad: string;
+  sayac?: SayacAdi;
+  ton?: RozetTonu;
+};
+
+export type Bolum = {
+  /** Bölümün ana sayfası: adına tıklayınca gidilen yer. */
   yol: string;
   ad: string;
   ikon: IkonAdi;
-  /** Bekleyen iş sayısı; sıfırsa rozet gösterilmiyor. */
-  rozet?: number;
+  /** Bölümün kendi rozeti (ana sayfasının). */
+  sayac?: SayacAdi;
+  ton?: RozetTonu;
   /**
-   * Rozetin tonu. `bekleyen`: müşteri cevap bekliyor, geciktikçe zarar veriyor
-   * — dikkat çeken renk. `hatirlatma`: mağazanın kendi işi, bugün yapılmazsa
-   * kimse beklemiyor — sessiz renk. Hepsi kırmızı olsaydı hiçbiri
-   * kırmızı olmazdı.
+   * Bölüm kapalıyken başlıkta toplamı yazılan sayaçlar. Açıkken rakam alt
+   * maddelerde duruyor, aynı sayı iki kez görünmüyor. Açıkça yazılıyor,
+   * çünkü sayaçlar örtüşebiliyor: "Günün işi" siparişlerin bir alt kümesi,
+   * toplansa iki kez sayılırdı.
    */
-  ton?: "bekleyen" | "hatirlatma";
+  ozetSayaclar?: SayacAdi[];
+  alt: AltMadde[];
 };
 
-export type MenuGrubu = { baslik: string; maddeler: MenuMaddesi[] };
+/**
+ * Menü ağacı (K-116).
+ *
+ * Üst düzeyde yedi bölüm, en altta Ayarlar. Alt maddeler yalnızca bölüm
+ * açıkken görünüyor (Shopify, Stripe, WooCommerce kalıbı): her gün
+ * kullanılan şey tek tıkta, hiçbir sayfa menü dışında kalmıyor. Adresler
+ * eskisiyle aynı; yalnızca yerleri değişti.
+ */
+export const BOLUMLER: Bolum[] = [
+  { yol: "/yonetim", ad: "Ana sayfa", ikon: "ozet", alt: [] },
+  {
+    yol: "/yonetim/siparisler",
+    ad: "Siparişler",
+    ikon: "siparis",
+    sayac: "siparis",
+    ton: "bekleyen",
+    ozetSayaclar: ["siparis", "talep", "iade"],
+    alt: [
+      { yol: "/yonetim/gunluk", ad: "Günün işi", sayac: "hazirlanacak", ton: "bekleyen" },
+      { yol: "/yonetim/talepler", ad: "Talepler", sayac: "talep", ton: "bekleyen" },
+      { yol: "/yonetim/iadeler", ad: "İadeler", sayac: "iade", ton: "bekleyen" },
+    ],
+  },
+  {
+    yol: "/yonetim/urunler",
+    ad: "Ürünler",
+    ikon: "urun",
+    sayac: "fotografsiz",
+    ton: "hatirlatma",
+    ozetSayaclar: ["fotografsiz"],
+    alt: [
+      { yol: "/yonetim/kategoriler", ad: "Kategoriler" },
+      { yol: "/yonetim/bedenler", ad: "Bedenler" },
+      { yol: "/yonetim/renkler", ad: "Renkler" },
+      { yol: "/yonetim/urunler/toplu", ad: "Toplu yükleme" },
+    ],
+  },
+  {
+    yol: "/yonetim/stok",
+    ad: "Stok",
+    ikon: "stok",
+    sayac: "sorunluStok",
+    ton: "hatirlatma",
+    ozetSayaclar: ["sorunluStok"],
+    alt: [
+      { yol: "/yonetim/stok/mal-kabul", ad: "Mal kabulü" },
+      { yol: "/yonetim/stok/sayim", ad: "Sayım" },
+      { yol: "/yonetim/stok/siparis-listesi", ad: "Sipariş listesi" },
+      { yol: "/yonetim/stok/satmayanlar", ad: "Satmayanlar" },
+      { yol: "/yonetim/stok/hareketler", ad: "Hareketler" },
+    ],
+  },
+  {
+    yol: "/yonetim/musteriler",
+    ad: "Müşteriler",
+    ikon: "musteri",
+    ozetSayaclar: ["yorum"],
+    alt: [{ yol: "/yonetim/yorumlar", ad: "Değerlendirmeler", sayac: "yorum", ton: "hatirlatma" }],
+  },
+  {
+    yol: "/yonetim/kampanyalar",
+    ad: "Vitrin",
+    ikon: "vitrin",
+    alt: [
+      { yol: "/yonetim/kampanyalar", ad: "Kampanyalar" },
+      { yol: "/yonetim/banner", ad: "Ana sayfa banner" },
+      { yol: "/yonetim/duyuru", ad: "Duyuru şeridi" },
+    ],
+  },
+  {
+    yol: "/yonetim/rapor",
+    ad: "Raporlar",
+    ikon: "rapor",
+    alt: [
+      { yol: "/yonetim/rapor", ad: "Satış raporu" },
+      { yol: "/yonetim/kar", ad: "Aylık kâr" },
+    ],
+  },
+];
 
 /**
- * Bir menü maddesi açık sayfaya karşılık geliyor mu?
- *
- * Alt sayfalar da maddeyi işaretliyor: `/yonetim/urunler/zibin` açıkken
- * "Ürünler" işaretli kalıyor. "/yonetim" her şeyin ön eki olduğu için tam
- * eşleşme aranıyor, yoksa bütün sayfalarda Özet de işaretli görünürdü.
+ * Ayarlar: ana listede değil, menünün altında tek giriş (K-116). Alt
+ * maddeleri Ayarlar ekranlarının üstünde sekme olarak da duruyor.
  */
-export function acikMi(yol: string, madde: string): boolean {
-  if (madde === "/yonetim") return yol === "/yonetim";
-  return yol === madde || yol.startsWith(`${madde}/`);
+export const AYARLAR: Bolum = {
+  yol: "/yonetim/ayarlar",
+  ad: "Ayarlar",
+  ikon: "ayar",
+  alt: [
+    { yol: "/yonetim/ayarlar", ad: "Satış ayarları" },
+    { yol: "/yonetim/ayarlar/giderler", ad: "Giderler" },
+    { yol: "/yonetim/yasal", ad: "Yasal metinler" },
+    { yol: "/yonetim/kullanicilar", ad: "Kullanıcılar" },
+    { yol: "/yonetim/hazirlik", ad: "Satışa hazırlık" },
+    { yol: "/yonetim/tani", ad: "Tanı" },
+  ],
+};
+
+export const TUM_BOLUMLER: Bolum[] = [...BOLUMLER, AYARLAR];
+
+/** Bir yol bir menü adresine karşılık geliyor mu (kendisi ya da alt sayfası)? */
+export function eslesir(yol: string, adres: string): boolean {
+  if (adres === "/yonetim") return yol === "/yonetim";
+  return yol === adres || yol.startsWith(`${adres}/`);
 }
+
+/**
+ * Açık sayfanın menüdeki karşılığı: eşleşen adreslerin en uzunu.
+ *
+ * `/yonetim/stok/sayim/abc` hem "Stok"a hem "Sayım"a uyuyor; işaretlenen
+ * Sayım. Alt madde bölümle aynı adresteyse ("Vitrin" ve "Kampanyalar")
+ * alt madde işaretleniyor: bölüm başlığı zaten açık.
+ */
+export function etkinAdres(yol: string, bolumler: Bolum[] = TUM_BOLUMLER): string | undefined {
+  let enIyi: string | undefined;
+  for (const b of bolumler) {
+    for (const adres of [b.yol, ...b.alt.map((a) => a.yol)]) {
+      if (eslesir(yol, adres) && (!enIyi || adres.length > enIyi.length)) enIyi = adres;
+    }
+  }
+  return enIyi;
+}
+
+/** Açık sayfanın bölümü; alt maddesi eşleşen bölüm kendi adresinden önce geliyor. */
+export function etkinBolum(yol: string, bolumler: Bolum[] = TUM_BOLUMLER): Bolum | undefined {
+  const adres = etkinAdres(yol, bolumler);
+  if (!adres) return undefined;
+  return (
+    bolumler.find((b) => b.alt.some((a) => a.yol === adres)) ?? bolumler.find((b) => b.yol === adres)
+  );
+}
+
+/**
+ * Bölümün satırı mı işaretli (alt maddesi değil)? Bölüm adresi en iyi
+ * eşleşmeyse ve aynı adreste bir alt madde yoksa.
+ */
+export function bolumSatiriEtkinMi(yol: string, b: Bolum): boolean {
+  const adres = etkinAdres(yol);
+  return adres === b.yol && !b.alt.some((a) => a.yol === b.yol);
+}
+
+/** Kapalı bölümün başlığındaki toplam ve tonu. */
+export function bolumOzeti(b: Bolum, s: Sayaclar): { sayi: number; ton: RozetTonu } {
+  const sayi = (b.ozetSayaclar ?? []).reduce((t, ad) => t + (s[ad] ?? 0), 0);
+  const tonlar = [
+    ...(b.sayac && b.ton && s[b.sayac] > 0 ? [b.ton] : []),
+    ...b.alt.filter((a) => a.sayac && a.ton && s[a.sayac] > 0).map((a) => a.ton!),
+  ];
+  return { sayi, ton: tonlar.includes("bekleyen") ? "bekleyen" : "hatirlatma" };
+}
+
+/** Müşterinin beklediği işlerin toplamı; telefondaki kapalı menü başlığında. */
+export function bekleyenToplami(s: Sayaclar): number {
+  return s.siparis + s.talep + s.iade;
+}
+
+/** Açık sayfanın adı: "Stok › Sayım" gibi. */
+export function sayfaAdi(yol: string): string {
+  const b = etkinBolum(yol);
+  if (!b) return "Yönetim";
+  const adres = etkinAdres(yol);
+  const alt = b.alt.find((a) => a.yol === adres);
+  return alt && alt.ad !== b.ad ? `${b.ad} › ${alt.ad}` : b.ad;
+}
+
+/** Elle açılmış bölümlerin çerezi (K-116); `server/panel-gorunum.ts` okuyor. */
+export const BOLUM_CEREZI = "panel_bolumler";

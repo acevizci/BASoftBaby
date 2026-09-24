@@ -5046,6 +5046,57 @@ sayılar orada ayrı ele alınıyor.
 
 ---
 
+### K-116 · Panel menüsü: iki seviye, bağlamsal açılma
+
+Menü 22 maddeye çıkmıştı (K-43'teki başlıklı ama hep açık gruplar) ve
+geniş ekranda sayfa boyunu aşıyordu. Stoğun beş alt sayfası, toplu yükleme
+ve giderler ise menüde hiç yoktu. Tür adı taşıyan gruplar da işi
+anlatmıyordu: "Satış" altında hem her gün bakılan siparişler hem ayda bir
+açılan aylık kâr vardı.
+
+**Her grubun açılıp kapandığı akordeon seçilmedi.** Sık kullanılan şeyi her
+gün yeniden açtırıyor, kapalı grubun içindeki bekleyen işi saklıyor.
+Shopify, Stripe ve WooCommerce'in kalıbı olan **bağlamsal açılma** seçildi:
+
+- **Üst düzeyde 7 bölüm:** Ana sayfa, Siparişler, Ürünler, Stok,
+  Müşteriler, Vitrin, Raporlar. **En altta Ayarlar**, ana listeden ayrı.
+  Kapalıyken menü 8 satır.
+- **Bölüm adı bir bağlantı**, bölümün ana sayfasına gidiyor. Açık sayfanın
+  bölümü her zaman açık, alt maddeleri girintili olarak altında.
+- **Öteki bölümlerde ok**, gitmeden alt maddelere bakmak için. Ok ayrı bir
+  düğme (WAI-ARIA disclosure: `aria-expanded`, `aria-controls`); bağlantının
+  içine düğme koymak ekran okuyucuda iki işi tek öğeye yüklerdi. Elle
+  açılanlar çerezde (`panel_bolumler`), sunucu ilk boyamada aynı bölümleri
+  açık çiziyor, menü sıçramıyor.
+- **İşaretleme en uzun eşleşmeye göre:** `/yonetim/stok/sayim/…` "Stok ›
+  Sayım"ı, ürün detayı "Ürünler"i işaretliyor. Alt madde bölümle aynı
+  adresteyse (Vitrin → Kampanyalar) alt madde işaretleniyor.
+- **Rozetler kaybolmuyor:** kapalı bölümün başlığında toplam, açıkken
+  rakamlar alt maddelerde; aynı sayı iki kez görünmüyor. Toplamlar açıkça
+  tanımlı, çünkü sayaçlar örtüşüyor ("Günün işi" siparişlerin alt kümesi,
+  toplansa iki kez sayılırdı). Ton en acil olanınki. Ok olmayan satırlarda
+  da yer ayrılıyor, rozetler alt alta hizalı.
+- **Yerleşim:** Kategoriler, Bedenler, Renkler ve Toplu yükleme Ürünler'in
+  altında. Stok ayrı bölüm (beş alt sayfası ve kendi rozeti var).
+  Değerlendirmeler Müşteriler'in altında. Kampanyalar, banner ve duyuru
+  "Vitrin"de. Satış raporu ve Aylık kâr "Raporlar"da. Yasal metinler,
+  kullanıcılar, satışa hazırlık ve tanı Ayarlar'da.
+- **Giderler kendi sayfasında** (`/yonetim/ayarlar/giderler`); Satış
+  ayarlarının altında duruyordu.
+- Dokunma hedefleri en az 40 piksel (WCAG 2.5.8 en az 24 istiyor).
+  Hareket azaltma tercihinde ok animasyonu yok. Adresler değişmedi.
+
+Yapı saf modülde (`ui/panel-menu-bicim.ts`): sekmeler ve hızlı atlama da
+aynı ağaçtan besleniyor. Bir test, `app/yonetim` altındaki her liste
+sayfasının menüde yeri olduğunu ve menüdeki her adresin bir sayfası
+olduğunu denetliyor: gizli sayfa ya da kırık bağlantı kalmıyor.
+
+**Nerede:** [`../ui/panel-menu-bicim.ts`](../ui/panel-menu-bicim.ts),
+[`../ui/panel-menu.tsx`](../ui/panel-menu.tsx),
+[`../testler/panel-menu.test.ts`](../testler/panel-menu.test.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

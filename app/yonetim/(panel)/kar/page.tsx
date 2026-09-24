@@ -98,7 +98,7 @@ export default async function AylikKarEkrani({ searchParams }: PageProps<"/yonet
         <p className="rounded-marka bg-sari-soluk px-4 py-3 text-sm text-sari-koyu">
           {a.kar.eksikSiparis} sipariş eksik bilgiyle hesaplandı ({a.kar.eksikSebepler.join(", ")}). Kâr
           olduğundan yüksek görünüyor olabilir.{" "}
-          <Link href="/yonetim/ayarlar#giderler" className="font-bold underline">
+          <Link href="/yonetim/ayarlar/giderler" className="font-bold underline">
             Giderler
           </Link>
         </p>

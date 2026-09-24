@@ -70,7 +70,7 @@ export default function KarDokumu({ kar, iptal }: { kar?: SiparisKari; iptal?: b
         <p className="mt-3 rounded-marka bg-sari-soluk px-3 py-2 text-xs text-sari-koyu">
           Eksik: {kar.eksikler.join(", ")}. Girilmeyen kalem sıfır sayıldı; kâr olduğundan
           yüksek görünüyor olabilir.{" "}
-          <Link href="/yonetim/ayarlar#giderler" className="font-bold underline">
+          <Link href="/yonetim/ayarlar/giderler" className="font-bold underline">
             Giderleri gir
           </Link>
         </p>

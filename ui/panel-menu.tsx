@@ -3,7 +3,22 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import PanelIkon from "@/ui/panel-ikon";
-import { acikMi, type MenuGrubu, type MenuMaddesi } from "@/ui/panel-menu-bicim";
+import { useState } from "react";
+import {
+  AYARLAR,
+  BOLUMLER,
+  BOLUM_CEREZI,
+  bekleyenToplami,
+  bolumOzeti,
+  bolumSatiriEtkinMi,
+  eslesir,
+  etkinAdres,
+  etkinBolum,
+  sayfaAdi,
+  type Bolum,
+  type RozetTonu,
+  type Sayaclar,
+} from "@/ui/panel-menu-bicim";
 
 /**
  * Panel menüsü.
@@ -31,17 +46,25 @@ import { acikMi, type MenuGrubu, type MenuMaddesi } from "@/ui/panel-menu-bicim"
  *
  * Menü yapısı ve sayaçlar sunucudan geliyor: veritabanına bakan hiçbir şey
  * tarayıcıya inmiyor.
+ *
+ * **İki seviye, bağlamsal açılma (K-116).** Üst düzeyde yedi bölüm ve en
+ * altta Ayarlar. Açık sayfanın bölümü her zaman açık, alt maddeleri altında.
+ * Öteki bölümlerin yanındaki ok, gitmeden alt maddelere bakmak için; elle
+ * açılanlar çerezde. Bölüm adı bir bağlantı, ok ayrı bir düğme
+ * (WAI-ARIA disclosure): bağlantının içine düğme koymak ekran okuyucuda
+ * iki işi tek öğeye yüklerdi.
  */
 export default function PanelMenu({
-  ozet,
-  gruplar,
+  sayaclar,
+  elleAcik,
   yonetici,
   dar,
   cikis,
   gorunumuCevir,
 }: {
-  ozet: MenuMaddesi;
-  gruplar: MenuGrubu[];
+  sayaclar: Sayaclar;
+  /** Çerezdeki elle açılmış bölümler. */
+  elleAcik: string[];
   yonetici: { adSoyad: string; eposta: string };
   /** Geniş ekranda menü daraltılmış mı? */
   dar: boolean;
@@ -51,14 +74,32 @@ export default function PanelMenu({
   gorunumuCevir: () => Promise<void>;
 }) {
   const yol = usePathname() ?? "/yonetim";
+  const [acik, setAcik] = useState<string[]>(elleAcik);
 
-  const maddeler = [ozet, ...gruplar.flatMap((g) => g.maddeler)];
-  const acikSayfa = maddeler.find((m) => acikMi(yol, m.yol))?.ad ?? "Yönetim";
+  const cevir = (b: Bolum) => {
+    const yeni = acik.includes(b.yol) ? acik.filter((y) => y !== b.yol) : [...acik, b.yol];
+    setAcik(yeni);
+    bolumCereziniYaz(yeni);
+  };
 
   // Telefonda menü kapalı duruyor; bekleyen iş varsa rozetler görünmüyor.
   // Kapalı başlığa müşterinin beklediği işlerin toplamı yazılıyor, yoksa
   // "bugün bakılacak bir şey var mı" sorusu menüyü açmadan cevapsız kalırdı.
-  const bekleyen = maddeler.reduce((t, m) => t + (m.ton === "bekleyen" ? (m.rozet ?? 0) : 0), 0);
+  const bekleyen = bekleyenToplami(sayaclar);
+  const etkin = etkinBolum(yol);
+
+  const bolum = (b: Bolum) => (
+    <BolumSatiri
+      key={b.yol + b.ad}
+      b={b}
+      yol={yol}
+      dar={dar}
+      sayaclar={sayaclar}
+      etkin={etkin === b}
+      acik={etkin === b || acik.includes(b.yol)}
+      cevir={() => cevir(b)}
+    />
+  );
 
   return (
     // Küçük ekranda açılır, geniş ekranda hep açık. `open-yok` sınıfı
@@ -67,7 +108,7 @@ export default function PanelMenu({
     <details className="open-yok group/menu">
       <summary className="flex list-none items-center justify-between rounded-marka border border-cizgi bg-yuzey px-4 py-2.5 text-sm font-bold text-metin-2 lg:hidden [&::-webkit-details-marker]:hidden">
         <span>
-          Menü · <span className="text-metin">{acikSayfa}</span>
+          Menü · <span className="text-metin">{sayfaAdi(yol)}</span>
         </span>
         <span className="flex items-center gap-2">
           {bekleyen > 0 && (
@@ -81,10 +122,9 @@ export default function PanelMenu({
           </span>
         </span>
       </summary>
-
       <nav
         aria-label="Yönetim menüsü"
-        className="mt-2 flex flex-col gap-1 rounded-marka border border-cizgi bg-yuzey p-2 lg:mt-0 lg:sticky lg:top-6"
+        className="mt-2 flex flex-col gap-0.5 rounded-marka border border-cizgi bg-yuzey p-2 lg:mt-0 lg:sticky lg:top-6"
       >
         <div className="mb-1 flex items-center justify-between gap-2 px-1">
           {!dar && (
@@ -106,30 +146,18 @@ export default function PanelMenu({
           </form>
         </div>
 
-        <Madde madde={ozet} yol={yol} dar={dar} />
+        {BOLUMLER.map(bolum)}
 
-        {gruplar.map((g) => (
-          <div key={g.baslik} className="mt-3 flex flex-col gap-0.5 border-t border-cizgi pt-2">
-            {/* Grup başlığı dar menüde yer kaplamasın diye kalkıyor; ayırıcı
-                çizgi duruyor, gruplama kaybolmuyor. Başlık `metin-2`:
-                eskisi 2,9:1 ile WCAG eşiğinin altındaydı (K-50). */}
-            {!dar && (
-              <p className="px-2 pb-0.5 text-[0.7rem] font-bold uppercase tracking-[0.09em] text-metin-2 lg:block">
-                {g.baslik}
-              </p>
-            )}
-            {g.maddeler.map((m) => (
-              <Madde key={m.yol} madde={m} yol={yol} dar={dar} />
-            ))}
-          </div>
-        ))}
+        {/* Ayarlar ana listeden ayrı, altta: nadiren açılıyor ama her zaman
+            aynı yerde bulunmalı (K-116). */}
+        <div className="mt-2 border-t border-cizgi pt-2">{bolum(AYARLAR)}</div>
 
         {/* Grupların dışında: mağazaya çıkış bir ayar maddesi değil. */}
-        <div className="mt-3 border-t border-cizgi pt-2">
+        <div className="mt-2 border-t border-cizgi pt-2">
           <Link
             href="/"
             title={dar ? "Mağazayı gör" : undefined}
-            className={`flex items-center gap-2.5 rounded-full py-2 text-sm font-semibold text-mavi-koyu transition hover:bg-mavi-soluk ${
+            className={`flex min-h-10 items-center gap-2.5 rounded-full py-2 text-sm font-semibold text-mavi-koyu transition hover:bg-mavi-soluk ${
               dar ? "justify-center px-0" : "px-2.5"
             }`}
           >
@@ -137,13 +165,12 @@ export default function PanelMenu({
             <span className={dar ? "sr-only" : ""}>Mağazayı gör</span>
           </Link>
         </div>
-
         {/* Kimin girdiği yazıyor: ortak bir şifre yerine kişiye ait
             hesaplar olmasının görünen yanı bu (K-45). */}
-        <div className="mt-3 border-t border-cizgi-soluk pt-2">
+        <div className="mt-2 border-t border-cizgi-soluk pt-2">
           <Link
             href="/yonetim/hesabim"
-            aria-current={acikMi(yol, "/yonetim/hesabim") ? "page" : undefined}
+            aria-current={eslesir(yol, "/yonetim/hesabim") ? "page" : undefined}
             title={dar ? yonetici.adSoyad : undefined}
             className={`flex items-center gap-2.5 rounded-marka py-1.5 transition hover:bg-yuzey-sicak ${
               dar ? "justify-center px-0" : "px-2.5"
@@ -190,64 +217,140 @@ function basHarfler(ad: string): string {
   return (parcalar[0][0] + parcalar[parcalar.length - 1][0]).toLocaleUpperCase("tr");
 }
 
-function Madde({ madde, yol, dar }: { madde: MenuMaddesi; yol: string; dar: boolean }) {
-  const acik = acikMi(yol, madde.yol);
-  const rozetVar = madde.rozet !== undefined && madde.rozet > 0;
+/** Sunucu bir sonraki sayfada aynı bölümleri açık çizsin (K-116). */
+function bolumCereziniYaz(acik: string[]): void {
+  document.cookie = `${BOLUM_CEREZI}=${encodeURIComponent(acik.join(","))}; path=/yonetim; max-age=31536000; samesite=lax`;
+}
 
+/** Rozet: sayı ya da dar menüde nokta; ekran okuyucu her zaman sayıyı duyuyor. */
+function Rozet({ sayi, ton, nokta }: { sayi: number; ton: RozetTonu; nokta?: boolean }) {
+  if (sayi <= 0) return null;
+  if (nokta) {
+    return (
+      <span
+        className={`absolute right-1.5 top-1.5 h-2 w-2 rounded-full ${ton === "bekleyen" ? "bg-mercan" : "bg-metin-3"}`}
+      >
+        <span className="sr-only">{sayi} bekleyen</span>
+      </span>
+    );
+  }
   return (
-    <Link
-      href={madde.yol}
-      aria-current={acik ? "page" : undefined}
-      title={dar ? madde.ad : undefined}
-      // Açık sayfa: sol kenarı düz ve kalın mercan çubuklu bir sekme —
-      // yuvarlak kenarda çubuk hilale dönüyor ve çubuk olduğu
-      // anlaşılmıyordu. Yazı kalın ve koyu: mercan yazı soluk mercan
-      // dolgunun üstünde 4,39:1 veriyordu, eşik 4,5. Kimliği zaten çubuk
-      // taşıyor, yazının okunur olması daha önemli (K-50).
-      className={`relative flex items-center gap-2.5 py-2 text-sm transition ${
-        dar ? "justify-center pr-0" : "justify-between pr-2.5"
-      } ${
-        acik
-          ? `border-l-[3px] border-mercan bg-mercan-soluk font-bold text-metin ${
-              dar ? "rounded-r-[10px] pl-[calc(0.625rem-3px)]" : "rounded-r-full pl-[calc(0.625rem-3px)]"
-            }`
-          : `font-semibold text-metin-2 hover:bg-yuzey-sicak hover:text-metin ${
-              dar ? "rounded-[10px] pl-0" : "rounded-full pl-2.5"
-            }`
+    <span
+      className={`rakam flex-none rounded-full px-2 py-0.5 text-xs font-bold ${
+        ton === "bekleyen" ? "bg-dugme text-dugme-yazi" : "border border-cizgi bg-yuzey text-metin-2"
       }`}
     >
-      <span className={`flex min-w-0 items-center gap-2.5 ${dar ? "justify-center" : ""}`}>
-        <PanelIkon ad={madde.ikon} />
-        <span className={dar ? "sr-only" : "truncate"}>{madde.ad}</span>
-      </span>
+      {sayi}
+      <span className="sr-only"> bekleyen</span>
+    </span>
+  );
+}
 
-      {/* Rozet yalnızca bekleyen iş varken: her maddede sürekli duran bir
-          rakam kısa sürede görünmez oluyor. Müşterinin beklediği işler dolu
-          renkte, mağazanın kendi işleri sessiz — hepsi kırmızı olsaydı
-          hiçbiri kırmızı olmazdı. */}
-      {rozetVar &&
-        (dar ? (
-          // Dar menüde sayı sığmıyor; nokta "bekleyen iş var" diyor ve
-          // sayı ekran okuyucuda okunmaya devam ediyor.
-          <span
-            className={`absolute right-1.5 top-1.5 h-2 w-2 rounded-full ${
-              madde.ton === "bekleyen" ? "bg-mercan" : "bg-metin-3"
-            }`}
-          >
-            <span className="sr-only">{madde.rozet} bekleyen</span>
+// Açık sayfa: sol kenarı düz ve kalın mercan çubuklu bir sekme. Yazı kalın
+// ve koyu: mercan yazı soluk mercan dolgunun üstünde 4,39:1 veriyordu, eşik
+// 4,5 (K-50).
+const ETKIN = "border-l-[3px] border-mercan bg-mercan-soluk font-bold text-metin";
+
+function BolumSatiri({
+  b,
+  yol,
+  dar,
+  sayaclar,
+  etkin,
+  acik,
+  cevir,
+}: {
+  b: Bolum;
+  yol: string;
+  dar: boolean;
+  sayaclar: Sayaclar;
+  /** Açık sayfa bu bölümde mi? */
+  etkin: boolean;
+  /** Alt maddeler görünüyor mu (etkin ya da elle açılmış)? */
+  acik: boolean;
+  cevir: () => void;
+}) {
+  const satirEtkin = bolumSatiriEtkinMi(yol, b);
+  const adres = etkinAdres(yol);
+  const altVar = b.alt.length > 0;
+  const gorunur = acik && altVar && !dar;
+  // Alt maddeler görünüyorsa rakamlar onlarda; başlıkta yalnızca bölümün
+  // kendi rozeti. Kapalıysa bölümün toplamı başlıkta (K-116).
+  const ozet = bolumOzeti(b, sayaclar);
+  const baslikRozet = gorunur
+    ? { sayi: b.sayac ? sayaclar[b.sayac] : 0, ton: b.ton ?? "hatirlatma" }
+    : ozet;
+  const listeId = `menu-${b.yol.replaceAll("/", "-")}-${b.ad.length}`;
+
+  return (
+    <div className="flex flex-col">
+      <div className="relative flex items-center">
+        <Link
+          href={b.yol}
+          aria-current={satirEtkin ? "page" : undefined}
+          title={dar ? b.ad : undefined}
+          className={`relative flex min-h-10 flex-1 items-center gap-2.5 py-2 text-sm transition ${
+            dar ? "justify-center pr-0" : "justify-between pr-2.5"
+          } ${
+            satirEtkin
+              ? `${ETKIN} ${dar ? "rounded-r-[10px]" : "rounded-r-full"} pl-[calc(0.625rem-3px)]`
+              : `${etkin ? "font-bold text-metin" : "font-semibold text-metin-2"} hover:bg-yuzey-sicak hover:text-metin ${
+                  dar ? "rounded-[10px] pl-0" : "rounded-full pl-2.5"
+                }`
+          }`}
+        >
+          <span className={`flex min-w-0 items-center gap-2.5 ${dar ? "justify-center" : ""}`}>
+            <PanelIkon ad={b.ikon} />
+            <span className={dar ? "sr-only" : "truncate"}>{b.ad}</span>
           </span>
-        ) : (
-          <span
-            className={`rakam flex-none rounded-full px-2 py-0.5 text-xs font-bold ${
-              madde.ton === "bekleyen"
-                ? "bg-dugme text-dugme-yazi"
-                : "border border-cizgi bg-yuzey text-metin-2"
-            }`}
+          <Rozet sayi={baslikRozet.sayi} ton={baslikRozet.ton} nokta={dar} />
+        </Link>
+        {/* Açık sayfanın bölümü hep açık: ok yok. Öteki bölümlerde ok,
+            gitmeden alt maddelere bakmak için. */}
+        {altVar && !dar && !etkin && (
+          <button
+            type="button"
+            onClick={cevir}
+            aria-expanded={acik}
+            aria-controls={listeId}
+            className="ml-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full text-metin-3 transition hover:bg-yuzey-sicak hover:text-metin"
           >
-            {madde.rozet}
-            <span className="sr-only"> bekleyen</span>
-          </span>
-        ))}
-    </Link>
+            <span aria-hidden="true" className={`text-xs transition motion-reduce:transition-none ${acik ? "rotate-180" : ""}`}>
+              ▾
+            </span>
+            <span className="sr-only">
+              {b.ad} alt sayfalarını {acik ? "gizle" : "göster"}
+            </span>
+          </button>
+        )}
+        {/* Ok olmayan satırda da yeri ayrılıyor: rozetler alt alta hizalı kalsın. */}
+        {!dar && !(altVar && !etkin) && <span aria-hidden="true" className="ml-0.5 w-8 flex-none" />}
+      </div>
+
+      {gorunur && (
+        <ul id={listeId} className="mb-1 ml-[1.15rem] mt-0.5 flex flex-col gap-0.5 border-l border-cizgi pl-2">
+          {b.alt.map((a) => {
+            const secili = adres === a.yol;
+            const sayi = a.sayac ? sayaclar[a.sayac] : 0;
+            return (
+              <li key={a.yol + a.ad}>
+                <Link
+                  href={a.yol}
+                  aria-current={secili ? "page" : undefined}
+                  className={`flex min-h-9 items-center justify-between gap-2 py-1.5 pr-2 text-sm transition ${
+                    secili
+                      ? `${ETKIN} rounded-r-full pl-[calc(0.625rem-3px)]`
+                      : "rounded-full pl-2.5 font-semibold text-metin-2 hover:bg-yuzey-sicak hover:text-metin"
+                  }`}
+                >
+                  <span className="truncate">{a.ad}</span>
+                  <Rozet sayi={sayi} ton={a.ton ?? "hatirlatma"} />
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }
