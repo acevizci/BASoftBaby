@@ -5491,6 +5491,28 @@ Google'ın siteyi daha verimli taraması için üç düzenleme:
 **Nerede:** [`../app/sitemap.ts`](../app/sitemap.ts),
 [`../server/urun-yonlendirme.ts`](../server/urun-yonlendirme.ts)
 
+### K-129 · Arama motoru doğrulaması ve IndexNow
+
+Ayarlar › Arama motorları:
+
+- **Site sahipliği doğrulaması:** Google Search Console, Bing Webmaster ve
+  Yandex Webmaster'ın "HTML etiketi" kodları panelden giriliyor; etiketin
+  tamamı ya da yalnızca değeri yapıştırılabiliyor. Kodlar ana sayfanın
+  `<head>`'ine yazılıyor. Kod değiştirmeye, dağıtım beklemeye gerek yok.
+  Etiket dışında bir şey kabul edilmiyor (sayfaya HTML sızmasın).
+- **Adresler tek yerde:** site haritası ve Google ürün beslemesi, hangi
+  panele ekleneceği yazılı.
+- **IndexNow:** ürün eklenince, değişince ya da silinince adresi (ve
+  kategorisi) Bing'e ve Yandex'e hemen bildiriliyor; taramayı beklemiyor.
+  Türkiye'de Yandex'in payı küçük değil. Bildirim yanıttan sonra gidiyor
+  (`after`), en çok 3 saniye; hata işlemi bozmuyor. Anahtar ilk kullanımda
+  üretiliyor, `/indexnow.txt`'de yayında. İlk kurulum için "Bütün ürünleri
+  şimdi bildir" düğmesi. Yalnızca yayındaki sitede (https) gidiyor. Google
+  IndexNow kullanmıyor; Google için site haritası (K-128).
+
+**Nerede:** [`../server/arama-motoru.ts`](../server/arama-motoru.ts),
+[`../app/yonetim/(panel)/ayarlar/arama-motorlari/page.tsx`](../app/yonetim/(panel)/ayarlar/arama-motorlari/page.tsx)
+
 ---
 
 ## Açık sorular

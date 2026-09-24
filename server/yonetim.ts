@@ -19,8 +19,10 @@ import { TASIYICILAR, takipAdresi, tasiyiciAdi } from "@/server/kargo";
 import { faturaOlustur } from "@/server/fatura";
 import { belgeBasilabilirMi } from "@/server/siparis-belge";
 import { irsaliyeOlustur, irsaliyeSevkiniYaz } from "@/server/irsaliye";
+import { after } from "next/server";
 import { adresAyrilmisMi, slugYap } from "@/server/slug";
 import { silinenleriYonlendir } from "@/server/urun-yonlendirme";
+import { indexNowBildir } from "@/server/arama-motoru";
 import { renkKodlari } from "@/server/renkler";
 import { formSayfaEki, tasimaSayfaEki } from "@/ui/sayfalama-bicim";
 import { formAramaEki } from "@/ui/panel-arama-bicim";
@@ -137,6 +139,8 @@ export async function urunKaydet(form: FormData): Promise<void> {
     await maliyetiGecmiseYaz(guncel.id, alanlar.alisFiyatKurus);
     await aramaMetniniTazele(guncel.id);
     vitriniYenile();
+    // Bing ve Yandex'e yanıt gittikten sonra (K-129).
+    after(() => indexNowBildir([`/urun/${eskiSlug}`, `/${kategori.slug}`]));
     redirect(`/yonetim/urunler/${eskiSlug}?kayit=1`);
   }
 
@@ -147,6 +151,7 @@ export async function urunKaydet(form: FormData): Promise<void> {
   const yeni = await db.product.create({ data: { slug, ...alanlar }, select: { id: true } });
   await aramaMetniniTazele(yeni.id);
   vitriniYenile();
+  after(() => indexNowBildir([`/urun/${slug}`, `/${kategori.slug}`]));
   redirect(`/yonetim/urunler/${slug}?kayit=1`);
 }
 
@@ -189,6 +194,8 @@ export async function urunSil(form: FormData): Promise<void> {
   await db.product.delete({ where: { id: urun.id } });
 
   vitriniYenile();
+  // Silinen adres artık yönleniyor; arama motoru bunu öğrensin.
+  after(() => indexNowBildir([`/urun/${slug}`]));
   redirect("/yonetim/urunler?kayit=silindi");
 }
 

@@ -12,6 +12,7 @@ import { yasGruplari } from "@/server/yas-gruplari";
 import { tonSiniflari } from "@/ui/kategori-tonu";
 import { CAYMA_GUN } from "@/ui/talep-bicim";
 import { SonBakilanlar } from "@/ui/son-bakilan";
+import { aramaMotoruAyari } from "@/server/arama-motoru";
 
 /**
  * Ana sayfadaki yaş kutuları yaş grubuna gidiyor, tek bedene değil: "6-12 ay"
@@ -36,7 +37,21 @@ function guvenSatirlari(ayar: SatisAyari): string[] {
   ];
 }
 
-export const metadata: Metadata = { alternates: { canonical: "/" } };
+/**
+ * Arama motoru doğrulama etiketleri ana sayfada (K-129): Search Console,
+ * Bing ve Yandex sahipliği buradan kontrol ediyor. Kodlar panelden.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const a = await aramaMotoruAyari();
+  return {
+    alternates: { canonical: "/" },
+    verification: {
+      google: a.googleDogrulama || undefined,
+      yandex: a.yandexDogrulama || undefined,
+      other: a.bingDogrulama ? { "msvalidate.01": a.bingDogrulama } : undefined,
+    },
+  };
+}
 
 export default async function AnaSayfa() {
   const [urunler, kategoriler, ayar, kunye, yasKutulari] = await Promise.all([

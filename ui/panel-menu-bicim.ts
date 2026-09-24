@@ -181,6 +181,11 @@ export const AYARLAR: Bolum = {
       anahtar: "pixel piksel meta facebook instagram google analytics ads cerez",
     },
     { yol: "/yonetim/yasal", ad: "Yasal metinler", anahtar: "kvkk sozlesme" },
+    {
+      yol: "/yonetim/ayarlar/arama-motorlari",
+      ad: "Arama motorları",
+      anahtar: "seo google search console bing yandex site haritasi indexnow",
+    },
     { yol: "/yonetim/kullanicilar", ad: "Kullanıcılar", anahtar: "yonetici personel" },
     { yol: "/yonetim/hazirlik", ad: "Satışa hazırlık", anahtar: "kontrol listesi" },
     { yol: "/yonetim/tani", ad: "Tanı", anahtar: "saglik yavas bolge" },

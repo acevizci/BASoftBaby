@@ -264,6 +264,16 @@ model StoreSetting {
   metaPikselId   String @default("")
   googleEtiketId String @default("")
 
+  /// Arama motoru doğrulama kodları (K-129): Search Console, Bing Webmaster,
+  /// Yandex Webmaster. Ana sayfanın <head>'ine meta etiketi olarak yazılıyor.
+  googleDogrulama String @default("")
+  bingDogrulama   String @default("")
+  yandexDogrulama String @default("")
+  /// IndexNow anahtarı (K-129): değişen ürün Bing ve Yandex'e anında
+  /// bildiriliyor. Boşsa ilk kullanımda üretiliyor; `/indexnow.txt`'de yayında.
+  indexNowAnahtari String  @default("")
+  indexNowAcik     Boolean @default(true)
+
   /// Ana sayfadaki banner kaç saniyede bir değişsin
   bannerSaniye Int @default(6)
 
