@@ -14,7 +14,7 @@ Dosyalar `public/marka/` altında; site onları bu adresten doğrudan servis ede
 | `basoftbaby-logo.png` | Rozet logonun tamamı, şeffaf zemin (539 px). Google'a bildirilen logo, baskı |
 | `basoftbaby-logo-256.webp` / `.png` | Rozet, 256 px. Site üst çubuğu, panel giriş sayfaları |
 | `basoftbaby-amblem.png` | Ay üstünde uyuyan ayıcık ve tavşan, beyaz daire içinde (512 px). Sosyal medya profili |
-| `basoftbaby-amblem-256.webp` | Amblem, 256 px. Ana sayfa banner'ı |
+| `basoftbaby-logo-440.webp` | Rozet, 440 px. Ana sayfa banner'ı ("Logo" çizimi) |
 | `basoftbaby-apple-touch-180.png` | iPhone ana ekran simgesi (`app/apple-icon.png` ile aynı) |
 | `basoftbaby-favicon-64.png` / `-32.png` | Tarayıcı sekmesi simgesi (`app/icon.png` ile aynı) |
 

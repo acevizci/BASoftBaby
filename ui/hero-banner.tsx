@@ -57,15 +57,17 @@ function noktaKareleri(adet: number): string {
 }
 
 function Gorsel({ banner }: { banner: Banner }) {
+  // Mağazanın rozet logosu olduğu gibi, yazısıyla (K-138).
   if (banner.gorsel === "amblem") {
     return (
       <Image
-        src="/marka/basoftbaby-amblem-256.webp"
+        src="/marka/basoftbaby-logo-440.webp"
         alt=""
-        width={116}
-        height={116}
+        width={220}
+        height={220}
         priority
         unoptimized
+        className="h-44 w-44 sm:h-[220px] sm:w-[220px]"
       />
     );
   }

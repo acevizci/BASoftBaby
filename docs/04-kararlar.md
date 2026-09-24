@@ -5783,10 +5783,11 @@ orijinal suluboya logoyu verdi ve istenen, ona sadık kalmak.
 - **Siyah arka plan kenardan başlayan dolguyla temizlendi:** yalnızca dışarıyla
   bağlantılı koyu pikseller siliniyor, rozetin içindeki koyu çizgiler (gözler,
   kontur) kalıyor. Kenar yarı saydam yumuşatıldı.
-- **Rozetin tamamı** üst çubukta (64-76 px), panel giriş sayfalarında, Google'a
-  bildirilen logoda ve paylaşım görsellerinde.
+- **Rozetin tamamı** üst çubukta (64-76 px), ana sayfa banner'ında (176-220 px,
+  panelde "Logo" çizimi), panel giriş sayfalarında, Google'a bildirilen logoda
+  ve paylaşım görsellerinde.
 - **Küçük boylar için amblem:** ay üstünde uyuyan ayıcık ve tavşan, rozetten
-  kesilip beyaz daireye oturtuldu. Sekme simgesi, telefon ana ekranı, banner.
+  kesilip beyaz daireye oturtuldu. Sekme simgesi ve telefon ana ekranı.
   Yazı küçük boyda okunmadığı için amblemde yok.
 - Eski vektör dosyaları (`*.svg`, 1200 px PNG'ler) silindi.
 

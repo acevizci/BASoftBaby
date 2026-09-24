@@ -473,7 +473,7 @@ function BannerFormu({ b, varsayilanSira = 0 }: { b?: BannerKaydi; varsayilanSir
               <select name="gorsel" defaultValue={b?.gorsel ?? "amblem"} className={GIRDI}>
                 {BANNER_GORSELLERI.map((g) => (
                   <option key={g} value={g}>
-                    {g === "amblem" ? "Logo amblemi" : g}
+                    {g === "amblem" ? "Logo" : g}
                   </option>
                 ))}
               </select>
