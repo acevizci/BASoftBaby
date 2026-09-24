@@ -1236,3 +1236,13 @@ model Newsletter {
 
   @@index([olusturuldu])
 }
+
+/// Silinen ürünün adresi nereye yönlensin (K-128). Ürün silinince adresi
+/// 404 veriyordu: arama motorundaki sırası ve dışarıdan gelen bağlantılar
+/// boşa gidiyordu. Artık kategorisine kalıcı yönlendiriliyor.
+model ProductRedirect {
+  slug        String   @id
+  /// "/erkek-cocuk" gibi; kategori de kapanmışsa "/urunler"e düşülüyor.
+  hedef       String
+  olusturuldu DateTime @default(now())
+}

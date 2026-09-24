@@ -5468,6 +5468,29 @@ harfler ve ₺ doğru çıkıyor. Fotoğraflar JPEG'e çevrilip gömülüyor. Bi
 **Nerede:** [`../server/paylasim-gorseli.tsx`](../server/paylasim-gorseli.tsx),
 `app/(magaza)/**/opengraph-image.tsx`
 
+### K-128 · Site haritası, süzgeçli listeler ve kaldırılan ürünler
+
+Google'ın siteyi daha verimli taraması için üç düzenleme:
+
+- **Site haritasında son değişiklik tarihi ve fotoğraflar.** Her ürünün son
+  güncellenme tarihi (kategori ve ana sayfa için içlerindeki en son değişen
+  ürününki) ve en çok on fotoğrafı. Google değişen sayfayı öncelikle yeniden
+  tarıyor; fotoğraflar Google Görseller'e giriyor.
+- **Süzgeçli ve sıralanmış listeler dizine girmiyor** (`noindex, follow`):
+  beden × renk × yaş × fiyat birleşimleri yüzlerce adres üretiyordu. Canonical
+  zaten süzgeçsiz sayfayı gösteriyordu (K-67); artık Google bunları dizine
+  almaya da çalışmıyor, içlerindeki ürün bağlantılarını yine izliyor. Sayfa
+  numarası süzgeç sayılmıyor.
+- **Yayında olmayan ürün 404 vermiyor.** Pasif ürün kategorisine **geçici**
+  yönlendiriliyor (geri gelince adres yine çalışıyor); silinen ürün
+  kategorisine **kalıcı** (301) yönlendiriliyor. Silinirken hedef kaydediliyor
+  (`ProductRedirect`), toplu silmede de. Kategori de kapalıysa "Tüm ürünler".
+  Böylece Google'daki sırası ve dışarıdan gelen bağlantıların değeri
+  kaybolmuyor. Hiç var olmamış adres 404 vermeye devam ediyor.
+
+**Nerede:** [`../app/sitemap.ts`](../app/sitemap.ts),
+[`../server/urun-yonlendirme.ts`](../server/urun-yonlendirme.ts)
+
 ---
 
 ## Açık sorular

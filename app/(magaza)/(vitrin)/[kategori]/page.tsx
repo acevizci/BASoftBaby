@@ -48,7 +48,13 @@ export async function generateMetadata({
   searchParams,
 }: PageProps<"/[kategori]">): Promise<Metadata> {
   const { kategori } = await params;
-  const { sayfa } = (await searchParams) as Aranan;
+  const aranan = (await searchParams) as Aranan;
+  const { sayfa } = aranan;
+  // Süzgeçli ya da sıralanmış liste dizine girmiyor ama içindeki bağlantılar
+  // izleniyor (K-128): beden × renk × yaş × fiyat birleşimleri yüzlerce adres
+  // üretiyor, Google tarama zamanını bunlarla harcamasın.
+  const suzgecli = Boolean(aranan.yas || aranan.beden || aranan.renk || aranan.fiyat || aranan.sirala);
+  const robots = suzgecli ? { index: false, follow: true } : undefined;
 
   // Süzgeçler canonical adrese girmiyor: aynı listenin onlarca kopyası
   // dizine girip birbirinin sırasını yemesin. **Sayfa numarası giriyor**:
@@ -60,6 +66,7 @@ export async function generateMetadata({
     return {
       title: n > 1 ? `Tüm ürünler · sayfa ${n}` : "Tüm ürünler",
       alternates: { canonical: ek(`/${TUMU}`) },
+      robots,
       openGraph: { title: "Tüm ürünler · BASoftBaby", url: `/${TUMU}`, type: "website" },
     };
   }
@@ -71,6 +78,7 @@ export async function generateMetadata({
         title: n > 1 ? `${k.ad} · sayfa ${n}` : k.ad,
         description: k.aciklama,
         alternates: { canonical: ek(`/${k.slug}`) },
+        robots,
         openGraph: { title: `${k.ad} · BASoftBaby`, description: k.aciklama, url: `/${k.slug}`, type: "website" },
       }
     : {};

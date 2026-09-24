@@ -20,6 +20,7 @@ import { faturaOlustur } from "@/server/fatura";
 import { belgeBasilabilirMi } from "@/server/siparis-belge";
 import { irsaliyeOlustur, irsaliyeSevkiniYaz } from "@/server/irsaliye";
 import { adresAyrilmisMi, slugYap } from "@/server/slug";
+import { silinenleriYonlendir } from "@/server/urun-yonlendirme";
 import { renkKodlari } from "@/server/renkler";
 import { formSayfaEki, tasimaSayfaEki } from "@/ui/sayfalama-bicim";
 import { formAramaEki } from "@/ui/panel-arama-bicim";
@@ -170,7 +171,7 @@ export async function urunSil(form: FormData): Promise<void> {
 
   const urun = await db.product.findUnique({
     where: { slug },
-    select: { id: true, images: { select: { yol: true, kucukYol: true } } },
+    select: { id: true, categoryId: true, images: { select: { yol: true, kucukYol: true } } },
   });
   if (!urun) redirect("/yonetim/urunler?hata=bulunamadi");
 
@@ -183,6 +184,8 @@ export async function urunSil(form: FormData): Promise<void> {
 
   // Fotoğraf dosyaları da gitsin: kayıt silinince depoda öksüz kalırlardı.
   await gorselDosyalariniSil(urun.images.flatMap((g) => [g.yol, g.kucukYol]).filter(Boolean));
+  // Adresi kategorisine yönlensin (K-128).
+  await silinenleriYonlendir([{ slug, categoryId: urun.categoryId }]);
   await db.product.delete({ where: { id: urun.id } });
 
   vitriniYenile();
@@ -265,6 +268,7 @@ export async function topluUrunIslemi(form: FormData): Promise<void> {
     select: {
       id: true,
       slug: true,
+      categoryId: true,
       images: { select: { yol: true, kucukYol: true } },
       _count: { select: { variants: { where: { orderItems: { some: {} } } } } },
     },
@@ -277,6 +281,7 @@ export async function topluUrunIslemi(form: FormData): Promise<void> {
     await gorselDosyalariniSil(
       silinecekler.flatMap((u) => u.images.flatMap((g) => [g.yol, g.kucukYol])).filter(Boolean),
     );
+    await silinenleriYonlendir(silinecekler);
     await db.product.deleteMany({ where: { id: { in: silinecekler.map((u) => u.id) } } });
     vitriniYenile();
   }

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
+import { kaldirilanUrun } from "@/server/urun-yonlendirme";
 import type { Metadata } from "next";
 import UrunGalerisi from "@/ui/urun-galerisi";
 import UrunKarti from "@/ui/urun-karti";
@@ -51,7 +52,13 @@ export default async function UrunSayfasi({
   // "Stoka girince haber ver" formunun sonucu adres satırında dönüyor.
   const { bildirim, renk, yorumSayfa } = await searchParams;
   const urun = await urunGetir(slug);
-  if (!urun) notFound();
+  if (!urun) {
+    // Pasif ya da silinmiş ürün kategorisine gidiyor, 404 değil (K-128).
+    const yon = await kaldirilanUrun(slug);
+    if (!yon) notFound();
+    if (yon.kalici) permanentRedirect(yon.hedef);
+    redirect(yon.hedef);
+  }
 
   const [kategori, benzerler, yorumOzeti, ayar] = await Promise.all([
     kategoriGetir(urun.kategori),
