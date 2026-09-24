@@ -51,17 +51,26 @@ export const aramaMotoruAyari = paylasilanOnbellek(
   [ETIKETLER.ayarlar],
 );
 
-/** Anahtar yoksa üretip kaydeder. */
+/**
+ * Anahtar yoksa üretip kaydeder. Önbellekten değil veritabanından okuyor:
+ * önbellekteki ayar ilk üretimden sonra bir süre boş kalıyordu, her çağrı
+ * yeni bir anahtar üretip `/indexnow.txt` ile bildirim uyuşmuyordu. Yarış
+ * olmasın diye yalnızca boşsa yazılıyor ve yazılan geri okunuyor.
+ */
 export async function indexNowAnahtari(): Promise<string> {
-  const ayar = await aramaMotoruAyari();
-  if (ayar.indexNowAnahtari) return ayar.indexNowAnahtari;
+  const oku = () =>
+    db.storeSetting.findUnique({ where: { id: "tek" }, select: { indexNowAnahtari: true } });
+  const mevcut = (await oku())?.indexNowAnahtari;
+  if (mevcut) return mevcut;
   const anahtar = randomBytes(16).toString("hex");
-  await db.storeSetting.upsert({
-    where: { id: "tek" },
-    update: { indexNowAnahtari: anahtar },
-    create: { id: "tek", indexNowAnahtari: anahtar },
+  const yazildi = await db.storeSetting.updateMany({
+    where: { id: "tek", indexNowAnahtari: "" },
+    data: { indexNowAnahtari: anahtar },
   });
-  return anahtar;
+  if (yazildi.count === 0) {
+    await db.storeSetting.upsert({ where: { id: "tek" }, update: {}, create: { id: "tek", indexNowAnahtari: anahtar } });
+  }
+  return (await oku())?.indexNowAnahtari || anahtar;
 }
 
 export type BildirimSonucu = { gonderildi: boolean; adet: number; sebep?: string };

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SepetAdediBildir } from "@/ui/ziyaretci";
 import type { Metadata } from "next";
 import UrunFoto from "@/ui/urun-foto";
 import { sepetGetir } from "@/server/sepet";
@@ -16,6 +17,7 @@ export default async function SepetSayfasi({ searchParams }: PageProps<"/sepet">
   if (sepet.satirlar.length === 0) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16 text-center">
+        <SepetAdediBildir adet={0} />
         <h1 className="text-2xl sm:text-3xl">Sepetin boş</h1>
         <p className="mt-3 text-metin-2">
           {sepet.cikarilan > 0
@@ -34,6 +36,8 @@ export default async function SepetSayfasi({ searchParams }: PageProps<"/sepet">
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
+      {/* Adet değişince sayfa adresi değişmiyor; üst çubuk buradan öğreniyor (K-131). */}
+      <SepetAdediBildir adet={sepet.toplamAdet} />
       <h1 className="text-2xl sm:text-3xl">Sepetim</h1>
       <p className="mt-1 text-sm text-metin-2">{sepet.toplamAdet} ürün</p>
       {sepet.cikarilan > 0 && (

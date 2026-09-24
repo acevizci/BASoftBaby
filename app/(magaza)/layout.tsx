@@ -2,7 +2,7 @@ import DuyuruSeridi from "@/ui/duyuru-seridi";
 import UstCubuk from "@/ui/ust-cubuk";
 import AltBilgi from "@/ui/alt-bilgi";
 import { FavoriSaglayici } from "@/ui/favori";
-import { favoriIdleri } from "@/server/favori";
+import { ZiyaretciSaglayici } from "@/ui/ziyaretci";
 import { kunyeGetir } from "@/server/yasal";
 import { whatsappNumarasi } from "@/server/whatsapp";
 import WhatsappDugmesi from "@/ui/whatsapp-dugmesi";
@@ -21,20 +21,18 @@ import { olcumAyari } from "@/server/olcum";
  * Grup adı adrese girmiyor: bütün sayfaların adresi aynı kaldı.
  */
 export default async function MagazaDuzeni({ children }: LayoutProps<"/">) {
-  // Favoriler bir kez okunup bütün kartlara dağılıyor (K-94). Üst çubuk zaten
-  // her sayfada oturumu okuduğu için bu sayfayı dinamikleştirmiyor.
-  const [favoriler, kunye, olcum] = await Promise.all([
-    favoriIdleri(),
-    kunyeGetir(),
-    olcumAyari(),
-  ]);
+  // Burada ziyaretçiye özel hiçbir şey okunmuyor: düzen herkes için aynı,
+  // sayfalar önbellekten verilebiliyor. Giriş, sepet ve favoriler tarayıcıda
+  // (K-131).
+  const [kunye, olcum] = await Promise.all([kunyeGetir(), olcumAyari()]);
   // WhatsApp düğmesi künyedeki destek telefonu cep numarasıysa çıkıyor (K-99).
   const whatsapp = whatsappNumarasi(kunye.destekTelefon);
   // Reklam ölçümü panelde açıksa çerez onay bandı (K-124); değilse site
   // çerez kullanmıyor ve bant da yok (K-16).
   const olcumVar = Boolean(olcum.metaPikselId || olcum.googleEtiketId);
   return (
-    <FavoriSaglayici ilk={favoriler}>
+    <ZiyaretciSaglayici>
+    <FavoriSaglayici>
       <DuyuruSeridi />
       <UstCubuk />
       <main className="flex-1">{children}</main>
@@ -42,5 +40,6 @@ export default async function MagazaDuzeni({ children }: LayoutProps<"/">) {
       {whatsapp && <WhatsappDugmesi numara={whatsapp} />}
       {olcumVar && <CerezOnayi metaId={olcum.metaPikselId} googleId={olcum.googleEtiketId} />}
     </FavoriSaglayici>
+    </ZiyaretciSaglayici>
   );
 }

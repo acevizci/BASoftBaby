@@ -10,8 +10,8 @@ export const metadata: Metadata = {
   description: "Sipariş, ödeme, kargo, iade ve ürünlerle ilgili en çok sorulan sorular.",
 };
 
-/** Kargo rakamları ayardan geldiği için sayfa her açılışta yeniden çiziliyor. */
-export const dynamic = "force-dynamic";
+/** Kargo rakamları ayardan geliyor; önbellek ayar kaydedilince düşüyor (K-131). */
+export const revalidate = 300;
 
 type Soru = { soru: string; cevap: React.ReactNode };
 

@@ -4,7 +4,13 @@ import type { Metadata } from "next";
 import YasalMetin, { KunyeKutusu } from "@/ui/yasal-metin";
 import { kunyeGetir, yasalSayfaGetir, yasalSayfalariGetir } from "@/server/yasal";
 
-export const dynamic = "force-dynamic";
+/** Metin panelden değişince önbellek düşüyor; en geç beş dakikada yenileniyor (K-131). */
+export const revalidate = 300;
+
+/** Yayımlanmış metinler derlemede hazırlanıyor; sonradan eklenen ilk açılışta. */
+export async function generateStaticParams(): Promise<{ slug: string }[]> {
+  return (await yasalSayfalariGetir()).map((y) => ({ slug: y.slug }));
+}
 
 export async function generateMetadata({
   params,

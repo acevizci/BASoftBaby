@@ -4,12 +4,13 @@ import { createContext, useContext, useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { favoriCevir } from "@/server/favori-islem";
+import { useZiyaretci } from "@/ui/ziyaretci";
 
 /**
  * Favoriler (K-94): mağaza düzeninin okuduğu liste ve kalp düğmesi.
  *
- * Liste düzende bir kez okunuyor ve bağlamla bütün kartlara dağılıyor; her
- * kart ayrı ayrı sormuyor. `null` "giriş yok" demek: kalp o zaman giriş
+ * Liste bir kez okunuyor (tarayıcıda, K-131) ve bağlamla bütün kartlara
+ * dağılıyor; her kart ayrı ayrı sormuyor. `null` "giriş yok" demek: kalp o zaman giriş
  * sayfasına götürüyor ve dönüşte aynı sayfaya geri geliyor.
  */
 type FavoriBaglami = {
@@ -24,35 +25,24 @@ const Baglam = createContext<FavoriBaglami>({
   cevir: async () => {},
 });
 
-export function FavoriSaglayici({
-  ilk,
-  children,
-}: {
-  ilk: string[] | null;
-  children: React.ReactNode;
-}) {
-  const [idler, setIdler] = useState(() => new Set(ilk ?? []));
+export function FavoriSaglayici({ children }: { children: React.ReactNode }) {
+  // Liste tarayıcıda okunuyor (K-131); üstüne bu sayfada yapılan
+  // değişiklikler biniyor, liste yeniden okununca onlar zaten içinde.
+  const { durum } = useZiyaretci();
+  const [degisenler, setDegisenler] = useState<Map<string, boolean>>(new Map());
+  const listede = new Set(durum?.favoriler ?? []);
+  const favoriMi = (id: string) => degisenler.get(id) ?? listede.has(id);
 
   async function cevir(id: string) {
     // İyimser: kalp hemen doluyor, sunucu reddederse geri dönüyor.
-    const onceki = idler.has(id);
-    const yeni = new Set(idler);
-    if (onceki) yeni.delete(id);
-    else yeni.add(id);
-    setIdler(yeni);
+    const onceki = favoriMi(id);
+    setDegisenler((m) => new Map(m).set(id, !onceki));
     const sonuc = await favoriCevir(id).catch(() => undefined);
-    if (!sonuc?.tamam) {
-      setIdler((s) => {
-        const geri = new Set(s);
-        if (onceki) geri.add(id);
-        else geri.delete(id);
-        return geri;
-      });
-    }
+    if (!sonuc?.tamam) setDegisenler((m) => new Map(m).set(id, onceki));
   }
 
   return (
-    <Baglam.Provider value={{ girisli: ilk !== null, favoriMi: (id) => idler.has(id), cevir }}>
+    <Baglam.Provider value={{ girisli: durum?.girisli ?? false, favoriMi, cevir }}>
       {children}
     </Baglam.Provider>
   );

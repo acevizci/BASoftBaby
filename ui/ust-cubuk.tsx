@@ -1,8 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import SepetSayaci from "@/ui/sepet-sayaci";
 import AramaKutusu from "@/ui/arama-kutusu";
-import HesapBaglantisi from "@/ui/hesap-baglantisi";
+import { HesapBaglantisi, SepetSayaci } from "@/ui/ziyaretci";
 import OdemedeGizli from "@/ui/odemede-gizli";
 import { kategorileriGetir } from "@/server/katalog";
 

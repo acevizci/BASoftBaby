@@ -5537,6 +5537,38 @@ hediye önerisi. Kopya metin değil, mağazanın kendi sesiyle.
 **Nerede:** [`../ui/rehber-bicim.ts`](../ui/rehber-bicim.ts),
 [`../ui/rehber-metni.tsx`](../ui/rehber-metni.tsx)
 
+### K-131 · Mağaza sayfaları önbellekten: ziyaretçiye özel kısım tarayıcıda
+
+Mağaza düzeni her istekte oturum ve sepet çerezini okuyordu (üst çubuktaki
+"Giriş/Hesabım", sepet adedi, favoriler). Düzen çerez okuyunca altındaki
+**bütün** sayfalar her istekte baştan çiziliyordu: ana sayfa, yardım ve yasal
+sayfalar bile. Veritabanı uykudaysa (K-30) ilk yanıt saniyeyi bulabiliyordu;
+sayfa hızı (Core Web Vitals) Google sıralamasında bir etken.
+
+- Ziyaretçiye özel üç bilgi artık tarayıcıda `/api/ziyaretci`'den okunuyor
+  (her sayfa geçişinde; sepet sayfası kendi adedini ayrıca bildiriyor,
+  çünkü adet değişince adres değişmiyor). Düzen herkes için aynı.
+- **Önbellekten verilenler:** ana sayfa, beden rehberi, kargo, iade, SSS ve
+  yasal metinler. Yerel üretim derlemesinde ana sayfa ~3 ms'de dönüyor.
+  Panelden bir şey kaydedilince önbellek düşüyor (K-22'deki etiketler ve
+  `revalidatePath`); ayar sayfaları ayrıca en geç beş dakikada yenileniyor.
+- **Ürün ve kategori sayfaları dinamik kalıyor:** renk, süzgeç ve sayfa
+  adresten okunuyor ve JavaScript'siz çalışması gerekiyor (K-40, K-48). Ama
+  artık her istekte oturum ve sepet sorgusu yapmıyorlar; katalog verisi zaten
+  önbellekte.
+- **JavaScript'siz:** üst çubukta "Giriş" (girişliyse giriş sayfası hesaba
+  yönlendiriyor) ve sayısız "Sepet" bağlantısı; alışveriş aynen çalışıyor.
+- İlk açılışta sepet sayısı ve kalp durumu bir an sonra geliyor; bedeli bu.
+
+**Yan düzeltme (K-129):** IndexNow anahtarı ilk üretildiğinde önbellekteki
+ayar bir süre boş kalıyor, her çağrı yeni anahtar üretip `/indexnow.txt` ile
+bildirim uyuşmuyordu. Anahtar artık doğrudan veritabanından okunuyor ve
+yalnızca boşsa yazılıyor.
+
+**Nerede:** [`../ui/ziyaretci.tsx`](../ui/ziyaretci.tsx),
+[`../app/api/ziyaretci/route.ts`](../app/api/ziyaretci/route.ts),
+[`../app/(magaza)/layout.tsx`](../app/(magaza)/layout.tsx)
+
 ---
 
 ## Açık sorular

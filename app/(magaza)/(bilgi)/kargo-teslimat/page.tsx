@@ -9,8 +9,11 @@ export const metadata: Metadata = {
   description: "Kargo ücreti, bedava kargo sınırı, hazırlık ve teslimat süreleri.",
 };
 
-/** Ücretler panelden değişebildiği için sayfa her açılışta ayardan okunuyor. */
-export const dynamic = "force-dynamic";
+/**
+ * Ücretler panelden değişebiliyor. Sayfa önbellekten veriliyor (K-131); ayar
+ * kaydedilince önbellek düşüyor, en geç beş dakikada kendiliğinden yenileniyor.
+ */
+export const revalidate = 300;
 
 export default async function KargoTeslimat() {
   const ayar = await ayarlariGetir();
