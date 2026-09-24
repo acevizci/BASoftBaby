@@ -72,6 +72,21 @@ export async function siparisOlustur(
   customerId?: string,
   /** havale · kart. Kartta sipariş açılıyor, ödeme ekranı sonra geliyor. */
   odemeYontemi: "havale" | "kart" = "havale",
+  cekSecenegi: {
+    /**
+     * Kart ve havale kapalıyken sipariş yalnızca çek tamamını karşılıyorsa
+     * açılabiliyor (K-137). Bakiye kontrolle işlem arasında azalırsa sipariş
+     * ödenemeyecek bir havale siparişi olarak açılmasın.
+     */
+    yalnizCek?: boolean;
+    /**
+     * Ödeme sayfasında müşteriye gösterilen çek tutarı. 0 ise çek
+     * kullanılmıyor (ekranda geçersiz görünmüştü); başka bir tutar çıkarsa
+     * sipariş açılmıyor: müşteri gördüğünden farklı bir tutar ödememeli.
+     * Verilmezse çekten ne düşerse o.
+     */
+    beklenenKurus?: number;
+  } = {},
 ): Promise<SiparisSonucu> {
   // Süresi dolmuş bekleyen siparişlerin tuttuğu stok, yeni sipariş açılmadan
   // hemen önce serbest bırakılıyor. Zamanlı iş de aynı işi yapıyor ama günde
@@ -145,7 +160,7 @@ export async function siparisOlustur(
   const toplamKurus = araToplamKurus - indirimKurus + kargoKurus;
   const simdi = new Date();
   // Hediye çeki (K-137): bakiye işlemin içinde düşülüyor.
-  const cekKodu = await hediyeCekiOku();
+  const cekKodu = cekSecenegi.beklenenKurus === 0 ? undefined : await hediyeCekiOku();
 
   try {
     const yazilan = await db.$transaction(async (islem) => {
@@ -170,6 +185,13 @@ export async function siparisOlustur(
       const hediyeCekiKurus = cek?.tutarKurus ?? 0;
       // Çek tamamını karşıladıysa ödenecek bir şey yok: sipariş ödenmiş açılıyor.
       const cekleOdendi = hediyeCekiKurus >= toplamKurus;
+      if (cekSecenegi.yalnizCek && !cekleOdendi) throw new Error("CEK");
+      if (
+        cekSecenegi.beklenenKurus !== undefined &&
+        hediyeCekiKurus !== cekSecenegi.beklenenKurus
+      ) {
+        throw new Error("CEK");
+      }
 
       const siparis = await islem.order.create({
         data: {

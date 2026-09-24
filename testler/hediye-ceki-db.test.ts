@@ -51,11 +51,14 @@ async function cekKur(bakiyeKurus: number, ek: { aktif?: boolean } = {}) {
 }
 
 /** 100 ₺'lik bir ürün + 49,90 ₺ kargo = 149,90 ₺. */
-async function cekleSiparis(kod: string) {
+async function cekleSiparis(
+  kod: string,
+  secenek?: Parameters<typeof siparisOlustur>[4],
+) {
   const { variantId } = await urunKur(5);
   await sepetKur(variantId, 1);
   cerezAyarla(HEDIYE_CEKI_CEREZI, kod);
-  return { variantId, sonuc: await siparisOlustur(girdi(), AYAR) };
+  return { variantId, sonuc: await siparisOlustur(girdi(), AYAR, undefined, "havale", secenek) };
 }
 
 const bakiye = async (id: string) =>
@@ -162,5 +165,28 @@ describe("hediye çeki (veritabanı)", { skip: atlamaSebebi }, () => {
     assert.equal(iade.durum, "tamamlandi");
     const sonra = await testDb().order.findUniqueOrThrow({ where: { id: s.id } });
     assert.equal(sonra.odemeDurumu, "iade");
+  });
+
+  it("ekranda gösterilenden farklı tutar düşecekse sipariş açılmıyor", async () => {
+    const cek = await cekKur(5000);
+    // Sayfa 60 ₺ göstermişti; bakiye arada 50 ₺'ye inmiş.
+    const { sonuc } = await cekleSiparis(cek.kod, { beklenenKurus: 6000 });
+    assert.ok(!sonuc.tamam && sonuc.sebep === "cek");
+    assert.equal(await bakiye(cek.id), 5000);
+  });
+
+  it("ekranda çek düşülmemişse (geçersiz görünmüştü) sipariş çeksiz açılıyor", async () => {
+    const cek = await cekKur(5000, { aktif: false });
+    const { sonuc } = await cekleSiparis(cek.kod, { beklenenKurus: 0 });
+    assert.ok(sonuc.tamam);
+    assert.equal(sonuc.hediyeCekiKurus, 0);
+    assert.equal(sonuc.tahsilatKurus, 14990);
+  });
+
+  it("ödeme yöntemi kapalıyken çek tamamını karşılamıyorsa sipariş açılmıyor", async () => {
+    const cek = await cekKur(5000);
+    const { sonuc } = await cekleSiparis(cek.kod, { yalnizCek: true });
+    assert.ok(!sonuc.tamam && sonuc.sebep === "cek");
+    assert.equal(await bakiye(cek.id), 5000);
   });
 });

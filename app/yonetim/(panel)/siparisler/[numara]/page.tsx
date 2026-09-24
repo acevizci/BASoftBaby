@@ -258,7 +258,16 @@ export default async function SiparisDetayi({
           <ul className="mt-3 flex flex-col divide-y divide-cizgi-soluk text-sm">
             {iadeler.map((i) => (
               <li key={i.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
-                <span className="rakam font-bold">{fiyatYaz(i.tutarKurus)}</span>
+                <span className="rakam font-bold">
+                  {i.tutarKurus > 0 || i.hediyeCekiKurus === 0 ? fiyatYaz(i.tutarKurus) : null}
+                  {/* Çekle ödenen kısım bakiyesine döndü; gönderilecek para değil (K-137). */}
+                  {i.hediyeCekiKurus > 0 && (
+                    <span className="font-semibold text-nane-koyu">
+                      {i.tutarKurus > 0 ? " + " : ""}
+                      {fiyatYaz(i.hediyeCekiKurus)} çek bakiyesine
+                    </span>
+                  )}
+                </span>
                 <span
                   className={`rounded-full px-2.5 py-1 text-xs font-bold ${
                     i.durum === "tamamlandi"

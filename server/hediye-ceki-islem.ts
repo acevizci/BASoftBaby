@@ -13,6 +13,7 @@ import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { islemSinirla } from "@/server/istek-siniri";
 import { HEDIYE_CEKI_CEREZI, cekDurumu } from "@/server/hediye-ceki";
 import { kodUret } from "@/server/hediye-ceki-bicim";
+import { tutarCoz } from "@/server/tutar";
 import { hediyeCekiEpostasi } from "@/server/eposta";
 
 export async function hediyeCekiUygula(form: FormData): Promise<void> {
@@ -46,7 +47,8 @@ const EPOSTA = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function cekOlustur(form: FormData): Promise<void> {
   const yonetici = await yoneticiGerekli();
-  const tutarKurus = Math.round(Number(String(form.get("tutar") ?? "").replace(",", ".")) * 100);
+  // Türkçe yazım: "1.000" bin lira, "1.000,50" de olur (K-115).
+  const tutarKurus = tutarCoz(String(form.get("tutar") ?? "")) ?? NaN;
   const aliciAd = String(form.get("aliciAd") ?? "")
     .trim()
     .slice(0, 80);

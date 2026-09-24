@@ -140,15 +140,26 @@ export async function siparisiTamamla(veri: FormData): Promise<void> {
    */
   //
   // Hediye çeki sepetin tamamını karşılıyorsa ödeme yöntemi gerekmiyor (K-137).
-  if (!kartMi && !odemeDurumu(odemeAcikMi(), ayar.havaleBilgisi).havale) {
+  const yalnizCek = !kartMi && !odemeDurumu(odemeAcikMi(), ayar.havaleBilgisi).havale;
+  if (yalnizCek) {
     const { toplamKurus } = await sepetGetir();
     const cek = await sepetteCek(toplamKurus);
     const tamamiCekle = cek && "kullanilanKurus" in cek && cek.kullanilanKurus >= toplamKurus;
     if (!tamamiCekle) redirect("/odeme?hata=odeme-yok");
   }
-  const sonuc = await siparisOlustur(girdi, ayar, customerId, kartMi ? "kart" : "havale");
+  // Ekranda gösterilen çek tutarı; sunucu yalnızca bunu harcıyor (K-137).
+  const beklenenKurus = Number(veri.get("cekKurus") ?? 0);
+  const sonuc = await siparisOlustur(girdi, ayar, customerId, kartMi ? "kart" : "havale", {
+    yalnizCek,
+    beklenenKurus: Number.isInteger(beklenenKurus) && beklenenKurus >= 0 ? beklenenKurus : 0,
+  });
 
-  if (!sonuc.tamam && sonuc.sebep === "cek") redirect("/odeme?hata=cek");
+  if (!sonuc.tamam && sonuc.sebep === "cek") {
+    // Kullanılamayan çek çerezde kalırsa her deneme aynı hatayla dönerdi;
+    // müşteri yeni tutarı görüp çeksiz ya da yeni kodla devam edebilsin.
+    (await cookies()).delete(HEDIYE_CEKI_CEREZI);
+    redirect("/odeme?hata=cek");
+  }
   if (!sonuc.tamam) {
     redirect(sonuc.hata.includes("boş") ? "/odeme?hata=bos" : "/odeme?hata=stok");
   }

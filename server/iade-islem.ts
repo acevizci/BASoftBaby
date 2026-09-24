@@ -27,6 +27,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
 import { TUM_ETIKETLER } from "@/server/onbellek";
 import { iadeKaydiAc, iadeyiBasarisizIsaretle, iadeyiTamamla } from "@/server/iade";
+import { tutarCoz } from "@/server/tutar";
 import { kartIadesiYap } from "@/server/odeme-iade";
 import { iadeYapildiEpostasi } from "@/server/eposta";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
@@ -126,10 +127,10 @@ export async function elleIadeAc(form: FormData): Promise<void> {
   await yoneticiGerekli();
 
   const numara = String(form.get("numara") ?? "").trim().toUpperCase();
-  const lira = String(form.get("tutar") ?? "").trim().replace(",", ".");
   const aciklama = String(form.get("aciklama") ?? "").trim();
 
-  const tutarKurus = Math.round(Number(lira) * 100);
+  // Türkçe yazım (K-115): "1.250" bin iki yüz elli; eskiden 12,50 ₺ oluyordu.
+  const tutarKurus = tutarCoz(String(form.get("tutar") ?? "")) ?? NaN;
   if (!numara) redirect(donus(form, "hata=numara"));
   if (!Number.isFinite(tutarKurus) || tutarKurus <= 0) redirect(donus(form, "hata=tutar"));
 

@@ -82,6 +82,57 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
    * kilitleyip müşteriyi beklemeye almak demek (K-76). Bunu baştan söylemek
    * hem dürüst hem de stoğu boşa harcamıyor.
    */
+  // Hediye çeki (K-137): ayrı form, sipariş formunun içine giremez.
+  const cekKutusu = (
+    <div id="hediye-ceki" className="mt-4 border-t border-cizgi pt-3">
+      {cek && "kullanilanKurus" in cek ? (
+        <div className="flex items-start justify-between gap-2 text-sm">
+          <p>
+            <span className="rakam font-bold">{cek.kod}</span>
+            <span className="block text-xs text-metin-3">
+              Kalan bakiye: <span className="rakam">{fiyatYaz(cek.kalanBakiyeKurus)}</span>
+            </span>
+          </p>
+          <form action={hediyeCekiKaldir}>
+            <button className="text-xs font-bold text-mavi-koyu hover:underline">Kaldır</button>
+          </form>
+        </div>
+      ) : (
+        <>
+          {cek && "hata" in cek && (
+            <div className="mb-2 flex items-center justify-between gap-2 text-sm">
+              <span className="rakam font-bold text-metin-3 line-through">{cek.kod}</span>
+              <form action={hediyeCekiKaldir}>
+                <button className="text-xs font-bold text-mavi-koyu hover:underline">Kaldır</button>
+              </form>
+            </div>
+          )}
+          <form action={hediyeCekiUygula} className="flex flex-col gap-1.5">
+            <label htmlFor="cek-kodu" className={ETIKET}>
+              Hediye çeki
+            </label>
+            <div className="flex gap-2">
+              <input
+                id="cek-kodu"
+                name="kod"
+                autoComplete="off"
+                placeholder="HC-XXXX-XXXX"
+                className={`${GIRDI} min-w-0 flex-1 uppercase`}
+              />
+              <GonderDugmesi
+                bekleyen="…"
+                className="rounded-full border-[1.5px] border-cizgi px-4 text-sm font-bold"
+              >
+                Uygula
+              </GonderDugmesi>
+            </div>
+          </form>
+        </>
+      )}
+      {cekHatasi && <p className="mt-1.5 text-xs font-semibold text-mercan-koyu">{cekHatasi}</p>}
+    </div>
+  );
+
   if (!odeme.alinabilir && !cekleOdeniyor) {
     return (
       <div className="mx-auto max-w-xl px-4 py-12">
@@ -104,6 +155,12 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
         >
           Sepete dön
         </Link>
+        <div className="mt-8 max-w-sm">
+          <p className="text-sm text-metin-2">
+            Hediye çekin sepetin tamamını karşılıyorsa siparişini şimdi verebilirsin:
+          </p>
+          {cekKutusu}
+        </div>
       </div>
     );
   }
@@ -145,6 +202,7 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
         <form action={siparisiTamamla} className="flex flex-col gap-5">
+          <input type="hidden" name="cekKurus" value={cekKurus} />
           {!musteri && (
             <p className="rounded-marka border border-cizgi bg-yuzey-sicak px-4 py-3 text-sm text-metin-2">
               Hesabın var mı?{" "}
@@ -528,44 +586,7 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
             )}
           </dl>
 
-          {/* Hediye çeki (K-137): ayrı form, sipariş formunun içine giremez. */}
-          <div id="hediye-ceki" className="mt-4 border-t border-cizgi pt-3">
-            {cek && "kullanilanKurus" in cek ? (
-              <div className="flex items-start justify-between gap-2 text-sm">
-                <p>
-                  <span className="rakam font-bold">{cek.kod}</span>
-                  <span className="block text-xs text-metin-3">
-                    Kalan bakiye: <span className="rakam">{fiyatYaz(cek.kalanBakiyeKurus)}</span>
-                  </span>
-                </p>
-                <form action={hediyeCekiKaldir}>
-                  <button className="text-xs font-bold text-mavi-koyu hover:underline">Kaldır</button>
-                </form>
-              </div>
-            ) : (
-              <form action={hediyeCekiUygula} className="flex flex-col gap-1.5">
-                <label htmlFor="cek-kodu" className={ETIKET}>
-                  Hediye çeki
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    id="cek-kodu"
-                    name="kod"
-                    autoComplete="off"
-                    placeholder="HC-XXXX-XXXX"
-                    className={`${GIRDI} min-w-0 flex-1 uppercase`}
-                  />
-                  <GonderDugmesi
-                    bekleyen="…"
-                    className="rounded-full border-[1.5px] border-cizgi px-4 text-sm font-bold"
-                  >
-                    Uygula
-                  </GonderDugmesi>
-                </div>
-              </form>
-            )}
-            {cekHatasi && <p className="mt-1.5 text-xs font-semibold text-mercan-koyu">{cekHatasi}</p>}
-          </div>
+          {cekKutusu}
 
           <Link
             href="/sepet"

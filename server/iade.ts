@@ -360,6 +360,7 @@ export async function siparisinIadeleri(numara: string) {
     select: {
       id: true,
       tutarKurus: true,
+      hediyeCekiKurus: true,
       yontem: true,
       durum: true,
       hata: true,

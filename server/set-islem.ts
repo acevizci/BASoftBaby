@@ -6,6 +6,7 @@ import { db } from "@/server/veritabani";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { TUM_ETIKETLER } from "@/server/onbellek";
 import { setBoz, setHazirla, varyantBul } from "@/server/set";
+import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
 
 /** Set eylemleri (K-133). Hepsi ürün düzenleme ekranının set bölümüne dönüyor. */
 
@@ -33,7 +34,12 @@ export async function setParcasiEkle(form: FormData): Promise<void> {
   // Set kendini ya da kendi ürününün bir bedenini içeremez.
   if (!set || parca.productId === set.productId) return donus(form, "sethata=kendisi");
   // Parça başka bir setin set varyantı olamaz: iç içe set stoğu karıştırırdı.
-  if (await db.bundleItem.count({ where: { setVariantId: parca.id } })) return donus(form, "sethata=icice");
+  // İç içe set yok: parça set olamaz, başka setin parçası da set olamaz.
+  const [parcaSetMi, setParcaMi] = await Promise.all([
+    db.bundleItem.count({ where: { setVariantId: parca.id } }),
+    db.bundleItem.count({ where: { variantId: setVariantId } }),
+  ]);
+  if (parcaSetMi || setParcaMi) return donus(form, "sethata=icice");
   await db.bundleItem.upsert({
     where: { setVariantId_variantId: { setVariantId, variantId: parca.id } },
     update: { adet },
@@ -60,6 +66,15 @@ export async function setIslemi(form: FormData): Promise<void> {
       ? await setBoz(setVariantId, adet, ben)
       : await setHazirla(setVariantId, adet, ben);
   if (!sonuc.tamam) return donus(form, `sethata=${encodeURIComponent(sonuc.sebep)}`);
+  // Stoğu artan varyant için "gelince haber ver" diyenler: hazırlamada set,
+  // bozmada parçalar.
+  const artan =
+    tur === "boz"
+      ? (await db.bundleItem.findMany({ where: { setVariantId }, select: { variantId: true } })).map(
+          (p) => p.variantId,
+        )
+      : [setVariantId];
+  await stokBildirimleriniGonder(artan);
   yenile();
   return donus(form, `setkayit=${tur}&setadet=${sonuc.adet}`);
 }

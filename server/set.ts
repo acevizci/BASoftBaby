@@ -31,7 +31,9 @@ export type SetSonucu = { tamam: true; adet: number } | { tamam: false; sebep: s
 
 export async function setHazirla(setVariantId: string, adet: number, yapan: Yapan): Promise<SetSonucu> {
   if (!Number.isInteger(adet) || adet < 1 || adet > 1000) return { tamam: false, sebep: "adet" };
-  return db.$transaction(async (islem) => {
+  // Parça stoğu okuma ile düşüm arasında değişirse işlem geri alınıyor;
+  // panel hata sayfası değil, sebebi gösteriyor.
+  return db.$transaction(async (islem): Promise<SetSonucu> => {
     const parcalar = await islem.bundleItem.findMany({
       where: { setVariantId },
       select: { variantId: true, adet: true, variant: { select: { stok: true } } },
@@ -46,7 +48,7 @@ export async function setHazirla(setVariantId: string, adet: number, yapan: Yapa
         where: { id: p.variantId, stok: { gte: p.adet * adet } },
         data: { stok: { decrement: p.adet * adet } },
       });
-      if (count === 0) throw new Error("Parça stoğu hazırlama sırasında değişti.");
+      if (count === 0) throw new Error("SET_STOK");
     }
     await islem.productVariant.update({ where: { id: setVariantId }, data: { stok: { increment: adet } } });
     await hareketYaz(islem, [
@@ -60,6 +62,9 @@ export async function setHazirla(setVariantId: string, adet: number, yapan: Yapa
       { variantId: setVariantId, degisim: adet, sebep: "set-hazirla", yapan },
     ]);
     return { tamam: true, adet } as const;
+  }).catch((hata: unknown) => {
+    if (hata instanceof Error && hata.message === "SET_STOK") return { tamam: false, sebep: "degisti" } as const;
+    throw hata;
   });
 }
 

@@ -94,8 +94,15 @@ export default async function SiparisOnayi({
 
       <section className="mt-6 rounded-marka border border-cizgi bg-yuzey p-5">
         <h2 className="text-lg">Ödeme</h2>
-        {iadeli ? (
+        {iadeli && siparis.odemeYontemi === "hediye-ceki" ? (
           <p className="mt-2 text-sm text-metin-2">
+            Siparişin iptal edildi; çekle ödediğin tutar hediye çekinin bakiyesine geri yüklendi.
+            Aynı kodla yeniden kullanabilirsin.
+          </p>
+        ) : iadeli ? (
+          <p className="mt-2 text-sm text-metin-2">
+            {siparis.hediyeCekiKurus > 0 &&
+              "Hediye çekiyle ödediğin kısım çekinin bakiyesine geri yüklendi. "}
             {iadeEdildi ? (
               <>
                 Ödemen iade edildi.{" "}

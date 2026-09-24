@@ -5631,6 +5631,11 @@ kâr hesabı setin kendi varyantı üzerinden, hiçbiri değişmedi.
 parçaların sayfalarına bağlantı) ve set fiyatı ayrı ayrı toplamdan
 düşükse "Ayrı ayrı alsan X ₺ — sette Y ₺ daha az ödüyorsun".
 
+**Gözden geçirmede düzeltilenler:** hazırlama sırasında parça stoğu değişirse
+panel hata sayfası yerine sebebi gösteriyor; başka bir setin parçası olan
+bedene içerik eklenemiyor (iç içe set); hazırlama ve bozmada stoğu artan
+bedenler için "gelince haber ver" bildirimleri gidiyor.
+
 **Nerede:** [`../server/set.ts`](../server/set.ts),
 [`../ui/set-yonetimi.tsx`](../ui/set-yonetimi.tsx),
 [`../ui/set-icerigi.tsx`](../ui/set-icerigi.tsx)
@@ -5740,6 +5745,19 @@ hediye edeni zorluyor. Hediye çeki bu soruyu alana bırakıyor.
   (varsayılan iki yıl) ile çek oluşturma, kodu alıcıya e-postayla gönderme,
   bakiye ve hareketler, kullanıma kapatma. Üstte kullanılabilir toplam
   bakiye: müşterilere olan borç.
+
+**Gözden geçirmede düzeltilenler:**
+- Sipariş formu ekranda gösterilen çek tutarını taşıyor; sunucu yalnızca onu
+  harcıyor. Arada bakiye değişirse sipariş açılmıyor, çek ekranda geçersiz
+  görünmüşse sipariş çeksiz ilerliyor. Eskiden kapatılmış ya da bitmiş bir
+  çekin çerezi kalıyor, her deneme hatayla dönüyordu.
+- Geçersiz çekte de kod ve "Kaldır" görünüyor; ödeme yöntemleri kapalıyken
+  çek kutusu yine çıkıyor ve sipariş yalnızca çek tamamını karşılıyorsa
+  açılıyor.
+- Çek tutarı panelde Türkçe yazımla okunuyor ("1.000" bin lira; K-115).
+  Elle iade tutarında da aynı hata vardı, o da düzeldi.
+- İptal edilen çekli siparişin sayfası "hesabına gönderildi" yerine "çek
+  bakiyene geri yüklendi" diyor; panelde iadenin çek kısmı ayrı yazıyor.
 
 **Bilerek yapılmayan:** çekin sitede **satılması**. Satılan çekin bedeli
 tahsil ediliyor ve belgelenmesi gerekiyor; bu e-arşiv faturaya ve şirket

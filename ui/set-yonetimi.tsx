@@ -22,7 +22,8 @@ const KUCUK = "rounded-full border border-cizgi px-3 py-1.5 text-xs font-bold te
 const HATALAR: Record<string, string> = {
   bulunamadi: "Bu SKU ya da barkodla bir beden bulunamadı.",
   kendisi: "Set kendi ürününün bir bedenini içeremez.",
-  icice: "O beden de bir set; set içinde set olamıyor.",
+  icice: "Set içinde set olamıyor: eklenen beden bir set ya da bu beden başka bir setin parçası.",
+  degisti: "Parça stoğu tam o sırada değişti; hiçbir şey düşülmedi. Tekrar dene.",
   bos: "Önce setin içeriğini ekle.",
   adet: "Geçerli bir adet yaz.",
   "set-stok": "Bozulacak kadar hazır set yok.",
