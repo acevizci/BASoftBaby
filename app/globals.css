@@ -708,3 +708,8 @@ body:has(.buyutec:target) {
     opacity: 0;
   }
 }
+
+/* Hızlı atlama penceresi açıkken arkadaki sayfa kaymasın (K-119). */
+html:has(dialog.hizli-atlama[open]) {
+  overflow: hidden;
+}

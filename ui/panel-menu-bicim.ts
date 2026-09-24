@@ -23,7 +23,9 @@ export type IkonAdi =
   | "musteri"
   | "vitrin"
   | "rapor"
-  | "ayar";
+  | "ayar"
+  /** Hızlı atlama düğmesi (K-119); menü maddesi değil. */
+  | "ara";
 
 /**
  * Rozetin tonu. `bekleyen`: müşteri cevap bekliyor, geciktikçe zarar veriyor
@@ -48,6 +50,11 @@ export type Sayaclar = Record<SayacAdi, number>;
 export type AltMadde = {
   yol: string;
   ad: string;
+  /**
+   * Hızlı atlamada (K-119) adın yanında aranan başka kelimeler: "masraf"
+   * yazan kişi Giderler'i, "yorum" yazan Değerlendirmeler'i bulsun.
+   */
+  anahtar?: string;
   sayac?: SayacAdi;
   ton?: RozetTonu;
 };
@@ -57,6 +64,7 @@ export type Bolum = {
   yol: string;
   ad: string;
   ikon: IkonAdi;
+  anahtar?: string;
   /** Bölümün kendi rozeti (ana sayfasının). */
   sayac?: SayacAdi;
   ton?: RozetTonu;
@@ -79,7 +87,7 @@ export type Bolum = {
  * eskisiyle aynı; yalnızca yerleri değişti.
  */
 export const BOLUMLER: Bolum[] = [
-  { yol: "/yonetim", ad: "Ana sayfa", ikon: "ozet", alt: [] },
+  { yol: "/yonetim", ad: "Ana sayfa", ikon: "ozet", anahtar: "ozet panel", alt: [] },
   {
     yol: "/yonetim/siparisler",
     ad: "Siparişler",
@@ -88,9 +96,9 @@ export const BOLUMLER: Bolum[] = [
     ton: "bekleyen",
     ozetSayaclar: ["siparis", "talep", "iade"],
     alt: [
-      { yol: "/yonetim/gunluk", ad: "Günün işi", sayac: "hazirlanacak", ton: "bekleyen" },
-      { yol: "/yonetim/talepler", ad: "Talepler", sayac: "talep", ton: "bekleyen" },
-      { yol: "/yonetim/iadeler", ad: "İadeler", sayac: "iade", ton: "bekleyen" },
+      { yol: "/yonetim/gunluk", ad: "Günün işi", anahtar: "hazirla paketle kargo", sayac: "hazirlanacak", ton: "bekleyen" },
+      { yol: "/yonetim/talepler", ad: "Talepler", anahtar: "degisim iptal", sayac: "talep", ton: "bekleyen" },
+      { yol: "/yonetim/iadeler", ad: "İadeler", anahtar: "geri odeme", sayac: "iade", ton: "bekleyen" },
     ],
   },
   {
@@ -101,10 +109,10 @@ export const BOLUMLER: Bolum[] = [
     ton: "hatirlatma",
     ozetSayaclar: ["fotografsiz"],
     alt: [
-      { yol: "/yonetim/kategoriler", ad: "Kategoriler" },
-      { yol: "/yonetim/bedenler", ad: "Bedenler" },
+      { yol: "/yonetim/kategoriler", ad: "Kategoriler", anahtar: "reyon" },
+      { yol: "/yonetim/bedenler", ad: "Bedenler", anahtar: "yas ay" },
       { yol: "/yonetim/renkler", ad: "Renkler" },
-      { yol: "/yonetim/urunler/toplu", ad: "Toplu yükleme" },
+      { yol: "/yonetim/urunler/toplu", ad: "Toplu yükleme", anahtar: "excel csv ice aktar" },
     ],
   },
   {
@@ -115,11 +123,11 @@ export const BOLUMLER: Bolum[] = [
     ton: "hatirlatma",
     ozetSayaclar: ["sorunluStok"],
     alt: [
-      { yol: "/yonetim/stok/mal-kabul", ad: "Mal kabulü" },
-      { yol: "/yonetim/stok/sayim", ad: "Sayım" },
-      { yol: "/yonetim/stok/siparis-listesi", ad: "Sipariş listesi" },
-      { yol: "/yonetim/stok/satmayanlar", ad: "Satmayanlar" },
-      { yol: "/yonetim/stok/hareketler", ad: "Hareketler" },
+      { yol: "/yonetim/stok/mal-kabul", ad: "Mal kabulü", anahtar: "gelen mal tedarik giris" },
+      { yol: "/yonetim/stok/sayim", ad: "Sayım", anahtar: "envanter barkod" },
+      { yol: "/yonetim/stok/siparis-listesi", ad: "Sipariş listesi", anahtar: "tedarikci eksik alinacak" },
+      { yol: "/yonetim/stok/satmayanlar", ad: "Satmayanlar", anahtar: "olu stok" },
+      { yol: "/yonetim/stok/hareketler", ad: "Hareketler", anahtar: "stok gecmisi" },
     ],
   },
   {
@@ -127,16 +135,16 @@ export const BOLUMLER: Bolum[] = [
     ad: "Müşteriler",
     ikon: "musteri",
     ozetSayaclar: ["yorum"],
-    alt: [{ yol: "/yonetim/yorumlar", ad: "Değerlendirmeler", sayac: "yorum", ton: "hatirlatma" }],
+    alt: [{ yol: "/yonetim/yorumlar", ad: "Değerlendirmeler", anahtar: "yorum puan", sayac: "yorum", ton: "hatirlatma" }],
   },
   {
     yol: "/yonetim/kampanyalar",
     ad: "Vitrin",
     ikon: "vitrin",
     alt: [
-      { yol: "/yonetim/kampanyalar", ad: "Kampanyalar" },
-      { yol: "/yonetim/banner", ad: "Ana sayfa banner" },
-      { yol: "/yonetim/duyuru", ad: "Duyuru şeridi" },
+      { yol: "/yonetim/kampanyalar", ad: "Kampanyalar", anahtar: "indirim kupon kod" },
+      { yol: "/yonetim/banner", ad: "Ana sayfa banner", anahtar: "afis slider gorsel" },
+      { yol: "/yonetim/duyuru", ad: "Duyuru şeridi", anahtar: "bildirim ust serit" },
     ],
   },
   {
@@ -144,8 +152,8 @@ export const BOLUMLER: Bolum[] = [
     ad: "Raporlar",
     ikon: "rapor",
     alt: [
-      { yol: "/yonetim/rapor", ad: "Satış raporu" },
-      { yol: "/yonetim/kar", ad: "Aylık kâr" },
+      { yol: "/yonetim/rapor", ad: "Satış raporu", anahtar: "ciro" },
+      { yol: "/yonetim/kar", ad: "Aylık kâr", anahtar: "kar zarar net" },
     ],
   },
 ];
@@ -159,12 +167,12 @@ export const AYARLAR: Bolum = {
   ad: "Ayarlar",
   ikon: "ayar",
   alt: [
-    { yol: "/yonetim/ayarlar", ad: "Satış ayarları" },
-    { yol: "/yonetim/ayarlar/giderler", ad: "Giderler" },
-    { yol: "/yonetim/yasal", ad: "Yasal metinler" },
-    { yol: "/yonetim/kullanicilar", ad: "Kullanıcılar" },
-    { yol: "/yonetim/hazirlik", ad: "Satışa hazırlık" },
-    { yol: "/yonetim/tani", ad: "Tanı" },
+    { yol: "/yonetim/ayarlar", ad: "Satış ayarları", anahtar: "kargo ucreti taksit" },
+    { yol: "/yonetim/ayarlar/giderler", ad: "Giderler", anahtar: "masraf kira maliyet komisyon" },
+    { yol: "/yonetim/yasal", ad: "Yasal metinler", anahtar: "kvkk sozlesme" },
+    { yol: "/yonetim/kullanicilar", ad: "Kullanıcılar", anahtar: "yonetici personel" },
+    { yol: "/yonetim/hazirlik", ad: "Satışa hazırlık", anahtar: "kontrol listesi" },
+    { yol: "/yonetim/tani", ad: "Tanı", anahtar: "hata saglik" },
   ],
 };
 

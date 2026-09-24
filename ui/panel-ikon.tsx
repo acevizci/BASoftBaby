@@ -3,7 +3,7 @@ import type { IkonAdi } from "@/ui/panel-menu-bicim";
 /**
  * Panel menüsünün ikonları.
  *
- * Kütüphane yok: sekiz ikon için bir paket kurmak sayfaya inen
+ * Kütüphane yok: birkaç ikon için bir paket kurmak sayfaya inen
  * JavaScript'i artırır ve tema uyumunu dışarı emanet ederdi. Hepsi tek
  * çizgi kalınlığında, `currentColor` ile — açık ve koyu temada
  * kendiliğinden doğru renkte (K-60).
@@ -22,6 +22,7 @@ const YOLLAR: Record<IkonAdi, string> = {
   vitrin: "M4 9 5.5 4h13L20 9M4 9h16M4 9a2.67 2.67 0 0 0 5.33 0 2.67 2.67 0 0 0 5.34 0A2.67 2.67 0 0 0 20 9M5 11.5V20h14v-8.5M10 20v-5h4v5",
   rapor: "M5 20V10m7 10V4m7 16v-7",
   ayar: "M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm8 3a8 8 0 0 0-.2-1.6l2-1.5-2-3.4-2.3.9a8 8 0 0 0-2.8-1.6L14.4 2H9.6l-.3 2.8a8 8 0 0 0-2.8 1.6l-2.3-.9-2 3.4 2 1.5a8 8 0 0 0 0 3.2l-2 1.5 2 3.4 2.3-.9a8 8 0 0 0 2.8 1.6l.3 2.8h4.8l.3-2.8a8 8 0 0 0 2.8-1.6l2.3.9 2-3.4-2-1.5c.1-.5.2-1 .2-1.6Z",
+  ara: "M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14Zm9 2-4-4",
 };
 
 export default function PanelIkon({ ad }: { ad: IkonAdi }) {

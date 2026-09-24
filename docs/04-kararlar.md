@@ -5151,6 +5151,43 @@ olmayınca ekranı kaplayan bir çekmece kullanıcıyı hapsederdi.
 **Nerede:** [`../ui/panel-menu.tsx`](../ui/panel-menu.tsx),
 [`../app/globals.css`](../app/globals.css) (`cekmece`, `karartma`)
 
+### K-119 · Hızlı atlama (⌘K / Ctrl+K)
+
+Menü ne kadar düzenli olursa olsun, yeri bilinen bir sayfaya gitmek iki üç
+tıklama; sipariş numarası elde olan birinin siparişi bulması listeyi açıp
+aramak. Yönetim ekranlarının ortak cevabı (Shopify, Stripe, Linear, GitHub)
+her yerden açılan bir arama penceresi. Panelde artık var:
+
+- **Açmak:** ⌘K (Mac) / Ctrl+K her panel sayfasında; menünün üstündeki
+  "Ara…" düğmesi; telefonda menü başlığının yanındaki büyüteç.
+- **Sayfalar menü ağacından** (K-116): menüye eklenen sayfa burada da
+  kendiliğinden çıkıyor. Adın yanında aranan kelimeler de ağaçta
+  (`anahtar`): "masraf" Giderler'i, "yorum" Değerlendirmeler'i buluyor.
+  Türkçe harfe takılmıyor ("sayim" → Sayım); her kelime bir kelimenin
+  başına uymalı, adı yazılanla başlayan önde.
+- **Sipariş numarası:** "BA-2026-0012", "ba 2026 12" gibi yazımlar tanınıyor,
+  ilk sonuç doğrudan siparişin sayfası.
+- **Arama kısayolları:** yazılan metin siparişlerde, ürünlerde, stokta
+  (barkod dahil) ve müşterilerde aranabiliyor; ilgili listenin kendi
+  araması açılıyor.
+- **Eylemler:** yeni ürün, stok etiketi, hesabım, mağazayı aç.
+
+**Veritabanına bakmıyor.** Sonuçlar tarayıcıda, menü ağacından; tuşa basar
+basmaz çıkıyorlar ve pencere açıldığında sunucuya istek gitmiyor. Kayıt
+aramasını (ürün adı, müşteri adı) listelerin kendi araması yapıyor; aynı
+aramayı ikinci bir yerde yazmak, iki arama arasında fark doğururdu.
+
+**Erişilebilirlik.** Yerel `<dialog>` modal: odak pencerede kalıyor, Esc ve
+karartmaya tıklamak kapatıyor, kapanınca odak açan düğmeye dönüyor. Arama
+kutusu ARIA combobox: odak kutuda, oklar seçili satırı değiştiriyor
+(`aria-activedescendant`), Enter açıyor, ⌘/Ctrl+Enter yeni sekmede açıyor;
+sonuç sayısı ekran okuyucuya duyuruluyor. Tarayıcının kendi Ctrl+K'sı
+panelde bastırılıyor. JavaScript kapalıyken düğmeler hiç çizilmiyor.
+
+**Nerede:** [`../ui/hizli-atlama-bicim.ts`](../ui/hizli-atlama-bicim.ts),
+[`../ui/hizli-atlama.tsx`](../ui/hizli-atlama.tsx),
+[`../ui/panel-menu.tsx`](../ui/panel-menu.tsx)
+
 ---
 
 ## Açık sorular

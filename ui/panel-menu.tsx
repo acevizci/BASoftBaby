@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import PanelIkon from "@/ui/panel-ikon";
+import HizliAtlama from "@/ui/hizli-atlama";
 import {
   AYARLAR,
   BOLUMLER,
@@ -90,8 +91,17 @@ export default function PanelMenu({
     () => false,
   );
 
+  const mac = useSyncExternalStore(
+    () => () => {},
+    () => /Mac|iPhone|iPad/.test(navigator.platform),
+    () => false,
+  );
+  const [atlama, setAtlama] = useState(false);
+
   const cevir = (b: Bolum) => {
-    const yeni = acik.includes(b.yol) ? acik.filter((y) => y !== b.yol) : [...acik, b.yol];
+    const yeni = acik.includes(b.yol)
+      ? acik.filter((y) => y !== b.yol)
+      : [...acik, b.yol];
     setAcik(yeni);
     bolumCereziniYaz(yeni);
   };
@@ -108,6 +118,30 @@ export default function PanelMenu({
     if (kutu.current) kutu.current.open = false;
   }, [yol]);
 
+  // ⌘K / Ctrl+K hızlı atlamayı açıp kapatıyor (K-119). Tarayıcının kendi
+  // Ctrl+K'sı (adres çubuğunda arama) panelde bastırılıyor: yönetim
+  // ekranlarının hepsinde (Shopify, Stripe, Linear) bu tuş bu iş için.
+  useEffect(() => {
+    const tus = (e: KeyboardEvent) => {
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        !e.altKey &&
+        e.key.toLowerCase() === "k"
+      ) {
+        e.preventDefault();
+        setAtlama((a) => !a);
+      }
+    };
+    document.addEventListener("keydown", tus);
+    return () => document.removeEventListener("keydown", tus);
+  }, []);
+
+  // Çekmeceden açılınca çekmece kapanıyor; pencere onun üstünde kalmasın.
+  const atlamayiAc = () => {
+    if (kutu.current?.open) kutu.current.open = false;
+    setAtlama(true);
+  };
+
   // Esc kapatıyor; Tab çekmecenin içinde dönüyor (odak tuzağı).
   useEffect(() => {
     const tus = (e: KeyboardEvent) => {
@@ -120,7 +154,9 @@ export default function PanelMenu({
       }
       if (e.key !== "Tab" || !cekmece.current) return;
       const odaklar = [
-        ...cekmece.current.querySelectorAll<HTMLElement>("a[href], button:not([disabled])"),
+        ...cekmece.current.querySelectorAll<HTMLElement>(
+          "a[href], button:not([disabled])",
+        ),
       ].filter((el) => el.offsetParent !== null);
       if (odaklar.length === 0) return;
       const ilk = odaklar[0];
@@ -139,7 +175,9 @@ export default function PanelMenu({
 
   // Açılınca odak çekmecenin ilk bağlantısına, arkadaki sayfa kaymıyor.
   const acildi = () => {
-    const acikMi = Boolean(kutu.current?.open) && !window.matchMedia("(min-width: 1024px)").matches;
+    const acikMi =
+      Boolean(kutu.current?.open) &&
+      !window.matchMedia("(min-width: 1024px)").matches;
     sayfaKaydirmasi(!acikMi);
     if (acikMi) cekmece.current?.querySelector<HTMLElement>("a[href]")?.focus();
   };
@@ -170,135 +208,192 @@ export default function PanelMenu({
     : "mt-2";
 
   return (
-    // Küçük ekranda açılır, geniş ekranda hep açık. `open-yok` sınıfı
-    // globals.css'te: tarayıcının kapalı `<details>` içeriğini gizleyen
-    // kuralını geniş ekranda etkisiz kılıyor.
-    <details ref={kutu} className="open-yok group/menu" onToggle={acildi}>
-      <summary
-        ref={baslik}
-        className="flex min-h-11 list-none items-center justify-between gap-3 rounded-marka border border-cizgi bg-yuzey px-4 py-2.5 text-sm font-bold text-metin-2 lg:hidden [&::-webkit-details-marker]:hidden"
+    // Telefonda menü başlığı ile arama düğmesi yan yana. Geniş ekranda
+    // sarmalayıcı yok sayılıyor (`contents`): `<details>` ızgaranın hücresi
+    // olarak boyunu alıyor, yapışkan menü ona göre duruyor.
+    <div className="flex gap-2 lg:contents">
+      {/* Küçük ekranda açılır, geniş ekranda hep açık. `open-yok` sınıfı
+        globals.css'te: tarayıcının kapalı `<details>` içeriğini gizleyen
+        kuralını geniş ekranda etkisiz kılıyor. */}
+      <details
+        ref={kutu}
+        className="open-yok group/menu min-w-0 flex-1"
+        onToggle={acildi}
       >
-        <span className="flex min-w-0 items-center gap-2.5">
-          <span aria-hidden="true" className="text-base leading-none">
-            ☰
+        <summary
+          ref={baslik}
+          className="flex min-h-11 list-none items-center justify-between gap-3 rounded-marka border border-cizgi bg-yuzey px-4 py-2.5 text-sm font-bold text-metin-2 lg:hidden [&::-webkit-details-marker]:hidden"
+        >
+          <span className="flex min-w-0 items-center gap-2.5">
+            <span aria-hidden="true" className="text-base leading-none">
+              ☰
+            </span>
+            <span className="truncate">
+              <span className="sr-only">Menü · </span>
+              <span className="text-metin">{sayfaAdi(yol)}</span>
+            </span>
           </span>
-          <span className="truncate">
-            <span className="sr-only">Menü · </span>
-            <span className="text-metin">{sayfaAdi(yol)}</span>
-          </span>
-        </span>
-        {bekleyen > 0 && (
-          <span className="rakam flex-none rounded-full bg-dugme px-2 py-0.5 text-xs font-bold text-dugme-yazi">
-            {bekleyen}
-            <span className="sr-only"> bekleyen iş</span>
-          </span>
+          {bekleyen > 0 && (
+            <span className="rakam flex-none rounded-full bg-dugme px-2 py-0.5 text-xs font-bold text-dugme-yazi">
+              {bekleyen}
+              <span className="sr-only"> bekleyen iş</span>
+            </span>
+          )}
+        </summary>
+
+        {/* Çekmecenin arkası: dokununca kapanıyor. */}
+        {js && (
+          <div
+            aria-hidden="true"
+            data-karartma
+            onClick={kapat}
+            className="fixed inset-0 z-40 bg-black/40 lg:hidden motion-safe:animate-[karartma_180ms_ease-out]"
+          />
         )}
-      </summary>
 
-      {/* Çekmecenin arkası: dokununca kapanıyor. */}
-      {js && (
-        <div
-          aria-hidden="true"
-          data-karartma
-          onClick={kapat}
-          className="fixed inset-0 z-40 bg-black/40 lg:hidden motion-safe:animate-[karartma_180ms_ease-out]"
-        />
-      )}
-
-      <nav
-        ref={cekmece}
-        aria-label="Yönetim menüsü"
-        className={`flex flex-col gap-0.5 border border-cizgi bg-yuzey p-2 lg:sticky lg:top-6 lg:mt-0 lg:rounded-marka ${
-          js ? cekmeceSinifi : "mt-2 rounded-marka"
-        }`}
-      >
-        <div className="mb-1 flex min-h-9 items-center justify-between gap-2 px-1">
-          <p className={`font-baslik text-base font-bold ${dar ? "lg:hidden" : ""}`}>Yönetim</p>
-          {/* Daraltma yalnızca geniş ekranda anlamlı. */}
-          <form action={gorunumuCevir} className="ml-auto hidden lg:block">
-            <button
-              type="submit"
-              title={dar ? "Menüyü genişlet" : "Menüyü daralt"}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-metin-3 transition hover:bg-yuzey-sicak hover:text-metin"
+        <nav
+          ref={cekmece}
+          aria-label="Yönetim menüsü"
+          className={`flex flex-col gap-0.5 border border-cizgi bg-yuzey p-2 lg:sticky lg:top-6 lg:mt-0 lg:rounded-marka ${
+            js ? cekmeceSinifi : "mt-2 rounded-marka"
+          }`}
+        >
+          <div className="mb-1 flex min-h-9 items-center justify-between gap-2 px-1">
+            <p
+              className={`font-baslik text-base font-bold ${dar ? "lg:hidden" : ""}`}
             >
-              <span aria-hidden="true" className="text-sm">
-                {dar ? "»" : "«"}
-              </span>
-              <span className="sr-only">{dar ? "Menüyü genişlet" : "Menüyü daralt"}</span>
-            </button>
-          </form>
+              Yönetim
+            </p>
+            {/* Daraltma yalnızca geniş ekranda anlamlı. */}
+            <form action={gorunumuCevir} className="ml-auto hidden lg:block">
+              <button
+                type="submit"
+                title={dar ? "Menüyü genişlet" : "Menüyü daralt"}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-metin-3 transition hover:bg-yuzey-sicak hover:text-metin"
+              >
+                <span aria-hidden="true" className="text-sm">
+                  {dar ? "»" : "«"}
+                </span>
+                <span className="sr-only">
+                  {dar ? "Menüyü genişlet" : "Menüyü daralt"}
+                </span>
+              </button>
+            </form>
+            {js && (
+              <button
+                type="button"
+                onClick={kapat}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-metin-2 transition hover:bg-yuzey-sicak hover:text-metin lg:hidden"
+              >
+                <span aria-hidden="true">✕</span>
+                <span className="sr-only">Menüyü kapat</span>
+              </button>
+            )}
+          </div>
+
+          {/* Hızlı atlama (K-119). JavaScript'siz tarayıcıda işe yaramadığı
+            için yalnızca sayfa canlanınca. */}
           {js && (
             <button
               type="button"
-              onClick={kapat}
-              className="flex h-9 w-9 items-center justify-center rounded-full text-metin-2 transition hover:bg-yuzey-sicak hover:text-metin lg:hidden"
+              onClick={atlamayiAc}
+              title={dar ? `Ara (${mac ? "⌘K" : "Ctrl K"})` : undefined}
+              aria-keyshortcuts={mac ? "Meta+K" : "Control+K"}
+              className={`mb-1 flex min-h-10 items-center gap-2.5 rounded-full border border-cizgi px-2.5 py-2 text-sm text-metin-3 transition hover:border-metin-3 hover:text-metin ${
+                dar ? "lg:justify-center lg:border-transparent lg:px-0" : ""
+              }`}
             >
-              <span aria-hidden="true">✕</span>
-              <span className="sr-only">Menüyü kapat</span>
+              <PanelIkon ad="ara" />
+              <span className={`flex-1 text-left ${dar ? "lg:sr-only" : ""}`}>
+                Ara…
+              </span>
+              <kbd
+                className={`hidden rounded border border-cizgi px-1.5 text-[11px] lg:block ${dar ? "lg:hidden" : ""}`}
+              >
+                {mac ? "⌘K" : "Ctrl K"}
+              </kbd>
             </button>
           )}
-        </div>
 
-        {BOLUMLER.map(bolum)}
+          {BOLUMLER.map(bolum)}
 
-        {/* Ayarlar ana listeden ayrı, altta: nadiren açılıyor ama her zaman
+          {/* Ayarlar ana listeden ayrı, altta: nadiren açılıyor ama her zaman
             aynı yerde bulunmalı (K-116). */}
-        <div className="mt-2 border-t border-cizgi pt-2">{bolum(AYARLAR)}</div>
+          <div className="mt-2 border-t border-cizgi pt-2">
+            {bolum(AYARLAR)}
+          </div>
 
-        {/* Grupların dışında: mağazaya çıkış bir ayar maddesi değil. */}
-        <div className="mt-2 border-t border-cizgi pt-2">
-          <Link
-            href="/"
-            title={dar ? "Mağazayı gör" : undefined}
-            className={`flex min-h-10 items-center gap-2.5 rounded-full px-2.5 py-2 text-sm font-semibold text-mavi-koyu transition hover:bg-mavi-soluk ${
-              dar ? "lg:justify-center lg:px-0" : ""
-            }`}
-          >
-            <span aria-hidden="true">↗</span>
-            <span className={dar ? "lg:sr-only" : ""}>Mağazayı gör</span>
-          </Link>
-        </div>
-        {/* Kimin girdiği yazıyor: ortak bir şifre yerine kişiye ait
-            hesaplar olmasının görünen yanı bu (K-45). */}
-        <div className="mt-2 border-t border-cizgi-soluk pt-2">
-          <Link
-            href="/yonetim/hesabim"
-            aria-current={eslesir(yol, "/yonetim/hesabim") ? "page" : undefined}
-            title={dar ? yonetici.adSoyad : undefined}
-            className={`flex items-center gap-2.5 rounded-marka px-2.5 py-1.5 transition hover:bg-yuzey-sicak ${
-              dar ? "lg:justify-center lg:px-0" : ""
-            }`}
-          >
-            {/* Dar menüde baş harfler: ad sığmıyor ama "kim girmiş"
-                bilgisi tamamen kaybolmamalı. */}
-            <span
-              aria-hidden="true"
-              className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-yuzey-sicak text-xs font-bold text-metin-2"
-            >
-              {basHarfler(yonetici.adSoyad)}
-            </span>
-            <span className={dar ? "min-w-0 lg:sr-only" : "min-w-0"}>
-              <span className="block truncate text-sm font-bold text-metin">
-                {yonetici.adSoyad}
-              </span>
-              <span className="block truncate text-xs text-metin-3">{yonetici.eposta}</span>
-            </span>
-          </Link>
-          <form action={cikis}>
-            <button
-              type="submit"
-              title={dar ? "Çıkış yap" : undefined}
-              className={`mt-1 flex min-h-10 w-full items-center gap-2.5 rounded-full px-2.5 py-1.5 text-sm font-semibold text-metin-2 transition hover:bg-yuzey-sicak hover:text-mercan-koyu ${
+          {/* Grupların dışında: mağazaya çıkış bir ayar maddesi değil. */}
+          <div className="mt-2 border-t border-cizgi pt-2">
+            <Link
+              href="/"
+              title={dar ? "Mağazayı gör" : undefined}
+              className={`flex min-h-10 items-center gap-2.5 rounded-full px-2.5 py-2 text-sm font-semibold text-mavi-koyu transition hover:bg-mavi-soluk ${
                 dar ? "lg:justify-center lg:px-0" : ""
               }`}
             >
-              <span aria-hidden="true">⎋</span>
-              <span className={dar ? "lg:sr-only" : ""}>Çıkış yap</span>
-            </button>
-          </form>
-        </div>
-      </nav>
-    </details>
+              <span aria-hidden="true">↗</span>
+              <span className={dar ? "lg:sr-only" : ""}>Mağazayı gör</span>
+            </Link>
+          </div>
+          {/* Kimin girdiği yazıyor: ortak bir şifre yerine kişiye ait
+            hesaplar olmasının görünen yanı bu (K-45). */}
+          <div className="mt-2 border-t border-cizgi-soluk pt-2">
+            <Link
+              href="/yonetim/hesabim"
+              aria-current={
+                eslesir(yol, "/yonetim/hesabim") ? "page" : undefined
+              }
+              title={dar ? yonetici.adSoyad : undefined}
+              className={`flex items-center gap-2.5 rounded-marka px-2.5 py-1.5 transition hover:bg-yuzey-sicak ${
+                dar ? "lg:justify-center lg:px-0" : ""
+              }`}
+            >
+              {/* Dar menüde baş harfler: ad sığmıyor ama "kim girmiş"
+                bilgisi tamamen kaybolmamalı. */}
+              <span
+                aria-hidden="true"
+                className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-yuzey-sicak text-xs font-bold text-metin-2"
+              >
+                {basHarfler(yonetici.adSoyad)}
+              </span>
+              <span className={dar ? "min-w-0 lg:sr-only" : "min-w-0"}>
+                <span className="block truncate text-sm font-bold text-metin">
+                  {yonetici.adSoyad}
+                </span>
+                <span className="block truncate text-xs text-metin-3">
+                  {yonetici.eposta}
+                </span>
+              </span>
+            </Link>
+            <form action={cikis}>
+              <button
+                type="submit"
+                title={dar ? "Çıkış yap" : undefined}
+                className={`mt-1 flex min-h-10 w-full items-center gap-2.5 rounded-full px-2.5 py-1.5 text-sm font-semibold text-metin-2 transition hover:bg-yuzey-sicak hover:text-mercan-koyu ${
+                  dar ? "lg:justify-center lg:px-0" : ""
+                }`}
+              >
+                <span aria-hidden="true">⎋</span>
+                <span className={dar ? "lg:sr-only" : ""}>Çıkış yap</span>
+              </button>
+            </form>
+          </div>
+        </nav>
+      </details>
+
+      {js && (
+        <button
+          type="button"
+          onClick={atlamayiAc}
+          className="flex min-h-11 w-11 flex-none items-center justify-center rounded-marka border border-cizgi bg-yuzey text-metin-2 lg:hidden"
+        >
+          <PanelIkon ad="ara" />
+          <span className="sr-only">Hızlı atlama</span>
+        </button>
+      )}
+      {atlama && <HizliAtlama onKapat={() => setAtlama(false)} />}
+    </div>
   );
 }
 
@@ -316,14 +411,28 @@ function sayfaKaydirmasi(serbest: boolean): void {
 function basHarfler(ad: string): string {
   const parcalar = ad.trim().split(/\s+/).filter(Boolean);
   if (parcalar.length === 0) return "?";
-  if (parcalar.length === 1) return parcalar[0].slice(0, 2).toLocaleUpperCase("tr");
-  return (parcalar[0][0] + parcalar[parcalar.length - 1][0]).toLocaleUpperCase("tr");
+  if (parcalar.length === 1)
+    return parcalar[0].slice(0, 2).toLocaleUpperCase("tr");
+  return (parcalar[0][0] + parcalar[parcalar.length - 1][0]).toLocaleUpperCase(
+    "tr",
+  );
 }
 
 /** Rozet: sayı, ya da dar menüde nokta; ekran okuyucu her zaman sayıyı duyuyor. */
-function Rozet({ sayi, ton, dar }: { sayi: number; ton: RozetTonu; dar?: boolean }) {
+function Rozet({
+  sayi,
+  ton,
+  dar,
+}: {
+  sayi: number;
+  ton: RozetTonu;
+  dar?: boolean;
+}) {
   if (sayi <= 0) return null;
-  const renk = ton === "bekleyen" ? "bg-dugme text-dugme-yazi" : "border border-cizgi bg-yuzey text-metin-2";
+  const renk =
+    ton === "bekleyen"
+      ? "bg-dugme text-dugme-yazi"
+      : "border border-cizgi bg-yuzey text-metin-2";
   return (
     <>
       <span
@@ -347,7 +456,8 @@ function Rozet({ sayi, ton, dar }: { sayi: number; ton: RozetTonu; dar?: boolean
 // Açık sayfa: sol kenarı düz ve kalın mercan çubuklu bir sekme. Yazı kalın
 // ve koyu: mercan yazı soluk mercan dolgunun üstünde 4,39:1 veriyordu, eşik
 // 4,5 (K-50).
-const ETKIN = "border-l-[3px] border-mercan bg-mercan-soluk font-bold text-metin";
+const ETKIN =
+  "border-l-[3px] border-mercan bg-mercan-soluk font-bold text-metin";
 
 function BolumSatiri({
   b,
@@ -376,7 +486,10 @@ function BolumSatiri({
   // kendi rozeti. Kapalıysa bölümün toplamı başlıkta (K-116). Dar menüde alt
   // maddeler hiç görünmediği için orada hep toplam.
   const ozet = bolumOzeti(b, sayaclar);
-  const kendi = { sayi: b.sayac ? sayaclar[b.sayac] : 0, ton: b.ton ?? "hatirlatma" };
+  const kendi = {
+    sayi: b.sayac ? sayaclar[b.sayac] : 0,
+    ton: b.ton ?? "hatirlatma",
+  };
   const baslikRozet = gorunur && !dar ? kendi : ozet;
   const listeId = `menu${b.yol.replaceAll("/", "-")}-${b.ad.length}`;
   const okVar = altVar && !etkin;
@@ -398,9 +511,13 @@ function BolumSatiri({
                 }`
           }`}
         >
-          <span className={`flex min-w-0 items-center gap-2.5 ${dar ? "lg:justify-center" : ""}`}>
+          <span
+            className={`flex min-w-0 items-center gap-2.5 ${dar ? "lg:justify-center" : ""}`}
+          >
             <PanelIkon ad={b.ikon} />
-            <span className={dar ? "truncate lg:sr-only" : "truncate"}>{b.ad}</span>
+            <span className={dar ? "truncate lg:sr-only" : "truncate"}>
+              {b.ad}
+            </span>
           </span>
           <Rozet sayi={baslikRozet.sayi} ton={baslikRozet.ton} dar={dar} />
         </Link>
@@ -429,7 +546,10 @@ function BolumSatiri({
         )}
         {/* Ok olmayan satırda da yeri ayrılıyor: rozetler alt alta hizalı kalsın. */}
         {!okVar && (
-          <span aria-hidden="true" className={`ml-0.5 w-8 flex-none ${dar ? "lg:hidden" : ""}`} />
+          <span
+            aria-hidden="true"
+            className={`ml-0.5 w-8 flex-none ${dar ? "lg:hidden" : ""}`}
+          />
         )}
       </div>
 
@@ -439,7 +559,14 @@ function BolumSatiri({
           className={`mb-1 ml-[1.15rem] mt-0.5 flex flex-col gap-0.5 border-l border-cizgi pl-2 ${dar ? "lg:hidden" : ""}`}
         >
           {b.alt.map((a) => (
-            <AltSatir key={a.yol + a.ad} ad={a.ad} yol={a.yol} secili={adres === a.yol} sayi={a.sayac ? sayaclar[a.sayac] : 0} ton={a.ton} />
+            <AltSatir
+              key={a.yol + a.ad}
+              ad={a.ad}
+              yol={a.yol}
+              secili={adres === a.yol}
+              sayi={a.sayac ? sayaclar[a.sayac] : 0}
+              ton={a.ton}
+            />
           ))}
         </ul>
       )}
@@ -460,7 +587,14 @@ function BolumSatiri({
             {altVar && (
               <ul className="mt-1 flex flex-col gap-0.5 border-t border-cizgi-soluk pt-1">
                 {b.alt.map((a) => (
-                  <AltSatir key={a.yol + a.ad} ad={a.ad} yol={a.yol} secili={adres === a.yol} sayi={a.sayac ? sayaclar[a.sayac] : 0} ton={a.ton} />
+                  <AltSatir
+                    key={a.yol + a.ad}
+                    ad={a.ad}
+                    yol={a.yol}
+                    secili={adres === a.yol}
+                    sayi={a.sayac ? sayaclar[a.sayac] : 0}
+                    ton={a.ton}
+                  />
                 ))}
               </ul>
             )}
