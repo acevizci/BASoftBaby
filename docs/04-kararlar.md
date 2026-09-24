@@ -5006,6 +5006,46 @@ sayısı. Hesap rapordakiyle aynı (`karRaporu`, K-113).
 
 ---
 
+### K-115 · Sabit giderler ve ay sonu net kâr
+
+Siparişin katkı payı (K-112) siparişe bağlı giderleri düşüyor. Kira, reklam,
+maaş gibi her ay olan giderler kapsam dışıydı.
+
+**Menü → Aylık kâr** (`/yonetim/kar`): ay ay gezilen ekran.
+
+- Üç kutu: siparişlerden kalan (o ayın ödemesi alınmış siparişlerinin katkı
+  payı, rapordaki hesabın aynısı; K-113), sabit giderler, **net kâr** ve net
+  satışa oranı. Eksik bilgili sipariş uyarısı; bu ay için "ay bitmedi" notu.
+- **Sabit giderler:** kategori (kira, reklam, maaş/SGK, yazılım, muhasebe,
+  diğer), açıklama, tutar (KDV hariç), "her ay tekrarla". Tekrarlı gider
+  eklendiği aydan itibaren her ay sayılıyor.
+- **Geçmiş değişmiyor:** önceki aydan gelen tekrarlı gider "bu aydan
+  durdur"la bir önceki ayda bitiriliyor, silinmiyor. Tutar değişince eskisi
+  durdurulup yenisi ekleniyor. Yalnızca bu ay açılan ya da tek seferlik
+  gider siliniyor.
+- **Son 12 ay tablosu:** sipariş, net satış, siparişlerden kalan, sabit
+  gider, net kâr; eksik bilgili aylar yıldızlı.
+
+Aylar Türkiye saatiyle (UTC+3, K-101). Ay ay dökümde önceki dönem
+karşılaştırması hesaplanmıyor (`karRaporu(…, { onceki: false })`), yoksa 12
+ay için sorgular iki katına çıkardı.
+
+**Türkçe tutar yazımı:** "12.500" yazılan kira 12,50 ₺ kaydediliyordu; panel
+bütün tutarlarda noktayı ondalık sayıyordu. Aynı sorun ürün fiyatında da
+vardı: "1.250" 12,50 ₺ oluyordu. Yeni `tutarCoz`: virgül varsa ondalık odur
+ve noktalar binlik; virgül yoksa üçlü gruplanmış noktalar ("12.500",
+"1.250.000") binlik, "249.90" gibi iki haneli ondalık yine ondalık. Paneldeki
+bütün tutar kutuları (ürün, kampanya, ayarlar, kargo, giderler) bundan
+geçiyor. Toplu yükleme kendi okuyucusunu kullanıyor (K-26); Excel'den gelen
+sayılar orada ayrı ele alınıyor.
+
+**Nerede:** [`../server/sabit-gider.ts`](../server/sabit-gider.ts),
+[`../server/tutar.ts`](../server/tutar.ts),
+[`../app/yonetim/(panel)/kar/page.tsx`](../app/yonetim/(panel)/kar/page.tsx),
+[`../testler/sabit-gider.test.ts`](../testler/sabit-gider.test.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

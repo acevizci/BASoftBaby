@@ -91,20 +91,27 @@ function liste(harita: Map<string, KarKirilimi>): KarKirilimi[] {
 
 const odendi = { odemeDurumu: { not: "bekliyor" }, durum: { not: "iptal" } };
 
-export async function karRaporu(donem: Donem): Promise<KarRaporu> {
+export async function karRaporu(
+  donem: Donem,
+  /** Önceki dönemle karşılaştırma; ay ay döküm için gerekmiyor (K-115). */
+  secenek: { onceki?: boolean } = {},
+): Promise<KarRaporu> {
   const uzunluk = donem.bitis.getTime() - donem.baslangic.getTime();
+  const oncekiIste = secenek.onceki ?? true;
   const [siparisler, oncekiler, ayar, gider] = await Promise.all([
     db.order.findMany({
       where: { ...odendi, olusturuldu: { gte: donem.baslangic, lt: donem.bitis } },
       select: SECIM,
     }),
-    db.order.findMany({
-      where: {
-        ...odendi,
-        olusturuldu: { gte: new Date(donem.baslangic.getTime() - uzunluk), lt: donem.baslangic },
-      },
-      select: KAR_SECIMI,
-    }),
+    oncekiIste
+      ? db.order.findMany({
+          where: {
+            ...odendi,
+            olusturuldu: { gte: new Date(donem.baslangic.getTime() - uzunluk), lt: donem.baslangic },
+          },
+          select: KAR_SECIMI,
+        })
+      : Promise.resolve([]),
     ayarlariGetir(),
     giderAyari(),
   ]);

@@ -25,7 +25,12 @@ export default function KarRaporuBolumu({ r }: { r: KarRaporu }) {
       <section className={KART}>
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-lg">Kâr</h2>
-          <span className="text-xs text-metin-3">ödemesi alınmış {r.siparis} sipariş · KDV hariç</span>
+          <span className="text-xs text-metin-3">
+            ödemesi alınmış {r.siparis} sipariş · KDV hariç ·{" "}
+            <Link href="/yonetim/kar" className="font-bold text-mavi-koyu hover:underline">
+              sabit giderlerle aylık kâr
+            </Link>
+          </span>
         </div>
         <div className="mt-3 grid gap-5 lg:grid-cols-[1fr_1.2fr]">
           <dl className="flex flex-col gap-1.5 text-sm">

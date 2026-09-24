@@ -23,6 +23,7 @@ export type IkonAdi =
   | "yorum"
   | "musteri"
   | "rapor"
+  | "kar"
   | "urun"
   | "kategori"
   | "beden"

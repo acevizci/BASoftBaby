@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import { tutarCoz } from "@/server/tutar";
 
 /**
  * Kâr hesabının giderleri (K-112). Boş kutu "girilmedi" (`null`) olarak
@@ -10,11 +11,9 @@ import { yoneticiGerekli } from "@/server/yonetim-kimlik";
  */
 
 function kurus(form: FormData, ad: string): number | null {
-  const metin = String(form.get(ad) ?? "").trim().replace(/\s/g, "").replace(",", ".");
-  if (!metin) return null;
-  const sayi = Number(metin);
-  if (!Number.isFinite(sayi) || sayi < 0 || sayi > 100_000) return null;
-  return Math.round(sayi * 100);
+  // Türkçe yazım: "1.250" bin iki yüz elli (K-115).
+  const k = tutarCoz(String(form.get(ad) ?? ""));
+  return k === null || k > 10_000_000 ? null : k;
 }
 
 /** "%3,49" → 349 (on binde). Üst sınır %30: yazım hatası kârı uçurmasın. */

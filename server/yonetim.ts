@@ -41,6 +41,7 @@ import { kargoyaVerildiEpostasi } from "@/server/eposta";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { hareketYaz } from "@/server/stok-hareket";
 import { maliyetiGecmiseYaz } from "@/server/maliyet";
+import { tutarCoz } from "@/server/tutar";
 import { siparisiIptalEtVeStoguIadeEt } from "@/server/odeme-akis";
 
 /**
@@ -70,14 +71,14 @@ function vitriniYenile() {
   revalidatePath("/", "layout");
 }
 
+/**
+ * Paneldeki tutar kutuları. Türkçe yazım (K-115): "1.250" bin iki yüz elli,
+ * "1.249,90" ve "249,90" de olur. Eskiden nokta her zaman ondalık
+ * sayılıyordu; "1.250" yazılan fiyat 12,50 ₺ kaydediliyordu.
+ */
 function kurusaCevir(deger: FormDataEntryValue | null): number | null {
   if (deger === null) return null;
-  const metin = String(deger).trim().replace(/\s/g, "").replace(",", ".");
-  if (!metin) return null;
-  const sayi = Number(metin);
-  if (!Number.isFinite(sayi) || sayi < 0) return null;
-  // Kayan noktalı çarpmada 249.9 * 100 = 24989.999... çıkıyor, yuvarlıyoruz.
-  return Math.round(sayi * 100);
+  return tutarCoz(String(deger));
 }
 
 function metin(form: FormData, ad: string): string {

@@ -919,6 +919,31 @@ model StockCountLine {
   @@index([variantId])
 }
 
+/// Sabit gider (K-115): kira, reklam, maaş gibi siparişe bağlı olmayan
+/// giderler. Ay sonu net kâr = siparişlerin katkı payı − o ayın sabit
+/// giderleri.
+///
+/// Tekrarlı gider `ay`dan başlayarak her ay geçerli; durdurulunca `bitisAy`
+/// doluyor. Tutar değişince eskisi durdurulup yenisi açılıyor: geçmiş ayların
+/// hesabı değişmesin.
+model Expense {
+  id        String  @id @default(cuid())
+  /// "2026-09"
+  ay        String
+  bitisAy   String?
+  tekrarli  Boolean @default(false)
+  /// kira · reklam · maas · yazilim · muhasebe · diger
+  kategori  String  @default("diger")
+  aciklama  String  @default("")
+  /// KDV hariç.
+  tutarKurus Int
+  adminId   String?
+  yapan     String  @default("")
+  olusturuldu DateTime @default(now())
+
+  @@index([ay])
+}
+
 /// "Stoka girince haber ver" isteği.
 ///
 /// Tükenmiş bir beden-renk için müşterinin bıraktığı adres. Ticari ileti

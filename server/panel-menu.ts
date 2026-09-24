@@ -86,6 +86,7 @@ export function menuyuKur(s: Sayaclar): { ozet: MenuMaddesi; gruplar: MenuGrubu[
           },
           { yol: "/yonetim/musteriler", ad: "Müşteriler", ikon: "musteri" },
           { yol: "/yonetim/rapor", ad: "Satış raporu", ikon: "rapor" },
+          { yol: "/yonetim/kar", ad: "Aylık kâr", ikon: "kar" },
         ],
       },
       {

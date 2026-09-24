@@ -23,6 +23,7 @@ const YOLLAR: Record<IkonAdi, string> = {
   // İki kişi: liste "kullanıcılar"dan (tek kişi) ayrılsın.
   musteri: "M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm-6 9a6 6 0 0 1 12 0M17 11a3 3 0 1 0 0-6m1.5 9a5.5 5.5 0 0 1 3.5 5",
   rapor: "M5 20V10m7 10V4m7 16v-7",
+  kar: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm3 5.5h-4a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H9m3-10.5V7m0 10v-.5",
   urun: "M20 8 12 4 4 8m16 0v8l-8 4-8-4V8m16 0-8 4m0 0L4 8m8 4v8",
   kategori: "M4 5h7v7H4V5Zm9 0h7v7h-7V5ZM4 14h7v5H4v-5Zm9 0h7v5h-7v-5Z",
   beden: "M4 8h16M4 8v8m16-8v8M8 8v3m4-3v4m4-4v3M4 16h16",
