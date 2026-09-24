@@ -5120,6 +5120,37 @@ Müşteriler, Vitrin, Raporlar ve Ayarlar için. Sekmeler menü ağacından
 **Nerede:** [`../ui/bolum-sekmeleri.tsx`](../ui/bolum-sekmeleri.tsx),
 [`../app/yonetim/(panel)/layout.tsx`](../app/yonetim/(panel)/layout.tsx)
 
+### K-118 · Daraltılmış menüde açılır panel, telefonda çekmece
+
+**Daraltılmış menü (geniş ekran).** Menü ikonlara indirildiğinde alt
+sayfalara ulaşmak için menüyü geri açmak gerekiyordu. Artık bir bölüm
+ikonunun üzerine gelince ya da klavyeyle odaklanınca yanında küçük bir panel
+açılıyor: bölümün adı, rozeti ve alt sayfaları (Linear, Stripe kalıbı).
+Tamamen CSS ile (`group-hover`, `group-focus-within`); JavaScript gerekmiyor,
+fare gidince kapanıyor. Rozetli bölümlerin ikonunda rakam yerine nokta
+duruyor, rakam panelde.
+
+**Telefon.** Menü, sayfanın üstünde aşağı uzayan bir kutu yerine soldan
+kayan bir çekmece (off-canvas):
+
+- Kapalı başlıkta açık sayfanın adı ("Stok › Sayım") ve müşterinin
+  beklediği işlerin toplamı; dokunma alanı 44 px (WCAG 2.5.5).
+- Arkası kararıyor; karartmaya dokunmak, ✕ düğmesi ya da Esc kapatıyor.
+  Kapanınca odak menü başlığına dönüyor.
+- Açıkken odak çekmecenin içinde dönüyor (Tab tuzağı), arkadaki sayfa
+  kaymıyor. Başka sayfaya geçince çekmece kendiliğinden kapanıyor.
+- "Menüyü daralt" tercihi telefonu etkilemiyor: daraltma yalnızca geniş
+  ekranın ayarı, çekmecede etiketler hep tam.
+- Hareketi azalt açıksa kayma ve kararma animasyonu yok.
+
+**JavaScript yoksa** eski davranış: `<details>` kutusu aşağı açılıyor,
+bağlantılar çalışıyor. Çekmece sınıfları yalnızca sayfa tarayıcıda
+canlandıktan sonra ekleniyor; karartmayı ve Esc'i kapatacak bir şey
+olmayınca ekranı kaplayan bir çekmece kullanıcıyı hapsederdi.
+
+**Nerede:** [`../ui/panel-menu.tsx`](../ui/panel-menu.tsx),
+[`../app/globals.css`](../app/globals.css) (`cekmece`, `karartma`)
+
 ---
 
 ## Açık sorular

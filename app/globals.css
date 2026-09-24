@@ -210,9 +210,10 @@ button:disabled,
    Panel menüsü küçük ekranda açılır kapanır, geniş ekranda düz bir liste.
    Aynı bağlantıları iki kez yazmamak için tek bir `<details>` kullanılıyor
    ve kapalıyken içeriği gizleyen tarayıcı kuralı burada etkisiz kılınıyor
-   (bkz. docs/04-kararlar.md, K-43). */
+   (bkz. docs/04-kararlar.md, K-43). Telefon çekmecesinin karartması
+   (`data-karartma`, K-118) bunun dışında: geniş ekranda hiç görünmemeli. */
 @media (min-width: 64rem) {
-  details.open-yok > *:not(summary) {
+  details.open-yok > *:not(summary):not([data-karartma]) {
     display: block;
     content-visibility: visible;
   }
@@ -691,5 +692,19 @@ body:has(.buyutec:target) {
 @media print {
   .barkod-etiket {
     border-color: transparent;
+  }
+}
+
+/* Telefonda panel menüsü çekmecesi (K-118). Sınıflarda `motion-safe:` ile
+   kullanılıyor; hareketi azaltmak isteyen kullanıcıda çekmece kaymadan açılır. */
+@keyframes cekmece {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes karartma {
+  from {
+    opacity: 0;
   }
 }
