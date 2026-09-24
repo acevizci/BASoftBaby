@@ -2,6 +2,7 @@ import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import Iyzipay from "iyzipay";
 import type { Siparis } from "@/server/siparis";
+import { tahsilat } from "@/server/hediye-ceki-bicim";
 import { tamAdres } from "@/server/site";
 
 /**
@@ -136,7 +137,8 @@ export async function odemeBaslat(
     // price: sepetin kendi toplamı, paidPrice: kargo ve indirimden sonra
     // karttan çekilecek tutar. iyzico ikisini ayrı istiyor.
     price: tutarYaz(siparis.araToplamKurus),
-    paidPrice: tutarYaz(siparis.toplamKurus),
+    // Hediye çekiyle ödenen kısım karttan çekilmiyor (K-137).
+    paidPrice: tutarYaz(tahsilat(siparis)),
     currency: Iyzipay.CURRENCY.TRY,
     basketId: siparis.numara,
     paymentGroup: Iyzipay.PAYMENT_GROUP.PRODUCT,

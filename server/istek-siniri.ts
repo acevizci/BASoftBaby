@@ -40,7 +40,8 @@ export type IslemTuru =
   | "dogrulama"
   | "takip"
   | "kupon"
-  | "soru";
+  | "soru"
+  | "hediye-ceki";
 
 /**
  * İşlem başına sınırlar.
@@ -77,6 +78,8 @@ const SINIRLAR: Record<IslemTuru, { adet: number; pencereDk: number }> = {
   kupon: { adet: 20, pencereDk: 60 },
   // Ürün sorusu (K-135): panelde birinin okuması gereken metin.
   soru: { adet: 5, pencereDk: 60 },
+  // Hediye çeki kodu tahmin edilmesin (K-137); kuponla ayrı sayaç.
+  "hediye-ceki": { adet: 10, pencereDk: 60 },
 };
 
 function ozet(deger: string): string {

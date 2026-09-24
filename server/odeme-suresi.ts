@@ -1,4 +1,5 @@
 import "server-only";
+import { tahsilat } from "@/server/hediye-ceki-bicim";
 import { db } from "@/server/veritabani";
 import { siparisiIptalEtVeStoguIadeEt } from "@/server/odeme-akis";
 import { havaleHatirlatmaEpostasi } from "@/server/eposta";
@@ -114,6 +115,7 @@ export async function havaleHatirlatmalariniGonder(simdi: Date = new Date()): Pr
       adSoyad: true,
       eposta: true,
       toplamKurus: true,
+      hediyeCekiKurus: true,
       olusturuldu: true,
     },
     take: 100,
@@ -124,7 +126,8 @@ export async function havaleHatirlatmalariniGonder(simdi: Date = new Date()): Pr
     await havaleHatirlatmaEpostasi(s.eposta, {
       numara: s.numara,
       adSoyad: s.adSoyad,
-      toplamKurus: s.toplamKurus,
+      // Havaleyle yatırılacak kısım: hediye çeki düşülmüş (K-137).
+      toplamKurus: tahsilat(s),
       sonTarih,
     });
     await db.order.update({ where: { id: s.id }, data: { hatirlatildi: simdi } });

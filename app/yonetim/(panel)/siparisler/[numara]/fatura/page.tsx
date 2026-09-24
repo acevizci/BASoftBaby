@@ -173,7 +173,12 @@ export default async function FaturaSayfasi({
 
         <p className="mt-6 text-xs opacity-70">
           Fiyatlara KDV dahildir. Ödeme yöntemi:{" "}
-          {siparis.odemeYontemi === "kart" ? "Kredi/banka kartı" : "Havale/EFT"}.
+          {siparis.odemeYontemi === "kart"
+            ? "Kredi/banka kartı"
+            : siparis.odemeYontemi === "hediye-ceki"
+              ? "Hediye çeki"
+              : "Havale/EFT"}
+          {siparis.hediyeCekiKurus > 0 && siparis.odemeYontemi !== "hediye-ceki" && " ve hediye çeki"}.
           {kunye.etbisNo && ` ETBİS: ${kunye.etbisNo}.`}
         </p>
       </div>

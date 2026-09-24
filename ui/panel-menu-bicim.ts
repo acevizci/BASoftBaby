@@ -160,6 +160,7 @@ export const BOLUMLER: Bolum[] = [
       { yol: "/yonetim/banner", ad: "Ana sayfa banner", anahtar: "afis slider gorsel" },
       { yol: "/yonetim/duyuru", ad: "Duyuru şeridi", anahtar: "bildirim ust serit" },
       { yol: "/yonetim/rehber", ad: "Rehber yazıları", anahtar: "blog yazi makale icerik seo" },
+      { yol: "/yonetim/hediye-cekleri", ad: "Hediye çekleri", anahtar: "hediye ceki kod bakiye kart" },
     ],
   },
   {

@@ -1,3 +1,4 @@
+import { fiyatYaz } from "@/ui/katalog-bicim";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
@@ -112,6 +113,10 @@ export default async function SiparisOnayi({
               </>
             )}
           </p>
+        ) : siparis.odemeYontemi === "hediye-ceki" ? (
+          <p className="mt-2 text-sm text-metin-2">
+            Siparişinin tamamı hediye çekinle ödendi; hazırlanmaya başlıyor.
+          </p>
         ) : kartla ? (
           odendi ? (
             <p className="mt-2 text-sm text-metin-2">
@@ -137,6 +142,15 @@ export default async function SiparisOnayi({
           <>
             <p className="mt-2 text-sm text-metin-2">
               Aşağıdaki hesaba havale/EFT yaparken açıklama kısmına sipariş numaranı yaz.
+              {siparis.hediyeCekiKurus > 0 && (
+                <>
+                  {" "}Hediye çekin düşüldü; yatıracağın tutar{" "}
+                  <span className="rakam font-bold text-metin">
+                    {fiyatYaz(siparis.toplamKurus - siparis.hediyeCekiKurus)}
+                  </span>
+                  .
+                </>
+              )}
             </p>
             <pre className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-[10px] bg-yuzey-sicak p-4 font-govde text-sm">
               {ayar.havaleBilgisi}

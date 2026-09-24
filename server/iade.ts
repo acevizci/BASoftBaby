@@ -2,6 +2,8 @@ import "server-only";
 import { db } from "@/server/veritabani";
 import { alanAramasi } from "@/ui/panel-arama-bicim";
 import type { Prisma } from "@/db/uretilen/client";
+import { cekeIadeEt } from "@/server/hediye-ceki";
+import { iadeBolustur } from "@/server/hediye-ceki-bicim";
 
 /**
  * Para iadesi.
@@ -147,6 +149,12 @@ export async function iadeTutari(
  * Parası alınmamış siparişte iade diye bir şey yok: kayıt açılmıyor,
  * `undefined` dönüyor. Çağıran bunu hata saymıyor — iptal edilen ödenmemiş
  * sipariş olağan durum.
+ *
+ * **Hediye çekiyle ödenmiş sipariş (K-137).** Tutar, siparişin ödendiği
+ * oranda para ve çek bakiyesi olarak bölünüyor. Çek kısmı aynı işlemde
+ * bakiyeye dönüyor (gönderilecek bir şey yok); kayıttaki `tutarKurus`
+ * yalnızca para olarak ödenecek kısım. Para kısmı sıfırsa kayıt
+ * tamamlanmış açılıyor.
  */
 export async function iadeKaydiAc(
   orderId: string,
@@ -158,28 +166,52 @@ export async function iadeKaydiAc(
 
   const siparis = await islem.order.findUnique({
     where: { id: orderId },
-    select: { odemeDurumu: true, odemeYontemi: true },
+    select: {
+      odemeDurumu: true,
+      odemeYontemi: true,
+      toplamKurus: true,
+      hediyeCekiKurus: true,
+      iadeler: { select: { tutarKurus: true, hediyeCekiKurus: true } },
+    },
   });
   if (!siparis) return undefined;
-  // Parası alınmamışsa iade edilecek bir şey de yok.
-  if (siparis.odemeDurumu !== "odendi" && siparis.odemeDurumu !== "iade-bekliyor") {
+  // Parası alınmamışsa iade edilecek bir şey de yok. "iade" de kabul: çekle
+  // ödenmiş kısmın önceki iadesi hemen tamamlanıyor, sonraki kısmi iade
+  // yine açılabilmeli.
+  if (!["odendi", "iade-bekliyor", "iade"].includes(siparis.odemeDurumu)) {
     return undefined;
   }
 
+  const { paraKurus, cekKurus } = iadeBolustur({
+    tutarKurus,
+    toplamKurus: siparis.toplamKurus,
+    hediyeCekiKurus: siparis.hediyeCekiKurus,
+    oncekiParaKurus: siparis.iadeler.reduce((t, i) => t + i.tutarKurus, 0),
+    oncekiCekKurus: siparis.iadeler.reduce((t, i) => t + i.hediyeCekiKurus, 0),
+  });
+  if (paraKurus <= 0 && cekKurus <= 0) return undefined;
+  if (cekKurus > 0) await cekeIadeEt(islem, orderId, cekKurus, "iade");
+
+  const yalnizCek = paraKurus <= 0;
   const kayit = await islem.refund.create({
     data: {
       orderId,
       requestId: ek.requestId,
-      tutarKurus,
+      tutarKurus: paraKurus,
+      hediyeCekiKurus: cekKurus,
       yontem: siparis.odemeYontemi,
       aciklama: (ek.aciklama ?? "").slice(0, 500),
+      ...(yalnizCek ? { durum: "tamamlandi", tamamlandi: new Date() } : {}),
     },
     select: { id: true },
   });
 
+  const bekleyen = yalnizCek
+    ? await islem.refund.count({ where: { orderId, durum: { not: "tamamlandi" } } })
+    : 1;
   await islem.order.update({
     where: { id: orderId },
-    data: { odemeDurumu: "iade-bekliyor" },
+    data: { odemeDurumu: bekleyen > 0 ? "iade-bekliyor" : "iade" },
   });
 
   return kayit.id;

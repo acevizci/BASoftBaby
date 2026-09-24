@@ -5704,6 +5704,53 @@ müşteri tabloya bakarak kendisi çözmek zorundaydı.
 **Nerede:** [`../ui/beden-onerici-bicim.ts`](../ui/beden-onerici-bicim.ts),
 [`../ui/beden-onerici.tsx`](../ui/beden-onerici.tsx)
 
+### K-137 · Hediye çeki
+
+Bebek giyiminde hediye alışverişi çok ama "hangi beden, hangi renk" sorusu
+hediye edeni zorluyor. Hediye çeki bu soruyu alana bırakıyor.
+
+- **İndirim değil, ödeme yolu.** Siparişin toplamı değişmiyor; çekten düşülen
+  kısım `Order.hediyeCekiKurus`'a yazılıyor, kalan kartla ya da havaleyle
+  ödeniyor. Bu yüzden kampanya ve kuponla birlikte kullanılabiliyor, kargo
+  eşiği de etkilenmiyor. Fatura siparişin tamamına kesiliyor: çek satışın
+  bedelini ödeyen araç, satışın kendisi değil.
+- **Kod** `HC-XXXX-XXXX`, karıştırılabilen harfler (0/O, 1/I, 5/S…) yok;
+  müşteri küçük harfle, boşlukla ya da tiresiz yazabiliyor. Deneme saatte 10
+  ile sınırlı (kuponla ayrı sayaç, K-122).
+- **Bakiye tek yerde, sipariş işleminin içinde düşüyor**, koşullu
+  güncellemeyle. Aynı çek iki sekmede aynı anda kullanılırsa ikincisi
+  tutmuyor; sipariş hiç açılmıyor, müşteri sebebiyle ödeme sayfasına dönüyor.
+  Sessizce çeksiz devam etmek, beklemediği bir tutarı kartından çekmek olurdu.
+- Çek sepetin tamamını karşılıyorsa sipariş **ödenmiş** açılıyor (ödeme
+  yöntemi "Hediye çeki"), kart ya da havale seçeneği gösterilmiyor. Kart ve
+  havale kapalıyken bile böyle bir sipariş verilebiliyor.
+- Kartta iyzico'ya giden `paidPrice` ve dönüşteki tutar kontrolü (K-110),
+  havale hatırlatması ve onay e-postaları çek düşülmüş tutarla.
+- **Geri dönüş:** ödenmeden iptal olan siparişte (kart tutmadı, havale
+  gelmedi) çekten düşülenin tamamı; ödenmiş siparişin iptal ya da iadesinde
+  sipariş hangi oranda çekle ödendiyse o oranda. Para kısmı iade kaydına
+  (`Refund.tutarKurus`), çek kısmı aynı işlemde bakiyeye
+  (`Refund.hediyeCekiKurus`); para kısmı sıfırsa kayıt tamamlanmış açılıyor.
+  Önceki iadelerle birlikte hiçbir kısım ödenenden fazla geri verilmiyor.
+- Her hareket `GiftCardUse` satırı (harcama, iptal, iade): bakiye bunlarla
+  her zaman açıklanabiliyor.
+- **Kâr:** vade farkı ve tahmini kart komisyonu karttan çekilen kısım
+  üzerinden; bakiyeye dönen iade de satıştan düşüyor.
+- **Panel › Vitrin › Hediye çekleri:** tutar, alıcı, not, son kullanma
+  (varsayılan iki yıl) ile çek oluşturma, kodu alıcıya e-postayla gönderme,
+  bakiye ve hareketler, kullanıma kapatma. Üstte kullanılabilir toplam
+  bakiye: müşterilere olan borç.
+
+**Bilerek yapılmayan:** çekin sitede **satılması**. Satılan çekin bedeli
+tahsil ediliyor ve belgelenmesi gerekiyor; bu e-arşiv faturaya ve şirket
+kaydına (A-03) bağlı. O zamana kadar çek panelden tanımlanıyor (mağazada
+elden satılan, çekilişte verilen, gönül almak için tanımlanan).
+
+**Nerede:** [`../server/hediye-ceki.ts`](../server/hediye-ceki.ts),
+[`../server/hediye-ceki-bicim.ts`](../server/hediye-ceki-bicim.ts),
+[`../server/hediye-ceki-islem.ts`](../server/hediye-ceki-islem.ts),
+[`../app/yonetim/(panel)/hediye-cekleri/page.tsx`](../app/yonetim/(panel)/hediye-cekleri/page.tsx)
+
 ---
 
 ## Açık sorular

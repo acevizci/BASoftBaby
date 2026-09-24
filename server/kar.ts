@@ -59,6 +59,8 @@ export type KarSatiri = {
 export type KarGirdisi = {
   kdvOrani: number;
   toplamKurus: number;
+  /** Hediye çekiyle ödenen kısım (K-137); kart çekimi kalan üzerinden. */
+  hediyeCekiKurus?: number;
   /** Tamamlanmış para iadeleri (KDV dahil). */
   iadeKurus: number;
   odemeYontemi: string;
@@ -103,8 +105,9 @@ export type SiparisKari = {
 export function siparisKari(g: KarGirdisi): SiparisKari {
   const eksikler: string[] = [];
   const netSatisKurus = kdvHaric(Math.max(0, g.toplamKurus - g.iadeKurus), g.kdvOrani);
+  const tahsilKurus = Math.max(0, g.toplamKurus - (g.hediyeCekiKurus ?? 0));
   const vadeFarkiKurus =
-    g.odemeYontemi === "kart" && g.odenenKurus !== null ? Math.max(0, g.odenenKurus - g.toplamKurus) : 0;
+    g.odemeYontemi === "kart" && g.odenenKurus !== null ? Math.max(0, g.odenenKurus - tahsilKurus) : 0;
 
   // Maliyet: satılıp geri gelmeyen adetler. Alış fiyatı olmayan satırlar
   // sıfır değil, eksik: kâr şişmesin diye ayrıca söyleniyor.
@@ -153,7 +156,7 @@ export function siparisKari(g: KarGirdisi): SiparisKari {
   if (g.odemeYontemi === "kart") {
     if (g.komisyonKurus !== null) komisyon = { kurus: g.komisyonKurus, tahmini: false };
     else if (g.gider.kartKomisyonOnbinde !== null) {
-      const cekilen = g.odenenKurus ?? g.toplamKurus;
+      const cekilen = g.odenenKurus ?? tahsilKurus;
       komisyon = {
         kurus: Math.round((cekilen * g.gider.kartKomisyonOnbinde) / 10000) + (g.gider.kartKomisyonSabitKurus ?? 0),
         tahmini: true,

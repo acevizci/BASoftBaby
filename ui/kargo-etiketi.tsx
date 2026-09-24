@@ -1,4 +1,5 @@
 import Barkod from "@/ui/barkod";
+import { yontemAdi } from "@/ui/siparis-bicim";
 
 export type EtiketSiparisi = {
   numara: string;
@@ -77,7 +78,7 @@ export default function KargoEtiketi({
         <span>{siparis.parca} parça</span>
         <span>
           {siparis.odemeDurumu === "odendi" ? "Ödendi" : "Ödeme bekliyor"} ·{" "}
-          {siparis.odemeYontemi === "kart" ? "Kart" : "Havale"}
+          {yontemAdi(siparis.odemeYontemi)}
         </span>
       </div>
     </div>

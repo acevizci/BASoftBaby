@@ -24,6 +24,7 @@ import "server-only";
 
 import { db } from "@/server/veritabani";
 import { renkAdlari } from "@/server/renkler";
+import { yontemAdi } from "@/ui/siparis-bicim";
 
 export type Donem = { baslangic: Date; bitis: Date; ad: string };
 
@@ -246,7 +247,7 @@ export async function raporGetir(donem: Donem): Promise<Rapor> {
 
   const odeme = new Map<string, SatirOzeti>();
   for (const s of siparisler) {
-    const ad = s.odemeYontemi === "kart" ? "Kart" : "Havale / EFT";
+    const ad = yontemAdi(s.odemeYontemi);
     const kayit = odeme.get(ad) ?? { ad, adet: 0, kurus: 0 };
     kayit.adet += 1;
     kayit.kurus += s.toplamKurus;

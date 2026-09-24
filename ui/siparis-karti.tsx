@@ -85,6 +85,25 @@ export default function SiparisKarti({
             {fiyatYaz(siparis.toplamKurus)}
           </dd>
         </div>
+        {/* Hediye çeki ödeme yolu; toplamı değiştirmiyor (K-137). */}
+        {siparis.hediyeCekiKurus > 0 && (
+          <>
+            <div className="flex justify-between">
+              <dt className="text-nane-koyu">Hediye çeki</dt>
+              <dd className="rakam font-semibold text-nane-koyu">
+                -{fiyatYaz(siparis.hediyeCekiKurus)}
+              </dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="font-bold">
+                {siparis.odemeYontemi === "kart" ? "Karttan" : siparis.odemeYontemi === "havale" ? "Havaleyle" : "Kalan"}
+              </dt>
+              <dd className="rakam font-bold">
+                {fiyatYaz(Math.max(0, siparis.toplamKurus - siparis.hediyeCekiKurus))}
+              </dd>
+            </div>
+          </>
+        )}
       </dl>
 
       <div className="mt-4 grid gap-4 border-t border-cizgi pt-4 text-sm sm:grid-cols-2">

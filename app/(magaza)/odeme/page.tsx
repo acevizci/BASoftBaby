@@ -10,6 +10,8 @@ import { odemeDurumu } from "@/ui/odeme-bicim";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import GonderDugmesi from "@/ui/gonder-dugmesi";
 import OlcumOlayi from "@/ui/olcum-olayi";
+import { sepetteCek } from "@/server/hediye-ceki";
+import { hediyeCekiKaldir, hediyeCekiUygula } from "@/server/hediye-ceki-islem";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Sipariş bilgileri", robots: { index: false } };
@@ -32,12 +34,22 @@ const HATALAR: Record<string, string> = {
     "Kısa sürede çok fazla sipariş denemesi geldi. Birkaç dakika bekleyip tekrar dene; sepetin duruyor.",
   "odeme-yok":
     "Şu anda ödeme alınamıyor, bu yüzden siparişin oluşturulmadı ve sepetin duruyor. Lütfen bizimle iletişime geç.",
+  cek: "Hediye çekin bu arada kullanılamaz hale geldi ya da bakiyesi değişti; siparişin oluşturulmadı. Çeki yeniden yazıp tekrar dene.",
   "odeme-baslatilamadi":
     "Ödeme sayfası açılamadı ve siparişin oluşturulmadı; kartından bir tahsilat yapılmadı. Tekrar deneyebilir ya da havale/EFT ile ödeyebilirsin.",
 };
 
+/** Hediye çeki kodu neden tutmadı (K-137). */
+const CEK_HATALARI: Record<string, string> = {
+  yok: "Bu kodla bir hediye çeki bulamadık. Harfleri kontrol et.",
+  pasif: "Bu hediye çeki kullanıma kapatılmış.",
+  suresi: "Bu hediye çekinin süresi dolmuş.",
+  bos: "Bu hediye çekinin bakiyesi kalmamış.",
+  cok: "Kısa sürede çok fazla kod denendi. Biraz bekleyip tekrar dene.",
+};
+
 export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">) {
-  const { hata, adres: adresSecimi } = await searchParams;
+  const { hata, adres: adresSecimi, cek: cekHataKodu } = await searchParams;
   const [sepet, musteri, ayar, kunye] = await Promise.all([
     sepetGetir(),
     girisYapan(),
@@ -55,6 +67,14 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
 
   if (sepet.satirlar.length === 0) redirect("/sepet");
 
+  const cek = await sepetteCek(sepet.toplamKurus);
+  const cekKurus = cek && "kullanilanKurus" in cek ? cek.kullanilanKurus : 0;
+  const odenecekKurus = sepet.toplamKurus - cekKurus;
+  const cekleOdeniyor = cekKurus > 0 && odenecekKurus === 0;
+  const cekHatasi =
+    (typeof cekHataKodu === "string" ? CEK_HATALARI[cekHataKodu] : undefined) ??
+    (cek && "hata" in cek ? CEK_HATALARI[cek.hata] : undefined);
+
   /**
    * Hiçbir ödeme yöntemi açık değilse form hiç çizilmiyor.
    *
@@ -62,7 +82,7 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
    * kilitleyip müşteriyi beklemeye almak demek (K-76). Bunu baştan söylemek
    * hem dürüst hem de stoğu boşa harcamıyor.
    */
-  if (!odeme.alinabilir) {
+  if (!odeme.alinabilir && !cekleOdeniyor) {
     return (
       <div className="mx-auto max-w-xl px-4 py-12">
         <h1 className="text-2xl">Şu anda sipariş alamıyoruz</h1>
@@ -299,7 +319,13 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
           <section className="rounded-marka border border-cizgi bg-yuzey p-5">
             <h2 className="text-lg">Ödeme</h2>
 
-            {kartAcik && (
+            {cekleOdeniyor && (
+              <p className="mt-3 rounded-[10px] border-[1.5px] border-nane bg-nane-soluk p-4 text-sm font-semibold text-nane-koyu">
+                Siparişin tamamı hediye çekinle ödeniyor; kart ya da havale gerekmiyor.
+              </p>
+            )}
+
+            {kartAcik && !cekleOdeniyor && (
               <label className="mt-3 flex items-start gap-3 rounded-[10px] border-[1.5px] border-mercan bg-mercan-soluk p-4">
                 <input
                   type="radio"
@@ -320,7 +346,7 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
               </label>
             )}
 
-            {havaleAcik && (
+            {havaleAcik && !cekleOdeniyor && (
             <label
               className={`mt-3 flex items-start gap-3 rounded-[10px] border-[1.5px] p-4 ${
                 kartAcik ? "border-cizgi" : "border-mercan bg-mercan-soluk"
@@ -343,7 +369,7 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
             </label>
             )}
 
-            {!kartAcik && (
+            {!kartAcik && !cekleOdeniyor && (
               <p className="mt-3 text-xs text-metin-3">
                 Kredi kartıyla ödeme çok yakında eklenecek.
               </p>
@@ -488,7 +514,58 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
                 {fiyatYaz(sepet.toplamKurus)}
               </dd>
             </div>
+            {cekKurus > 0 && (
+              <>
+                <div className="flex justify-between">
+                  <dt className="text-nane-koyu">Hediye çeki</dt>
+                  <dd className="rakam font-semibold text-nane-koyu">-{fiyatYaz(cekKurus)}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="font-bold">Ödenecek</dt>
+                  <dd className="rakam font-bold">{fiyatYaz(odenecekKurus)}</dd>
+                </div>
+              </>
+            )}
           </dl>
+
+          {/* Hediye çeki (K-137): ayrı form, sipariş formunun içine giremez. */}
+          <div id="hediye-ceki" className="mt-4 border-t border-cizgi pt-3">
+            {cek && "kullanilanKurus" in cek ? (
+              <div className="flex items-start justify-between gap-2 text-sm">
+                <p>
+                  <span className="rakam font-bold">{cek.kod}</span>
+                  <span className="block text-xs text-metin-3">
+                    Kalan bakiye: <span className="rakam">{fiyatYaz(cek.kalanBakiyeKurus)}</span>
+                  </span>
+                </p>
+                <form action={hediyeCekiKaldir}>
+                  <button className="text-xs font-bold text-mavi-koyu hover:underline">Kaldır</button>
+                </form>
+              </div>
+            ) : (
+              <form action={hediyeCekiUygula} className="flex flex-col gap-1.5">
+                <label htmlFor="cek-kodu" className={ETIKET}>
+                  Hediye çeki
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="cek-kodu"
+                    name="kod"
+                    autoComplete="off"
+                    placeholder="HC-XXXX-XXXX"
+                    className={`${GIRDI} min-w-0 flex-1 uppercase`}
+                  />
+                  <GonderDugmesi
+                    bekleyen="…"
+                    className="rounded-full border-[1.5px] border-cizgi px-4 text-sm font-bold"
+                  >
+                    Uygula
+                  </GonderDugmesi>
+                </div>
+              </form>
+            )}
+            {cekHatasi && <p className="mt-1.5 text-xs font-semibold text-mercan-koyu">{cekHatasi}</p>}
+          </div>
 
           <Link
             href="/sepet"

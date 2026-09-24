@@ -382,6 +382,12 @@ model Order {
   kampanyaAdi    String?
   kargoKurus     Int
   toplamKurus    Int
+  /// Hediye çekiyle ödenen kısım (K-137). Karttan ya da havaleyle tahsil
+  /// edilecek tutar `toplamKurus - hediyeCekiKurus`. Toplam değişmiyor:
+  /// hediye çeki indirim değil, bir ödeme yolu.
+  hediyeCekiKurus Int       @default(0)
+  giftCardId      String?
+  giftCard        GiftCard? @relation(fields: [giftCardId], references: [id], onDelete: SetNull)
 
   /// Kargo firması takip numarası; 05. adımda kargo entegrasyonu dolduracak.
   kargoTakipNo String?
@@ -711,6 +717,9 @@ model Refund {
   request   OrderRequest? @relation(fields: [requestId], references: [id], onDelete: SetNull)
 
   tutarKurus Int
+  /// İadenin hediye çeki bakiyesine dönen kısmı (K-137); `tutarKurus` para
+  /// olarak geri ödenecek kısım.
+  hediyeCekiKurus Int @default(0)
   /// havale · kart — siparişin ödeme yöntemi
   yontem     String
 
@@ -1344,4 +1353,41 @@ model ProductQuestion {
 
   @@index([productId, durum])
   @@index([durum, olusturuldu])
+}
+
+/// Hediye çeki (K-137). Panelden oluşturuluyor; ödemede kod yazılınca
+/// bakiyesinden düşüyor. İptal ve iadede bakiyeye geri dönüyor. Her hareket
+/// `GiftCardUse` satırı: bakiye onların toplamıyla her zaman açıklanabiliyor.
+model GiftCard {
+  id          String    @id @default(cuid())
+  /// "HC-7K3M-Q9TX"; karıştırılabilen harfler (0/O, 1/I) yok.
+  kod         String    @unique
+  tutarKurus  Int
+  bakiyeKurus Int
+  aliciAd     String    @default("")
+  aliciEposta String    @default("")
+  not         String    @default("")
+  sonKullanma DateTime?
+  aktif       Boolean   @default(true)
+  yapan       String    @default("")
+  olusturuldu DateTime  @default(now())
+
+  kullanimlar GiftCardUse[]
+  siparisler  Order[]
+
+  @@index([olusturuldu])
+}
+
+model GiftCardUse {
+  id          String   @id @default(cuid())
+  giftCardId  String
+  giftCard    GiftCard @relation(fields: [giftCardId], references: [id], onDelete: Cascade)
+  siparisNo   String?
+  /// Artı harcama, eksi bakiyeye dönüş.
+  tutarKurus  Int
+  /// siparis · iptal · iade
+  sebep       String
+  olusturuldu DateTime @default(now())
+
+  @@index([giftCardId])
 }

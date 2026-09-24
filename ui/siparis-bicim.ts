@@ -32,12 +32,14 @@ export const ODEME_ADLARI: Record<OdemeDurumu, string> = {
   iade: "İade edildi",
 };
 
-export const YONTEMLER = ["havale", "kart"] as const;
+/** "hediye-ceki": çekin tamamını karşıladığı sipariş (K-137). */
+export const YONTEMLER = ["havale", "kart", "hediye-ceki"] as const;
 export type Yontem = (typeof YONTEMLER)[number];
 
 export const YONTEM_ADLARI: Record<Yontem, string> = {
   havale: "Havale / EFT",
   kart: "Kart",
+  "hediye-ceki": "Hediye çeki",
 };
 
 export function yontemAdi(yontem: string): string {

@@ -20,6 +20,8 @@ import { enIyiKampanya, gecerliKampanyalar, indirimiDagit } from "@/server/kampa
 import { renkAdlari } from "@/server/renkler";
 import { takipAdresi, tasiyiciAdi } from "@/server/kargo";
 import { suresiDolanlariKapat } from "@/server/odeme-suresi";
+import { cekHarca, hediyeCekiOku } from "@/server/hediye-ceki";
+import { tahsilat } from "@/server/hediye-ceki-bicim";
 
 /**
  * Onay sayfasını açan çerezin adı. Burada duruyor çünkü "use server" işaretli
@@ -48,8 +50,15 @@ export type SiparisGirdisi = {
 };
 
 export type SiparisSonucu =
-  | { tamam: true; numara: string; toplamKurus: number }
-  | { tamam: false; hata: string };
+  | {
+      tamam: true;
+      numara: string;
+      toplamKurus: number;
+      /** Hediye çekiyle ödenen ve kalan, tahsil edilecek kısım (K-137). */
+      hediyeCekiKurus: number;
+      tahsilatKurus: number;
+    }
+  | { tamam: false; hata: string; sebep?: "cek" };
 
 /** BA-2026-0001 */
 function numaraYaz(sayac: number, tarih: Date): string {
@@ -133,10 +142,13 @@ export async function siparisOlustur(
   );
 
   const kargoKurus = kargoHesapla(araToplamKurus - indirimKurus, ayar, true);
+  const toplamKurus = araToplamKurus - indirimKurus + kargoKurus;
   const simdi = new Date();
+  // Hediye çeki (K-137): bakiye işlemin içinde düşülüyor.
+  const cekKodu = await hediyeCekiOku();
 
   try {
-    const numara = await db.$transaction(async (islem) => {
+    const yazilan = await db.$transaction(async (islem) => {
       for (const k of kalemler) {
         // Koşullu düşüm: stok yetmiyorsa hiçbir satır güncellenmez.
         const sonuc = await islem.productVariant.updateMany({
@@ -153,11 +165,20 @@ export async function siparisOlustur(
         select: { sonSiparisNo: true },
       });
 
+      const numara = numaraYaz(ayarSatiri.sonSiparisNo, simdi);
+      const cek = cekKodu ? await cekHarca(islem, cekKodu, toplamKurus, numara) : undefined;
+      const hediyeCekiKurus = cek?.tutarKurus ?? 0;
+      // Çek tamamını karşıladıysa ödenecek bir şey yok: sipariş ödenmiş açılıyor.
+      const cekleOdendi = hediyeCekiKurus >= toplamKurus;
+
       const siparis = await islem.order.create({
         data: {
-          numara: numaraYaz(ayarSatiri.sonSiparisNo, simdi),
+          numara,
           customerId: customerId ?? null,
-          odemeYontemi,
+          odemeYontemi: cekleOdendi ? "hediye-ceki" : odemeYontemi,
+          ...(cekleOdendi ? { odemeDurumu: "odendi", durum: "hazirlaniyor" } : {}),
+          hediyeCekiKurus,
+          giftCardId: cek?.id ?? null,
           sozlesmeOnayi: girdi.sozlesmeOnayi,
           adSoyad: girdi.adSoyad,
           eposta: girdi.eposta,
@@ -173,7 +194,7 @@ export async function siparisOlustur(
           indirimKurus,
           kampanyaAdi: kampanya?.ad ?? null,
           kargoKurus,
-          toplamKurus: araToplamKurus - indirimKurus + kargoKurus,
+          toplamKurus,
           satirlar: { create: kalemler.map((k, i) => ({ ...k, indirimKurus: paylar[i] })) },
         },
         select: { numara: true },
@@ -198,11 +219,24 @@ export async function siparisOlustur(
       );
 
       await islem.cartItem.deleteMany({ where: { cartId } });
-      return siparis.numara;
+      return { numara: siparis.numara, hediyeCekiKurus };
     });
 
-    return { tamam: true, numara, toplamKurus: araToplamKurus - indirimKurus + kargoKurus };
+    return {
+      tamam: true,
+      numara: yazilan.numara,
+      toplamKurus,
+      hediyeCekiKurus: yazilan.hediyeCekiKurus,
+      tahsilatKurus: tahsilat({ toplamKurus, hediyeCekiKurus: yazilan.hediyeCekiKurus }),
+    };
   } catch (hata) {
+    if (hata instanceof Error && hata.message === "CEK") {
+      return {
+        tamam: false,
+        sebep: "cek",
+        hata: "Hediye çekin artık kullanılamıyor ya da bakiyesi değişti.",
+      };
+    }
     if (hata instanceof Error && hata.message === "STOK") {
       return {
         tamam: false,
@@ -244,6 +278,8 @@ export type Siparis = {
   kampanyaAdi: string | null;
   kargoKurus: number;
   toplamKurus: number;
+  /** Hediye çekiyle ödenen kısım (K-137). */
+  hediyeCekiKurus: number;
   kargoTakipNo: string | null;
   sozlesmeOnayi: Date | null;
   /** Kartla ödemede son denemenin hatası; müşteriye sebebi gösterebilmek için. */

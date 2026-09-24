@@ -5,6 +5,8 @@ import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
 import { odemeSorgula } from "@/server/odeme";
 import { odemeAlindiEpostasi } from "@/server/eposta";
 import { iadeKaydiAc, iadeTutari } from "@/server/iade";
+import { cekeIadeEt } from "@/server/hediye-ceki";
+import { tahsilat } from "@/server/hediye-ceki-bicim";
 
 /**
  * Ödeme akışının sipariş tarafı: girişim kaydı, dönüşün işlenmesi, ödeme
@@ -73,7 +75,7 @@ export async function siparisiIptalEtVeStoguIadeEt(
     // Ödeme durumu iptalden önce okunuyor: sonrası çok geç.
     const oncesi = await islem.order.findUnique({
       where: { id: orderId },
-      select: { odemeDurumu: true, numara: true },
+      select: { odemeDurumu: true, numara: true, hediyeCekiKurus: true },
     });
     const parasiAlindi = oncesi?.odemeDurumu === "odendi";
 
@@ -85,6 +87,12 @@ export async function siparisiIptalEtVeStoguIadeEt(
       },
     });
     if (iptal.count === 0) return [];
+
+    // Ödenmeden iptal: çekten düşülen tutar olduğu gibi bakiyeye dönüyor
+    // (K-137). Ödenmişse aşağıdaki iade kaydı çek kısmını kendisi ayırıyor.
+    if (!parasiAlindi && oncesi && oncesi.hediyeCekiKurus > 0) {
+      await cekeIadeEt(islem, orderId, oncesi.hediyeCekiKurus, "iptal");
+    }
 
     // Parası alınmışsa borç kayda giriyor. Tutar siparişin tamamı: iptal
     // parça parça olmuyor, kargo da iade ediliyor.
@@ -196,6 +204,7 @@ export async function odemeDonusunuIsle(jeton: string): Promise<DonusSonucu> {
           id: true,
           numara: true,
           toplamKurus: true,
+          hediyeCekiKurus: true,
           durum: true,
           adSoyad: true,
           eposta: true,
@@ -224,10 +233,12 @@ export async function odemeDonusunuIsle(jeton: string): Promise<DonusSonucu> {
   // Taksitte vade farkı müşteriye yansıtılıyorsa çekilen tutar toplamdan
   // büyük; o fazla kabul (K-110). Eskiden reddediliyordu: para karttan
   // çekilmiş, sipariş iptal edilmiş oluyordu.
-  const tutarTutuyor = odemeTutariTutuyor(sonuc.odenenKurus, girisim.order.toplamKurus, sonuc.taksit);
+  // Karttan beklenen, hediye çeki düşüldükten sonraki kısım (K-137).
+  const beklenen = tahsilat(girisim.order);
+  const tutarTutuyor = odemeTutariTutuyor(sonuc.odenenKurus, beklenen, sonuc.taksit);
   if (sonuc.basarili && !tutarTutuyor) {
     console.error(
-      `Ödeme tutarı siparişle uyuşmuyor: ${girisim.order.numara} bekleniyordu ${girisim.order.toplamKurus}, geldi ${sonuc.odenenKurus}`,
+      `Ödeme tutarı siparişle uyuşmuyor: ${girisim.order.numara} bekleniyordu ${beklenen}, geldi ${sonuc.odenenKurus}`,
     );
   }
 
@@ -271,6 +282,7 @@ export async function odemeDonusunuIsle(jeton: string): Promise<DonusSonucu> {
     adSoyad: girisim.order.adSoyad,
     eposta: girisim.order.eposta,
     toplamKurus: girisim.order.toplamKurus,
+    hediyeCekiKurus: girisim.order.hediyeCekiKurus,
     odemeYontemi: "kart",
   });
 

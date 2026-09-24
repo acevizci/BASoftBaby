@@ -222,8 +222,21 @@ export type SiparisEpostasi = {
   adSoyad: string;
   eposta: string;
   toplamKurus: number;
+  /** Hediye çekiyle ödenen kısım (K-137). */
+  hediyeCekiKurus?: number;
   odemeYontemi: string;
 };
+
+/** "Toplam" satırı; hediye çeki varsa çek ve kalan ödenecek de yazılıyor. */
+function tutarSatirlari(s: SiparisEpostasi, sonEtiket: string): string {
+  const cek = s.hediyeCekiKurus ?? 0;
+  if (cek <= 0) return `${sonEtiket}: ${tutar(s.toplamKurus)}`;
+  return [
+    `Sipariş toplamı: ${tutar(s.toplamKurus)}`,
+    `Hediye çeki: -${tutar(cek)}`,
+    `${sonEtiket}: ${tutar(Math.max(0, s.toplamKurus - cek))}`,
+  ].join("\n");
+}
 
 function tutar(kurus: number): string {
   return `${(kurus / 100).toFixed(2).replace(".", ",")} ₺`;
@@ -237,7 +250,9 @@ export async function siparisAlindiEpostasi(
   const takip = `${siteAdresi()}/siparis-takip?numara=${encodeURIComponent(siparis.numara)}&eposta=${encodeURIComponent(siparis.eposta)}`;
 
   const odemeBolumu =
-    siparis.odemeYontemi === "havale"
+    siparis.odemeYontemi === "hediye-ceki"
+      ? "Siparişinin tamamı hediye çekinle ödendi; hazırlanmaya başlıyoruz."
+      : siparis.odemeYontemi === "havale"
       ? havaleBilgisi
         ? `Ödemeni aşağıdaki hesaba havale/EFT ile yapabilirsin. Açıklama kısmına sipariş numaranı yazmayı unutma.\n\n${havaleBilgisi}`
         : "Ödeme bilgilerini en kısa sürede ileteceğiz."
@@ -249,7 +264,7 @@ export async function siparisAlindiEpostasi(
     `Merhaba ${siparis.adSoyad},
 
 Siparişini aldık. Sipariş numaran: ${siparis.numara}
-Toplam tutar: ${tutar(siparis.toplamKurus)}
+${tutarSatirlari(siparis, siparis.odemeYontemi === "hediye-ceki" ? "Toplam tutar" : "Ödenecek tutar")}
 
 ${odemeBolumu}
 
@@ -268,7 +283,7 @@ export async function odemeAlindiEpostasi(siparis: SiparisEpostasi): Promise<Epo
     `Merhaba ${siparis.adSoyad},
 
 ${siparis.numara} numaralı siparişinin ödemesi alındı, siparişin hazırlanmaya başlıyor.
-Ödenen tutar: ${tutar(siparis.toplamKurus)}
+${tutarSatirlari(siparis, "Ödenen tutar")}
 
 Kargoya verildiğinde sana yine haber vereceğiz.
 
@@ -738,5 +753,31 @@ Cevap: ${bilgi.cevap}
 
 Ürüne bakmak için:
 ${siteAdresi()}/urun/${bilgi.slug}#sorular${await altBilgi()}`,
+  );
+}
+
+/** Panelden oluşturulan hediye çekinin kodu, alıcıya (K-137). */
+export async function hediyeCekiEpostasi(
+  kime: string,
+  bilgi: { kod: string; aliciAd: string; tutarKurus: number; sonKullanma: Date | null },
+): Promise<EpostaSonucu> {
+  const tarih = bilgi.sonKullanma
+    ? `\nSon kullanma: ${bilgi.sonKullanma.toLocaleDateString("tr-TR", { dateStyle: "long", timeZone: "Europe/Istanbul" })}`
+    : "";
+  return gonder(
+    kime,
+    `${tutar(bilgi.tutarKurus)} değerinde hediye çekin var`,
+    `Merhaba${bilgi.aliciAd ? ` ${bilgi.aliciAd}` : ""},
+
+Sana ${tutar(bilgi.tutarKurus)} değerinde bir BASoftBaby hediye çeki tanımlandı.
+
+Kod: ${bilgi.kod}${tarih}
+
+Siparişini verirken ödeme sayfasındaki "Hediye çeki" alanına bu kodu yazman
+yeterli. Tutarın tamamını tek siparişte kullanmak zorunda değilsin; kalan
+bakiye sonraki siparişlerinde kullanılabiliyor.
+
+Alışverişe başlamak için:
+${siteAdresi()}${await altBilgi()}`,
   );
 }

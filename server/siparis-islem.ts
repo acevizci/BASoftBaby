@@ -20,7 +20,9 @@ import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
-import { ayarlariGetir, sepetIdOku } from "@/server/sepet";
+import { ayarlariGetir, sepetGetir, sepetIdOku } from "@/server/sepet";
+import { HEDIYE_CEKI_CEREZI, sepetteCek } from "@/server/hediye-ceki";
+import { tahsilat } from "@/server/hediye-ceki-bicim";
 import { KUPON_CEREZI } from "@/server/kampanya";
 import { SON_SIPARIS_CEREZI, siparisGetirPanel, siparisOlustur } from "@/server/siparis";
 import { odemeAcikMi, odemeBaslat } from "@/server/odeme";
@@ -136,11 +138,17 @@ export async function siparisiTamamla(veri: FormData): Promise<void> {
    * havale bilgisi girilmemişse mağaza sipariş alamaz. Bunu sipariş anında
    * söylemek, sipariş aldıktan sonra söylememekten iyidir.
    */
+  //
+  // Hediye çeki sepetin tamamını karşılıyorsa ödeme yöntemi gerekmiyor (K-137).
   if (!kartMi && !odemeDurumu(odemeAcikMi(), ayar.havaleBilgisi).havale) {
-    redirect("/odeme?hata=odeme-yok");
+    const { toplamKurus } = await sepetGetir();
+    const cek = await sepetteCek(toplamKurus);
+    const tamamiCekle = cek && "kullanilanKurus" in cek && cek.kullanilanKurus >= toplamKurus;
+    if (!tamamiCekle) redirect("/odeme?hata=odeme-yok");
   }
   const sonuc = await siparisOlustur(girdi, ayar, customerId, kartMi ? "kart" : "havale");
 
+  if (!sonuc.tamam && sonuc.sebep === "cek") redirect("/odeme?hata=cek");
   if (!sonuc.tamam) {
     redirect(sonuc.hata.includes("boş") ? "/odeme?hata=bos" : "/odeme?hata=stok");
   }
@@ -174,6 +182,7 @@ export async function siparisiTamamla(veri: FormData): Promise<void> {
   const kavanoz = await cookies();
   // Kupon bir siparişlik: kalırsa müşteri farkında olmadan tekrar kullanır.
   kavanoz.delete(KUPON_CEREZI);
+  kavanoz.delete(HEDIYE_CEKI_CEREZI);
   kavanoz.set(SON_SIPARIS_CEREZI, sonuc.numara, {
     httpOnly: true,
     sameSite: "lax",
@@ -184,7 +193,9 @@ export async function siparisiTamamla(veri: FormData): Promise<void> {
 
   revalidatePath("/", "layout");
 
-  if (kartMi) redirect(await odemeyeYonlendir(sonuc.numara));
+  // Çek tamamını karşıladıysa karta gidilecek bir tutar yok.
+  const cekleOdendi = sonuc.tahsilatKurus === 0;
+  if (kartMi && !cekleOdendi) redirect(await odemeyeYonlendir(sonuc.numara));
 
   // Havalede sipariş burada tamamlanıyor: onay e-postası şimdi gidiyor.
   // Kartta ödeme sonucu belli olunca gidiyor (dönüş ucunda).
@@ -194,7 +205,8 @@ export async function siparisiTamamla(veri: FormData): Promise<void> {
       adSoyad: girdi.adSoyad,
       eposta: girdi.eposta,
       toplamKurus: sonuc.toplamKurus,
-      odemeYontemi: "havale",
+      hediyeCekiKurus: sonuc.hediyeCekiKurus,
+      odemeYontemi: cekleOdendi ? "hediye-ceki" : "havale",
     },
     ayar.havaleBilgisi,
   );
@@ -228,7 +240,7 @@ async function odemeyeYonlendir(numara: string): Promise<string> {
   }
 
   const kayit = await db.order.findUnique({ where: { numara }, select: { id: true } });
-  if (kayit) await odemeGirisimiKaydet(kayit.id, baslatma.jeton, siparis.toplamKurus);
+  if (kayit) await odemeGirisimiKaydet(kayit.id, baslatma.jeton, tahsilat(siparis));
 
   return baslatma.adres;
 }

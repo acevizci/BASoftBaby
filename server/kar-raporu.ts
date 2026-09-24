@@ -16,6 +16,7 @@ import { ayarlariGetir } from "@/server/sepet";
 import { kdvHaric, type SiparisKari } from "@/server/kar";
 import { KAR_SECIMI, giderAyari, kayittanKar } from "@/server/siparis-kari";
 import type { Donem } from "@/server/rapor";
+import { yontemAdi } from "@/ui/siparis-bicim";
 
 export type KarKirilimi = {
   ad: string;
@@ -169,7 +170,7 @@ export async function karRaporu(
     if (k.maliyet.tahmini || k.kargo.tahmini || k.komisyon.tahmini) r.tahminiSiparis += 1;
 
     const gelir = k.netSatisKurus + k.vadeFarkiKurus;
-    ekle(odeme, s.odemeYontemi === "kart" ? "Kart" : "Havale / EFT", 1, gelir, k.katkiKurus);
+    ekle(odeme, yontemAdi(s.odemeYontemi), 1, gelir, k.katkiKurus);
     if (s.kampanyaAdi) {
       const kk = kampanyalar.get(s.kampanyaAdi) ?? {
         ad: s.kampanyaAdi, adet: 0, netSatisKurus: 0, karKurus: 0, marjYuzde: null, indirimKurus: 0,
