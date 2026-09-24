@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { db } from "@/server/veritabani";
 import { OLUMSUZ_PUAN } from "@/server/yorum";
-import { yorumuAc, yorumuGizle, yorumuYanitla } from "@/server/yorum-yonetim";
+import { fotografOnayla, fotografSil, yorumuAc, yorumuGizle, yorumuYanitla } from "@/server/yorum-yonetim";
 import { Yildiz } from "@/ui/yildiz";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import Sayfalama, { SayfaAlani } from "@/ui/sayfalama";
@@ -80,6 +80,19 @@ export default async function YorumEkrani({ searchParams }: PageProps<"/yonetim/
     },
   });
 
+  // Onay bekleyen müşteri fotoğrafları (K-134): hangi yorumda ve üründe.
+  const bekleyenFotolar = await db.reviewPhoto.findMany({
+    where: { onayli: false },
+    orderBy: { olusturuldu: "asc" },
+    take: 30,
+    select: {
+      id: true,
+      yol: true,
+      kucukYol: true,
+      review: { select: { adSoyad: true, yorum: true, product: { select: { ad: true } } } },
+    },
+  });
+
   const suzgecler: [string, string][] = [
     ["yayinda", "Yayında"],
     ["olumsuz", `${OLUMSUZ_PUAN} yıldız ve altı`],
@@ -108,13 +121,55 @@ export default async function YorumEkrani({ searchParams }: PageProps<"/yonetim/
             ? "Yorum gizlendi."
             : kayit === "acildi"
               ? "Yorum yeniden yayında."
-              : "Yanıtın kaydedildi."}
+              : kayit === "foto-onay"
+                ? "Fotoğraf yayında."
+                : kayit === "foto-sil"
+                  ? "Fotoğraf silindi."
+                  : "Yanıtın kaydedildi."}
         </p>
       )}
       {hata === "sebep" && (
         <p className="rounded-marka bg-mercan-soluk px-4 py-3 text-sm font-semibold text-mercan-koyu">
           Gizleme sebebi yazılmadan yorum gizlenemiyor.
         </p>
+      )}
+
+      {bekleyenFotolar.length > 0 && (
+        <section className={KART}>
+          <h2 className="text-lg">Onay bekleyen fotoğraflar ({bekleyenFotolar.length})</h2>
+          <p className="mt-1 text-sm text-metin-3">
+            Müşterinin değerlendirmesine eklediği fotoğraflar onaylanınca ürün sayfasında görünüyor.
+            Yüzü net görünen bir çocuk, ev adresi ya da ürünle ilgisiz bir şey varsa sil.
+          </p>
+          <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {bekleyenFotolar.map((f) => (
+              <li key={f.id} className="flex flex-col gap-2 rounded-[12px] border border-cizgi-soluk p-3">
+                <a href={f.yol} target="_blank" rel="noopener">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- yüklenirken küçültülmüş webp */}
+                  <img src={f.kucukYol || f.yol} alt="" className="aspect-square w-full rounded-[10px] object-cover" />
+                </a>
+                <p className="text-xs text-metin-3">
+                  <span className="font-bold text-metin-2">{f.review.product.ad}</span> · {f.review.adSoyad}
+                </p>
+                <p className="line-clamp-2 text-xs text-metin-2">{f.review.yorum}</p>
+                <div className="flex gap-2">
+                  <form action={fotografOnayla}>
+                    <input type="hidden" name="id" value={f.id} />
+                    <button type="submit" className="rounded-full bg-dugme px-3 py-1.5 text-xs font-bold text-dugme-yazi">
+                      Yayınla
+                    </button>
+                  </form>
+                  <form action={fotografSil}>
+                    <input type="hidden" name="id" value={f.id} />
+                    <button type="submit" className="rounded-full border border-cizgi px-3 py-1.5 text-xs font-bold text-mercan-koyu">
+                      Sil
+                    </button>
+                  </form>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       <div className="flex flex-wrap gap-2">

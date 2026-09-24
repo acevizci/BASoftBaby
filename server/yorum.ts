@@ -38,6 +38,7 @@ export type Yorum = {
   yorum: string;
   yanit: string;
   olusturuldu: Date;
+  fotograflar: { id: string; yol: string; kucukYol: string }[];
 };
 
 export type YorumOzeti = {
@@ -118,6 +119,12 @@ export async function urunYorumlari(productId: string, sayfa: unknown = 1): Prom
       yorum: true,
       yanit: true,
       olusturuldu: true,
+      // Yalnızca panelde onaylanmış fotoğraflar (K-134).
+      fotograflar: {
+        where: { onayli: true },
+        orderBy: { sira: "asc" },
+        select: { id: true, yol: true, kucukYol: true },
+      },
     },
   });
 
@@ -206,7 +213,7 @@ export type YorumGirdisi = {
   yorum: string;
 };
 
-export type YorumSonucu = { tamam: true } | { tamam: false; hata: string };
+export type YorumSonucu = { tamam: true; reviewId: string } | { tamam: false; hata: string };
 
 /** Değerlendirmeyi kaydeder. Kuralları yeniden denetliyor. */
 export async function yorumYaz(girdi: YorumGirdisi): Promise<YorumSonucu> {
@@ -241,7 +248,8 @@ export async function yorumYaz(girdi: YorumGirdisi): Promise<YorumSonucu> {
     return { tamam: false, hata: "Ürün artık katalogda yok." };
   }
 
-  await db.review.create({
+  const yeni = await db.review.create({
+    select: { id: true },
     data: {
       productId: satir.variant.productId,
       orderItemId: satir.id,
@@ -252,7 +260,7 @@ export async function yorumYaz(girdi: YorumGirdisi): Promise<YorumSonucu> {
   });
 
   await puaniTazele(satir.variant.productId);
-  return { tamam: true };
+  return { tamam: true, reviewId: yeni.id };
 }
 
 /** Panelde yanıt bekleyen olumsuz yorum sayısı. */

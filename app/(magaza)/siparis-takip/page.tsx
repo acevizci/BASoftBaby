@@ -96,6 +96,7 @@ export default async function SiparisTakip({ searchParams }: PageProps<"/siparis
           satirlar={degerlendirilebilir}
           sonuc={yorumSonucu}
           mesaj={yorumMesaji}
+          foto={typeof aranan.foto === "string" ? aranan.foto : undefined}
         />
       )}
 

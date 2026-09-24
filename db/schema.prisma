@@ -1078,8 +1078,29 @@ model Review {
   olusturuldu DateTime @default(now())
   guncellendi DateTime @updatedAt
 
+  fotograflar ReviewPhoto[]
+
   @@index([productId, durum])
   @@index([durum, olusturuldu])
+}
+
+/// Değerlendirmeye eklenen fotoğraf (K-134). Panelde onaylanana kadar
+/// görünmüyor: müşteri yüklemesi, içinde yüz ya da ev adresi olabilir.
+/// Yüklenirken EXIF (konum dahil) siliniyor.
+model ReviewPhoto {
+  id        String @id @default(cuid())
+  reviewId  String
+  review    Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  yol       String
+  kucukYol  String
+  genislik  Int    @default(0)
+  yukseklik Int    @default(0)
+  onayli    Boolean @default(false)
+  sira      Int     @default(0)
+  olusturuldu DateTime @default(now())
+
+  @@index([reviewId])
+  @@index([onayli])
 }
 
 /// Giriş denemesi sayacı.

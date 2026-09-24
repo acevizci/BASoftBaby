@@ -1,6 +1,7 @@
 import { YildizSecici } from "@/ui/yildiz";
 import { degerlendirmeGonder } from "@/server/yorum-islem";
 import type { DegerlendirilebilirSatir } from "@/server/yorum";
+import YorumFotografSecici from "@/ui/yorum-fotograf-secici";
 
 const GIRDI =
   "rounded-[10px] border-[1.5px] border-cizgi bg-yuzey px-3 py-2 text-sm text-metin outline-none focus:border-mercan";
@@ -19,6 +20,7 @@ export default function DegerlendirmeFormu({
   satirlar,
   sonuc,
   mesaj,
+  foto,
 }: {
   numara: string;
   eposta: string;
@@ -27,6 +29,8 @@ export default function DegerlendirmeFormu({
   satirlar: DegerlendirilebilirSatir[];
   sonuc?: string;
   mesaj?: string;
+  /** Kaydedilen fotoğraf sayısı (K-134). */
+  foto?: string;
 }) {
   if (satirlar.length === 0 && sonuc !== "alindi") return null;
 
@@ -43,6 +47,7 @@ export default function DegerlendirmeFormu({
         <p className="mt-3 rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">
           Değerlendirmen yayımlandı. Teşekkürler — beden tutup tutmadığını yazman başka
           annelerin işini çok kolaylaştırıyor.
+          {foto && ` Fotoğrafların (${foto}) kısa bir kontrolden sonra görünecek.`}
         </p>
       )}
       {sonuc === "hata" && (
@@ -96,6 +101,8 @@ export default function DegerlendirmeFormu({
                     className={GIRDI}
                   />
                 </label>
+
+                <YorumFotografSecici />
 
                 <button
                   type="submit"

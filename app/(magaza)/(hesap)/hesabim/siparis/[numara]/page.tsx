@@ -72,6 +72,7 @@ export default async function UyeSiparisAyrintisi({
         satirlar={degerlendirilebilir}
         sonuc={tek("yorum")}
         mesaj={tek("ymesaj")}
+        foto={tek("foto")}
       />
 
       {talepBilgisi && (

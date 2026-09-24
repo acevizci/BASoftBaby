@@ -86,6 +86,22 @@ export default function YorumListesi({
                   <span>{tarihYaz(y.olusturuldu)}</span>
                 </p>
                 <p className="mt-2 text-sm text-metin-2">{y.yorum}</p>
+                {/* Müşteri fotoğrafları (K-134): panelde onaylananlar; büyük hâli yeni sekmede. */}
+                {y.fotograflar.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {y.fotograflar.map((f) => (
+                      <a key={f.id} href={f.yol} target="_blank" rel="noopener" className="block">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- yüklenirken küçültülmüş webp (K-12) */}
+                        <img
+                          src={f.kucukYol || f.yol}
+                          alt={`${y.adSoyad} kullanıcısının fotoğrafı`}
+                          loading="lazy"
+                          className="h-20 w-20 rounded-[10px] object-cover ring-1 ring-cizgi"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                )}
                 {y.yanit && (
                   <div className="mt-3 rounded-marka bg-zemin-2 px-3 py-2">
                     <p className="text-xs font-bold text-metin-2">BASoftBaby</p>

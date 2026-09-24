@@ -12,6 +12,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/server/veritabani";
 import { yorumYaz } from "@/server/yorum";
 import { islemSinirla } from "@/server/istek-siniri";
+import { yorumFotograflariniKaydet } from "@/server/yorum-fotograf";
 
 export async function degerlendirmeGonder(form: FormData): Promise<void> {
   const numara = String(form.get("numara") ?? "").trim().toUpperCase();
@@ -49,7 +50,11 @@ export async function degerlendirmeGonder(form: FormData): Promise<void> {
     redirect(geri(`yorum=hata&ymesaj=${encodeURIComponent(sonuc.hata)}`));
   }
 
+  // Fotoğraflar (K-134): onaylanınca görünüyor; yorumu bekletmiyor.
+  const dosyalar = form.getAll("fotograflar").filter((d): d is File => d instanceof File);
+  const foto = await yorumFotograflariniKaydet(sonuc.reviewId, dosyalar);
+
   // Ürün sayfasındaki puan ve yorum listesi hemen tazelensin.
   revalidatePath("/", "layout");
-  redirect(geri("yorum=alindi"));
+  redirect(geri(`yorum=alindi${foto.eklenen ? `&foto=${foto.eklenen}` : ""}${foto.hatali ? `&fotohata=${foto.hatali}` : ""}`));
 }

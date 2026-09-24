@@ -5635,6 +5635,29 @@ düşükse "Ayrı ayrı alsan X ₺ — sette Y ₺ daha az ödüyorsun".
 [`../ui/set-yonetimi.tsx`](../ui/set-yonetimi.tsx),
 [`../ui/set-icerigi.tsx`](../ui/set-icerigi.tsx)
 
+### K-134 · Değerlendirmelere fotoğraf
+
+Bebek giyiminde en güçlü satış ikna aracı gerçek bebeğin üstünde gerçek
+ürün. Değerlendirme formu yalnızca yıldız ve metin alıyordu.
+
+- **Formda fotoğraf:** en çok 3. Göndermeden önce tarayıcıda küçültülüyor
+  (telefon fotoğrafı 5-8 MB, sunucunun istek sınırı 4,5 MB); JavaScript
+  kapalıysa düz dosya kutusu. Seçilenlerin küçük önizlemesi görünüyor.
+- **Sunucuda** ürün fotoğraflarıyla aynı yol (K-12): biçim denetimi,
+  küçültme, webp. Yeniden kodlanırken **EXIF siliniyor**: telefon
+  fotoğrafında çekildiği yerin konumu olabiliyor. Biri bozuksa ötekiler yine
+  kaydediliyor, yorumun kendisi hiç düşmüyor.
+- **Onaydan sonra yayında:** müşteri yüklemesi; içinde yüzü net bir çocuk,
+  ev adresi ya da ürünle ilgisiz bir şey olabilir. Panelde Değerlendirmeler
+  ekranının başında "Onay bekleyen fotoğraflar": Yayınla / Sil (dosyası da
+  siliniyor, yorum duruyor). Bekleyen fotoğraflar menüde Değerlendirmeler'in
+  rozetine ekleniyor. Yorum metni eskisi gibi hemen yayında (K-34).
+- **Ürün sayfasında** yorumun altında küçük kareler; dokununca büyük hâli.
+
+**Nerede:** [`../server/yorum-fotograf.ts`](../server/yorum-fotograf.ts),
+[`../ui/yorum-fotograf-secici.tsx`](../ui/yorum-fotograf-secici.tsx),
+[`../server/yorum-yonetim.ts`](../server/yorum-yonetim.ts)
+
 ---
 
 ## Açık sorular

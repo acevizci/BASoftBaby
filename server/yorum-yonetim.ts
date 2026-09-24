@@ -15,6 +15,7 @@ import { db } from "@/server/veritabani";
 import { puaniTazele } from "@/server/yorum";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { formSayfaEki } from "@/ui/sayfalama-bicim";
+import { gorselDosyalariniSil } from "@/server/gorsel-depo";
 
 const SAYFA = "/yonetim/yorumlar";
 
@@ -78,4 +79,25 @@ export async function yorumuYanitla(form: FormData): Promise<void> {
   await db.review.update({ where: { id }, data: { yanit: yanit.slice(0, 1000) } });
   revalidatePath("/", "layout");
   redirect(donus(form, "kayit=yanit"));
+}
+
+/** Değerlendirme fotoğrafını yayına alır (K-134). */
+export async function fotografOnayla(form: FormData): Promise<void> {
+  await yoneticiGerekli();
+  await db.reviewPhoto.updateMany({ where: { id: String(form.get("id") ?? "") }, data: { onayli: true } });
+  revalidatePath("/", "layout");
+  redirect(donus(form, "kayit=foto-onay"));
+}
+
+/** Değerlendirme fotoğrafını siler; dosyası da gidiyor. Yorumun kendisi duruyor. */
+export async function fotografSil(form: FormData): Promise<void> {
+  await yoneticiGerekli();
+  const id = String(form.get("id") ?? "");
+  const f = await db.reviewPhoto.findUnique({ where: { id }, select: { yol: true, kucukYol: true } });
+  if (f) {
+    await db.reviewPhoto.delete({ where: { id } });
+    await gorselDosyalariniSil([f.yol, f.kucukYol]);
+  }
+  revalidatePath("/", "layout");
+  redirect(donus(form, "kayit=foto-sil"));
 }

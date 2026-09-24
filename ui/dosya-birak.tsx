@@ -23,7 +23,7 @@ type Sonuc = {
  * yatardı. webp yazamayan tarayıcı (eski Safari) png döndürüyor; o zaman beyaz
  * zemine jpeg yazılıyor, png 1600 pikselde bile birkaç MB tutabiliyor.
  */
-async function kucult(
+export async function kucult(
   dosya: File,
   enGenis: number = EN_GENIS,
   hedefBayt: number = HEDEF_BAYT,

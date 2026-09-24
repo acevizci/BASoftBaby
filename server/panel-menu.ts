@@ -29,7 +29,11 @@ export async function menuSayaclari(): Promise<Sayaclar> {
     }),
     db.orderRequest.count({ where: { durum: "yeni" } }),
     db.refund.count({ where: { durum: { in: ["bekliyor", "basarisiz"] } } }),
-    db.review.count({ where: { durum: "yayinda", yanit: "", puan: { lte: OLUMSUZ_PUAN } } }),
+    // Yanıt bekleyen olumsuz yorumlar ve onay bekleyen müşteri fotoğrafları (K-134).
+    Promise.all([
+      db.review.count({ where: { durum: "yayinda", yanit: "", puan: { lte: OLUMSUZ_PUAN } } }),
+      db.reviewPhoto.count({ where: { onayli: false } }),
+    ]).then(([a, b]) => a + b),
     db.product.count({ where: { aktif: true, images: { none: {} } } }),
     // Beden değil **ürün** sayılıyor: rozete tıklayınca açılan listede o
     // kadar satır çıksın. "13" yazıp yedi satır göstermek kafa karıştırıyordu
