@@ -5419,6 +5419,30 @@ adres ve karar: izni ispat gönderenin yükümlülüğü.
 [`../app/yonetim/(panel)/bulten/page.tsx`](../app/yonetim/(panel)/bulten/page.tsx),
 [`../app/api/eposta-izni/route.ts`](../app/api/eposta-izni/route.ts)
 
+### K-126 · Ürün yapısal verisi: varyantlar, puan, kargo ve iade, sayfa yolu
+
+Ürün sayfasının yapısal verisi tek fiyat ve stok durumundan ibaretti. Google
+arama sonucunda çok daha fazlasını gösterebiliyor; hepsi eklendi:
+
+- **Varyantlar** (`ProductGroup` + `hasVariant`): her beden-renk kendi
+  fiyatı, stoğu, o rengin fotoğrafı ve o renkle açılan adresiyle. Kimlikler
+  Merchant beslemesiyle (K-123) aynı: varyant kimliği ve ürün grubu.
+  Tek varyantlı ürün düz `Product`.
+- **Puan ve yorumlar:** yalnızca gerçek değerlendirme varken (yorumlar
+  yalnızca teslim edilmiş siparişten, K-34). Sonuçta yıldız ve yorum sayısı
+  görünebiliyor; yorumu olmayan ürüne puan yazılmıyor (Google bunu cezalandırıyor).
+- **Kargo ve iade** her teklifte: kargo ücreti (bedava kargo eşiğinin
+  üstündeyse 0), hazırlık 0-1 ve yol 1-4 iş günü, 14 gün ücretsiz iade
+  (anlaşmalı kodla). Sonuçta "Ücretsiz kargo · 14 gün iade" gibi görünebiliyor.
+- **Üstü çizili fiyat** `StrikethroughPrice` olarak: Google indirimi tanıyor.
+- **Sayfa yolu** (`BreadcrumbList`) ürün ve kategori sayfalarında: sonuçta
+  çıplak adres yerine "BASoftBaby › Yenidoğan" görünüyor.
+
+Değerler ekrandakiyle aynı kaynaktan geliyor; ayrışırsa Google zenginleştirmeyi
+kaldırıyor.
+
+**Nerede:** [`../server/yapisal-veri.ts`](../server/yapisal-veri.ts)
+
 ---
 
 ## Açık sorular

@@ -17,6 +17,9 @@ import { yasGruplari } from "@/server/yas-gruplari";
 import { renkSecenekleri } from "@/server/renkler";
 import type { RenkSecenegi } from "@/ui/katalog-bicim";
 import Sayfalama from "@/ui/sayfalama";
+import YapisalVeri from "@/ui/yapisal-veri";
+import { sayfaYolu } from "@/server/yapisal-veri";
+import { tamAdres } from "@/server/site";
 import { sayfaAdresi, sayfaNo } from "@/ui/sayfalama-bicim";
 
 /** "urunler" gerçek bir kategori değil; tüm katalogu gösteren liste. */
@@ -237,6 +240,16 @@ export default async function KategoriSayfasi({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
+      {/* Sayfa yolu Google için de (K-126). */}
+      <YapisalVeri
+        veri={sayfaYolu(
+          [
+            { ad: "Ana sayfa", yol: "/" },
+            tumu ? { ad: "Tüm ürünler", yol: `/${TUMU}` } : { ad: bilgi!.ad, yol: `/${bilgi!.slug}` },
+          ],
+          tamAdres,
+        )}
+      />
       <nav className="text-xs text-metin-3">
         <Link href="/" className="hover:underline">
           Ana sayfa

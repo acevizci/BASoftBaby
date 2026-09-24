@@ -11,6 +11,9 @@ import { urunYorumlari } from "@/server/yorum";
 import YapisalVeri from "@/ui/yapisal-veri";
 import { tamAdres } from "@/server/site";
 import OlcumOlayi from "@/ui/olcum-olayi";
+import { sayfaYolu, urunYapisalVerisi } from "@/server/yapisal-veri";
+import { ayarlariGetir } from "@/server/sepet";
+import { CAYMA_GUN } from "@/ui/talep-bicim";
 import {
   benzerUrunler,
   fiyatYaz,
@@ -51,10 +54,11 @@ export default async function UrunSayfasi({
   const urun = await urunGetir(slug);
   if (!urun) notFound();
 
-  const [kategori, benzerler, yorumOzeti] = await Promise.all([
+  const [kategori, benzerler, yorumOzeti, ayar] = await Promise.all([
     kategoriGetir(urun.kategori),
     benzerUrunler(urun),
     urunYorumlari(urun.id, yorumSayfa),
+    ayarlariGetir(),
   ]);
   const bedenler = urununBedenleri(urun);
   // Boy-kilo bilgisi istemci bileşenine sunucudan geçiyor: bedenler artık
@@ -79,32 +83,31 @@ export default async function UrunSayfasi({
     ? Math.round((1 - satisKurus / ustuCizili) * 100)
     : 0;
 
-  const stokVar = urun.varyantlar.some((v) => v.stok > 0);
-
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
-      {/* Google ürünü fiyatı ve stok durumuyla tanısın; veri ekrandakiyle aynı
-          kaynaktan geliyor. Puan ve yorum sayısı bilerek konulmadı: şu anki
-          değerler örnek veri, gerçek müşteri yorumu değil. */}
+      {/* Google ürünü fiyatı, stoğu, bedenleri, kargo ve iade koşulları ve
+          (varsa) gerçek müşteri puanıyla tanısın; veri ekrandakiyle aynı
+          kaynaktan (K-126). */}
       <YapisalVeri
-        veri={{
-          "@context": "https://schema.org",
-          "@type": "Product",
-          name: urun.ad,
-          description: `${urun.ozet} · ${urun.kumasIcerigi}`,
-          sku: urun.slug,
-          brand: { "@type": "Brand", name: "BASoftBaby" },
-          image: urun.fotograflar.map((f) => tamAdres(f.yol)),
-          offers: {
-            "@type": "Offer",
-            url: tamAdres(`/urun/${urun.slug}`),
-            priceCurrency: "TRY",
-            price: (satisKurus / 100).toFixed(2),
-            availability: stokVar
-              ? "https://schema.org/InStock"
-              : "https://schema.org/OutOfStock",
-          },
-        }}
+        veri={urunYapisalVerisi(urun, {
+          adres: tamAdres,
+          satisKurus,
+          ustuCiziliKurus: ustuCizili,
+          kargoKurus: ayar.kargoKurus,
+          bedavaKargoEsigi: ayar.bedavaKargoEsigi,
+          iadeGun: CAYMA_GUN,
+          yorum: { ortalama: yorumOzeti.ortalama, adet: yorumOzeti.adet, ornekler: yorumOzeti.yorumlar },
+        })}
+      />
+      <YapisalVeri
+        veri={sayfaYolu(
+          [
+            { ad: "Ana sayfa", yol: "/" },
+            ...(kategori ? [{ ad: kategori.ad, yol: `/${kategori.slug}` }] : []),
+            { ad: urun.ad, yol: `/urun/${urun.slug}` },
+          ],
+          tamAdres,
+        )}
       />
 
       <OlcumOlayi
