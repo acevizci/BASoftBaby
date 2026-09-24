@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: PageProps<"/urun/[slug]">): P
   const { slug } = await params;
   const urun = await urunGetir(slug);
   if (!urun) return {};
-  const fotograf = urun.fotograflar[0];
+  // Paylaşım görseli `opengraph-image.tsx`'ten (K-127).
   return {
     title: urun.ad,
     description: `${urun.ozet} · ${urun.kumasIcerigi}`,
@@ -39,7 +39,6 @@ export async function generateMetadata({ params }: PageProps<"/urun/[slug]">): P
       description: urun.ozet,
       type: "website",
       url: `/urun/${urun.slug}`,
-      images: fotograf ? [{ url: fotograf.yol }] : undefined,
     },
   };
 }

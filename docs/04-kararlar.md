@@ -5443,6 +5443,31 @@ kaldırıyor.
 
 **Nerede:** [`../server/yapisal-veri.ts`](../server/yapisal-veri.ts)
 
+### K-127 · Paylaşım görselleri
+
+WhatsApp, Instagram, Facebook ya da X'te ana sayfa veya bir kategori
+paylaşılınca boş bir kart çıkıyordu: paylaşım görseli yalnızca ürün
+sayfasında vardı ve o da fotoğrafın kendisiydi (fotoğrafsız üründe yine boş,
+WebP'yi göstermeyen uygulamada kırık).
+
+Artık her mağaza sayfasının kendi kartı var, sunucuda çiziliyor
+(`opengraph-image.tsx`, 1200×630 PNG, saatte bir yenileniyor):
+
+- **Ana sayfa:** logo, "Minik bedenlere, yumuşacık kumaşlar" ve öne çıkan
+  ürünlerin fotoğrafları. Kendi kartı olmayan sayfalar (yardım, yasal) bunu
+  kullanıyor.
+- **Kategori:** adı, açıklaması ve ilk ürünlerinin fotoğrafları; paylaşım
+  başlığı da artık kategorinin adı (eskiden genel "BASoftBaby").
+- **Ürün:** fotoğraf, ad ve güncel fiyat (kampanyalıysa kampanyalı).
+
+Yazı tipleri sitedekilerle aynı (Baloo 2, Nunito Sans) ve depoda
+(`assets/fontlar`): çizim sırasında dışarıdan bir şey indirilmiyor, Türkçe
+harfler ve ₺ doğru çıkıyor. Fotoğraflar JPEG'e çevrilip gömülüyor. Bir parça
+(yazı tipi, logo, fotoğraf) okunamazsa kart o parça olmadan çiziliyor.
+
+**Nerede:** [`../server/paylasim-gorseli.tsx`](../server/paylasim-gorseli.tsx),
+`app/(magaza)/**/opengraph-image.tsx`
+
 ---
 
 ## Açık sorular

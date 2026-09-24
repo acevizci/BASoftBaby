@@ -60,14 +60,18 @@ export async function generateMetadata({
     return {
       title: n > 1 ? `Tüm ürünler · sayfa ${n}` : "Tüm ürünler",
       alternates: { canonical: ek(`/${TUMU}`) },
+      openGraph: { title: "Tüm ürünler · BASoftBaby", url: `/${TUMU}`, type: "website" },
     };
   }
   const k = await kategoriGetir(kategori);
+  // Paylaşım kartının başlığı ve açıklaması da kategorinin; yoksa kök
+  // düzenin genel "BASoftBaby"si çıkıyordu (K-127).
   return k
     ? {
         title: n > 1 ? `${k.ad} · sayfa ${n}` : k.ad,
         description: k.aciklama,
         alternates: { canonical: ek(`/${k.slug}`) },
+        openGraph: { title: `${k.ad} · BASoftBaby`, description: k.aciklama, url: `/${k.slug}`, type: "website" },
       }
     : {};
 }
