@@ -6,10 +6,10 @@
  * **İçerik güvenlik politikası (CSP).** Sayfaya sızmış bir betiğin
  * (örneğin bir ürün adına gizlenmiş kod) başka bir sunucudan kod
  * yükleyememesi, veriyi başka bir yere gönderememesi ve siteyi başka bir
- * sitenin içine gömememesi için. Site dışarıdan hiçbir şey yüklemiyor:
- * fontlar `next/font` ile kendi sunucumuzda, fotoğraflar `/yuklenen`
- * üzerinden, ölçüm (Vercel Analytics) kendi alan adımızdan. O yüzden kural
- * neredeyse her şeyi "yalnızca kendimiz" ile sınırlıyor.
+ * sitenin içine gömememesi için. Site dışarıdan neredeyse hiçbir şey
+ * yüklemiyor: fontlar `next/font` ile kendi sunucumuzda, ölçüm (Vercel
+ * Analytics) kendi alan adımızdan. Tek istisna fotoğraflar: yayında Vercel
+ * Blob'un adresinden geliyorlar (yerelde `/yuklenen` üzerinden).
  *
  * **Betiklerde `unsafe-inline` neden var.** Next.js sayfayı canlandırmak
  * için satır içi betik yazıyor. Onları tek tek izinlemenin yolu her istekte
@@ -26,6 +26,7 @@
  */
 
 const IYZICO = ["https://*.iyzipay.com", "https://*.iyzico.com"];
+const BLOB = "https://*.public.blob.vercel-storage.com";
 
 export function icerikPolitikasi(gelistirme: boolean): string {
   const kurallar: Record<string, string[]> = {
@@ -34,8 +35,10 @@ export function icerikPolitikasi(gelistirme: boolean): string {
     "script-src": ["'self'", "'unsafe-inline'", ...(gelistirme ? ["'unsafe-eval'"] : [])],
     // Tailwind ve bileşenlerin `style` öznitelikleri satır içi.
     "style-src": ["'self'", "'unsafe-inline'"],
-    // `blob:` tarayıcıda küçültülen fotoğrafın önizlemesi, `data:` küçük SVG'ler.
-    "img-src": ["'self'", "data:", "blob:"],
+    // Ürün ve banner fotoğrafları yayında Vercel Blob'da, tam adresle
+    // (K-12). `blob:` tarayıcıda küçültülen fotoğrafın önizlemesi, `data:`
+    // küçük SVG'ler.
+    "img-src": ["'self'", "data:", "blob:", BLOB],
     "font-src": ["'self'"],
     "connect-src": ["'self'", ...(gelistirme ? ["ws:", "https://va.vercel-scripts.com"] : [])],
     // Barkod okuyucu kamerayı `<video>` ile gösteriyor.

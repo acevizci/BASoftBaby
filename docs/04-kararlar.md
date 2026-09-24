@@ -5218,6 +5218,12 @@ adları bu listeye eklenecek.
 Üretim derlemesiyle mağaza, sepet, ödeme ve panel ekranları gezildi; ihlal
 yok.
 
+**Düzeltme (aynı gün):** yerel denemede fotoğraflar `/yuklenen` üzerinden
+geldiği için gözden kaçtı: yayında fotoğraflar Vercel Blob'un tam adresinden
+(`*.public.blob.vercel-storage.com`) yükleniyor ve ilk hâliyle politika
+onları engelliyordu. `img-src`'ye Blob'un alan adı eklendi, bunu sınayan bir
+test yazıldı.
+
 **Nerede:** [`../server/guvenlik-basliklari.ts`](../server/guvenlik-basliklari.ts),
 [`../next.config.ts`](../next.config.ts)
 

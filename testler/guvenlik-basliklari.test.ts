@@ -18,6 +18,10 @@ test("yayında dışarıdan betik yüklenemiyor, eval yok", () => {
   assert.ok(p.includes("upgrade-insecure-requests"));
 });
 
+test("yayındaki fotoğraflar (Vercel Blob) yüklenebiliyor", () => {
+  assert.ok(kural(icerikPolitikasi(false), "img-src")?.includes("https://*.public.blob.vercel-storage.com"));
+});
+
 test("ödeme yönlendirmesi için form-action'da iyzico var", () => {
   const formAction = kural(icerikPolitikasi(false), "form-action") ?? [];
   assert.ok(formAction.includes("'self'"));
