@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
+import { hataBildir } from "@/ui/hata-bildir";
 
 /**
  * Beklenmedik hata ekranı.
@@ -20,6 +22,13 @@ export default function Hata({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  // Sunucuda olan hatanın bir kodu (`digest`) var ve zaten kayıtta
+  // (`instrumentation.ts`); tarayıcıdaki çizim hatasının yok, o buradan
+  // bildiriliyor (K-121).
+  useEffect(() => {
+    if (!error.digest) hataBildir({ mesaj: `${error.name}: ${error.message}`, yigin: error.stack });
+  }, [error]);
+
   return (
     <main className="mx-auto flex min-h-full max-w-xl flex-col justify-center px-4 py-16 text-center">
       <h1 className="text-2xl sm:text-3xl">Bir şeyler ters gitti</h1>

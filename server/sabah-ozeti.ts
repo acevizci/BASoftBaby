@@ -54,6 +54,8 @@ export type SabahVerisi = {
   bitecekler: Bitecek[];
   /** Dünün ödemesi alınmış siparişlerinin kalanı (K-114); sipariş yoksa boş. */
   dunKar?: { katkiKurus: number; marjYuzde: number | null; eksik: number; siparis: number };
+  /** Dünden beri görülen, çözülmemiş farklı hata sayısı (K-121). */
+  dunHata?: number;
   ozet: Pick<
     PanelOzeti,
     "isler" | "azalanlar" | "azalanToplam" | "bekleyenler" | "bekleyenToplam" | "eksikler"
@@ -69,7 +71,12 @@ function tutar(kurus: number): string {
 
 /** Gönderilecek bir şey var mı: dün sipariş ya da bekleyen iş. */
 export function soylenecekVarMi(v: SabahVerisi): boolean {
-  return v.dunAdet > 0 || v.ozet.isler.some((i) => i.acil) || v.bitecekler.length > 0;
+  return (
+    v.dunAdet > 0 ||
+    v.ozet.isler.some((i) => i.acil) ||
+    v.bitecekler.length > 0 ||
+    (v.dunHata ?? 0) > 0
+  );
 }
 
 /** E-postanın konusu ve düz metni. */
@@ -136,6 +143,12 @@ export function sabahMetni(v: SabahVerisi): { konu: string; metin: string } {
     bolumler.push(`"Gelince haber ver" diyenler:\n\n${satirlar.join("\n")}`);
   }
 
+  if ((v.dunHata ?? 0) > 0) {
+    bolumler.push(
+      `Sitede hata: dünden beri ${v.dunHata} farklı hata görüldü.\n  ${site}/yonetim/hatalar`,
+    );
+  }
+
   if (v.ozet.eksikler.length > 0) {
     bolumler.push(
       `Kurulum eksikleri:\n\n${v.ozet.eksikler.map((e) => `• ${e.ad}`).join("\n")}`,
@@ -158,7 +171,7 @@ export function sabahMetni(v: SabahVerisi): { konu: string; metin: string } {
 async function veriTopla(simdi: Date): Promise<SabahVerisi> {
   const { bas, son } = dununAraligi(simdi);
   const kosul = { durum: { not: "iptal" }, olusturuldu: { gte: bas, lt: son } };
-  const [toplam, siparisler, ozet, adlar, hizlar, kar] = await Promise.all([
+  const [toplam, siparisler, ozet, adlar, hizlar, kar, dunHata] = await Promise.all([
     db.order.aggregate({ where: kosul, _count: true, _sum: { toplamKurus: true } }),
     db.order.findMany({
       where: kosul,
@@ -170,6 +183,7 @@ async function veriTopla(simdi: Date): Promise<SabahVerisi> {
     renkAdlari(),
     satisHizlari(undefined, simdi),
     karRaporu({ baslangic: bas, bitis: son, ad: "dün" }),
+    db.errorLog.count({ where: { cozuldu: false, son: { gte: bas } } }),
   ]);
   const yakin = [...hizlar.entries()]
     .filter(([, h]) => h.stok > 0 && h.kacGun !== null && h.kacGun <= 7)
@@ -199,6 +213,7 @@ async function veriTopla(simdi: Date): Promise<SabahVerisi> {
       kar.siparis > 0
         ? { katkiKurus: kar.katkiKurus, marjYuzde: kar.marjYuzde, eksik: kar.eksikSiparis, siparis: kar.siparis }
         : undefined,
+    dunHata,
     ozet: { ...ozet, azalanlar: ozet.azalanlar.map(renk), bekleyenler: ozet.bekleyenler.map(renk) },
   };
 }

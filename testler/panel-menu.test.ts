@@ -45,7 +45,7 @@ describe("menü işaretleme", () => {
 });
 
 describe("kapalı bölümün rozeti", () => {
-  const s: Sayaclar = { siparis: 5, hazirlanacak: 3, talep: 2, iade: 1, yorum: 0, fotografsiz: 4, sorunluStok: 0 };
+  const s: Sayaclar = { siparis: 5, hazirlanacak: 3, talep: 2, iade: 1, yorum: 0, fotografsiz: 4, sorunluStok: 0, hata: 0 };
   it("örtüşen sayaç iki kez sayılmıyor: günün işi siparişlerin alt kümesi", () => {
     assert.deepEqual(bolumOzeti(BOLUMLER.find((b) => b.ad === "Siparişler")!, s), { sayi: 8, ton: "bekleyen" });
   });

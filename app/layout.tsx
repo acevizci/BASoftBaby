@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
 import { Baloo_2, Nunito_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import HataDinleyici from "@/ui/hata-dinleyici";
 import { siteAdresi } from "@/server/site";
 import YuklemeCizgisi from "@/ui/yukleme";
 import "./globals.css";
@@ -66,6 +67,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             arasında izlemiyor. Bu yüzden çerez onay bandı gerekmiyor (K-16).
             Vercel'de Analytics açık değilse hiçbir veri gitmiyor. */}
         <Analytics />
+        {/* Tarayıcıda olan hatalar panelin hata kaydına (K-121). */}
+        <HataDinleyici />
       </body>
     </html>
   );

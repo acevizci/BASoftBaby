@@ -21,7 +21,7 @@ import type { Sayaclar } from "@/ui/panel-menu-bicim";
 export type { Sayaclar } from "@/ui/panel-menu-bicim";
 
 export async function menuSayaclari(): Promise<Sayaclar> {
-  const [siparis, hazirlanacak, talep, iade, yorum, fotografsiz, sorunluStok] =
+  const [siparis, hazirlanacak, talep, iade, yorum, fotografsiz, sorunluStok, hata] =
     await Promise.all([
     db.order.count({ where: { durum: { in: ["bekliyor", "hazirlaniyor"] } } }),
     db.order.count({
@@ -35,6 +35,7 @@ export async function menuSayaclari(): Promise<Sayaclar> {
     // kadar satır çıksın. "13" yazıp yedi satır göstermek kafa karıştırıyordu
     // (K-44).
     db.product.count({ where: { aktif: true, variants: { some: { stok: { lte: AZALAN_ESIK } } } } }),
+    db.errorLog.count({ where: { cozuldu: false } }),
   ]);
-  return { siparis, hazirlanacak, talep, iade, yorum, fotografsiz, sorunluStok };
+  return { siparis, hazirlanacak, talep, iade, yorum, fotografsiz, sorunluStok, hata };
 }

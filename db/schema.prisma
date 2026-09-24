@@ -1171,3 +1171,27 @@ model Favorite {
   @@unique([customerId, productId])
   @@index([customerId])
 }
+
+/// Canlıda olan hata (K-121). Aynı hata tek satır: `parmakIzi` hatanın
+/// türü, metni (sayılar atılmış) ve yığının ilk satırından; tekrar edince
+/// `adet` artıyor, `son` güncelleniyor. Böylece bir döngüde patlayan hata
+/// tabloyu doldurmuyor, "kaç kez" sorusu da cevaplı kalıyor.
+model ErrorLog {
+  id        String   @id @default(cuid())
+  parmakIzi String   @unique
+  /// sunucu · tarayici
+  kaynak    String
+  mesaj     String
+  yigin     String   @default("")
+  /// Hatanın ilk görüldüğü adres (sorgu metni atılmış).
+  adres     String   @default("")
+  /// Next.js'in müşteriye gösterdiği hata kodu; destek konuşmasında eşleştirmek için.
+  ozet      String   @default("")
+  adet      Int      @default(1)
+  ilk       DateTime @default(now())
+  son       DateTime @default(now())
+  /// Panelde "çözüldü" denince; aynı hata yeniden olursa kendiliğinden açılıyor.
+  cozuldu   Boolean  @default(false)
+
+  @@index([son])
+}

@@ -28,7 +28,7 @@ import { createHash } from "node:crypto";
 import { headers } from "next/headers";
 import { db } from "@/server/veritabani";
 
-export type IslemTuru = "siparis" | "yorum" | "talep" | "stok-bildirimi";
+export type IslemTuru = "siparis" | "yorum" | "talep" | "stok-bildirimi" | "hata";
 
 /**
  * İşlem başına sınırlar.
@@ -42,6 +42,10 @@ const SINIRLAR: Record<IslemTuru, { adet: number; pencereDk: number }> = {
   yorum: { adet: 5, pencereDk: 60 },
   talep: { adet: 10, pencereDk: 60 },
   "stok-bildirimi": { adet: 10, pencereDk: 60 },
+  // Tarayıcı hata bildirimi (K-121): bir sayfada birkaç hata olabilir, ama
+  // saatte yirmiden fazlası ya bozuk bir tarayıcı ya da kaydı doldurmaya
+  // çalışan biri.
+  hata: { adet: 20, pencereDk: 60 },
 };
 
 function ozet(deger: string): string {

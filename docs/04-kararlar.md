@@ -5221,6 +5221,48 @@ yok.
 **Nerede:** [`../server/guvenlik-basliklari.ts`](../server/guvenlik-basliklari.ts),
 [`../next.config.ts`](../next.config.ts)
 
+### K-121 · Canlıdaki hataların kaydı
+
+Müşteri hata ekranı gördüğünde ya da bir düğme çalışmadığında mağaza
+sahibinin haberi olmuyordu: hata yalnızca Vercel'in günlüğündeydi, birkaç
+gün sonra siliniyordu ve kimse oraya bakmıyordu. Artık her hata panelde.
+
+- **Sunucu hataları** (`instrumentation.ts`, Next.js'in `onRequestError`'ı):
+  sayfa çizimi, form gönderimi, API ucu. Yönlendirme ve 404 hata sayılmıyor.
+- **Tarayıcı hataları:** hata ekranını açan çizim hataları ve ekran açmayan,
+  yalnızca düğmeyi "çalışmaz" bırakan hatalar (yakalanmamış hata, reddedilen
+  `Promise`). `sendBeacon` ile `/api/hata`'ya gidiyor.
+- **Aynı hata tek satır.** Parmak izi hatanın türü, metni ve yığının ilk
+  satırından; sayılar, uzun kimlikler ve tırnak içi değerler atılarak
+  ("BA-2026-0012 bulunamadı" ile "…0013 bulunamadı" aynı hata). Tekrar
+  edince `adet` artıyor.
+- **Panelde Ayarlar › Hata kaydı:** mesaj, sunucu/tarayıcı, kaç kez, ilk ve
+  son görülme, adres, müşterinin hata ekranında gördüğü kod (arama kutusuna
+  yazılınca bulunuyor), teknik ayrıntı. "Çözüldü" denen hata listeden
+  çekiliyor; aynı hata yeniden olursa kendiliğinden geri geliyor, yani
+  düzeltmenin tutup tutmadığı görülüyor. Açık hata sayısı menüde rozet.
+- **Sabah özetinde** dünden beri görülen hata sayısı ve bağlantı.
+
+**Kötüye kullanıma karşı.** Uç herkese açık olduğu için yalnızca kendi
+sayfalarımızdan gelen istek (`Origin`), en çok 8 KB, adres başına saatte 20
+bildirim (K-64 sayacı). Tarayıcı eklentilerinin, başka sitelerden gelen
+betiklerin ("Script error.") ve ağ kesintisinin hataları atılıyor. Kayıt en
+çok 500 farklı hata ve 90 gün tutuluyor; adreslerden sorgu metni (e-posta
+jetonu, arama) atılıyor.
+
+**Neden Sentry değil.** Bir hesap, bir anahtar ve sayfaya inen fazladan bir
+betik demekti; CSP'ye (K-120) dış alan adı eklemek gerekirdi. Bu mağazanın
+ihtiyacı "ne oldu, kaç kez, nerede" sorusunun cevabı. Kayıt hiçbir zaman
+hata atmıyor: veritabanına yazılamazsa yalnızca günlüğe düşüyor, asıl hatanın
+yerine geçmiyor.
+
+**Nerede:** [`../server/hata-kaydi.ts`](../server/hata-kaydi.ts),
+[`../server/hata-bicim.ts`](../server/hata-bicim.ts),
+[`../instrumentation.ts`](../instrumentation.ts),
+[`../app/api/hata/route.ts`](../app/api/hata/route.ts),
+[`../ui/hata-dinleyici.tsx`](../ui/hata-dinleyici.tsx),
+[`../app/yonetim/(panel)/hatalar/page.tsx`](../app/yonetim/(panel)/hatalar/page.tsx)
+
 ---
 
 ## Açık sorular

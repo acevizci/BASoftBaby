@@ -43,7 +43,9 @@ export type SayacAdi =
   | "iade"
   | "yorum"
   | "fotografsiz"
-  | "sorunluStok";
+  | "sorunluStok"
+  /** Çözülmemiş hata (K-121). */
+  | "hata";
 
 export type Sayaclar = Record<SayacAdi, number>;
 
@@ -166,13 +168,21 @@ export const AYARLAR: Bolum = {
   yol: "/yonetim/ayarlar",
   ad: "Ayarlar",
   ikon: "ayar",
+  ozetSayaclar: ["hata"],
   alt: [
     { yol: "/yonetim/ayarlar", ad: "Satış ayarları", anahtar: "kargo ucreti taksit" },
     { yol: "/yonetim/ayarlar/giderler", ad: "Giderler", anahtar: "masraf kira maliyet komisyon" },
     { yol: "/yonetim/yasal", ad: "Yasal metinler", anahtar: "kvkk sozlesme" },
     { yol: "/yonetim/kullanicilar", ad: "Kullanıcılar", anahtar: "yonetici personel" },
     { yol: "/yonetim/hazirlik", ad: "Satışa hazırlık", anahtar: "kontrol listesi" },
-    { yol: "/yonetim/tani", ad: "Tanı", anahtar: "hata saglik" },
+    { yol: "/yonetim/tani", ad: "Tanı", anahtar: "saglik yavas bolge" },
+    {
+      yol: "/yonetim/hatalar",
+      ad: "Hata kaydı",
+      anahtar: "error hata kodu",
+      sayac: "hata",
+      ton: "hatirlatma",
+    },
   ],
 };
 
