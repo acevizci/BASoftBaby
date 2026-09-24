@@ -27,6 +27,8 @@ export const SEBEPLER = {
   toplu: "Toplu yükleme",
   yeni: "Yeni beden",
   silindi: "Beden silindi",
+  "set-hazirla": "Set hazırlama",
+  "set-boz": "Set bozma",
 } as const;
 export type Sebep = keyof typeof SEBEPLER;
 

@@ -12,6 +12,8 @@ import { urunHareketleri } from "@/server/stok-hareket";
 import { renkAdlari } from "@/server/renkler";
 import { ayarlariGetir } from "@/server/sepet";
 import { kategoriEtiketleri } from "@/ui/kategori-etiketi";
+import SetYonetimi from "@/ui/set-yonetimi";
+import { urununSetleri } from "@/server/set";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +26,7 @@ export default async function UrunDuzenle({
   await yoneticiGerekli();
 
   const { slug } = await params;
-  const { kayit, fhata, fkayit, fsil, fsira, hata, renk: renkParam, varolan } =
+  const { kayit, fhata, fkayit, fsil, fsira, hata, renk: renkParam, varolan, sethata, setkayit, setadet } =
     await searchParams;
 
   const [urun, kategoriler, satisAyari] = await Promise.all([
@@ -159,6 +161,13 @@ export default async function UrunDuzenle({
           (K-61). Silme bölümü en altta kalmaya devam ediyor (K-53). */}
       <UrunKaydetDugmesi />
 
+      <SetBolumu
+        productId={urun.id}
+        hata={typeof sethata === "string" ? sethata : undefined}
+        kayit={typeof setkayit === "string" ? setkayit : undefined}
+        islemAdedi={typeof setadet === "string" ? setadet : undefined}
+      />
+
       <StokGecmisi productId={urun.id} slug={urun.slug} />
 
       <UrunSilme
@@ -171,6 +180,15 @@ export default async function UrunDuzenle({
       />
     </div>
   );
+}
+
+/** Set içeriği ve set hazırlama (K-133). */
+async function SetBolumu(p: { productId: string; hata?: string; kayit?: string; islemAdedi?: string }) {
+  const [varyantlar, adlar, sira] = await Promise.all([urununSetleri(p.productId), renkAdlari(), bedenSirasi()]);
+  const sirali = [...varyantlar].sort(
+    (a, b) => sonSira(sira, a.beden) - sonSira(sira, b.beden) || a.renk.localeCompare(b.renk, "tr"),
+  );
+  return <SetYonetimi varyantlar={sirali} renkAdi={(k) => adlar[k] ?? k} hata={p.hata} kayit={p.kayit} islemAdedi={p.islemAdedi} />;
 }
 
 /** Ürünün son stok hareketleri (K-103); tamamı hareketler ekranında. */

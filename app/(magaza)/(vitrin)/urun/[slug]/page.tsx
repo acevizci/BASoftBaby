@@ -12,6 +12,8 @@ import { urunYorumlari } from "@/server/yorum";
 import YapisalVeri from "@/ui/yapisal-veri";
 import { tamAdres } from "@/server/site";
 import OlcumOlayi from "@/ui/olcum-olayi";
+import SetIcerigi from "@/ui/set-icerigi";
+import { setIcerikleri } from "@/server/set";
 import { sayfaYolu, urunYapisalVerisi } from "@/server/yapisal-veri";
 import { ayarlariGetir } from "@/server/sepet";
 import { CAYMA_GUN } from "@/ui/talep-bicim";
@@ -60,11 +62,12 @@ export default async function UrunSayfasi({
     redirect(yon.hedef);
   }
 
-  const [kategori, benzerler, yorumOzeti, ayar] = await Promise.all([
+  const [kategori, benzerler, yorumOzeti, ayar, setler] = await Promise.all([
     kategoriGetir(urun.kategori),
     benzerUrunler(urun),
     urunYorumlari(urun.id, yorumSayfa),
     ayarlariGetir(),
+    setIcerikleri(urun.id),
   ]);
   const bedenler = urununBedenleri(urun);
   // Boy-kilo bilgisi istemci bileşenine sunucudan geçiyor: bedenler artık
@@ -194,6 +197,15 @@ export default async function UrunSayfasi({
             varyantlar={urun.varyantlar}
             slug={urun.slug}
             bildirimDurumu={typeof bildirim === "string" ? bildirim : undefined}
+          />
+
+          {/* Set ise içindekiler: seçili rengin ilk bedeninin içeriği (K-133). */}
+          <SetIcerigi
+            kalemler={
+              setler[urun.varyantlar.find((v) => v.renk === seciliRenk && setler[v.id])?.id ?? ""] ?? []
+            }
+            setFiyatKurus={satisKurus}
+            renkAdi={(k) => urun.renkler.find((r) => r.kod === k)?.ad ?? k}
           />
 
           <div className="flex flex-col gap-3 rounded-marka border border-cizgi bg-yuzey p-4 text-sm">

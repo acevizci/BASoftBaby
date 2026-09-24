@@ -171,6 +171,9 @@ model ProductVariant {
   bildirimler StockAlert[]
   hareketler  StockMovement[]
   sayimlar    StockCountLine[]
+  /// Bu varyant bir setse içindekiler; bir setin parçasıysa girdiği setler (K-133).
+  setIcerigi  BundleItem[] @relation("SetVaryanti")
+  setlerde    BundleItem[] @relation("SetParcasi")
 
   @@unique([productId, beden, renk])
   @@index([productId])
@@ -1281,4 +1284,20 @@ model Article {
   guncellendi DateTime  @updatedAt
 
   @@index([yayinda, yayinTarihi])
+}
+
+/// Set içeriği (K-133): "3'lü body seti · 0-3 ay" varyantında hangi
+/// varyanttan kaç adet var. Set kendi stoğu olan normal bir ürün; panelde
+/// "set hazırla" parçaların stoğunu düşüp setin stoğunu artırıyor. Satış,
+/// iade ve kâr hesabı setin kendi varyantı üzerinden, hiçbiri değişmiyor.
+model BundleItem {
+  id          String         @id @default(cuid())
+  setVariantId String
+  setVariant  ProductVariant @relation("SetVaryanti", fields: [setVariantId], references: [id], onDelete: Cascade)
+  variantId   String
+  variant     ProductVariant @relation("SetParcasi", fields: [variantId], references: [id], onDelete: Cascade)
+  adet        Int            @default(1)
+
+  @@unique([setVariantId, variantId])
+  @@index([variantId])
 }

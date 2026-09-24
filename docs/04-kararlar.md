@@ -5603,6 +5603,38 @@ yıkama. Her biri 600-1500 kelime, içinden ilgili kategori ve ürünlere bağla
 [`../server/rehber-islem.ts`](../server/rehber-islem.ts),
 `app/(magaza)/rehber/`, [`../app/yonetim/(panel)/rehber/page.tsx`](../app/yonetim/(panel)/rehber/page.tsx)
 
+### K-133 · Set ve paket ürün
+
+"3'lü body seti", "hastane çıkış seti" gibi ürünler bebek giyiminde sepet
+tutarını en çok artıran şeylerden. Set satılabiliyordu (ayrı bir ürün olarak)
+ama içindekilerle bağı yoktu: stok iki yerde ayrı ayrı tutuluyordu.
+
+**Yaklaşım: hazırlanmış paket.** Set kendi stoğu olan normal bir ürün;
+varyantlarının içinde hangi varyanttan kaç adet olduğu yazılıyor
+(`BundleItem`). Panelde ürün düzenleme ekranındaki "Set içeriği" bölümünde:
+
+- Parça SKU ya da etiketteki barkodla (K-107) ekleniyor, adediyle.
+- **"Set hazırla"** o kadar seti paketliyor: parçaların stoğu düşüyor, setin
+  stoğu artıyor. **"Seti boz"** tersini yapıyor. İkisi de tek işlemde,
+  stok geçmişine "Set hazırlama / Set bozma" olarak yazılıyor.
+- Parçalar yetmiyorsa hiçbir şey değişmiyor ve en çok kaç set
+  hazırlanabileceği yazıyor; her bedenin yanında da bu sayı görünüyor.
+- Set kendi ürününün bedenini ya da başka bir seti içeremiyor.
+
+**Neden stok anlık hesaplanmıyor.** Setin stoğunu her an parçalardan
+hesaplamak sepet, sipariş, iptal, iade, değişim, sayım, satış hızı ve
+beslemedeki stok yolunun hepsini değiştirmek demekti. Gerçekte de set
+önceden paketleniyor; panelde yapılan iş raftaki işin aynısı. Satış, iade ve
+kâr hesabı setin kendi varyantı üzerinden, hiçbiri değişmedi.
+
+**Mağazada:** ürün sayfasında "Sette neler var" (seçili rengin içeriği,
+parçaların sayfalarına bağlantı) ve set fiyatı ayrı ayrı toplamdan
+düşükse "Ayrı ayrı alsan X ₺ — sette Y ₺ daha az ödüyorsun".
+
+**Nerede:** [`../server/set.ts`](../server/set.ts),
+[`../ui/set-yonetimi.tsx`](../ui/set-yonetimi.tsx),
+[`../ui/set-icerigi.tsx`](../ui/set-icerigi.tsx)
+
 ---
 
 ## Açık sorular
