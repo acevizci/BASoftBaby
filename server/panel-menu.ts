@@ -21,7 +21,7 @@ import type { Sayaclar } from "@/ui/panel-menu-bicim";
 export type { Sayaclar } from "@/ui/panel-menu-bicim";
 
 export async function menuSayaclari(): Promise<Sayaclar> {
-  const [siparis, hazirlanacak, talep, iade, yorum, fotografsiz, sorunluStok, hata] =
+  const [siparis, hazirlanacak, talep, iade, yorum, fotografsiz, sorunluStok, hata, soru] =
     await Promise.all([
     db.order.count({ where: { durum: { in: ["bekliyor", "hazirlaniyor"] } } }),
     db.order.count({
@@ -40,6 +40,7 @@ export async function menuSayaclari(): Promise<Sayaclar> {
     // (K-44).
     db.product.count({ where: { aktif: true, variants: { some: { stok: { lte: AZALAN_ESIK } } } } }),
     db.errorLog.count({ where: { cozuldu: false } }),
+    db.productQuestion.count({ where: { durum: "bekliyor" } }),
   ]);
-  return { siparis, hazirlanacak, talep, iade, yorum, fotografsiz, sorunluStok, hata };
+  return { siparis, hazirlanacak, talep, iade, yorum, fotografsiz, sorunluStok, hata, soru };
 }

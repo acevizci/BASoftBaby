@@ -142,6 +142,7 @@ model Product {
   variants  ProductVariant[]
   images    ProductImage[]
   campaigns Campaign[]
+  sorular   ProductQuestion[]
   yorumlar  Review[]
   favoriler Favorite[]
 
@@ -1321,4 +1322,26 @@ model BundleItem {
 
   @@unique([setVariantId, variantId])
   @@index([variantId])
+}
+
+/// Ürün sorusu (K-135). Müşteri ürün sayfasından soruyor, mağaza panelden
+/// cevaplıyor; **cevaplanınca** ürün sayfasında herkese görünüyor.
+/// Cevapsız soru görünmüyor: spam ve cevapsız kalmış soru vitrinde durmasın.
+model ProductQuestion {
+  id          String    @id @default(cuid())
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  soru        String
+  /// Ekranda görünen ad ("Ayşe Y."); boşsa "Ziyaretçi".
+  adSoyad     String    @default("")
+  /// Cevap gelince haber vermek için; ekranda görünmüyor.
+  eposta      String    @default("")
+  cevap       String    @default("")
+  /// bekliyor · yayinda · gizli
+  durum       String    @default("bekliyor")
+  olusturuldu DateTime  @default(now())
+  cevaplandi  DateTime?
+
+  @@index([productId, durum])
+  @@index([durum, olusturuldu])
 }

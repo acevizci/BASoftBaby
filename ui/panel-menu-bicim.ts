@@ -45,7 +45,9 @@ export type SayacAdi =
   | "fotografsiz"
   | "sorunluStok"
   /** Çözülmemiş hata (K-121). */
-  | "hata";
+  | "hata"
+  /** Cevap bekleyen ürün sorusu (K-135). */
+  | "soru";
 
 export type Sayaclar = Record<SayacAdi, number>;
 
@@ -136,9 +138,16 @@ export const BOLUMLER: Bolum[] = [
     yol: "/yonetim/musteriler",
     ad: "Müşteriler",
     ikon: "musteri",
-    ozetSayaclar: ["yorum"],
+    ozetSayaclar: ["yorum", "soru"],
     alt: [
       { yol: "/yonetim/yorumlar", ad: "Değerlendirmeler", anahtar: "yorum puan", sayac: "yorum", ton: "hatirlatma" },
+      {
+        yol: "/yonetim/sorular",
+        ad: "Ürün soruları",
+        anahtar: "soru cevap musteri",
+        sayac: "soru",
+        ton: "bekleyen",
+      },
       { yol: "/yonetim/bulten", ad: "E-bülten", anahtar: "bulten kampanya duyuru eposta iys izin" },
     ],
   },
@@ -255,7 +264,7 @@ export function bolumOzeti(b: Bolum, s: Sayaclar): { sayi: number; ton: RozetTon
 
 /** Müşterinin beklediği işlerin toplamı; telefondaki kapalı menü başlığında. */
 export function bekleyenToplami(s: Sayaclar): number {
-  return s.siparis + s.talep + s.iade;
+  return s.siparis + s.talep + s.iade + s.soru;
 }
 
 /** Açık sayfanın adı: "Stok › Sayım" gibi. */

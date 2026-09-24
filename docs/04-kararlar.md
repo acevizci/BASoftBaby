@@ -5658,6 +5658,30 @@ Bebek giyiminde en güçlü satış ikna aracı gerçek bebeğin üstünde gerç
 [`../ui/yorum-fotograf-secici.tsx`](../ui/yorum-fotograf-secici.tsx),
 [`../server/yorum-yonetim.ts`](../server/yorum-yonetim.ts)
 
+### K-135 · Ürün sayfasında soru-cevap
+
+Müşteri ürün hakkında bir şey sormak istediğinde WhatsApp'a (K-99)
+gidiyordu; cevap o kişide kalıyor, aynı soru tekrar tekrar geliyordu.
+
+- **Ürün sayfasında "Sorular ve cevaplar":** cevaplanmış sorular ve soru
+  formu (soru; isteğe bağlı ad ve e-posta). Düz HTML formu, JavaScript'siz
+  çalışıyor. Ad "Zeynep K." olarak kısaltılıyor (K-34'teki kural); e-posta
+  sayfada görünmüyor, pazarlama için kullanılmıyor.
+- **Yalnızca cevaplanan soru yayında:** spam ve cevapsız kalmış soru vitrinde
+  durmasın.
+- **Panelde Müşteriler › Ürün soruları:** cevap bekleyen / yayında /
+  gizlenmiş. Cevaplayınca soru yayına giriyor; soran e-posta bıraktıysa
+  **ilk cevapta** haber gidiyor (cevabı düzeltmek ikinci e-posta
+  göndermiyor). Spam ya da ürünle ilgisiz soru gizleniyor. Cevap bekleyen
+  soru menüde rozet ve telefondaki "bekleyen iş" toplamında: müşteri
+  bekliyor.
+- **Kötüye kullanıma karşı:** adres başına saatte 5 soru (K-64 sayacı),
+  bal küpü alanı (ekranda yok, betikler dolduruyor), en az 10 karakter.
+
+**Nerede:** [`../server/soru-islem.ts`](../server/soru-islem.ts),
+[`../ui/urun-sorulari.tsx`](../ui/urun-sorulari.tsx),
+[`../app/yonetim/(panel)/sorular/page.tsx`](../app/yonetim/(panel)/sorular/page.tsx)
+
 ---
 
 ## Açık sorular

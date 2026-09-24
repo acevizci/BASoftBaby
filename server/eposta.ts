@@ -716,3 +716,27 @@ Bu e-posta yönetim panelindeki "Deneme e-postası gönder" düğmesiyle gönder
 Gönderen: ${gonderen()}${await altBilgi()}`,
   );
 }
+
+/**
+ * Ürün sorusu cevaplandı (K-135). Müşterinin kendi sorusunun cevabı:
+ * tanıtım değil, izin gerekmiyor. Yalnızca soruda e-posta bırakana gidiyor.
+ */
+export async function soruCevaplandiEpostasi(
+  kime: string,
+  bilgi: { urunAd: string; slug: string; soru: string; cevap: string },
+): Promise<EpostaSonucu> {
+  return gonder(
+    kime,
+    `Sorunu cevapladık: ${bilgi.urunAd}`,
+    `Merhaba,
+
+"${bilgi.urunAd}" hakkında sorduğun soruyu cevapladık.
+
+Soru: ${bilgi.soru}
+
+Cevap: ${bilgi.cevap}
+
+Ürüne bakmak için:
+${siteAdresi()}/urun/${bilgi.slug}#sorular${await altBilgi()}`,
+  );
+}

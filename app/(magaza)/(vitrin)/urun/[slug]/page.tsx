@@ -13,6 +13,8 @@ import YapisalVeri from "@/ui/yapisal-veri";
 import { tamAdres } from "@/server/site";
 import OlcumOlayi from "@/ui/olcum-olayi";
 import SetIcerigi from "@/ui/set-icerigi";
+import UrunSorulari from "@/ui/urun-sorulari";
+import { urunSorulari } from "@/server/soru";
 import { setIcerikleri } from "@/server/set";
 import { sayfaYolu, urunYapisalVerisi } from "@/server/yapisal-veri";
 import { ayarlariGetir } from "@/server/sepet";
@@ -52,7 +54,7 @@ export default async function UrunSayfasi({
 }: PageProps<"/urun/[slug]">) {
   const { slug } = await params;
   // "Stoka girince haber ver" formunun sonucu adres satırında dönüyor.
-  const { bildirim, renk, yorumSayfa } = await searchParams;
+  const { bildirim, renk, yorumSayfa, soru } = await searchParams;
   const urun = await urunGetir(slug);
   if (!urun) {
     // Pasif ya da silinmiş ürün kategorisine gidiyor, 404 değil (K-128).
@@ -62,12 +64,13 @@ export default async function UrunSayfasi({
     redirect(yon.hedef);
   }
 
-  const [kategori, benzerler, yorumOzeti, ayar, setler] = await Promise.all([
+  const [kategori, benzerler, yorumOzeti, ayar, setler, sorular] = await Promise.all([
     kategoriGetir(urun.kategori),
     benzerUrunler(urun),
     urunYorumlari(urun.id, yorumSayfa),
     ayarlariGetir(),
     setIcerikleri(urun.id),
+    urunSorulari(urun.id),
   ]);
   const bedenler = urununBedenleri(urun);
   // Boy-kilo bilgisi istemci bileşenine sunucudan geçiyor: bedenler artık
@@ -230,6 +233,8 @@ export default async function UrunSayfasi({
       </div>
 
       <YorumListesi ozet={yorumOzeti} slug={urun.slug} renk={seciliRenk} />
+
+      <UrunSorulari slug={urun.slug} sorular={sorular} sonuc={typeof soru === "string" ? soru : undefined} />
 
       <section className="mt-14">
         <h2 className="text-xl">Bunlara da bakabilirsin</h2>
