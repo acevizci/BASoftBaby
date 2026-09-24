@@ -6,6 +6,7 @@ import SiparisKarti from "@/ui/siparis-karti";
 import { ayarlariGetir } from "@/server/sepet";
 import { kunyeGetir } from "@/server/yasal";
 import { SON_SIPARIS_CEREZI, siparisGetirPanel } from "@/server/siparis";
+import OlcumOlayi from "@/ui/olcum-olayi";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Siparişin alındı", robots: { index: false } };
@@ -55,6 +56,20 @@ export default async function SiparisOnayi({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
+      {/* Satış bir kez sayılıyor; ödemesi alınamayan kartlı sipariş satış değil
+          (K-124). Havale siparişi sipariş anında sayılıyor: reklam açısından
+          dönüşüm o an. */}
+      {!odemeBasarisiz && !iadeli && (
+        <OlcumOlayi
+          ad="satis"
+          tekSeferlik={`satis:${siparis.numara}`}
+          veri={{
+            tutarKurus: siparis.toplamKurus,
+            siparisNo: siparis.numara,
+            adet: siparis.satirlar.reduce((t, s) => t + s.adet, 0),
+          }}
+        />
+      )}
       <div
         className={`rounded-marka px-5 py-6 text-center ${
           odemeBasarisiz ? "bg-mercan-soluk" : iadeli ? "bg-yuzey-sicak" : "bg-nane-soluk"

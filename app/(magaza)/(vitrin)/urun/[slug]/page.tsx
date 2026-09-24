@@ -10,6 +10,7 @@ import { Yildiz } from "@/ui/yildiz";
 import { urunYorumlari } from "@/server/yorum";
 import YapisalVeri from "@/ui/yapisal-veri";
 import { tamAdres } from "@/server/site";
+import OlcumOlayi from "@/ui/olcum-olayi";
 import {
   benzerUrunler,
   fiyatYaz,
@@ -104,6 +105,11 @@ export default async function UrunSayfasi({
               : "https://schema.org/OutOfStock",
           },
         }}
+      />
+
+      <OlcumOlayi
+        ad="urun-goruntuleme"
+        veri={{ tutarKurus: satisKurus, urunIdleri: [urun.id], grup: true, urunAdi: urun.ad }}
       />
 
       <nav className="text-xs text-metin-3">

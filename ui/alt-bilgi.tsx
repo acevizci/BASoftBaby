@@ -1,4 +1,5 @@
 import Link from "next/link";
+import CerezTercihleri from "@/ui/cerez-tercihleri";
 import { BILGI_SAYFALARI } from "@/app/(magaza)/(bilgi)/bilgi-bicim";
 import { kunyeGetir, yasalSayfalariGetir } from "@/server/yasal";
 
@@ -18,7 +19,7 @@ const KATEGORILER = [
 
 const BAG = "text-metin-3 transition hover:text-metin hover:underline";
 
-export default async function AltBilgi() {
+export default async function AltBilgi({ cerezTercihi = false }: { cerezTercihi?: boolean }) {
   const [yasal, kunye] = await Promise.all([yasalSayfalariGetir(), kunyeGetir()]);
 
   return (
@@ -86,7 +87,17 @@ export default async function AltBilgi() {
 
       <div className="border-t border-cizgi-soluk">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-xs text-metin-3">
-          <span>© {new Date().getFullYear()} BASoftBaby</span>
+          <span>
+            © {new Date().getFullYear()} BASoftBaby
+            {/* Onay bandı yalnızca ölçüm açıkken var; kararı değiştirmenin
+                yolu da (K-124). */}
+            {cerezTercihi && (
+              <>
+                {" · "}
+                <CerezTercihleri />
+              </>
+            )}
+          </span>
           <span className="rakam">
             {kunye.etbisNo ? `ETBİS: ${kunye.etbisNo}` : "ETBİS kaydı açılışta eklenecek"}
           </span>

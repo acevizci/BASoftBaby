@@ -172,6 +172,11 @@ export const AYARLAR: Bolum = {
   alt: [
     { yol: "/yonetim/ayarlar", ad: "Satış ayarları", anahtar: "kargo ucreti taksit" },
     { yol: "/yonetim/ayarlar/giderler", ad: "Giderler", anahtar: "masraf kira maliyet komisyon" },
+    {
+      yol: "/yonetim/ayarlar/olcum",
+      ad: "Reklam ölçümü",
+      anahtar: "pixel piksel meta facebook instagram google analytics ads cerez",
+    },
     { yol: "/yonetim/yasal", ad: "Yasal metinler", anahtar: "kvkk sozlesme" },
     { yol: "/yonetim/kullanicilar", ad: "Kullanıcılar", anahtar: "yonetici personel" },
     { yol: "/yonetim/hazirlik", ad: "Satışa hazırlık", anahtar: "kontrol listesi" },

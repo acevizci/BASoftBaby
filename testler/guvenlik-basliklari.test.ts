@@ -11,8 +11,15 @@ const kural = (politika: string, ad: string) =>
 
 test("yayında dışarıdan betik yüklenemiyor, eval yok", () => {
   const p = icerikPolitikasi(false);
-  assert.deepEqual(kural(p, "script-src"), ["'self'", "'unsafe-inline'"]);
-  assert.deepEqual(kural(p, "connect-src"), ["'self'"]);
+  // Dışarıdan yalnızca onaydan sonra yüklenen iki ölçüm aracı (K-124).
+  assert.deepEqual(kural(p, "script-src"), [
+    "'self'",
+    "'unsafe-inline'",
+    "https://*.googletagmanager.com",
+    "https://connect.facebook.net",
+  ]);
+  assert.ok(kural(p, "connect-src")?.includes("https://www.facebook.com"));
+  assert.ok(!kural(p, "connect-src")?.includes("ws:"));
   assert.deepEqual(kural(p, "object-src"), ["'none'"]);
   assert.deepEqual(kural(p, "frame-ancestors"), ["'none'"]);
   assert.ok(p.includes("upgrade-insecure-requests"));

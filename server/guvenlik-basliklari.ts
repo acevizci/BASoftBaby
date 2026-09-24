@@ -28,22 +28,66 @@
 const IYZICO = ["https://*.iyzipay.com", "https://*.iyzico.com"];
 const BLOB = "https://*.public.blob.vercel-storage.com";
 
+/**
+ * Reklam ölçümü araçları (K-124). Betikler yalnızca ziyaretçi onaylayınca
+ * yükleniyor; bu alan adları o zaman gerekli. Listeler Google'ın ve Meta'nın
+ * kendi CSP belgelerinden.
+ */
+const GOOGLE = {
+  betik: ["https://*.googletagmanager.com"],
+  resim: [
+    "https://*.google-analytics.com",
+    "https://*.googletagmanager.com",
+    "https://*.g.doubleclick.net",
+    "https://*.google.com",
+    "https://*.google.com.tr",
+  ],
+  baglanti: [
+    "https://*.google-analytics.com",
+    "https://*.analytics.google.com",
+    "https://*.googletagmanager.com",
+    "https://*.g.doubleclick.net",
+    "https://*.google.com",
+    "https://*.google.com.tr",
+    "https://pagead2.googlesyndication.com",
+  ],
+  cerceve: ["https://td.doubleclick.net", "https://www.googletagmanager.com"],
+};
+const META = {
+  betik: ["https://connect.facebook.net"],
+  resim: ["https://www.facebook.com"],
+  baglanti: ["https://www.facebook.com", "https://connect.facebook.net"],
+};
+
 export function icerikPolitikasi(gelistirme: boolean): string {
   const kurallar: Record<string, string[]> = {
     "default-src": ["'self'"],
     // Geliştirmede React hata ayıklama için `eval` kullanıyor.
-    "script-src": ["'self'", "'unsafe-inline'", ...(gelistirme ? ["'unsafe-eval'"] : [])],
+    "script-src": [
+      "'self'",
+      "'unsafe-inline'",
+      ...GOOGLE.betik,
+      ...META.betik,
+      // Geliştirmede Vercel Analytics'in hata ayıklama betiği dışarıdan geliyor.
+      ...(gelistirme ? ["'unsafe-eval'", "https://va.vercel-scripts.com"] : []),
+    ],
     // Tailwind ve bileşenlerin `style` öznitelikleri satır içi.
     "style-src": ["'self'", "'unsafe-inline'"],
     // Ürün ve banner fotoğrafları yayında Vercel Blob'da, tam adresle
     // (K-12). `blob:` tarayıcıda küçültülen fotoğrafın önizlemesi, `data:`
     // küçük SVG'ler.
-    "img-src": ["'self'", "data:", "blob:", BLOB],
+    "img-src": ["'self'", "data:", "blob:", BLOB, ...GOOGLE.resim, ...META.resim],
     "font-src": ["'self'"],
-    "connect-src": ["'self'", ...(gelistirme ? ["ws:", "https://va.vercel-scripts.com"] : [])],
+    "connect-src": [
+      "'self'",
+      ...GOOGLE.baglanti,
+      ...META.baglanti,
+      ...(gelistirme ? ["ws:", "https://va.vercel-scripts.com"] : []),
+    ],
     // Barkod okuyucu kamerayı `<video>` ile gösteriyor.
     "media-src": ["'self'", "blob:"],
-    "frame-src": ["'none'"],
+    // Google Ads dönüşüm ölçümü görünmez bir çerçeve açıyor.
+    "frame-src": GOOGLE.cerceve,
     "frame-ancestors": ["'none'"],
     "object-src": ["'none'"],
     "base-uri": ["'self'"],

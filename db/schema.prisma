@@ -259,6 +259,11 @@ model StoreSetting {
   /// hatırlatma gönderilmiyor.
   havaleHatirlatmaSaat Int @default(24)
 
+  /// Reklam ölçümü (K-124). Boşsa o araç hiç yüklenmiyor; ikisi de boşsa
+  /// çerez onay bandı da çıkmıyor. Betikler yalnızca ziyaretçi onaylayınca.
+  metaPikselId   String @default("")
+  googleEtiketId String @default("")
+
   /// Ana sayfadaki banner kaç saniyede bir değişsin
   bannerSaniye Int @default(6)
 

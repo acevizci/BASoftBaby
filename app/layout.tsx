@@ -64,8 +64,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </Suspense>
         {children}
         {/* Ölçümleme: çerez kullanmıyor, ziyaretçiyi tanımlıyor ve siteler
-            arasında izlemiyor. Bu yüzden çerez onay bandı gerekmiyor (K-16).
-            Vercel'de Analytics açık değilse hiçbir veri gitmiyor. */}
+            arasında izlemiyor. Bu yüzden onay istemiyor (K-16). Reklam
+            ölçümü (Meta, Google) ayrı ve onaya bağlı: mağaza düzenindeki
+            çerez onay bandı (K-124). */}
         <Analytics />
         {/* Tarayıcıda olan hatalar panelin hata kaydına (K-121). */}
         <HataDinleyici />

@@ -9,6 +9,7 @@ import { odemeAcikMi } from "@/server/odeme";
 import { odemeDurumu } from "@/ui/odeme-bicim";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import GonderDugmesi from "@/ui/gonder-dugmesi";
+import OlcumOlayi from "@/ui/olcum-olayi";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Sipariş bilgileri", robots: { index: false } };
@@ -99,6 +100,14 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
+      <OlcumOlayi
+        ad="odeme-baslangici"
+        veri={{
+          tutarKurus: sepet.toplamKurus,
+          urunIdleri: sepet.satirlar.map((s) => s.variantId),
+          adet: sepet.satirlar.reduce((t, s) => t + s.adet, 0),
+        }}
+      />
       <nav className="text-xs text-metin-3">
         <Link href="/sepet" className="hover:underline">
           Sepetim

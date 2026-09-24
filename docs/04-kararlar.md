@@ -5335,6 +5335,46 @@ resim adresleri gidiyordu. Tam adres artık olduğu gibi dönüyor.
 [`../app/google-urunler.xml/route.ts`](../app/google-urunler.xml/route.ts),
 [`../server/site.ts`](../server/site.ts)
 
+### K-124 · Çerez onayı ve reklam dönüşüm ölçümü
+
+Instagram, Facebook ya da Google reklamı verilince hangi reklamın satış
+getirdiği ölçülemiyordu. Çerezsiz ölçüm (K-16) ziyaret sayıyor ama reklam
+platformuna "bu tıklama satışa döndü" diyemiyor. Bunun için Meta Pixel ve
+Google etiketi gerekiyor, ikisi de çerez yazıyor, yani onay istiyor.
+
+- **Panelden açılıyor:** Ayarlar › Reklam ölçümü'ne Meta Pixel kimliği ve/veya
+  Google etiketi (GA4 "G-" ya da Ads "AW-") giriliyor. Hatalı biçim
+  kaydedilmiyor. **Kimlik yoksa hiçbir şey değişmiyor:** site çerez
+  kullanmıyor, bant çıkmıyor.
+- **Onay bandı:** "Reddet" ve "Kabul et" aynı boyutta, yan yana; bandı
+  görmezden gelmek onay sayılmıyor (KVKK Kurulu'nun çerez rehberi ve AB
+  uygulaması: reddetmesi zor bir bant geçerli onay değil). Hangi araçların
+  kullanılacağı bantta adıyla yazıyor, çerez politikasına bağlantı var.
+- **Onaydan önce hiçbir şey yüklenmiyor:** ne betik iniyor ne istek gidiyor
+  (denendi: reddeden ziyaretçiden Meta'ya ve Google'a sıfır istek). Onaydan
+  önce olan bir şey onaydan sonra gönderilmiyor.
+- Karar bir yıl hatırlanıyor (sürümlü çerez: araç listesi değişirse yeniden
+  soruluyor). Alt bilgideki "Çerez tercihleri" bandı yeniden açıyor; onay
+  geri alınırsa araçların çerezleri (`_fbp`, `_ga`…) siliniyor ve sayfa
+  yenileniyor.
+- **Ölçülen olaylar** iki aracın standart adlarıyla: sayfa görüntüleme (her
+  geçişte), ürün görüntüleme, sepete ekleme, ödemeye geçiş ve satış (tutar,
+  adet ve sipariş numarasıyla). Satış bir kez sayılıyor (tarayıcıda sipariş
+  numarasıyla işaretleniyor); ödemesi alınamayan kartlı sipariş satış
+  sayılmıyor. Ürün kimlikleri Google beslemesiyle (K-123) aynı: sepete
+  eklemede varyant, ürün görüntülemede ürün grubu.
+- CSP'ye (K-120) yalnızca bu iki aracın kendi belgelerinde verdiği alan
+  adları eklendi.
+
+**Mağaza sahibinin yapacağı:** çerez politikasına (Yasal metinler) Meta ve
+Google çerezlerini eklemek; metin avukat onayından geçerken (A-05) bu da
+kontrol edilmeli.
+
+**Nerede:** [`../ui/cerez-onayi.tsx`](../ui/cerez-onayi.tsx),
+[`../ui/olcum.ts`](../ui/olcum.ts), [`../ui/olcum-bicim.ts`](../ui/olcum-bicim.ts),
+[`../ui/olcum-olayi.tsx`](../ui/olcum-olayi.tsx),
+[`../app/yonetim/(panel)/ayarlar/olcum/page.tsx`](../app/yonetim/(panel)/ayarlar/olcum/page.tsx)
+
 ---
 
 ## Açık sorular

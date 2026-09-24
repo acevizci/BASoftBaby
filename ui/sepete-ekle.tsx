@@ -20,7 +20,8 @@ export default function SepeteEkle({
   const kapali = devreDisi || !variantId;
 
   return (
-    <form action={sepeteEkle} className={tamGenislik ? "w-full" : ""}>
+    // `data-olcum`: reklam ölçümünün "sepete ekleme" olayı (K-124).
+    <form action={sepeteEkle} data-olcum="sepete-ekleme" className={tamGenislik ? "w-full" : ""}>
       <input type="hidden" name="variantId" value={variantId ?? ""} />
       <input type="hidden" name="nereye" value="sepet" />
       <GonderDugmesi
