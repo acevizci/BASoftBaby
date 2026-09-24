@@ -18,6 +18,7 @@ import { renkSecenekleri } from "@/server/renkler";
 import type { RenkSecenegi } from "@/ui/katalog-bicim";
 import Sayfalama from "@/ui/sayfalama";
 import YapisalVeri from "@/ui/yapisal-veri";
+import RehberMetni from "@/ui/rehber-metni";
 import { sayfaYolu } from "@/server/yapisal-veri";
 import { tamAdres } from "@/server/site";
 import { sayfaAdresi, sayfaNo } from "@/ui/sayfalama-bicim";
@@ -455,6 +456,12 @@ export default async function KategoriSayfasi({
           </div>
         </div>
       </div>
+
+      {/* Rehber yazısı yalnızca ilk sayfada: ikinci sayfada tekrarlanırsa
+          aynı metin iki adreste olur (K-130). */}
+      {!tumu && durum.sayfa === 1 && bilgi?.rehberMetni && (
+        <RehberMetni baslik={`${bilgi.ad} seçerken`} metin={bilgi.rehberMetni} />
+      )}
     </div>
   );
 }

@@ -18,6 +18,10 @@ model Category {
   slug      String     @unique
   ad        String
   aciklama  String?
+  /// Kategori sayfasının altındaki rehber yazısı (K-130): 150-300 kelime,
+  /// seçim tavsiyesi. Google için ürün listesinden daha değerli içerik.
+  /// Boş satır paragraf, "## " ara başlık, "- " madde.
+  rehberMetni String   @default("")
   sira      Int        @default(0)
   aktif     Boolean    @default(true)
   products  Product[]

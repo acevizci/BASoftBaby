@@ -20,6 +20,8 @@ export type Kategori = {
   ad: string;
   aciklama: string;
   sira: number;
+  /** Sayfanın altındaki rehber yazısı (K-130); yalnızca kategori sayfasında dolu. */
+  rehberMetni?: string;
 };
 
 export type Varyant = {

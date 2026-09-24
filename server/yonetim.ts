@@ -617,6 +617,7 @@ export async function kategoriKaydet(veri: FormData): Promise<void> {
   const id = String(veri.get("id") ?? "").trim();
   const ad = String(veri.get("ad") ?? "").trim().slice(0, 60);
   const aciklama = String(veri.get("aciklama") ?? "").trim().slice(0, 200);
+  const rehberMetni = String(veri.get("rehberMetni") ?? "").trim().slice(0, 8000);
   const aktif = veri.get("aktif") !== null;
 
   if (!ad) redirect(`/yonetim/kategoriler?hata=ad${id ? `&duzenle=${id}` : ""}`);
@@ -639,7 +640,7 @@ export async function kategoriKaydet(veri: FormData): Promise<void> {
 
   if (id) {
     try {
-      await db.category.update({ where: { id }, data: { ad, aciklama, aktif } });
+      await db.category.update({ where: { id }, data: { ad, aciklama, rehberMetni, aktif } });
     } catch (e) {
       if (adCakisti(e)) redirect(`/yonetim/kategoriler?hata=ad-tekrar&duzenle=${id}`);
       throw e;
@@ -664,7 +665,7 @@ export async function kategoriKaydet(veri: FormData): Promise<void> {
   const sonSira = await db.category.aggregate({ _max: { sira: true } });
   try {
     await db.category.create({
-      data: { slug, ad, aciklama, aktif, sira: (sonSira._max.sira ?? 0) + 1 },
+      data: { slug, ad, aciklama, rehberMetni, aktif, sira: (sonSira._max.sira ?? 0) + 1 },
     });
   } catch (e) {
     if (adCakisti(e)) redirect("/yonetim/kategoriler?hata=ad-tekrar");

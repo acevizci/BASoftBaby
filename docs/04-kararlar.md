@@ -5513,6 +5513,30 @@ Ayarlar › Arama motorları:
 **Nerede:** [`../server/arama-motoru.ts`](../server/arama-motoru.ts),
 [`../app/yonetim/(panel)/ayarlar/arama-motorlari/page.tsx`](../app/yonetim/(panel)/ayarlar/arama-motorlari/page.tsx)
 
+### K-130 · Kategori rehber yazıları
+
+Kategori sayfalarında tek cümlelik açıklama ve ürün ızgarasından başka metin
+yoktu. Google için ürün listesi zayıf içerik: her mağazada aynı ürünler, aynı
+kartlar. "Yenidoğan kıyafeti nasıl seçilir" gibi aramalarda öne çıkan şey
+kategoriye özgü, işe yarar tavsiye.
+
+- Panelde kategori düzenleme formunda **"Rehber yazısı"** alanı: boş satır
+  paragraf, "## " ara başlık, "- " madde. HTML ya da Markdown öğrenmek
+  gerekmiyor; sayfaya HTML de sızmıyor (her şey düz metin olarak yazılıyor).
+  Alanın altında kelime sayısı ve 150-300 kelime önerisi.
+- Yazı kategori sayfasının **altında**, ürünlerden sonra ("Yenidoğan
+  seçerken"): müşteri önce ürünü görüyor, metin arayana orada.
+- **Yalnızca ilk sayfada:** ikinci sayfada tekrarlansa aynı metin iki adreste
+  olurdu.
+- Boşsa hiçbir şey görünmüyor.
+
+**Mağaza sahibinin yapacağı:** her kategori için yazı. Önerilen konular: kumaş
+(organik pamuk, bambu), beden ve boy-kilo, mevsime göre katmanlama, yıkama,
+hediye önerisi. Kopya metin değil, mağazanın kendi sesiyle.
+
+**Nerede:** [`../ui/rehber-bicim.ts`](../ui/rehber-bicim.ts),
+[`../ui/rehber-metni.tsx`](../ui/rehber-metni.tsx)
+
 ---
 
 ## Açık sorular

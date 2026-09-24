@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { kelimeSayisi } from "@/ui/rehber-bicim";
 import { tumKategoriler } from "@/server/katalog";
 import {
   kategoriCevir,
@@ -352,6 +353,25 @@ export default async function KategoriEkrani({
               placeholder="Kategori sayfasının başında görünen tek cümle"
               className={GIRDI}
             />
+          </label>
+
+          <label className="flex flex-col gap-1.5 sm:col-span-2">
+            <span className={ETIKET}>Rehber yazısı (sayfanın altında)</span>
+            <textarea
+              name="rehberMetni"
+              defaultValue={duzenlenen?.rehberMetni ?? ""}
+              rows={8}
+              maxLength={8000}
+              placeholder={"Bu kategoride seçim yaparken nelere dikkat edilmeli?\n\n## Hangi beden?\n- 0-3 ay: 50-62 cm\n- 3-6 ay: 62-68 cm"}
+              className={GIRDI}
+            />
+            <span className="text-xs text-metin-3">
+              Google için en değerli içerik: 150-300 kelimelik, bu kategoriye özgü tavsiye
+              (kumaş, beden, mevsim). Boş satır paragraf, &quot;## &quot; ara başlık, &quot;- &quot; madde.
+              {duzenlenen?.rehberMetni
+                ? ` Şu an ${kelimeSayisi(duzenlenen.rehberMetni)} kelime.`
+                : ""}
+            </span>
           </label>
 
           <label className="flex items-center gap-2 sm:col-span-2">

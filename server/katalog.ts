@@ -179,6 +179,7 @@ export type PanelKategorisi = {
   slug: string;
   ad: string;
   aciklama: string;
+  rehberMetni: string;
   sira: number;
   aktif: boolean;
   urunAdedi: number;
@@ -196,6 +197,7 @@ export async function tumKategoriler(): Promise<PanelKategorisi[]> {
     slug: k.slug,
     ad: k.ad,
     aciklama: k.aciklama ?? "",
+    rehberMetni: k.rehberMetni,
     sira: k.sira,
     aktif: k.aktif,
     urunAdedi: k._count.products,
@@ -206,7 +208,7 @@ export async function tumKategoriler(): Promise<PanelKategorisi[]> {
 export async function kategoriGetir(slug: string): Promise<Kategori | undefined> {
   const k = await db.category.findUnique({ where: { slug } });
   if (!k || !k.aktif) return undefined;
-  return { slug: k.slug, ad: k.ad, aciklama: k.aciklama ?? "", sira: k.sira };
+  return { slug: k.slug, ad: k.ad, aciklama: k.aciklama ?? "", sira: k.sira, rehberMetni: k.rehberMetni };
 }
 
 export async function urunGetir(slug: string): Promise<Urun | undefined> {
