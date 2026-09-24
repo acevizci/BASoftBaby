@@ -47,10 +47,10 @@ export default async function SifremiUnuttum({
     <div className="mx-auto flex min-h-full w-full max-w-md flex-col justify-center px-4 py-12">
       <Link href="/" className="self-center" aria-label="BASoftBaby ana sayfa">
         <Image
-          src="/marka/basoftbaby-logo-yatay.svg"
+          src="/marka/basoftbaby-logo-256.webp"
           alt="BASoftBaby"
-          width={186}
-          height={42}
+          width={120}
+          height={120}
           priority
           unoptimized
         />

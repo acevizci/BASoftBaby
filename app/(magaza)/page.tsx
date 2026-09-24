@@ -74,7 +74,7 @@ export default async function AnaSayfa() {
           name: kunye.unvan || "BASoftBaby",
           alternateName: "BASoftBaby",
           url: siteAdresi(),
-          logo: tamAdres("/marka/basoftbaby-logo-yatay.svg"),
+          logo: tamAdres("/marka/basoftbaby-logo.png"),
           description: "Organik pamuklu bebek kıyafetleri, zıbın, tulum ve uyku ürünleri.",
           ...(kunye.destekTelefon || kunye.destekEposta
             ? {

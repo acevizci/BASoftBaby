@@ -43,13 +43,15 @@ export default async function UstCubuk() {
       {/* Üst sıra: logo · arama · hesap ve sepet */}
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3">
         <Link href="/" className="flex-none" aria-label="BASoftBaby ana sayfa">
+          {/* Mağazanın kendi rozet logosu; yazısı küçükte de okunsun diye 64-76 px. */}
           <Image
-            src="/marka/basoftbaby-logo-yatay.svg"
+            src="/marka/basoftbaby-logo-256.webp"
             alt="BASoftBaby"
-            width={186}
-            height={42}
+            width={76}
+            height={76}
             priority
             unoptimized
+            className="h-16 w-16 sm:h-[76px] sm:w-[76px]"
           />
         </Link>
 

@@ -5772,6 +5772,28 @@ elden satılan, çekilişte verilen, gönül almak için tanımlanan).
 [`../server/hediye-ceki-islem.ts`](../server/hediye-ceki-islem.ts),
 [`../app/yonetim/(panel)/hediye-cekleri/page.tsx`](../app/yonetim/(panel)/hediye-cekleri/page.tsx)
 
+### K-138 · Orijinal logo
+
+Site vektör olarak yeniden çizilmiş logoyu kullanıyordu (K-03); mağaza sahibi
+orijinal suluboya logoyu verdi ve istenen, ona sadık kalmak.
+
+- **Yeniden çizim bırakıldı.** Suluboya çizim (ayıcığın ifadesi, fırça dokusu,
+  el çizimi harfler) kodla birebir üretilemiyor; denemeler her seferinde
+  orijinalden uzaklaştı. Görselin kendisi kullanılıyor.
+- **Siyah arka plan kenardan başlayan dolguyla temizlendi:** yalnızca dışarıyla
+  bağlantılı koyu pikseller siliniyor, rozetin içindeki koyu çizgiler (gözler,
+  kontur) kalıyor. Kenar yarı saydam yumuşatıldı.
+- **Rozetin tamamı** üst çubukta (64-76 px), panel giriş sayfalarında, Google'a
+  bildirilen logoda ve paylaşım görsellerinde.
+- **Küçük boylar için amblem:** ay üstünde uyuyan ayıcık ve tavşan, rozetten
+  kesilip beyaz daireye oturtuldu. Sekme simgesi, telefon ana ekranı, banner.
+  Yazı küçük boyda okunmadığı için amblemde yok.
+- Eski vektör dosyaları (`*.svg`, 1200 px PNG'ler) silindi.
+
+**Nerede:** [`../public/marka/`](../public/marka/), [`05-marka.md`](05-marka.md),
+kaynak [`../assets/logo-kaynak.webp`](../assets/logo-kaynak.webp)
+
+
 ---
 
 ## Açık sorular
@@ -5795,8 +5817,10 @@ kodu hazır ve denendi; başvuru sonuçlanıp anahtarlar Vercel'e girilene kadar
 kart seçeneği müşteriye gösterilmiyor (K-17). Künye de buna bağlı (K-15).
 
 ### A-04 · Logonun orijinal dosyası
-Mevcut değil. Vektör yeniden çizim şimdilik resmî kaynak. Açılışı engellemiyor:
-her boyut vektörden üretiliyor.
+**24 Eylül 2026'da kısmen kapandı (K-138).** Orijinal logo görsel olarak geldi
+ve sitede kullanılıyor. Eksik olan yüksek çözünürlüklü (en az 2000 px) ya da
+katmanlı orijinal: büyük baskı için gerekli; gelirse aynı kesimle bütün dosyalar
+yeniden üretilir.
 
 ### A-05 · Yasal metinlerin hukuki onayı
 Dört metnin taslağı yazıldı ve panelden düzenlenebilir hâlde sitede duruyor

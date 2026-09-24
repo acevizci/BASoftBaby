@@ -70,7 +70,7 @@ export async function paylasimKarti(k: {
   const [baloo, nunito, logo, ...fotolar] = await Promise.all([
     oku(readFile(path.join(process.cwd(), "assets", "fontlar", "baloo2-700.ttf"))),
     oku(readFile(path.join(process.cwd(), "assets", "fontlar", "nunitosans-600.ttf"))),
-    oku(readFile(path.join(process.cwd(), "assets", "logo-yatay.png"))),
+    oku(readFile(path.join(process.cwd(), "assets", "logo-rozet.png"))),
     ...(k.fotograflar ?? []).slice(0, 3).map((f, i) => fotograf(f, i === 0 ? 520 : 250)),
   ]);
   const gorseller = fotolar.filter((f): f is string => Boolean(f));
@@ -98,8 +98,8 @@ export async function paylasimKarti(k: {
             // eslint-disable-next-line @next/next/no-img-element -- ImageResponse düz img istiyor
             <img
               src={`data:image/png;base64,${logo.toString("base64")}`}
-              width={330}
-              height={89}
+              width={150}
+              height={150}
               alt=""
             />
           ) : (

@@ -1,8 +1,9 @@
 # Marka dosyaları
 
-Logonun orijinal dosyası bulunmadığı için eldeki görselden vektör olarak yeniden
-çizildi. Yazılar eğriye çevrildi: dosyalar font gerektirmiyor, her boyutta net
-çıkıyor.
+Site mağaza sahibinin verdiği **orijinal suluboya logoyu** kullanıyor (K-138).
+Kaynak `assets/logo-kaynak.webp`; siyah arka planı temizlenip rozet ve amblem
+olarak kesildi. Vektör yeniden çizim bırakıldı: suluboya çizim kodla birebir
+yeniden üretilemiyordu.
 
 ## Hangi dosya nerede
 
@@ -10,18 +11,16 @@ Dosyalar `public/marka/` altında; site onları bu adresten doğrudan servis ede
 
 | Dosya | Nerede kullanılır |
 | --- | --- |
-| `basoftbaby-logo.svg` | Ana logo (amblem üstte, yazı altta). Baskı, tanıtım, geniş alan |
-| `basoftbaby-logo-yatay.svg` | Yatay logo (amblem solda, yazı sağda). Site üst çubuğu, e-posta başlığı |
-| `basoftbaby-amblem.svg` | Yalnız amblem (ayıcık, tavşan, bulut, ay). Sosyal medya profili, uygulama simgesi |
-| `basoftbaby-logo-1200.png` | Ana logonun 1200 px PNG hâli — SVG desteklemeyen yerler için |
-| `basoftbaby-logo-yatay-1200.png` | Yatay logonun 1200 px PNG hâli |
-| `basoftbaby-amblem-1024.png` | Amblemin 1024 px PNG hâli |
-| `basoftbaby-apple-touch-180.png` | iPhone ana ekran simgesi (`apple-touch-icon`) |
-| `basoftbaby-favicon-64.png` | Tarayıcı sekmesi simgesi |
-| `basoftbaby-favicon-32.png` | Tarayıcı sekmesi simgesi, küçük boy |
+| `basoftbaby-logo.png` | Rozet logonun tamamı, şeffaf zemin (539 px). Google'a bildirilen logo, baskı |
+| `basoftbaby-logo-256.webp` / `.png` | Rozet, 256 px. Site üst çubuğu, panel giriş sayfaları |
+| `basoftbaby-amblem.png` | Ay üstünde uyuyan ayıcık ve tavşan, beyaz daire içinde (512 px). Sosyal medya profili |
+| `basoftbaby-amblem-256.webp` | Amblem, 256 px. Ana sayfa banner'ı |
+| `basoftbaby-apple-touch-180.png` | iPhone ana ekran simgesi (`app/apple-icon.png` ile aynı) |
+| `basoftbaby-favicon-64.png` / `-32.png` | Tarayıcı sekmesi simgesi (`app/icon.png` ile aynı) |
 
-Tercih sırası her zaman SVG. PNG'ler yalnızca SVG kabul etmeyen yerler
-(bazı e-posta istemcileri, sosyal medya profil görselleri) içindir.
+Kaynak 924×2000 piksellik bir görsel; rozet bunun içinde yaklaşık 540 piksel.
+Web için yeterli. Büyük baskı (tabela, afiş) için daha yüksek çözünürlüklü
+orijinal gerekir; gelirse aynı kesimle bütün dosyalar yeniden üretilir.
 
 ## Renkler
 
@@ -68,10 +67,11 @@ açık zemin + koyu yazı.
 - Logoyu yatay/dikey ayrı ayrı esnetme; oranı koru.
 - Renkleri değiştirme. Tek renk gerekiyorsa amblemi ana metin rengiyle
   (`#332F2A`) kullan.
-- Koyu zeminde krem (`#FCF5E7`) zeminli amblem sürümünü kullan.
+- Rozet kendi krem halkasıyla geldiği için açık ve koyu zeminde olduğu gibi
+  kullanılır.
 
 ## Bilinen sınır
 
-Orijinal logo suluboya tarzında; vektör sürümde fırça dokusu yok. Karakterler ve
-renkler korundu. Orijinal dosya bulunursa onun kullanılması tercih edilir
-(bkz. [`04-kararlar.md`](04-kararlar.md) K-03, A-04).
+Logo raster (piksel) bir görsel; vektör sürüm yok. Suluboya bir çizimin iyi
+vektörünü ancak bir illüstratör çizebilir, otomatik dönüştürme dokuyu bozar
+(bkz. [`04-kararlar.md`](04-kararlar.md) A-04).

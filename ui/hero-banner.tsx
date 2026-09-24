@@ -60,7 +60,7 @@ function Gorsel({ banner }: { banner: Banner }) {
   if (banner.gorsel === "amblem") {
     return (
       <Image
-        src="/marka/basoftbaby-amblem.svg"
+        src="/marka/basoftbaby-amblem-256.webp"
         alt=""
         width={116}
         height={116}
