@@ -6,6 +6,7 @@ import SepeteEkle from "@/ui/sepete-ekle";
 import StokBildirimi from "@/ui/stok-bildirimi";
 import { renkYaz, type RenkAdi, type RenkSecenegi, type Varyant } from "@/ui/katalog-bicim";
 import { tonSec, type Ton } from "@/ui/kategori-tonu";
+import BedenOnerici from "@/ui/beden-onerici";
 
 /**
  * Beden düğmelerinin tonları (K-90). Ana sayfadaki "Yaşa göre" kutularıyla
@@ -123,6 +124,8 @@ export default function VaryantSecici({
             {beden} ≈ boy {seciliOlcu.boy} · kilo {seciliOlcu.kilo}
           </p>
         )}
+        {/* Bebeğin ölçüsünden beden önerisi (K-136). */}
+        <BedenOnerici olculer={olculer} urunBedenleri={bedenler} onSec={setBeden} />
       </div>
 
       <div>

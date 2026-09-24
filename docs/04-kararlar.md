@@ -5682,6 +5682,28 @@ gidiyordu; cevap o kişide kalıyor, aynı soru tekrar tekrar geliyordu.
 [`../ui/urun-sorulari.tsx`](../ui/urun-sorulari.tsx),
 [`../app/yonetim/(panel)/sorular/page.tsx`](../app/yonetim/(panel)/sorular/page.tsx)
 
+### K-136 · Beden önerici
+
+Bebek giyiminde iadelerin çoğu beden yüzünden. Ürün sayfasında seçili
+bedenin boy-kilo karşılığı yazıyordu, ama "benim bebeğime hangisi" sorusunu
+müşteri tabloya bakarak kendisi çözmek zorundaydı.
+
+- Beden seçicinin altında **"Hangi beden olur?"**: bebeğin boyu, kilosu ya
+  da doğum tarihi (birini girmek yeter). Öneri mağazanın kendi beden
+  tablosundan (panelden, K-56); öncelik boy (bebek bedenlerinde asıl ölçü),
+  sonra kilo, sonra yaş (bedenin adındaki ay/yaş aralığı).
+- **İki bedenin sınırındaki bebeğe büyük olan** öneriliyor (62 cm hem 0-3'ün
+  üst hem 3-6'nın alt sınırı → 3-6): bebek büyüyor, küçük gelen giyilemiyor.
+  Bedenin üst sınırına yakınsa (aralığın son %15'i) "bir üst beden daha uzun
+  giyilir" notu ve iki seçenek.
+- Önerilen beden üründe yoksa en yakını (önce büyük olan) ve bunun yazılması.
+- "Seç" düğmesi bedeni doğrudan seçiyor.
+- **Ölçüler yalnızca bu tarayıcıda** (localStorage): sonraki ürünlerde öneri
+  hazır geliyor, sunucuya hiçbir şey gitmiyor. "Ölçüleri değiştir" siliyor.
+
+**Nerede:** [`../ui/beden-onerici-bicim.ts`](../ui/beden-onerici-bicim.ts),
+[`../ui/beden-onerici.tsx`](../ui/beden-onerici.tsx)
+
 ---
 
 ## Açık sorular
