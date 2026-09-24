@@ -40,6 +40,7 @@ export const HATALAR: Record<string, string> = {
   // Kilit mesajındaki dakika adres satırından geliyor; metin değil sayı
   // taşındığı için buraya sayfada ekleniyor (bkz. giriş sayfası).
   kilit: "Çok fazla hatalı giriş denemesi yapıldı.",
+  cok: "Kısa sürede çok fazla deneme yapıldı. Bir saat içinde tekrar deneyebilirsin.",
 };
 
 export const BILDIRIMLER: Record<string, string> = {

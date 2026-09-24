@@ -5263,6 +5263,36 @@ yerine geçmiyor.
 [`../ui/hata-dinleyici.tsx`](../ui/hata-dinleyici.tsx),
 [`../app/yonetim/(panel)/hatalar/page.tsx`](../app/yonetim/(panel)/hatalar/page.tsx)
 
+### K-122 · Hız sınırının eksik kalan yerleri
+
+K-64'te sipariş, değerlendirme, talep ve "gelince haber ver" işlemlerine hız
+sınırı konmuştu; girişlerin kendi sınırı vardı (K-38). Kimlik istemeyen
+bütün işlemler ve uçlar yeniden tek tek denetlendi. Beş yer açıktı:
+
+| İşlem | Neden tehlikeli | Sınır |
+|---|---|---|
+| Üye kaydı | Her kayıt bir doğrulama e-postası gönderiyor: başkasının adresine e-posta yağdırılabilir, gönderim kotası biter | IP başına saatte 5 |
+| Şifremi unuttum | Aynı nedenle; üstelik hedef belli bir müşterinin kutusu | Adres başına saatte 3 **ve** IP başına saatte 10 |
+| Doğrulamayı tekrar gönder | Oturum açık ama sınırsız e-posta | Müşteri başına saatte 3 |
+| Sipariş takibi | Numaralar sıralı; e-postası bilinen birinin numaraları denenerek adresi görülebilir | IP başına saatte 30 |
+| Kupon | Kod tahmin edilebilir | IP başına saatte 20 |
+
+- Sınır sayacı artık IP dışında bir anahtarla da sayabiliyor (e-posta adresi,
+  müşteri). Şifre sıfırlamada adres başına sayaç asıl koruma: IP değiştirmek
+  onu aşmıyor.
+- **Şifre sıfırlamada sınır dolunca da aynı cevap** ("e-posta gönderildi"):
+  yoksa hangi adreslerin kayıtlı olduğu sınırın cevabından öğrenilirdi.
+- Öteki yerlerde müşteriye Türkçe bir açıklama çıkıyor ("kısa sürede çok
+  fazla deneme…"), sessizce başarısız olmuyor.
+- Sepete ekleme ve favori sınırlanmadı: stok ayırmıyorlar (stok siparişte
+  düşüyor) ve favori oturum istiyor. Kargo bildirim ucu sırla, ödeme dönüşü
+  iyzico doğrulamasıyla, zamanlanmış görevler `CRON_SECRET` ile korunuyor.
+
+**Nerede:** [`../server/istek-siniri.ts`](../server/istek-siniri.ts),
+[`../server/uyelik-islem.ts`](../server/uyelik-islem.ts),
+[`../server/sepet-islem.ts`](../server/sepet-islem.ts),
+[`../app/(magaza)/siparis-takip/page.tsx`](../app/(magaza)/siparis-takip/page.tsx)
+
 ---
 
 ## Açık sorular

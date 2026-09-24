@@ -6,7 +6,7 @@ import Sayfalama from "@/ui/sayfalama";
 import { sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import { durumAdi, durumRengi, odemeAdi } from "@/ui/siparis-bicim";
-import { BILDIRIMLER, IYI_KUTU, KART } from "../hesap-bicim";
+import { BILDIRIMLER, HATALAR, HATA_KUTUSU, IYI_KUTU, KART } from "../hesap-bicim";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Siparişlerim", robots: { index: false } };
@@ -30,13 +30,14 @@ export default async function SiparislerimSayfasi({ searchParams }: PageProps<"/
   const musteri = await girisYapan();
   if (!musteri) redirect("/giris?hata=giris&nereye=%2Fhesabim");
 
-  const { kayit, baglanan, sayfa } = await searchParams;
+  const { kayit, baglanan, sayfa, hata } = await searchParams;
   const toplamAdet = await siparisAdedim(musteri.id);
   const durum = sayfaCoz(sayfa, toplamAdet, LISTE_BOYU);
   const siparisler = await siparislerimiGetir(musteri.id, durum.atla, durum.boy);
   const adres = (n: number) => sayfaAdresi("/hesabim", n);
 
   const bildirim = typeof kayit === "string" ? BILDIRIMLER[kayit] : undefined;
+  const hataMetni = typeof hata === "string" ? HATALAR[hata] : undefined;
   // Doğrulamadan sonra kaç eski siparişin bağlandığını söylüyoruz; müşteri
   // listenin neden uzadığını anlasın.
   const baglananSayisi = Number(baglanan);
@@ -47,6 +48,7 @@ export default async function SiparislerimSayfasi({ searchParams }: PageProps<"/
 
   return (
     <section className="mt-6">
+      {hataMetni && <p className={HATA_KUTUSU}>{hataMetni}</p>}
       {bildirim && (
         <p className={IYI_KUTU}>
           {bildirim}

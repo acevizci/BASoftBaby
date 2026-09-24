@@ -12,6 +12,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
+import { islemSinirla } from "@/server/istek-siniri";
 import {
   epostayiDogrulanmisSay,
   girisYapan,
@@ -63,6 +64,8 @@ export async function kayitOl(veri: FormData): Promise<void> {
 
   if (adSoyad.length < 3 || !epostaGecerliMi(eposta)) redirect(geri("eksik"));
   if (sifreKisaMi(sifre)) redirect(geri("kisa"));
+  // Her kayıt bir doğrulama e-postası gönderiyor (K-122).
+  if (!(await islemSinirla("kayit")).izin) redirect(geri("cok"));
 
   const varOlan = await db.customer.findUnique({ where: { eposta }, select: { id: true } });
   if (varOlan) redirect(geri("kayitli"));
@@ -216,6 +219,7 @@ export async function dogrulamayiTekrarGonder(): Promise<void> {
   const musteri = await girisYapan();
   if (!musteri) redirect("/giris?nereye=%2Fhesabim");
   if (musteri.epostaDogrulandiMi) redirect("/hesabim");
+  if (!(await islemSinirla("dogrulama", musteri.id)).izin) redirect("/hesabim?hata=cok");
 
   await dogrulamaGonder(musteri.id, musteri.eposta, musteri.adSoyad);
   redirect("/hesabim?kayit=dogrulama-gonderildi");
@@ -251,7 +255,14 @@ export async function epostayiDogrula(veri: FormData): Promise<void> {
 export async function sifreSifirlamaIste(veri: FormData): Promise<void> {
   const eposta = temiz(veri, "eposta").toLowerCase();
 
-  if (epostaGecerliMi(eposta)) {
+  // Sınır aşılınca da aynı cevap: kayıtlı adresler buradan öğrenilemesin
+  // (K-122). İki sayaç birden sayılıyor; biri doluysa e-posta gitmiyor.
+  const ipIzni = (await islemSinirla("sifirlama")).izin;
+  const adresIzni = epostaGecerliMi(eposta)
+    ? (await islemSinirla("sifirlama-adres", eposta)).izin
+    : false;
+
+  if (ipIzni && adresIzni) {
     const musteri = await db.customer.findUnique({
       where: { eposta },
       select: { id: true, adSoyad: true },

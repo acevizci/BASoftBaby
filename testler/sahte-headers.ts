@@ -40,8 +40,15 @@ export async function cookies() {
   return kavanoz;
 }
 
+let basliklar = new Headers();
+
+/** İsteğin geldiği adresi taklit eder (hız sınırı testleri); `undefined` sıfırlar. */
+export function ipAyarla(ip: string | undefined): void {
+  basliklar = new Headers(ip ? { "x-forwarded-for": ip } : {});
+}
+
 export async function headers() {
-  return new Headers();
+  return basliklar;
 }
 
 export async function draftMode() {

@@ -9,7 +9,8 @@ import { fiyatYaz, type GorselTipi } from "@/ui/katalog-bicim";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Sepetim", robots: { index: false } };
 
-export default async function SepetSayfasi() {
+export default async function SepetSayfasi({ searchParams }: PageProps<"/sepet">) {
+  const { kupon } = await searchParams;
   const sepet = await sepetGetir();
 
   if (sepet.satirlar.length === 0) {
@@ -193,6 +194,11 @@ export default async function SepetSayfasi() {
               </form>
             )}
 
+            {kupon === "cok" && (
+              <p className="mt-2 text-xs font-semibold text-mercan-koyu">
+                Kısa sürede çok fazla kupon denendi. Bir saat içinde tekrar deneyebilirsin.
+              </p>
+            )}
             {sepet.kuponGecersizMi && (
               <p className="mt-2 text-xs font-semibold text-mercan-koyu">
                 Bu kupon geçerli değil ya da süresi dolmuş.

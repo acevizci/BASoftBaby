@@ -3,6 +3,7 @@ import SiparisKarti from "@/ui/siparis-karti";
 import TalepFormu from "@/ui/talep-formu";
 import DegerlendirmeFormu from "@/ui/degerlendirme-formu";
 import { siparisGetir } from "@/server/siparis";
+import { islemSinirla } from "@/server/istek-siniri";
 import { talepDurumu } from "@/server/talep";
 import { degerlendirilebilirler } from "@/server/yorum";
 
@@ -23,7 +24,11 @@ export default async function SiparisTakip({ searchParams }: PageProps<"/siparis
   const eposta = typeof aranan.eposta === "string" ? aranan.eposta : "";
   const arandi = Boolean(numara && eposta);
 
-  const siparis = arandi ? await siparisGetir(numara, eposta) : undefined;
+  // Numaralar sıralı: e-postası bilinen birinin numaraları tek tek
+  // denenerek adresine ulaşılmasın (K-122).
+  const sinir = arandi ? await islemSinirla("takip") : undefined;
+  const engellendi = sinir !== undefined && !sinir.izin;
+  const siparis = arandi && !engellendi ? await siparisGetir(numara, eposta) : undefined;
   // Talep kuralları siparişin durumuna bağlı; hesabı sunucu yapıyor.
   const talepBilgisi = siparis ? await talepDurumu(siparis.numara) : undefined;
 
@@ -70,7 +75,13 @@ export default async function SiparisTakip({ searchParams }: PageProps<"/siparis
         </button>
       </form>
 
-      {arandi && !siparis && (
+      {sinir && !sinir.izin && (
+        <p className="mt-5 rounded-marka bg-mercan-soluk px-4 py-3 text-sm font-semibold text-mercan-koyu">
+          Kısa sürede çok fazla arama yapıldı. {sinir.kalanDk} dakika sonra tekrar dene; acelen
+          varsa bize yaz.
+        </p>
+      )}
+      {arandi && !engellendi && !siparis && (
         <p className="mt-5 rounded-marka bg-mercan-soluk px-4 py-3 text-sm font-semibold text-mercan-koyu">
           Bu numara ve e-postayla eşleşen sipariş bulunamadı. İkisini de bir kontrol et.
         </p>

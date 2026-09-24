@@ -28,7 +28,18 @@ import { createHash } from "node:crypto";
 import { headers } from "next/headers";
 import { db } from "@/server/veritabani";
 
-export type IslemTuru = "siparis" | "yorum" | "talep" | "stok-bildirimi" | "hata";
+export type IslemTuru =
+  | "siparis"
+  | "yorum"
+  | "talep"
+  | "stok-bildirimi"
+  | "hata"
+  | "kayit"
+  | "sifirlama"
+  | "sifirlama-adres"
+  | "dogrulama"
+  | "takip"
+  | "kupon";
 
 /**
  * İşlem başına sınırlar.
@@ -46,6 +57,23 @@ const SINIRLAR: Record<IslemTuru, { adet: number; pencereDk: number }> = {
   // saatte yirmiden fazlası ya bozuk bir tarayıcı ya da kaydı doldurmaya
   // çalışan biri.
   hata: { adet: 20, pencereDk: 60 },
+  // K-122: e-posta gönderen ya da tahmin edilerek bilgi sızdıran işlemler.
+  // Üye kaydı her seferinde bir doğrulama e-postası gönderiyor: sınırsız
+  // olsaydı başkasının adresine yüzlerce e-posta yağdırılabilir, gönderim
+  // kotası da biterdi.
+  kayit: { adet: 5, pencereDk: 60 },
+  // Şifre sıfırlama iki sayaçla: adres başına (bir kişinin kutusu
+  // doldurulamasın, IP değiştirmek işe yaramasın) ve IP başına (bir betik
+  // bütün müşterilere birer e-posta atamasın).
+  sifirlama: { adet: 10, pencereDk: 60 },
+  "sifirlama-adres": { adet: 3, pencereDk: 60 },
+  // Doğrulama e-postasını yeniden gönder: müşteri başına.
+  dogrulama: { adet: 3, pencereDk: 60 },
+  // Sipariş takibi numara + e-posta istiyor; e-postası bilinen birinin
+  // sıralı numaraları deneyerek adresine ulaşılmasın.
+  takip: { adet: 30, pencereDk: 60 },
+  // Kupon kodu tahmin edilmesin.
+  kupon: { adet: 20, pencereDk: 60 },
 };
 
 function ozet(deger: string): string {
@@ -68,8 +96,10 @@ export type SinirSonucu = { izin: true } | { izin: false; kalanDk: number };
  * Sayma ve kontrol birlikte: ayrı olsalardı aynı anda gelen iki istek ikisi
  * de "izin var" cevabını alabilirdi.
  */
-export async function islemSinirla(tur: IslemTuru): Promise<SinirSonucu> {
-  const ip = await adres();
+export async function islemSinirla(tur: IslemTuru, kimin?: string): Promise<SinirSonucu> {
+  // `kimin` verilirse sayaç ona göre (e-posta adresi, müşteri); verilmezse
+  // isteğin geldiği adrese göre.
+  const ip = kimin ?? (await adres());
   // Yerelde ya da başlık olmayan bir ortamda sınır uygulanmıyor: kimliği
   // olmayan isteği ayırt edemiyoruz ve herkesi tek sayaca toplamak bütün
   // mağazayı kilitlerdi.

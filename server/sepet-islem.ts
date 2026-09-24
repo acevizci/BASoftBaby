@@ -15,6 +15,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
 import { sepetIdAlVeyaKur, sepetIdOku } from "@/server/sepet";
 import { KUPON_CEREZI } from "@/server/kampanya";
+import { islemSinirla } from "@/server/istek-siniri";
 
 /** En fazla bu kadar adet tek kalemde satılır; yanlışlıkla 999 girilmesin. */
 const EN_FAZLA = 20;
@@ -98,6 +99,9 @@ export async function kuponUygula(veri: FormData): Promise<void> {
   const kod = String(veri.get("kupon") ?? "").trim().toUpperCase().slice(0, 40);
 
   const kavanoz = await cookies();
+  // Kod tahmin edilmesin (K-122). Sınır dolunca kod denenmiyor; sepet
+  // ekranı nedenini yazıyor.
+  if (kod && !(await islemSinirla("kupon")).izin) redirect("/sepet?kupon=cok");
   if (kod) {
     kavanoz.set(KUPON_CEREZI, kod, {
       httpOnly: true,
