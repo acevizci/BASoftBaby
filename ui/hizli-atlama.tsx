@@ -33,9 +33,7 @@ export default function HizliAtlama({ onKapat }: { onKapat: () => void }) {
 
   // Oklarla gezerken seçili satır görünür alanda kalsın.
   useEffect(() => {
-    document
-      .getElementById(`hizli-${aktif}`)
-      ?.scrollIntoView({ block: "nearest" });
+    document.getElementById(`hizli-${aktif}`)?.scrollIntoView({ block: "nearest" });
   }, [aktif]);
 
   const git = (s: Sonuc, yeniSekme = false) => {
@@ -60,8 +58,7 @@ export default function HizliAtlama({ onKapat }: { onKapat: () => void }) {
   };
 
   // Ardışık aynı türdeki sonuçlar bir grup.
-  const gruplar: { tur: Sonuc["tur"]; ogeler: { s: Sonuc; i: number }[] }[] =
-    [];
+  const gruplar: { tur: Sonuc["tur"]; ogeler: { s: Sonuc; i: number }[] }[] = [];
   liste.forEach((s, i) => {
     const son = gruplar[gruplar.length - 1];
     if (son && son.tur === s.tur) son.ogeler.push({ s, i });
@@ -115,11 +112,7 @@ export default function HizliAtlama({ onKapat }: { onKapat: () => void }) {
         className="max-h-[min(60vh,26rem)] overflow-y-auto p-2"
       >
         {gruplar.map((g, gi) => (
-          <div
-            key={`${g.tur}-${gi}`}
-            role="group"
-            aria-labelledby={`hizli-grup-${gi}`}
-          >
+          <div key={`${g.tur}-${gi}`} role="group" aria-labelledby={`hizli-grup-${gi}`}>
             <p
               id={`hizli-grup-${gi}`}
               role="presentation"
@@ -148,10 +141,7 @@ export default function HizliAtlama({ onKapat }: { onKapat: () => void }) {
                   {s.ek && <span className="text-metin-3"> · {s.ek}</span>}
                 </span>
                 {i === aktif && (
-                  <span
-                    aria-hidden="true"
-                    className="flex-none text-xs text-metin-3"
-                  >
+                  <span aria-hidden="true" className="flex-none text-xs text-metin-3">
                     ↵
                   </span>
                 )}
@@ -160,9 +150,7 @@ export default function HizliAtlama({ onKapat }: { onKapat: () => void }) {
           </div>
         ))}
         {liste.length === 0 && (
-          <p className="px-2.5 py-6 text-center text-sm text-metin-3">
-            Sonuç yok.
-          </p>
+          <p className="px-2.5 py-6 text-center text-sm text-metin-3">Sonuç yok.</p>
         )}
       </div>
 

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { guvenlikBasliklari } from "./server/guvenlik-basliklari";
 
 const nextConfig: NextConfig = {
   /**
@@ -7,6 +8,16 @@ const nextConfig: NextConfig = {
    * Bu liste "bunu paketleme, Node'un kendi require'ıyla yükle" demek.
    */
   serverExternalPackages: ["iyzipay"],
+
+  /** Güvenlik başlıkları her cevapta (K-120). */
+  async headers() {
+    return [
+      {
+        source: "/:yol*",
+        headers: guvenlikBasliklari(process.env.NODE_ENV !== "production"),
+      },
+    ];
+  },
 
   experimental: {
     serverActions: {

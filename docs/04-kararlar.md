@@ -5188,6 +5188,39 @@ panelde bastırılıyor. JavaScript kapalıyken düğmeler hiç çizilmiyor.
 [`../ui/hizli-atlama.tsx`](../ui/hizli-atlama.tsx),
 [`../ui/panel-menu.tsx`](../ui/panel-menu.tsx)
 
+### K-120 · Güvenlik başlıkları
+
+Siteye tarayıcı güvenlik başlıkları eklendi. Ödeme alan bir sitede bunlar
+standart; eksiklikleri güvenlik taramalarında ilk görünen şey.
+
+- **İçerik güvenlik politikası (CSP):** sayfa yalnızca kendi alan adımızdan
+  betik, fotoğraf, font yükleyebiliyor ve yalnızca oraya veri
+  gönderebiliyor. Başka bir site bizi çerçeve içine gömemiyor (tıklama
+  tuzağı), `<object>` ve `<base>` ile yapılan saldırılar kapalı. Form yalnızca
+  kendimize ve iyzico'ya gönderilebiliyor: ödeme başlatılınca sunucu
+  müşteriyi iyzico'ya yönlendiriyor, tarayıcı bu kuralı o yönlendirmeye de
+  uyguluyor.
+- **HSTS:** tarayıcı iki yıl boyunca siteyi yalnızca HTTPS ile açıyor.
+- **Permissions-Policy:** kamera yalnızca bizim sayfalarımızda (barkod
+  okuyucu, K-107); mikrofon, konum ve diğerleri kapalı.
+- `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` (başka
+  siteye giden bağlantıda sipariş numarası gibi adres ayrıntıları gitmiyor),
+  `Cross-Origin-Opener-Policy`.
+
+**Satır içi betiklere neden izin var.** Next.js sayfayı canlandırmak için
+satır içi betik yazıyor. Onları tek tek izinlemenin yolu her istekte değişen
+bir "nonce", ama nonce sayfaların önbellekten verilmesini (K-22) kapatıyor.
+Kullanıcı içeriği React ile kaçışlanarak yazıldığı için satır içi betik
+sızdırmanın yolu zaten kapalı; asıl koruma dışarıdan betik yüklemenin yasak
+olması. Reklam etiketleri eklenirse (çerez onayından sonra) onların alan
+adları bu listeye eklenecek.
+
+Üretim derlemesiyle mağaza, sepet, ödeme ve panel ekranları gezildi; ihlal
+yok.
+
+**Nerede:** [`../server/guvenlik-basliklari.ts`](../server/guvenlik-basliklari.ts),
+[`../next.config.ts`](../next.config.ts)
+
 ---
 
 ## Açık sorular

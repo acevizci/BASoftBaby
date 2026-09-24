@@ -22,7 +22,8 @@ test("boş aramada menüdeki her sayfa bir kez listeleniyor", () => {
   const yollar = liste.filter((s) => s.tur === "sayfa").map((s) => s.yol);
   assert.equal(new Set(yollar).size, yollar.length);
   for (const b of TUM_BOLUMLER) {
-    for (const adres of [b.yol, ...b.alt.map((a) => a.yol)]) assert.ok(yollar.includes(adres), adres);
+    for (const adres of [b.yol, ...b.alt.map((a) => a.yol)])
+      assert.ok(yollar.includes(adres), adres);
   }
   // Bölümle aynı adresteki alt madde bölümün yerine geçiyor.
   const vitrin = liste.find((s) => s.yol === "/yonetim/kampanyalar");
@@ -59,6 +60,9 @@ test("arama kısayolları sonda ve metni adrese kodluyor", () => {
 test("gruplar karışmıyor: sipariş, sayfalar, eylemler, arama", () => {
   const sira = ["siparis", "sayfa", "eylem", "ara"];
   const turler = sonuclar("urun").map((s) => sira.indexOf(s.tur));
-  assert.deepEqual(turler, [...turler].sort((a, b) => a - b));
+  assert.deepEqual(
+    turler,
+    [...turler].sort((a, b) => a - b),
+  );
   assert.ok(sonuclar("urun").some((s) => s.tur === "eylem" && s.yol === "/yonetim/urunler/yeni"));
 });

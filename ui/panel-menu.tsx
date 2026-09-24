@@ -99,9 +99,7 @@ export default function PanelMenu({
   const [atlama, setAtlama] = useState(false);
 
   const cevir = (b: Bolum) => {
-    const yeni = acik.includes(b.yol)
-      ? acik.filter((y) => y !== b.yol)
-      : [...acik, b.yol];
+    const yeni = acik.includes(b.yol) ? acik.filter((y) => y !== b.yol) : [...acik, b.yol];
     setAcik(yeni);
     bolumCereziniYaz(yeni);
   };
@@ -123,11 +121,7 @@ export default function PanelMenu({
   // ekranlarının hepsinde (Shopify, Stripe, Linear) bu tuş bu iş için.
   useEffect(() => {
     const tus = (e: KeyboardEvent) => {
-      if (
-        (e.metaKey || e.ctrlKey) &&
-        !e.altKey &&
-        e.key.toLowerCase() === "k"
-      ) {
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setAtlama((a) => !a);
       }
@@ -154,9 +148,7 @@ export default function PanelMenu({
       }
       if (e.key !== "Tab" || !cekmece.current) return;
       const odaklar = [
-        ...cekmece.current.querySelectorAll<HTMLElement>(
-          "a[href], button:not([disabled])",
-        ),
+        ...cekmece.current.querySelectorAll<HTMLElement>("a[href], button:not([disabled])"),
       ].filter((el) => el.offsetParent !== null);
       if (odaklar.length === 0) return;
       const ilk = odaklar[0];
@@ -175,9 +167,7 @@ export default function PanelMenu({
 
   // Açılınca odak çekmecenin ilk bağlantısına, arkadaki sayfa kaymıyor.
   const acildi = () => {
-    const acikMi =
-      Boolean(kutu.current?.open) &&
-      !window.matchMedia("(min-width: 1024px)").matches;
+    const acikMi = Boolean(kutu.current?.open) && !window.matchMedia("(min-width: 1024px)").matches;
     sayfaKaydirmasi(!acikMi);
     if (acikMi) cekmece.current?.querySelector<HTMLElement>("a[href]")?.focus();
   };
@@ -215,11 +205,7 @@ export default function PanelMenu({
       {/* Küçük ekranda açılır, geniş ekranda hep açık. `open-yok` sınıfı
         globals.css'te: tarayıcının kapalı `<details>` içeriğini gizleyen
         kuralını geniş ekranda etkisiz kılıyor. */}
-      <details
-        ref={kutu}
-        className="open-yok group/menu min-w-0 flex-1"
-        onToggle={acildi}
-      >
+      <details ref={kutu} className="open-yok group/menu min-w-0 flex-1" onToggle={acildi}>
         <summary
           ref={baslik}
           className="flex min-h-11 list-none items-center justify-between gap-3 rounded-marka border border-cizgi bg-yuzey px-4 py-2.5 text-sm font-bold text-metin-2 lg:hidden [&::-webkit-details-marker]:hidden"
@@ -259,11 +245,7 @@ export default function PanelMenu({
           }`}
         >
           <div className="mb-1 flex min-h-9 items-center justify-between gap-2 px-1">
-            <p
-              className={`font-baslik text-base font-bold ${dar ? "lg:hidden" : ""}`}
-            >
-              Yönetim
-            </p>
+            <p className={`font-baslik text-base font-bold ${dar ? "lg:hidden" : ""}`}>Yönetim</p>
             {/* Daraltma yalnızca geniş ekranda anlamlı. */}
             <form action={gorunumuCevir} className="ml-auto hidden lg:block">
               <button
@@ -274,9 +256,7 @@ export default function PanelMenu({
                 <span aria-hidden="true" className="text-sm">
                   {dar ? "»" : "«"}
                 </span>
-                <span className="sr-only">
-                  {dar ? "Menüyü genişlet" : "Menüyü daralt"}
-                </span>
+                <span className="sr-only">{dar ? "Menüyü genişlet" : "Menüyü daralt"}</span>
               </button>
             </form>
             {js && (
@@ -304,9 +284,7 @@ export default function PanelMenu({
               }`}
             >
               <PanelIkon ad="ara" />
-              <span className={`flex-1 text-left ${dar ? "lg:sr-only" : ""}`}>
-                Ara…
-              </span>
+              <span className={`flex-1 text-left ${dar ? "lg:sr-only" : ""}`}>Ara…</span>
               <kbd
                 className={`hidden rounded border border-cizgi px-1.5 text-[11px] lg:block ${dar ? "lg:hidden" : ""}`}
               >
@@ -319,9 +297,7 @@ export default function PanelMenu({
 
           {/* Ayarlar ana listeden ayrı, altta: nadiren açılıyor ama her zaman
             aynı yerde bulunmalı (K-116). */}
-          <div className="mt-2 border-t border-cizgi pt-2">
-            {bolum(AYARLAR)}
-          </div>
+          <div className="mt-2 border-t border-cizgi pt-2">{bolum(AYARLAR)}</div>
 
           {/* Grupların dışında: mağazaya çıkış bir ayar maddesi değil. */}
           <div className="mt-2 border-t border-cizgi pt-2">
@@ -341,9 +317,7 @@ export default function PanelMenu({
           <div className="mt-2 border-t border-cizgi-soluk pt-2">
             <Link
               href="/yonetim/hesabim"
-              aria-current={
-                eslesir(yol, "/yonetim/hesabim") ? "page" : undefined
-              }
+              aria-current={eslesir(yol, "/yonetim/hesabim") ? "page" : undefined}
               title={dar ? yonetici.adSoyad : undefined}
               className={`flex items-center gap-2.5 rounded-marka px-2.5 py-1.5 transition hover:bg-yuzey-sicak ${
                 dar ? "lg:justify-center lg:px-0" : ""
@@ -361,9 +335,7 @@ export default function PanelMenu({
                 <span className="block truncate text-sm font-bold text-metin">
                   {yonetici.adSoyad}
                 </span>
-                <span className="block truncate text-xs text-metin-3">
-                  {yonetici.eposta}
-                </span>
+                <span className="block truncate text-xs text-metin-3">{yonetici.eposta}</span>
               </span>
             </Link>
             <form action={cikis}>
@@ -411,28 +383,15 @@ function sayfaKaydirmasi(serbest: boolean): void {
 function basHarfler(ad: string): string {
   const parcalar = ad.trim().split(/\s+/).filter(Boolean);
   if (parcalar.length === 0) return "?";
-  if (parcalar.length === 1)
-    return parcalar[0].slice(0, 2).toLocaleUpperCase("tr");
-  return (parcalar[0][0] + parcalar[parcalar.length - 1][0]).toLocaleUpperCase(
-    "tr",
-  );
+  if (parcalar.length === 1) return parcalar[0].slice(0, 2).toLocaleUpperCase("tr");
+  return (parcalar[0][0] + parcalar[parcalar.length - 1][0]).toLocaleUpperCase("tr");
 }
 
 /** Rozet: sayı, ya da dar menüde nokta; ekran okuyucu her zaman sayıyı duyuyor. */
-function Rozet({
-  sayi,
-  ton,
-  dar,
-}: {
-  sayi: number;
-  ton: RozetTonu;
-  dar?: boolean;
-}) {
+function Rozet({ sayi, ton, dar }: { sayi: number; ton: RozetTonu; dar?: boolean }) {
   if (sayi <= 0) return null;
   const renk =
-    ton === "bekleyen"
-      ? "bg-dugme text-dugme-yazi"
-      : "border border-cizgi bg-yuzey text-metin-2";
+    ton === "bekleyen" ? "bg-dugme text-dugme-yazi" : "border border-cizgi bg-yuzey text-metin-2";
   return (
     <>
       <span
@@ -456,8 +415,7 @@ function Rozet({
 // Açık sayfa: sol kenarı düz ve kalın mercan çubuklu bir sekme. Yazı kalın
 // ve koyu: mercan yazı soluk mercan dolgunun üstünde 4,39:1 veriyordu, eşik
 // 4,5 (K-50).
-const ETKIN =
-  "border-l-[3px] border-mercan bg-mercan-soluk font-bold text-metin";
+const ETKIN = "border-l-[3px] border-mercan bg-mercan-soluk font-bold text-metin";
 
 function BolumSatiri({
   b,
@@ -511,13 +469,9 @@ function BolumSatiri({
                 }`
           }`}
         >
-          <span
-            className={`flex min-w-0 items-center gap-2.5 ${dar ? "lg:justify-center" : ""}`}
-          >
+          <span className={`flex min-w-0 items-center gap-2.5 ${dar ? "lg:justify-center" : ""}`}>
             <PanelIkon ad={b.ikon} />
-            <span className={dar ? "truncate lg:sr-only" : "truncate"}>
-              {b.ad}
-            </span>
+            <span className={dar ? "truncate lg:sr-only" : "truncate"}>{b.ad}</span>
           </span>
           <Rozet sayi={baslikRozet.sayi} ton={baslikRozet.ton} dar={dar} />
         </Link>
@@ -546,10 +500,7 @@ function BolumSatiri({
         )}
         {/* Ok olmayan satırda da yeri ayrılıyor: rozetler alt alta hizalı kalsın. */}
         {!okVar && (
-          <span
-            aria-hidden="true"
-            className={`ml-0.5 w-8 flex-none ${dar ? "lg:hidden" : ""}`}
-          />
+          <span aria-hidden="true" className={`ml-0.5 w-8 flex-none ${dar ? "lg:hidden" : ""}`} />
         )}
       </div>
 

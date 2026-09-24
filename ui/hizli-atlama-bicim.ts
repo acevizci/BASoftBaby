@@ -23,13 +23,7 @@ export type Sonuc = {
 
 type Aday = Sonuc & { ad: string; metin: string };
 
-function aday(
-  tur: SonucTuru,
-  baslik: string,
-  yol: string,
-  ek?: string,
-  anahtar?: string,
-): Aday {
+function aday(tur: SonucTuru, baslik: string, yol: string, ek?: string, anahtar?: string): Aday {
   return {
     tur,
     baslik,
@@ -49,34 +43,15 @@ function sayfalar(): Aday[] {
   for (const b of TUM_BOLUMLER) {
     if (!b.alt.some((a) => a.yol === b.yol))
       liste.push(aday("sayfa", b.ad, b.yol, undefined, b.anahtar));
-    for (const a of b.alt)
-      liste.push(aday("sayfa", a.ad, a.yol, b.ad, a.anahtar));
+    for (const a of b.alt) liste.push(aday("sayfa", a.ad, a.yol, b.ad, a.anahtar));
   }
   return liste;
 }
 
 const EYLEMLER: Aday[] = [
-  aday(
-    "eylem",
-    "Yeni ürün ekle",
-    "/yonetim/urunler/yeni",
-    undefined,
-    "urun olustur",
-  ),
-  aday(
-    "eylem",
-    "Stok etiketi bas",
-    "/yonetim/stok/etiketler",
-    undefined,
-    "barkod yazdir",
-  ),
-  aday(
-    "eylem",
-    "Hesabım",
-    "/yonetim/hesabim",
-    undefined,
-    "sifre degistir profil",
-  ),
+  aday("eylem", "Yeni ürün ekle", "/yonetim/urunler/yeni", undefined, "urun olustur"),
+  aday("eylem", "Stok etiketi bas", "/yonetim/stok/etiketler", undefined, "barkod yazdir"),
+  aday("eylem", "Hesabım", "/yonetim/hesabim", undefined, "sifre degistir profil"),
   aday("eylem", "Mağazayı aç", "/", undefined, "site"),
 ];
 
@@ -155,16 +130,13 @@ export function sonuclar(sorgu: string): Sonuc[] {
   // `kelimeler` tek harfleri atıyor; tek harf yazan kişi yine de bir şey
   // görmeli, o yüzden o durumda metnin kendisi aranıyor.
   const aranan = kelimeler(temiz);
-  const parcalar =
-    aranan.length > 0 ? aranan : [normalle(temiz)].filter(Boolean);
+  const parcalar = aranan.length > 0 ? aranan : [normalle(temiz)].filter(Boolean);
   if (parcalar.length > 0) {
     const uyanlar = [...SAYFALAR, ...EYLEMLER]
       .map((a, sira) => ({ a, sira, d: derece(a, parcalar) }))
       .filter((x) => x.d > 0)
       // Gruplar karışmasın diye önce tür, sonra uyma derecesi.
-      .sort(
-        (x, y) => SIRA[x.a.tur] - SIRA[y.a.tur] || y.d - x.d || x.sira - y.sira,
-      )
+      .sort((x, y) => SIRA[x.a.tur] - SIRA[y.a.tur] || y.d - x.d || x.sira - y.sira)
       .slice(0, EN_COK)
       .map((x) => sadelestir(x.a));
     liste.push(...uyanlar);
