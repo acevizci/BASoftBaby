@@ -24,9 +24,15 @@ export const metadata: Metadata = { title: "Giriş yap", robots: { index: false 
  */
 export default async function GirisSayfasi({ searchParams }: PageProps<"/giris">) {
   const { hata, kayit, nereye, dk } = await searchParams;
-  if (await girisYapan()) redirect("/hesabim");
-
-  const hedef = typeof nereye === "string" && nereye.startsWith("/") ? nereye : "/hesabim";
+  const hedef =
+    typeof nereye === "string" &&
+    nereye.startsWith("/") &&
+    !nereye.startsWith("//") &&
+    !nereye.includes("\\")
+      ? nereye
+      : "/hesabim";
+  // Zaten girişliyse gideceği yere (K-145: doğum listesi düğmesi buradan geçiyor).
+  if (await girisYapan()) redirect(hedef);
   const temelHata = typeof hata === "string" ? HATALAR[hata] : undefined;
   const bildirim = typeof kayit === "string" ? BILDIRIMLER[kayit] : undefined;
 

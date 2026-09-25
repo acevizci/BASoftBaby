@@ -87,9 +87,15 @@ export default async function UstCubuk() {
               ))}
               <Link
                 href="/urunler"
-                className="py-2.5 text-sm font-bold text-mavi-koyu hover:underline"
+                className="border-b border-cizgi-soluk py-2.5 text-sm font-bold text-mavi-koyu hover:underline"
               >
                 Tüm ürünler →
+              </Link>
+              <Link
+                href="/dogum-listesi"
+                className="py-2.5 text-sm font-bold text-nane-koyu hover:underline"
+              >
+                Doğum listesi →
               </Link>
             </nav>
           </details>
@@ -113,6 +119,13 @@ export default async function UstCubuk() {
             <div className="scrollbar-gizli -mx-4 flex gap-2 overflow-x-auto px-4 py-2.5">
               <Link href="/urunler" className={`${SERIT_BAGLANTISI} font-bold`}>
                 Tüm ürünler
+              </Link>
+              {/* Doğum listesi (K-145): kategorilerden ayrı dursun diye nane tonunda. */}
+              <Link
+                href="/dogum-listesi"
+                className="whitespace-nowrap rounded-full border border-nane bg-nane-soluk px-3.5 py-1.5 text-sm font-bold text-nane-koyu transition hover:border-nane-koyu"
+              >
+                Doğum listesi
               </Link>
               {kategoriler.map((k) => (
                 <Link key={k.slug} href={`/${k.slug}`} className={SERIT_BAGLANTISI}>

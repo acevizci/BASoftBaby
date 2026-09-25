@@ -48,7 +48,8 @@ function epostaGecerliMi(eposta: string): boolean {
  * başka bir siteye atılabilirdi.
  */
 function guvenliYol(deger: string, varsayilan: string): string {
-  if (!deger.startsWith("/") || deger.startsWith("//")) return varsayilan;
+  // Ters eğik çizgi de: tarayıcılar `/\\baska-site`i `//baska-site` gibi okuyor.
+  if (!deger.startsWith("/") || deger.startsWith("//") || deger.includes("\\")) return varsayilan;
   return deger;
 }
 

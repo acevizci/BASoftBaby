@@ -54,6 +54,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
       images: u.fotograflar.slice(0, 10).map((f) => tamAdres(f.yol)),
     })),
+    // Doğum listesi tanıtımı (K-145).
+    { url: tamAdres("/dogum-listesi"), changeFrequency: "monthly" as const, priority: 0.6 },
     // Rehber yazıları (K-132).
     ...(rehberler.length > 0
       ? [{ url: tamAdres("/rehber"), lastModified: new Date(rehberler[0].guncellendi), changeFrequency: "weekly" as const, priority: 0.6 }]

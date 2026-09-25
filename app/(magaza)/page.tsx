@@ -132,6 +132,26 @@ export default async function AnaSayfa() {
         </div>
       </section>
 
+      {/* Doğum listesi tanıtımı (K-145). */}
+      <section className="mx-auto max-w-6xl px-4 pb-12">
+        <div className="flex flex-col items-start gap-4 rounded-marka border border-nane bg-nane-soluk p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+          <div className="max-w-xl">
+            <p className="text-sm font-bold text-nane-koyu">Yeni · ücretsiz</p>
+            <h2 className="mt-1 text-2xl">Doğum listeni oluştur</h2>
+            <p className="mt-2 text-sm text-metin-2">
+              İstediklerini beden ve rengiyle listele, bağlantıyı yakınlarınla paylaş. Alınan
+              hediyeler işaretlenir; aynı hediye iki kez gelmez.
+            </p>
+          </div>
+          <Link
+            href="/dogum-listesi"
+            className="flex-none rounded-full bg-dugme px-6 py-3 font-bold text-dugme-yazi transition hover:brightness-95"
+          >
+            Nasıl çalışıyor?
+          </Link>
+        </div>
+      </section>
+
       {/* Geri dönen müşteri kaldığı yeri görsün (K-95). */}
       <SonBakilanlar className="mx-auto max-w-6xl px-4 pb-12" />
 

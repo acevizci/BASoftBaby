@@ -46,6 +46,11 @@ export default async function AltBilgi({ cerezTercihi = false }: { cerezTercihi?
                 </Link>
               </li>
             ))}
+            <li>
+              <Link href="/dogum-listesi" className={BAG}>
+                Doğum listesi
+              </Link>
+            </li>
           </ul>
         </div>
 

@@ -11,9 +11,14 @@ export const metadata: Metadata = { title: "Hesap oluştur", robots: { index: fa
 
 export default async function KayitSayfasi({ searchParams }: PageProps<"/kayit">) {
   const { hata, nereye } = await searchParams;
-  if (await girisYapan()) redirect("/hesabim");
-
-  const hedef = typeof nereye === "string" && nereye.startsWith("/") ? nereye : "/hesabim";
+  const hedef =
+    typeof nereye === "string" &&
+    nereye.startsWith("/") &&
+    !nereye.startsWith("//") &&
+    !nereye.includes("\\")
+      ? nereye
+      : "/hesabim";
+  if (await girisYapan()) redirect(hedef);
   const hataMetni = typeof hata === "string" ? HATALAR[hata] : undefined;
 
   return (

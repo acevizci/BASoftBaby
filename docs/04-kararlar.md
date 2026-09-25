@@ -5936,6 +5936,26 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
 [`../app/(magaza)/(hesap)/hesabim/dogum-listesi/page.tsx`](../app/(magaza)/(hesap)/hesabim/dogum-listesi/page.tsx)
 
 
+### K-145 · Doğum listesinin duyurulması
+
+- **Tanıtım sayfası** `/dogum-listesi`: ne olduğu, üç adım, sık sorulanlar,
+  "Listemi oluştur". Arama motorlarına açık ve site haritasında.
+- **Üst şeritte** "Tüm ürünler"in yanında, nane tonuyla kategorilerden ayrı;
+  telefonda kategori menüsünün sonunda; alt bilgide "Alışveriş" altında.
+- **Ana sayfada** "Bu haftanın favorileri"nin altında tanıtım kutusu.
+- **Banner:** "Doğum listeni oluştur" (nane zemin, tulum çizimi, sıra 1) bir
+  veri göçüyle eklendi (`20260925150000_dogum_listesi_banner`); panelden
+  düzenlenip kapatılabilir, silinirse geri gelmez.
+- "Listemi oluştur" girişten geçiyor ve **girişten ya da kayıttan sonra
+  doğrudan listeye dönüyor.** Giriş ve kayıt sayfası, zaten girişli
+  ziyaretçiyi de dönüş adresine gönderiyor (eskiden hep `/hesabim`'a).
+- Dönüş adresinde ters eğik çizgi de reddediliyor: tarayıcılar `/\\site`i
+  `//site` gibi, yani başka bir site olarak okuyor.
+
+**Nerede:** [`../app/(magaza)/dogum-listesi/page.tsx`](../app/(magaza)/dogum-listesi/page.tsx),
+[`../ui/ust-cubuk.tsx`](../ui/ust-cubuk.tsx)
+
+
 ---
 
 ## Açık sorular
