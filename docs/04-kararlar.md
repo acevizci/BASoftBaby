@@ -5855,6 +5855,23 @@ yorum sayısı düşük kalıyordu. Google'daki yıldızlar (K-126) ve beden kar
 `yorumIstegiEpostasi` — [`../server/eposta.ts`](../server/eposta.ts)
 
 
+### K-142 · Meta (Instagram/Facebook) ürün kataloğu
+
+Instagram gönderilerinde ürün etiketi ve "Mağaza" sekmesi için Meta'nın bir
+ürün kataloğu istemesi; bebek giyiminde satışın en güçlü kanalı Instagram.
+
+- `/meta-urunler.xml`: Google beslemesinin (K-123) aynısı. Meta, Google'ın
+  biçimini okuyor; tek fark stok durumunun yazımı (`in stock`). Fiyat,
+  kampanya, fotoğraf, beden-renk grubu ve kategori ortak; iki kanal aynı
+  ürünü aynı fiyatla gösteriyor. Saatte bir yenileniyor.
+- Katalog Commerce Manager'da **zamanlanmış akış** olarak bir kez tanımlanıyor;
+  Instagram'da ürün etiketi için hesabın Meta'nın ticaret onayından geçmesi
+  gerekiyor (mağaza sahibinin işi).
+
+**Nerede:** [`../app/meta-urunler.xml/route.ts`](../app/meta-urunler.xml/route.ts),
+[`../server/urun-beslemesi.ts`](../server/urun-beslemesi.ts)
+
+
 ---
 
 ## Açık sorular

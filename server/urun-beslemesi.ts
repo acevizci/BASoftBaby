@@ -17,8 +17,15 @@
  * **Fotoğrafı olmayan ürün beslemeye girmiyor.** Google resim istiyor; çizim
  * (fotoğraf gelene kadarki SVG) kabul edilmiyor.
  *
+ * **Meta (Instagram/Facebook) kataloğu da aynı liste** (K-142):
+ * `/meta-urunler.xml`. Meta, Google'ın biçimini okuyor; tek fark stok
+ * durumunun yazımı ("in stock"). Fiyat, fotoğraf ve varyant grubu ortak, iki
+ * kanal aynı ürünü aynı fiyatla gösteriyor.
+ *
  * Saf modül: adres üretimi dışarıdan veriliyor, testler doğrudan çağırıyor.
  */
+
+export type Hedef = "google" | "meta";
 
 import { normalle } from "@/server/arama-metin";
 import { renginFotograflari, type Urun } from "@/ui/katalog-bicim";
@@ -124,7 +131,7 @@ export function urunOgeleri(
   });
 }
 
-function ogeXml(o: BeslemeOgesi): string {
+function ogeXml(o: BeslemeOgesi, hedef: Hedef): string {
   const alan = (ad: string, deger: string) => `      <g:${ad}>${kacis(deger)}</g:${ad}>`;
   return [
     "    <item>",
@@ -135,7 +142,12 @@ function ogeXml(o: BeslemeOgesi): string {
     alan("link", o.link),
     alan("image_link", o.resim),
     ...o.ekResimler.map((r) => alan("additional_image_link", r)),
-    alan("availability", o.stokta ? "in_stock" : "out_of_stock"),
+    alan(
+      "availability",
+      hedef === "meta"
+        ? o.stokta ? "in stock" : "out of stock"
+        : o.stokta ? "in_stock" : "out_of_stock",
+    ),
     alan("price", o.fiyat),
     ...(o.indirimliFiyat ? [alan("sale_price", o.indirimliFiyat)] : []),
     alan("brand", MARKA),
@@ -156,6 +168,7 @@ export function beslemeXml(
   urunler: Urun[],
   adres: (yol: string) => string,
   kategoriAdlari: ReadonlyMap<string, string> = new Map(),
+  hedef: Hedef = "google",
 ): string {
   const ogeler = urunler.flatMap((u) => urunOgeleri(u, adres, kategoriAdlari));
   return [
@@ -165,7 +178,7 @@ export function beslemeXml(
     `    <title>${kacis(MARKA)}</title>`,
     `    <link>${kacis(adres("/"))}</link>`,
     "    <description>Bebek ve çocuk giyimi</description>",
-    ...ogeler.map(ogeXml),
+    ...ogeler.map((o) => ogeXml(o, hedef)),
     "  </channel>",
     "</rss>",
     "",

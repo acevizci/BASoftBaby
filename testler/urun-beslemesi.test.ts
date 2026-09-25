@@ -94,4 +94,14 @@ describe("Merchant beslemesi", () => {
     assert.ok(xml.includes("<g:sale_price>") === false);
     assert.ok(xml.includes("<g:identifier_exists>no</g:identifier_exists>"));
   });
+
+  it("Meta beslemesi stok durumunu Meta'nın yazımıyla veriyor (K-142)", () => {
+    const google = beslemeXml([urun()], adres);
+    const meta = beslemeXml([urun()], adres, new Map(), "meta");
+    assert.ok(google.includes("<g:availability>in_stock</g:availability>"));
+    assert.ok(meta.includes("<g:availability>in stock</g:availability>"));
+    assert.ok(!meta.includes("in_stock"));
+    // Geri kalan her şey aynı: iki kanal aynı fiyatı gösteriyor.
+    assert.equal(google.replace(/in_stock|out_of_stock/g, ""), meta.replace(/in stock|out of stock/g, ""));
+  });
 });
