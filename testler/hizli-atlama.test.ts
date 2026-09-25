@@ -66,3 +66,8 @@ test("gruplar karışmıyor: sipariş, sayfalar, eylemler, arama", () => {
   );
   assert.ok(sonuclar("urun").some((s) => s.tur === "eylem" && s.yol === "/yonetim/urunler/yeni"));
 });
+
+test("kullanım rehberi hızlı atlamada (K-162)", () => {
+  assert.ok(sonuclar("rehber").some((s) => s.yol === "/yonetim/kullanim-rehberi"));
+  assert.ok(sonuclar("yardım").some((s) => s.yol === "/yonetim/kullanim-rehberi"));
+});

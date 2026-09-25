@@ -6254,6 +6254,25 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
 [`../server/eposta-veri.ts`](../server/eposta-veri.ts),
 [`../server/eposta.ts`](../server/eposta.ts)
 
+### K-162 · Panel kullanım rehberi panelin içinde
+
+- Ekran görüntülü kullanım rehberi (siparişten stoğa, vitrin, raporlar,
+  ayarlar, sık yapılan işler) panelde: `/yonetim/kullanim-rehberi`. Menünün
+  en altında "Mağazayı gör"ün altında **Kullanım rehberi** bağlantısı (yeni
+  sekmede açılıyor, panel açık kalıyor); hızlı atlamada "rehber" ya da
+  "yardım" yazınca da çıkıyor.
+- Yalnızca giriş yapmış yöneticiye: sayfa da görseller de oturumu kendisi
+  soruyor (K-51); oturum yoksa girişe, girişten sonra rehbere dönülüyor.
+  Görsel adı yalnızca `a-z0-9-.jpg` olabiliyor, klasör dışı dosya okunamıyor.
+- Sayfa `assets/kullanim-rehberi/` altında düz HTML ve 29 JPEG (1,7 MB).
+  Dosya adı istekten geldiği için `outputFileTracingIncludes` ile yayın
+  paketine açıkça ekleniyor (yerel üretim derlemesinde doğrulandı).
+  Google Fonts CSP'de kapalı olduğundan rehber sistem yazı tiplerini
+  kullanıyor.
+- Ekranlar panel değiştikçe eskiyebilir; rehberin altında tarihi yazıyor.
+  Yeniden çekmek için panel açıkken ekran görüntüleri alınıp aynı adlarla
+  `gorsel/` klasörüne konması yeterli.
+
 
 ---
 

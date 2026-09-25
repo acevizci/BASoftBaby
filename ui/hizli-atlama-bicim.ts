@@ -53,6 +53,7 @@ const EYLEMLER: Aday[] = [
   aday("eylem", "Stok etiketi bas", "/yonetim/stok/etiketler", undefined, "barkod yazdir"),
   aday("eylem", "Hesabım", "/yonetim/hesabim", undefined, "sifre degistir profil"),
   aday("eylem", "Mağazayı aç", "/", undefined, "site"),
+  aday("eylem", "Kullanım rehberi", "/yonetim/kullanim-rehberi", undefined, "yardim nasil kullanilir"),
 ];
 
 const SAYFALAR = sayfalar();

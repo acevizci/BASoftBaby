@@ -15,6 +15,15 @@ const nextConfig: NextConfig = {
    * için WebAssembly); Vercel glibc Linux'ta çalışıyor, bunlar hiç
    * yüklenmiyor ama her fonksiyonun paketine giriyordu: yayın başına ~28 MB.
    */
+  /**
+   * Kullanım rehberi (K-162) `assets/` altından okunuyor; dosya adı istekten
+   * geldiği için izleyici göremiyor, klasör açıkça ekleniyor.
+   */
+  outputFileTracingIncludes: {
+    "/yonetim/kullanim-rehberi": ["./assets/kullanim-rehberi/index.html"],
+    "/yonetim/kullanim-rehberi/gorsel/[ad]": ["./assets/kullanim-rehberi/gorsel/*.jpg"],
+  },
+
   outputFileTracingExcludes: {
     "*": [
       "node_modules/@img/sharp-libvips-linuxmusl-x64/**",

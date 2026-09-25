@@ -311,6 +311,19 @@ export default function PanelMenu({
               <span aria-hidden="true">↗</span>
               <span className={dar ? "lg:sr-only" : ""}>Mağazayı gör</span>
             </Link>
+            {/* Kullanım rehberi (K-162): yeni sekmede, panel açık kalsın. */}
+            <a
+              href="/yonetim/kullanim-rehberi"
+              target="_blank"
+              rel="noopener"
+              title={dar ? "Kullanım rehberi" : undefined}
+              className={`flex min-h-10 items-center gap-2.5 rounded-full px-2.5 py-2 text-sm font-semibold text-mavi-koyu transition hover:bg-mavi-soluk ${
+                dar ? "lg:justify-center lg:px-0" : ""
+              }`}
+            >
+              <span aria-hidden="true">?</span>
+              <span className={dar ? "lg:sr-only" : ""}>Kullanım rehberi</span>
+            </a>
           </div>
           {/* Kimin girdiği yazıyor: ortak bir şifre yerine kişiye ait
             hesaplar olmasının görünen yanı bu (K-45). */}

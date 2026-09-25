@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Kullanım rehberi · BASoftBaby panel</title>
+<style>
+  body { margin: 0; }
+  .geri { display: inline-flex; align-items: center; gap: 6px; margin-top: 16px; font-size: 14px; font-weight: 700; text-decoration: none; }
+  :root {
+    --zemin: #fffcf7;
+    --yuzey: #ffffff;
+    --sicak: #fbf5eb;
+    --metin: #332f2a;
+    --metin-2: #6c655c;
+    --metin-3: #787064;
+    --cizgi: #eae3d7;
+    --mercan: #b33b33;
+    --mercan-soluk: #fdebe9;
+    --nane: #77d9ab;
+    --nane-koyu: #277856;
+    --nane-soluk: #e6f7ee;
+    --mavi: #2f6e9e;
+    --mavi-soluk: #eaf3fa;
+    --sari-koyu: #8f6410;
+    --sari-soluk: #fdf3dd;
+    --golge: 0 1px 2px rgba(51, 47, 42, .06), 0 8px 24px rgba(51, 47, 42, .06);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --zemin: #1b1814; --yuzey: #24201b; --sicak: #2c271f; --metin: #f2ece2; --metin-2: #cbc2b5;
+      --metin-3: #a79e91; --cizgi: #3a342b; --mercan: #f59289; --mercan-soluk: #3a2320; --nane: #5fc795;
+      --nane-koyu: #8fe0b8; --nane-soluk: #1f332a; --mavi: #8cc0ea; --mavi-soluk: #1d2b36;
+      --sari-koyu: #e0b56a; --sari-soluk: #33291a; --golge: 0 1px 2px rgba(0,0,0,.3);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --zemin: #1b1814; --yuzey: #24201b; --sicak: #2c271f; --metin: #f2ece2; --metin-2: #cbc2b5;
+    --metin-3: #a79e91; --cizgi: #3a342b; --mercan: #f59289; --mercan-soluk: #3a2320; --nane: #5fc795;
+    --nane-koyu: #8fe0b8; --nane-soluk: #1f332a; --mavi: #8cc0ea; --mavi-soluk: #1d2b36;
+    --sari-koyu: #e0b56a; --sari-soluk: #33291a; --golge: 0 1px 2px rgba(0,0,0,.3);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--zemin);
+    color: var(--metin);
+    font: 16px/1.65 "Nunito Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding-inline: 16px;
+  }
+  h1, h2, h3 { font-family: "Baloo 2", "Nunito Sans", system-ui, sans-serif; line-height: 1.2; text-wrap: balance; margin: 0; }
+  a { color: var(--mavi); }
+  kbd {
+    font: 600 .82em ui-monospace, Menlo, Consolas, monospace; padding: 1px 6px; border-radius: 6px;
+    border: 1px solid var(--cizgi); background: var(--sicak); color: var(--metin);
+  }
+  .yol { font-weight: 700; color: var(--metin); white-space: nowrap; }
+  .yol::before { content: ""; }
+
+  .sayfa { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 48px; padding-block: 32px 80px; }
+  @media (max-width: 900px) { .sayfa { grid-template-columns: 1fr; gap: 24px; } .icindekiler { position: static !important; } }
+
+  /* İçindekiler */
+  .icindekiler { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; }
+  .icindekiler .marka { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+  .icindekiler .rozet { width: 38px; height: 38px; border-radius: 50%; background: var(--nane-soluk); border: 2px solid var(--nane); display: grid; place-items: center; font: 800 15px "Baloo 2", sans-serif; color: var(--nane-koyu); }
+  .icindekiler nav { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+  .icindekiler nav a { color: var(--metin-2); text-decoration: none; padding: 5px 10px; border-radius: 8px; border-left: 3px solid transparent; }
+  .icindekiler nav a:hover, .icindekiler nav a:focus-visible { background: var(--sicak); color: var(--metin); outline: none; }
+  .icindekiler nav .grup { margin: 12px 0 4px; padding-left: 10px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--metin-3); }
+  @media (max-width: 900px) {
+    .icindekiler nav { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+    .icindekiler nav .grup { display: none; }
+    .icindekiler nav a { border: 1px solid var(--cizgi); border-radius: 999px; background: var(--yuzey); padding: 4px 12px; }
+  }
+
+  /* Giriş */
+  .giris { padding: 28px; border-radius: 22px; background: var(--nane-soluk); border: 1px solid color-mix(in srgb, var(--nane) 50%, transparent); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: center; }
+  @media (max-width: 640px) { .giris { grid-template-columns: 1fr; } }
+  .giris .ust { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--nane-koyu); }
+  .giris h1 { font-size: clamp(30px, 4.4vw, 44px); margin-top: 6px; }
+  .giris p { margin: 10px 0 0; color: var(--metin-2); max-width: 60ch; }
+  .adres { font: 700 15px ui-monospace, Menlo, Consolas, monospace; background: var(--yuzey); border: 1px solid var(--cizgi); padding: 10px 14px; border-radius: 12px; color: var(--metin); user-select: all; }
+
+  /* Günlük akış */
+  .akis { margin-top: 20px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+  @media (max-width: 760px) { .akis { grid-template-columns: 1fr 1fr; } }
+  .adim { background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: 14px; padding: 12px 14px; position: relative; }
+  .adim b { display: block; font: 800 22px "Baloo 2", sans-serif; color: var(--mercan); line-height: 1; }
+  .adim span { display: block; margin-top: 6px; font-weight: 700; font-size: 14px; }
+  .adim small { display: block; color: var(--metin-3); font-size: 12.5px; line-height: 1.45; margin-top: 2px; }
+
+  /* Bölümler */
+  main { min-width: 0; }
+  section.bolum { margin-top: 56px; scroll-margin-top: 24px; }
+  section.bolum > .baslik { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; padding-bottom: 10px; border-bottom: 2px solid var(--cizgi); }
+  section.bolum > .baslik h2 { font-size: 30px; }
+  section.bolum > .baslik .menu { font-size: 13px; color: var(--metin-3); }
+  .alt { margin-top: 30px; scroll-margin-top: 24px; }
+  .alt h3 { font-size: 21px; }
+  .alt > p { margin: 6px 0 0; max-width: 72ch; color: var(--metin-2); }
+  .ikili { margin-top: 14px; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+  @media (max-width: 1040px) { .ikili { grid-template-columns: 1fr; } }
+
+  figure { margin: 0; }
+  figure button { display: block; width: 100%; padding: 0; border: 1px solid var(--cizgi); border-radius: 14px; overflow: hidden; background: var(--sicak); cursor: zoom-in; box-shadow: var(--golge); }
+  figure button:focus-visible { outline: 3px solid var(--nane); outline-offset: 2px; }
+  figure img { display: block; width: 100%; height: auto; }
+  figcaption { font-size: 12.5px; color: var(--metin-3); margin-top: 6px; }
+
+  ol.adimlar, ul.maddeler { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  ol.adimlar { counter-reset: a; }
+  ol.adimlar li { counter-increment: a; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; font-size: 15px; }
+  ol.adimlar li::before { content: counter(a); width: 26px; height: 26px; border-radius: 50%; background: var(--mercan-soluk); color: var(--mercan); font: 800 14px/26px "Baloo 2", sans-serif; text-align: center; }
+  ul.maddeler li { position: relative; padding-left: 18px; font-size: 15px; }
+  ul.maddeler li::before { content: ""; position: absolute; left: 3px; top: .62em; width: 7px; height: 7px; border-radius: 50%; background: var(--nane); }
+
+  .ipucu, .dikkat { margin-top: 14px; padding: 12px 14px; border-radius: 12px; font-size: 14.5px; }
+  .ipucu { background: var(--mavi-soluk); border: 1px solid color-mix(in srgb, var(--mavi) 30%, transparent); }
+  .dikkat { background: var(--sari-soluk); border: 1px solid color-mix(in srgb, var(--sari-koyu) 30%, transparent); }
+  .ipucu strong, .dikkat strong { display: block; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+  .ipucu strong { color: var(--mavi); } .dikkat strong { color: var(--sari-koyu); }
+
+  /* Kısa ekran listesi */
+  .kartlar { margin-top: 14px; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+  .kart { background: var(--yuzey); border: 1px solid var(--cizgi); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .kart h4 { margin: 0; font: 700 16px "Baloo 2", sans-serif; }
+  .kart p { margin: 0; font-size: 14px; color: var(--metin-2); }
+  .kart figure button { border-radius: 10px; box-shadow: none; }
+
+  /* Durum tablosu */
+  .tablo { overflow-x: auto; margin-top: 14px; border: 1px solid var(--cizgi); border-radius: 14px; background: var(--yuzey); }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; min-width: 560px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--cizgi); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--metin-3); background: var(--sicak); }
+  tr:last-child td { border-bottom: 0; }
+  .etiket { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+  .e-kirmizi { background: var(--mercan-soluk); color: var(--mercan); }
+  .e-yesil { background: var(--nane-soluk); color: var(--nane-koyu); }
+  .e-mavi { background: var(--mavi-soluk); color: var(--mavi); }
+  .e-sari { background: var(--sari-soluk); color: var(--sari-koyu); }
+
+  .son { margin-top: 64px; padding: 20px; border-radius: 16px; background: var(--sicak); border: 1px solid var(--cizgi); font-size: 14px; color: var(--metin-2); }
+
+  /* Büyütme */
+  .buyut { position: fixed; inset: 0; z-index: 50; background: rgba(20, 18, 15, .82); display: grid; place-items: center; padding: calc(env(safe-area-inset-top, 0px) + 16px) 16px calc(env(safe-area-inset-bottom, 0px) + 16px); cursor: zoom-out; }
+  .buyut img { max-width: min(1280px, 100%); max-height: 100%; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,.4); }
+  @media (prefers-reduced-motion: no-preference) { figure button img { transition: transform .25s ease; } figure button:hover img { transform: scale(1.01); } }
+</style>
+</head>
+<body>
+
+<div class="sayfa">
+  <aside class="icindekiler">
+    <div class="marka"><div class="rozet" aria-hidden="true">BA</div><div><strong>Panel rehberi</strong><br><span style="font-size:13px;color:var(--metin-3)">BASoftBaby yönetim</span></div></div>
+    <a class="geri" href="/yonetim">← Panele dön</a>
+    <nav aria-label="İçindekiler">
+      <span class="grup">Başlarken</span>
+      <a href="#giris">Giriş ve menü</a>
+      <a href="#hizli">Hızlı atlama</a>
+      <span class="grup">Her gün</span>
+      <a href="#ozet">Ana sayfa</a>
+      <a href="#gunluk">Günün işi</a>
+      <a href="#siparis">Sipariş akışı</a>
+      <a href="#talepler">Talepler ve iadeler</a>
+      <span class="grup">Katalog</span>
+      <a href="#urunler">Ürünler</a>
+      <a href="#stok">Stok</a>
+      <span class="grup">Müşteri ve satış</span>
+      <a href="#musteriler">Müşteriler</a>
+      <a href="#vitrin">Vitrin</a>
+      <a href="#raporlar">Raporlar</a>
+      <span class="grup">Kurulum</span>
+      <a href="#ayarlar">Ayarlar</a>
+      <a href="#tarifler">Sık yapılan işler</a>
+    </nav>
+  </aside>
+
+  <main>
+    <header class="giris">
+      <div>
+        <div class="ust">Yönetim paneli kullanım rehberi</div>
+        <h1>Siparişten stoğa, paneli adım adım kullanın</h1>
+        <p>Her bölüm panelin gerçek ekranıyla anlatılıyor. Görsele dokununca büyür. Ekranlardaki ürün ve siparişler deneme verisidir; kendi panelinizde kendi verileriniz görünür. Bu rehbere paneldeki menünün en altındaki <strong>Kullanım rehberi</strong> bağlantısından ya da <kbd>Ctrl</kbd> + <kbd>K</kbd> ile "rehber" yazarak her zaman ulaşabilirsiniz.</p>
+      </div>
+      <div class="adres" title="Panel adresi">basoftbaby.com/yonetim</div>
+    </header>
+
+    <div class="akis" aria-label="Bir siparişin panelde izlediği yol">
+      <div class="adim"><b>1</b><span>Sipariş gelir</span><small>Kartla ödenmişse doğrudan hazırlanacaklara düşer.</small></div>
+      <div class="adim"><b>2</b><span>Ödeme onayı</span><small>Havalede para geçince "Ödendi" yapılır.</small></div>
+      <div class="adim"><b>3</b><span>Günün işi</span><small>Toplama listesi, etiket, irsaliye.</small></div>
+      <div class="adim"><b>4</b><span>Kargo</span><small>Takip no girilir, müşteriye e-posta gider.</small></div>
+      <div class="adim"><b>5</b><span>Teslim</span><small>14 günlük iade süresi başlar.</small></div>
+    </div>
+
+    <!-- BAŞLARKEN -->
+    <section class="bolum" id="giris">
+      <div class="baslik"><h2>Giriş ve menü</h2><span class="menu">Başlarken</span></div>
+
+      <div class="alt">
+        <div class="ikili">
+          <figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/giris.jpg" alt="Panel giriş ekranı" width="1280" height="860"></button><figcaption>Giriş ekranı</figcaption></figure>
+          <div>
+            <h3>Panele giriş</h3>
+            <ol class="adimlar" style="margin-top:10px">
+              <li><span>Tarayıcıda <span class="yol">basoftbaby.com/yonetim</span> adresini açın.</span></li>
+              <li><span>Panel e-postanız ve şifrenizle giriş yapın.</span></li>
+              <li><span>Şifrenizi unuttuysanız giriş ekranındaki şifremi unuttum bağlantısıyla e-postanıza sıfırlama bağlantısı gelir; bağlantı 1 saat geçerlidir.</span></li>
+            </ol>
+            <div class="dikkat"><strong>Güvenlik</strong>Art arda yanlış şifre girilirse giriş bir süre kilitlenir. Paneli ortak bilgisayarda kullandıysanız menünün en altındaki "Çıkış yap" ile çıkın.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="alt">
+        <h3>Menünün yapısı</h3>
+        <p>Soldaki menü yedi ana başlıktan oluşur; bir başlığa tıklayınca alt sayfaları açılır. Başlıkların yanındaki rakamlar bekleyen işlerdir: kırmızı rozet hemen bakılması gerekeni gösterir.</p>
+        <div class="tablo"><table>
+          <thead><tr><th>Menü</th><th>İçinde</th><th>Ne zaman</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Siparişler</strong></td><td>Sipariş listesi, Günün işi, Talepler, İadeler</td><td>Her gün</td></tr>
+            <tr><td><strong>Ürünler</strong></td><td>Ürün listesi, Kategoriler, Bedenler, Renkler, Toplu yükleme</td><td>Yeni ürün gelince</td></tr>
+            <tr><td><strong>Stok</strong></td><td>Stok, Mal kabulü, Sayım, Sipariş listesi, Satmayanlar, Hareketler</td><td>Mal gelince, ayda bir sayım</td></tr>
+            <tr><td><strong>Müşteriler</strong></td><td>Müşteri listesi, Değerlendirmeler, Ürün soruları, E-bülten, Doğum listeleri</td><td>Haftada birkaç kez</td></tr>
+            <tr><td><strong>Vitrin</strong></td><td>Kampanyalar, Ana sayfa banner, Duyuru şeridi, Rehber yazıları, Hediye çekleri</td><td>Kampanya dönemlerinde</td></tr>
+            <tr><td><strong>Raporlar</strong></td><td>Satış raporu, Aylık kâr</td><td>Hafta ve ay sonu</td></tr>
+            <tr><td><strong>Ayarlar</strong></td><td>Satış ayarları, Giderler, Reklam ölçümü, Yasal metinler, Arama motorları, Kullanıcılar, Satışa hazırlık, Tanı</td><td>Kurulumda ve değişiklikte</td></tr>
+          </tbody>
+        </table></div>
+        <div class="ipucu"><strong>Telefondan</strong>Panel telefonda da çalışır: menü üstteki <strong>☰</strong> çubuğundan açılır, yanındaki büyüteç hızlı atlamayı açar, bölümün alt sayfaları sekme olarak görünür. Günün işi ve sipariş güncelleme telefondan rahatça yapılır.</div>
+      </div>
+    </section>
+
+    <section class="bolum" id="hizli">
+      <div class="baslik"><h2>Hızlı atlama</h2><span class="menu">Her sayfada <kbd>Ctrl</kbd> + <kbd>K</kbd></span></div>
+      <div class="alt">
+        <div class="ikili">
+          <figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/hizli.jpg" alt="Hızlı atlama penceresi, kamp yazılmış" width="1280" height="860" loading="lazy"></button><figcaption>"kamp" yazınca Kampanyalar sayfası ve arama seçenekleri çıkıyor</figcaption></figure>
+          <div>
+            <p style="margin:0;color:var(--metin-2)">Menüde aramak yerine <kbd>Ctrl</kbd> + <kbd>K</kbd> (Mac'te <kbd>⌘</kbd> + <kbd>K</kbd>) ya da menünün üstündeki "Ara…" kutusu.</p>
+            <ul class="maddeler" style="margin-top:12px">
+              <li>Sayfa adının birkaç harfini yazın, <kbd>Enter</kbd> ile açın.</li>
+              <li>Sipariş numarası, müşteri adı ya da ürün adı yazıp doğrudan o listede arayın.</li>
+              <li>Stokta arama barkodla da çalışır: okuyucuyla barkodu okutmanız yeterli.</li>
+              <li><kbd>Ctrl</kbd> + <kbd>Enter</kbd> sonucu yeni sekmede açar, <kbd>Esc</kbd> kapatır.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- HER GÜN -->
+    <section class="bolum" id="ozet">
+      <div class="baslik"><h2>Ana sayfa: günün özeti</h2><span class="menu">Ana sayfa</span></div>
+      <div class="alt">
+        <div class="ikili">
+          <figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/ana.jpg" alt="Panel ana sayfası: tamamlanmamış ayarlar, bugün, yapılacaklar" width="1280" height="860" loading="lazy"></button><figcaption>Sarı kutu kurulum eksikleri, altında bugünün rakamları ve yapılacaklar</figcaption></figure>
+          <div>
+            <p style="margin:0;color:var(--metin-2)">Güne buradan başlayın. Sayfa yukarıdan aşağı öncelik sırasıyla dizilidir.</p>
+            <ul class="maddeler" style="margin-top:12px">
+              <li><strong>Tamamlanmamış ayarlar</strong> (sarı kutu): künye, yasal metinler, e-posta, WhatsApp gibi eksikler. Başlığa tıklayınca ilgili ayara gider; eksik kalmayınca kutu kaybolur.</li>
+              <li><strong>Bugün</strong>: günün sipariş sayısı ve tutarı, ayın toplamı. İptaller dahil değildir.</li>
+              <li><strong>Yapılacaklar</strong>: cevap bekleyen talep, havale onayı bekleyen, hazırlanacak, uzun süredir kargoda olan sipariş, yanıtsız düşük puanlı yorum, fotoğrafsız ürün. Kırmızı kart ilgilenilmesi gereken iştir; tıklayınca o işin süzülmüş listesi açılır.</li>
+            </ul>
+            <div class="ipucu"><strong>Sabah özeti</strong>Aynı özet her sabah e-postayla da gelebilir. Açıp kapatmak için menünün altındaki adınıza tıklayın (Hesabım).</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="bolum" id="gunluk">
+      <div class="baslik"><h2>Günün işi</h2><span class="menu">Siparişler › Günün işi</span></div>
+      <div class="alt">
+        <div class="ikili">
+          <figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/gunluk.jpg" alt="Günün işi: toplama listesi ve hazırlanacak siparişler" width="1280" height="860" loading="lazy"></button><figcaption>Toplama listesi aynı beden ve rengi birleştirir</figcaption></figure>
+          <div>
+            <p style="margin:0;color:var(--metin-2)">Ödemesi alınmış ama kargoya verilmemiş siparişlerin tamamı. Ödemesi gelmemiş sipariş burada görünmez; raftan ürün ayırmadan önce para gelmiş olur.</p>
+            <ol class="adimlar" style="margin-top:12px">
+              <li><span><strong>Toplama listesi</strong> ile raftan ürünleri toplayın. Aynı ürün birden çok siparişteyse tek satırda toplam adet yazar.</span></li>
+              <li><span>Sağ üstteki <strong>Hepsinin etiketini yazdır</strong> ile bütün kargo etiketlerini tek seferde basın (<kbd>Ctrl</kbd> + <kbd>P</kbd>).</span></li>
+              <li><span>Her siparişi paketleyin. <span class="etiket e-kirmizi">🎁 hediye</span> işaretli siparişte fiyatlı belge koymayın, hediye notunu karta yazın.</span></li>
+              <li><span><span class="etiket e-yesil">liste → …</span> işaretli sipariş doğum listesi sahibine gidiyor: pakete fatura koymayın, faturayı sipariş verene e-postayla gönderin.</span></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="bolum" id="siparis">
+      <div class="baslik"><h2>Sipariş akışı</h2><span class="menu">Siparişler › bir sipariş</span></div>
+      <div class="alt">
+        <div class="ikili">
+          <figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/siparis.jpg" alt="Sipariş detayı ve Durumu güncelle bölümü" width="1280" height="860" loading="lazy"></button><figcaption>Sipariş kartı, altında Durumu güncelle; sayfanın devamında Kargo, İadeler, İrsaliye, Fatura</figcaption></figure>
+          <div>
+            <h3>Havale siparişi</h3>
+            <ol class="adimlar" style="margin-top:10px">
+              <li><span>Banka hesabında sipariş numarasıyla gelen parayı görün.</span></li>
+              <li><span>Siparişi açın, <strong>Ödeme durumu</strong>nu <span class="etiket e-yesil">Ödendi</span> yapıp kaydedin. Müşteriye "ödemen alındı" e-postası gider, sipariş Günün işi'ne düşer.</span></li>
+            </ol>
+            <h3 style="margin-top:18px">Kargoya verme</h3>
+            <ol class="adimlar" style="margin-top:10px">
+              <li><span>Sipariş sayfasındaki <strong>Kargo</strong> bölümünde taşıyıcıyı seçin, takip numarasını yazın.</span></li>
+              <li><span>Kaydedince sipariş kendiliğinden <span class="etiket e-mavi">Kargoda</span> olur ve müşteriye takip bağlantılı e-posta gider.</span></li>
+              <li><span>Teslim edilince durumu <span class="etiket e-yesil">Teslim edildi</span> yapın. 14 günlük iade süresi bu tarihten başlar.</span></li>
+            </ol>
+          </div>
+        </div>
+        <div class="tablo"><table>
+          <thead><tr><th>Durum</th><th>Anlamı</th><th>Müşteriye giden</th></tr></thead>
+          <tbody>
+            <tr><td><span class="etiket e-kirmizi">Ödeme bekliyor</span></td><td>Havale bekleniyor. Süresi dolarsa sipariş kendiliğinden iptal olur, stok geri döner.</td><td>Sipariş alındı (banka bilgisiyle), süre bitmeden hatırlatma</td></tr>
+            <tr><td><span class="etiket e-sari">Hazırlanıyor</span></td><td>Ödeme alındı, paketlenecek.</td><td>Ödemen alındı</td></tr>
+            <tr><td><span class="etiket e-mavi">Kargoda</span></td><td>Takip numarası girildi.</td><td>Kargoya verildi, takip düğmesiyle</td></tr>
+            <tr><td><span class="etiket e-yesil">Teslim edildi</span></td><td>Müşteride. İade süresi başladı.</td><td>Teslim edildi; birkaç gün sonra değerlendirme isteği</td></tr>
+            <tr><td><span class="etiket e-kirmizi">İptal</span></td><td>Stok raflara geri döner.</td><td>Yok</td></tr>
+          </tbody>
+        </table></div>
+        <div class="ipucu"><strong>Belgeler</strong>Sipariş sayfasının altında <strong>İrsaliye</strong> ve <strong>Fatura</strong> bölümleri var; ikisi de yazdırılabilir sayfa açar. Fatura numarası bir kez kesilince değişmez.</div>
+      </div>
+    </section>
+
+    <section class="bolum" id="talepler">
+      <div class="baslik"><h2>Talepler ve iadeler</h2><span class="menu">Siparişler › Talepler · İadeler</span></div>
+      <div class="kartlar">
+        <div class="kart">
+          <figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/talepler.jpg" alt="Talepler listesi" width="1280" height="860" loading="lazy"></button></figure>
+          <h4>Talepler</h4>
+          <p>Müşterinin iptal, iade ya da değişim isteği. Açıp cevabınızı yazın ve sonuçlandırın: <em>Onaylandı</em>, <em>Reddedildi</em> ya da ürün geri geldiğinde <em>Tamamlandı</em>. Tamamlanan iadede ürün stoğa, değişimde yenisi stoktan düşer.</p>
+        </div>
+        <div class="kart">
+          <figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/iadeler.jpg" alt="İadeler listesi" width="1280" height="860" loading="lazy"></button></figure>
+          <h4>İadeler</h4>
+          <p>Geri ödenecek paralar. Kart ödemesinde iade iyzico'ya gönderilir; havalede müşterinin hesabına gönderdikten sonra "gönderildi" işaretleyin. Müşteriye "iaden gönderildi" e-postası gider.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- KATALOG -->
+    <section class="bolum" id="urunler">
+      <div class="baslik"><h2>Ürünler</h2><span class="menu">Ürünler</span></div>
+      <div class="alt">
+        <div class="ikili">
+          <figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/urun-yeni.jpg" alt="Yeni ürün formu" width="1280" height="860" loading="lazy"></button><figcaption>Ürünler › Yeni ürün</figcaption></figure>
+          <div>
+            <h3>Yeni ürün ekleme</h3>
+            <ol class="adimlar" style="margin-top:10px">
+              <li><span><strong>Temel bilgiler</strong>: ad, kısa açıklama, kategori, fiyat. Alış fiyatı yalnızca panelde görünür; kâr raporu için girin.</span></li>
+              <li><span><strong>Ürün sayfası bilgileri</strong>: kumaş içeriği ve yıkama talimatı (bebek tekstilinde zorunlu), her satıra bir özellik.</span></li>
+              <li><span>Kaydedin; ürün sayfası açılır. Buradan <strong>fotoğrafları</strong> yükleyin (sürükleyip bırakabilirsiniz, renge göre işaretlenebilir).</span></li>
+              <li><span><strong>Bedenler ve stok</strong> bölümünde her beden-renk birleşimini ve stoğunu ekleyin. Stoğu sıfır olan beden mağazada seçilemez.</span></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+      <div class="alt">
+        <div class="ikili">
+          <figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/urun-beden.jpg" alt="Ürün düzenleme: görünüm ve bedenler ve stok" width="1280" height="860" loading="lazy"></button><figcaption>Ürün düzenleme sayfasında Görünüm ve Bedenler ve stok</figcaption></figure>
+          <div>
+            <h3>Rozet, görünüm, pasife alma</h3>
+            <ul class="maddeler" style="margin-top:10px">
+              <li><strong>Rozet yazısı</strong> ürün kartında görünür ("Yeni", "%20"). "Son 2 adet" yazmayın; stok azalınca site kendisi yazar.</li>
+              <li>"Mağazada yayında" işaretini kaldırmak ürünü gizler ama siparişleri ve geçmişi silmez; silmek yerine bunu tercih edin.</li>
+              <li>Kategoriler, Bedenler ve Renkler ayrı sayfalardan yönetilir. Beden adındaki yaş aralığı ("0-3 ay") beden önerisinde ve süzgeçlerde kullanılır.</li>
+            </ul>
+            <div class="ipucu"><strong>Çok ürün birden</strong><span class="yol">Ürünler › Toplu yükleme</span> ile Excel (.xlsx) ya da CSV dosyasıyla onlarca ürün ve varyantı tek seferde ekleyebilirsiniz (en fazla 4 MB). Dosya önce kontrol edilir, siz onaylayınca yazılır.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="bolum" id="stok">
+      <div class="baslik"><h2>Stok</h2><span class="menu">Stok</span></div>
+      <div class="alt">
+        <div class="ikili">
+          <figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/stok.jpg" alt="Stok ekranı: biten ve azalan bedenler" width="1280" height="860" loading="lazy"></button><figcaption>Kırmızı kutu biten, sarı kutu azalan beden</figcaption></figure>
+          <div>
+            <p style="margin:0;color:var(--metin-2)">Stok ekranı biten ve azalan bedenleri önce gösterir. Kutudaki sayı stoğun kendisidir: değiştirip <strong>Stokları kaydet</strong>'e basın.</p>
+            <ul class="maddeler" style="margin-top:12px">
+              <li><strong>Mal kabulü</strong>: tedarikçiden gelen malı eklemek için. Yalnızca gelen <em>adedi</em> yazın, mevcut stoğun üstüne eklenir; arada gelen siparişler bozulmaz.</li>
+              <li><strong>Sayım</strong>: raftaki gerçek adetleri barkod okutarak ya da elle sayın; farklar tek seferde düzeltilir ve fire olarak kaydedilir.</li>
+              <li><strong>Sipariş listesi</strong>: satış hızına göre bitmek üzere olanlar ve tedarikçiden ne kadar isteneceği.</li>
+              <li><strong>Satmayanlar</strong>: uzun süredir satılmayan ürünler; kampanya için aday.</li>
+              <li><strong>Hareketler</strong>: her stok değişiminin kaydı (sipariş, iade, mal kabulü, sayım, elle düzeltme) ve kimin yaptığı.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="kartlar">
+        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/mal-kabul.jpg" alt="Mal kabulü ekranı" width="1280" height="860" loading="lazy"></button></figure><h4>Mal kabulü</h4><p>Ürün adı ya da barkodla bulun, gelen adetleri yazın. Tedarikçi ve irsaliye notu hareket kaydına düşer.</p></div>
+        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/sayim.jpg" alt="Sayım ekranı" width="1280" height="860" loading="lazy"></button></figure><h4>Sayım</h4><p>Ayda bir önerilir. Telefon kamerası ya da barkod okuyucuyla hızlıca sayılır.</p></div>
+        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/siparis-listesi.jpg" alt="Tedarik sipariş listesi" width="1280" height="860" loading="lazy"></button></figure><h4>Sipariş listesi</h4><p>Son satışlara göre kaç gün yeteceği ve önerilen sipariş adedi.</p></div>
+      </div>
+    </section>
+
+    <!-- MÜŞTERİ VE SATIŞ -->
+    <section class="bolum" id="musteriler">
+      <div class="baslik"><h2>Müşteriler</h2><span class="menu">Müşteriler</span></div>
+      <div class="kartlar">
+        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/musteriler.jpg" alt="Müşteri listesi" width="1280" height="860" loading="lazy"></button></figure><h4>Müşteri listesi</h4><p>Üyeler, sipariş sayıları ve toplam harcamaları. Bir müşteriyi açınca siparişleri ve adresleri görünür.</p></div>
+        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/yorumlar.jpg" alt="Değerlendirmeler" width="1280" height="860" loading="lazy"></button></figure><h4>Değerlendirmeler</h4><p>Yeni yorumlar onayınızla yayına girer. Düşük puanlıya kısa ve kibar bir yanıt yazın; gizlemekten iyidir.</p></div>
+        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/bulten.jpg" alt="E-bülten" width="1280" height="860" loading="lazy"></button></figure><h4>E-bülten</h4><p>Yalnızca izin veren üyelere gider. Önce "Deneme gönder" ile kendinize gönderip bakın, sonra hepsine gönderin.</p></div>
+        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/dogum.jpg" alt="Doğum listeleri özeti" width="1280" height="860" loading="lazy"></button></figure><h4>Doğum listeleri</h4><p>Açılan listeler, alınma oranı, listeden gelen satış ve en çok istenen ürünler. Yalnızca okuma; listeyi sahibi yönetir.</p></div>
+      </div>
+      <div class="ipucu"><strong>Ürün soruları</strong>Ürün sayfasında sorulan sorular <span class="yol">Müşteriler › Ürün soruları</span>'nda cevap bekler. Cevapladığınızda soru sayfada yayına girer, e-posta bırakan müşteriye haber gider.</div>
+    </section>
+
+    <section class="bolum" id="vitrin">
+      <div class="baslik"><h2>Vitrin</h2><span class="menu">Vitrin</span></div>
+      <div class="alt">
+        <div class="ikili">
+          <figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/kampanyalar.jpg" alt="Kampanyalar ve yeni kampanya formu" width="1280" height="860" loading="lazy"></button><figcaption>Vitrin › Kampanyalar</figcaption></figure>
+          <div>
+            <h3>Kampanya ve kupon</h3>
+            <ol class="adimlar" style="margin-top:10px">
+              <li><span>Müşterinin göreceği adı yazın ("Sonbahar indirimi").</span></li>
+              <li><span>İndirim türü: yüzde ya da tutar. Kapsam: tüm ürünler, bir kategori ya da tek ürün.</span></li>
+              <li><span><strong>Kupon kodu</strong> boşsa indirim kendiliğinden uygulanır; doluysa müşteri kodu sepette yazar ("HOSGELDIN").</span></li>
+              <li><span>İsterseniz en az sepet tutarı ve başlangıç-bitiş tarihi girin.</span></li>
+            </ol>
+            <div class="dikkat"><strong>İndirimler üst üste binmez</strong>Sepete birden çok kampanya uyarsa en çok indiren uygulanır. Maliyetin altına düşen kampanyada sayfa uyarı verir.</div>
+          </div>
+        </div>
+      </div>
+      <div class="kartlar">
+        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/banner.jpg" alt="Ana sayfa banner yönetimi" width="1280" height="860" loading="lazy"></button></figure><h4>Ana sayfa banner</h4><p>Yazılı ya da resimli. Resimliyse masaüstü için yatay 3:1 (örneğin 2400×800), telefon için ayrı dikey resim yükleyin. Birden çok banner sırayla döner.</p></div>
+        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/duyuru.jpg" alt="Duyuru şeridi" width="1280" height="860" loading="lazy"></button></figure><h4>Duyuru şeridi</h4><p>Sitenin en üstünde kayan kısa mesajlar: kargo, kampanya, aynı gün gönderim. Hız ve renk seçilebilir.</p></div>
+        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/rehber.jpg" alt="Rehber yazıları" width="1280" height="860" loading="lazy"></button></figure><h4>Rehber yazıları</h4><p>Blog yazıları. "## " ara başlık, "- " madde, [yazı](/adres) bağlantı. Altında gösterilecek ürünleri adresle ya da anahtar kelimeyle seçin.</p></div>
+        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/hediye.jpg" alt="Hediye çekleri" width="1280" height="860" loading="lazy"></button></figure><h4>Hediye çekleri</h4><p>Tutar ve son kullanma tarihiyle çek oluşturun; e-posta yazarsanız kod alıcıya gider. Bakiye birden çok siparişte kullanılabilir.</p></div>
+      </div>
+    </section>
+
+    <section class="bolum" id="raporlar">
+      <div class="baslik"><h2>Raporlar</h2><span class="menu">Raporlar</span></div>
+      <div class="kartlar">
+        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/rapor.jpg" alt="Satış raporu" width="1280" height="860" loading="lazy"></button></figure><h4>Satış raporu</h4><p>Bu ay, geçen ay, son 30 gün, son 12 ay ya da istediğiniz tarih aralığı: ciro, sipariş, ortalama sepet, iade ve iptal; günlük grafik, kategoriler, en çok satanlar, bedenler, ödeme yöntemleri. "CSV indir" ile Excel'e aktarılır.</p></div>
+        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/kar.jpg" alt="Aylık kâr" width="1280" height="860" loading="lazy"></button></figure><h4>Aylık kâr</h4><p>Ciro eksi ürün maliyeti, kargo, paket, komisyon ve sabit giderler. Doğru sonuç için ürünlerde alış fiyatı ve Ayarlar › Giderler dolu olmalı; eksikse rapor söyler.</p></div>
+      </div>
+    </section>
+
+    <!-- KURULUM -->
+    <section class="bolum" id="ayarlar">
+      <div class="baslik"><h2>Ayarlar</h2><span class="menu">Ayarlar</span></div>
+      <div class="alt">
+        <div class="ikili">
+          <figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/ayarlar.jpg" alt="Satış ayarları" width="1280" height="860" loading="lazy"></button><figcaption>Ayarlar › Satış ayarları</figcaption></figure>
+          <div>
+            <h3>Satış ayarları</h3>
+            <ul class="maddeler" style="margin-top:10px">
+              <li><strong>KDV oranı ve kargo firması</strong>: faturada ve kargo etiketinde kullanılır.</li>
+              <li><strong>Kargo ücreti ve bedava kargo eşiği</strong>: sepette ve duyurularda aynı rakam görünür.</li>
+              <li><strong>Havale bilgisi</strong>: banka, hesap sahibi, IBAN. Boşsa havale seçeneği hiç çıkmaz.</li>
+              <li><strong>Ödeme süresi</strong>: ödenmeyen havale siparişi bu kadar saat sonra iptal olur; bitmeden hatırlatma gider.</li>
+              <li><strong>İkinci sipariş teşviki</strong>: ilk siparişi teslim edilen üyeye kişiye özel kupon (0 = kapalı).</li>
+              <li><strong>Arkadaşını davet et</strong>: davet edene hediye çeki, davet edilene ilk sipariş kuponu (0 ₺ = kapalı).</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="kartlar">
+        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/yasal.jpg" alt="Yasal metinler ve künye" width="1280" height="860" loading="lazy"></button></figure><h4>Yasal metinler ve künye</h4><p>Sözleşmeler, KVKK ve çerez metinleri; künyede unvan, vergi no, adres, ETBİS, destek telefonu. <strong>WhatsApp numarası</strong> da buradadır: cep numarası yazınca sitede WhatsApp düğmesi çıkar.</p></div>
+        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/giderler.jpg" alt="Giderler" width="1280" height="860" loading="lazy"></button></figure><h4>Giderler</h4><p>Kargo, paket, iyzico komisyonu ve aylık sabit giderler. Kâr raporu bunlarla hesaplanır.</p></div>
+        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/kullanicilar.jpg" alt="Panel kullanıcıları" width="1280" height="860" loading="lazy"></button></figure><h4>Kullanıcılar</h4><p>Panele yeni kişi eklemek için e-postasını yazın; davet bağlantısıyla kendi şifresini belirler. Ayrılan kişinin hesabını "Kapat" ile kapatın.</p></div>
+        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/hazirlik.jpg" alt="Satışa hazırlık" width="1280" height="860" loading="lazy"></button></figure><h4>Satışa hazırlık</h4><p>Mağazanın satışa hazır olup olmadığının kontrol listesi. "Deneme e-postası gönder" ile e-postaların çalıştığını buradan sınayın.</p></div>
+      </div>
+      <div class="ipucu"><strong>Diğer ayarlar</strong><span class="yol">Reklam ölçümü</span>: Meta Pixel ve Google etiketi (açılınca sitede çerez onayı çıkar). <span class="yol">Arama motorları</span>: Search Console, Bing, Yandex doğrulama kodları. <span class="yol">Tanı</span> ve <span class="yol">Hata kaydı</span>: bir şey ters giderse teknik destek için.</div>
+    </section>
+
+    <section class="bolum" id="tarifler">
+      <div class="baslik"><h2>Sık yapılan işler</h2><span class="menu">Kısa tarifler</span></div>
+      <div class="tablo"><table>
+        <thead><tr><th>Yapmak istediğim</th><th>Nereden</th></tr></thead>
+        <tbody>
+          <tr><td>Havale geldi, siparişi onaylamak</td><td>Siparişler › siparişi aç › Ödeme durumu: Ödendi › Kaydet</td></tr>
+          <tr><td>Bugün gönderilecekleri hazırlamak</td><td>Siparişler › Günün işi › toplama listesi › Hepsinin etiketini yazdır</td></tr>
+          <tr><td>Kargo takip numarası girmek</td><td>Siparişi aç › Kargo › taşıyıcı ve takip no › Kaydet</td></tr>
+          <tr><td>Tedarikçiden gelen malı eklemek</td><td>Stok › Mal kabulü › ürünü bul › gelen adet</td></tr>
+          <tr><td>Bir bedenin stoğunu düzeltmek</td><td>Stok › kutudaki sayıyı değiştir › Stokları kaydet</td></tr>
+          <tr><td>Ürünü satıştan kaldırmak</td><td>Ürünler › ürünü aç › "Mağazada yayında" işaretini kaldır</td></tr>
+          <tr><td>Kupon kodlu indirim açmak</td><td>Vitrin › Kampanyalar › Yeni kampanya › Kupon kodu</td></tr>
+          <tr><td>Ana sayfa görselini değiştirmek</td><td>Vitrin › Ana sayfa banner (masaüstü 2400×800)</td></tr>
+          <tr><td>Müşteriye hediye çeki vermek</td><td>Vitrin › Hediye çekleri › Yeni çek, alıcı e-postasıyla</td></tr>
+          <tr><td>İade talebini sonuçlandırmak</td><td>Siparişler › Talepler › talebi aç › cevap yaz › Tamamlandı</td></tr>
+          <tr><td>Panele çalışan eklemek</td><td>Ayarlar › Kullanıcılar › e-posta ile davet</td></tr>
+          <tr><td>WhatsApp düğmesini açmak</td><td>Ayarlar › Yasal metinler › Künye › WhatsApp numarası</td></tr>
+        </tbody>
+      </table></div>
+      <div class="son">Ekranlar panelin 26 Eylül 2026 hâlinden alınmıştır; ürün, sipariş ve müşteri adları deneme verisidir. Bir sayfa rehberdekinden farklı görünüyorsa panel güncellenmiş olabilir; akış aynı kalır.</div>
+    </section>
+  </main>
+</div>
+
+<script>
+  (function () {
+    var acik = null;
+    function kapat() { if (acik) { acik.remove(); acik = null; } }
+    document.addEventListener("click", function (e) {
+      var d = e.target.closest("[data-buyut]");
+      if (d) {
+        var img = d.querySelector("img");
+        kapat();
+        acik = document.createElement("div");
+        acik.className = "buyut";
+        acik.setAttribute("role", "dialog");
+        acik.setAttribute("aria-label", img.alt);
+        var b = document.createElement("img");
+        b.src = img.src; b.alt = img.alt;
+        acik.appendChild(b);
+        document.body.appendChild(acik);
+        return;
+      }
+      if (acik && e.target.closest(".buyut")) kapat();
+    });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") kapat(); });
+  })();
+</script>
+</body>
+</html>
