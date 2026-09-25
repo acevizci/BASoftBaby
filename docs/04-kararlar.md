@@ -6043,6 +6043,29 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
 
 **Nerede:** [`../server/dogum-listesi-rapor.ts`](../server/dogum-listesi-rapor.ts)
 
+### K-151 · İkinci sipariş teşviki: kişiye özel kupon
+
+- İlk ve tek siparişi **teslim edilmiş** (ödenmiş, iptal edilmemiş) üyeye
+  teslimden `tesvikGun` gün sonra e-postayla kişiye özel, **tek kullanımlık**,
+  `tesvikGecerlilik` gün geçerli **%`tesvikYuzde`** kupon (`TESEKKUR-XXXXXX`).
+  Ayarlar › Satış ayarları'ndan; **varsayılan kapalı** (%0): indirim para
+  demek, açmak mağaza sahibinin kararı.
+- Tanıtım sayılıyor: yalnızca pazarlama izni açık, e-postası doğrulanmış
+  üyeye, listeden çıkma bağlantısıyla. Üye başına bir kez
+  (`Customer.tesvikGonderildi`). Teslimi `tesvikGun + 14` günden eski
+  siparişe bakılmıyor: açıldığı gün eski müşterilerin hepsine birden gitmesin.
+  E-posta gitmezse kupon siliniyor, ertesi gün yeni kodla yeniden.
+- Kampanyaya iki alan: `customerId` (kupon yalnızca o üye giriş yapmışken
+  geçerli; başkası yazarsa "kod tutmadı") ve `enFazlaKullanim`. Sınır sepette
+  süzülüyor, sipariş anında **işlemin içinde** koşullu artırımla yeniden
+  sınanıyor (`kuponKullan`): iki sekmeden aynı anda verilen sipariş tek
+  kullanımlık kuponu iki kez harcayamıyor; tutmazsa sipariş açılmıyor, kupon
+  çerezi siliniyor.
+- Kişiye özel kuponlar panelin kampanyalar listesinde görünmüyor.
+
+**Nerede:** [`../server/tesvik.ts`](../server/tesvik.ts), `gecerliKampanyalar` ve
+`kuponKullan` — [`../server/kampanya.ts`](../server/kampanya.ts), `tesvikEpostasi`
+
 
 ---
 

@@ -3,6 +3,7 @@ import { satisAyariKaydet } from "@/server/yonetim";
 import { TASIYICILAR } from "@/server/kargo";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import { db } from "@/server/veritabani";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,10 @@ export default async function AyarEkrani({ searchParams }: PageProps<"/yonetim/a
 
   const { kayit } = await searchParams;
   const ayar = await ayarlariGetir();
+  const tesvik = (await db.storeSetting.findUnique({
+    where: { id: "tek" },
+    select: { tesvikYuzde: true, tesvikGun: true, tesvikGecerlilik: true },
+  })) ?? { tesvikYuzde: 0, tesvikGun: 10, tesvikGecerlilik: 30 };
 
   return (
     <div className="flex flex-col gap-5">
@@ -175,6 +180,62 @@ export default async function AyarEkrani({ searchParams }: PageProps<"/yonetim/a
                 sen elle iptal edene kadar tutmaya devam eder.
               </>
             )}
+          </p>
+        </section>
+
+        {/* İkinci sipariş teşviki (K-151). */}
+        <section className="rounded-marka border border-cizgi bg-yuzey p-5">
+          <h2 className="text-lg">İkinci sipariş teşviki</h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <label className="flex flex-col gap-1.5">
+              <span className={ETIKET}>İndirim (%) · 0 kapalı</span>
+              <input
+                name="tesvikYuzde"
+                type="number"
+                min={0}
+                max={50}
+                defaultValue={tesvik.tesvikYuzde}
+                className={`${GIRDI} rakam`}
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={ETIKET}>Teslimden kaç gün sonra</span>
+              <input
+                name="tesvikGun"
+                type="number"
+                min={1}
+                max={365}
+                defaultValue={tesvik.tesvikGun}
+                className={`${GIRDI} rakam`}
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={ETIKET}>Kupon kaç gün geçerli</span>
+              <input
+                name="tesvikGecerlilik"
+                type="number"
+                min={1}
+                max={365}
+                defaultValue={tesvik.tesvikGecerlilik}
+                className={`${GIRDI} rakam`}
+              />
+            </label>
+          </div>
+          <p className="mt-3 text-xs text-metin-3">
+            {tesvik.tesvikYuzde > 0 ? (
+              <>
+                İlk siparişi teslim edilen üyeye{" "}
+                <span className="rakam font-bold">{tesvik.tesvikGun}</span> gün sonra kendine
+                özel, tek kullanımlık{" "}
+                <span className="rakam font-bold">%{tesvik.tesvikYuzde}</span> kupon e-postayla
+                gidiyor;{" "}
+                <span className="rakam font-bold">{tesvik.tesvikGecerlilik}</span> gün geçerli.
+              </>
+            ) : (
+              <>Kapalı.</>
+            )}{" "}
+            Yalnızca tanıtım e-postasına izin vermiş, e-postasını doğrulamış üyelere; her üyeye bir
+            kez. Kupon yalnızca o üyenin hesabında geçerli, kampanyalar listesinde görünmez.
           </p>
         </section>
 

@@ -53,7 +53,8 @@ export default async function KampanyaEkrani({
 
   const { kayit, hata, sayfa, ara } = await searchParams;
   const arama = aramaCoz(ara);
-  const kosul = alanAramasi(arama, ["ad", "kuponKodu"]);
+  // Kişiye özel kuponlar (K-151) listeyi doldurmasın; e-postayla gidiyorlar.
+  const kosul = { ...alanAramasi(arama, ["ad", "kuponKodu"]), customerId: null };
 
   // Kategori ve ürün listeleri kampanya formunun açılır menüleri; onlar
   // sayfalanmıyor, yalnızca kampanya tablosu (K-67).

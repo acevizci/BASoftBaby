@@ -978,6 +978,17 @@ export async function satisAyariKaydet(veri: FormData): Promise<void> {
   // göndermek anlamsız.
   const havaleHatirlatmaSaat = Math.min(saat("havaleHatirlatmaSaat", 24), havaleSaat);
 
+  // İkinci sipariş teşviki (K-151): 0 kapalı; oran %50'yi, süreler bir yılı geçmiyor.
+  const tamSayi = (ad: string, enAz: number, enCok: number, varsayilan: number): number => {
+    const ham = Number(String(veri.get(ad) ?? "").replace(",", "."));
+    return Number.isFinite(ham) ? Math.min(enCok, Math.max(enAz, Math.round(ham))) : varsayilan;
+  };
+  const tesvik = {
+    tesvikYuzde: tamSayi("tesvikYuzde", 0, 50, 0),
+    tesvikGun: tamSayi("tesvikGun", 1, 365, 10),
+    tesvikGecerlilik: tamSayi("tesvikGecerlilik", 1, 365, 30),
+  };
+
   const tasiyiciKodu = String(veri.get("varsayilanTasiyici") ?? "yurtici");
   const varsayilanTasiyici = TASIYICILAR.some((t) => t.kod === tasiyiciKodu)
     ? tasiyiciKodu
@@ -993,6 +1004,7 @@ export async function satisAyariKaydet(veri: FormData): Promise<void> {
       havaleHatirlatmaSaat,
       kdvOrani,
       varsayilanTasiyici,
+      ...tesvik,
     },
     create: {
       id: "tek",
@@ -1003,6 +1015,7 @@ export async function satisAyariKaydet(veri: FormData): Promise<void> {
       havaleHatirlatmaSaat,
       kdvOrani,
       varsayilanTasiyici,
+      ...tesvik,
     },
   });
 

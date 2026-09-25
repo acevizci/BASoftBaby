@@ -286,6 +286,13 @@ model StoreSetting {
   /// Ana sayfadaki banner kaç saniyede bir değişsin
   bannerSaniye Int @default(6)
 
+  /// İkinci sipariş teşviki (K-151): ilk siparişi teslim edilen, tanıtım izni
+  /// olan üyeye `tesvikGun` gün sonra kişiye özel, tek kullanımlık, %
+  /// `tesvikYuzde` kupon; `tesvikGecerlilik` gün geçerli. 0 = kapalı.
+  tesvikYuzde      Int @default(0)
+  tesvikGun        Int @default(10)
+  tesvikGecerlilik Int @default(30)
+
   /// Örnek bannerlar bir kez yazıldı mı. Silinen banner yayında geri gelmesin diye.
   bannerTohumu Boolean @default(false)
 
@@ -511,6 +518,13 @@ model Campaign {
   baslangic DateTime?
   bitis     DateTime?
 
+  /// Kişiye özel kupon (K-151): yalnızca bu üye giriş yapmışken geçerli.
+  /// Kampanyalar listesinde görünmüyor; müşteriye e-postayla gidiyor.
+  customerId      String?
+  customer        Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  /// En fazla kaç siparişte kullanılabilir; boşsa sınırsız.
+  enFazlaKullanim Int?
+
   /// Kaç siparişte uygulandığı; panelde raporlama için.
   kullanim    Int      @default(0)
   olusturuldu DateTime @default(now())
@@ -590,6 +604,9 @@ model Customer {
   bebekDogum    DateTime?
   /// En son haber verilen beden; aynı beden için ikinci e-posta gitmesin.
   buyumeBedeni  String    @default("")
+  /// İkinci sipariş teşvik kuponu gönderildiği an (K-151); bir kez.
+  tesvikGonderildi DateTime?
+  kisiselKuponlar  Campaign[]
   adresler   Address[]
   siparisler Order[]
   jetonlar   CustomerToken[]

@@ -16,7 +16,7 @@
 import { db } from "@/server/veritabani";
 import { hareketYaz } from "@/server/stok-hareket";
 import { kargoHesapla, kuponOku, sepetIdOku, type SatisAyari } from "@/server/sepet";
-import { enIyiKampanya, gecerliKampanyalar, indirimiDagit } from "@/server/kampanya";
+import { enIyiKampanya, gecerliKampanyalar, indirimiDagit, kuponKullan } from "@/server/kampanya";
 import { renkAdlari } from "@/server/renkler";
 import { takipAdresi, tasiyiciAdi } from "@/server/kargo";
 import { suresiDolanlariKapat } from "@/server/odeme-suresi";
@@ -67,7 +67,7 @@ export type SiparisSonucu =
       hediyeCekiKurus: number;
       tahsilatKurus: number;
     }
-  | { tamam: false; hata: string; sebep?: "cek" | "liste-adres" };
+  | { tamam: false; hata: string; sebep?: "cek" | "liste-adres" | "kupon" };
 
 /** BA-2026-0001 */
 function numaraYaz(sayac: number, tarih: Date): string {
@@ -180,7 +180,7 @@ export async function siparisOlustur(
     categoryId: s.variant.product.categoryId,
     araToplamKurus: (s.variant.fiyatKurus ?? s.variant.product.fiyatKurus) * s.adet,
   }));
-  const kampanyalar = await gecerliKampanyalar(await kuponOku());
+  const kampanyalar = await gecerliKampanyalar(await kuponOku(), undefined, customerId);
   const kampanya = enIyiKampanya(kampanyalar, indirimSatirlari, araToplamKurus);
   const indirimKurus = kampanya?.indirimKurus ?? 0;
   // Her satırın indirim payı; yalnızca kampanyanın kapsadığı satırlara (K-109).
@@ -266,12 +266,8 @@ export async function siparisOlustur(
       // Doğum listesinden alınanlar işaretleniyor; aynı hediye iki kez alınmasın.
       await alinanlariIsle(islem, kalemler, 1);
 
-      if (kampanya) {
-        await islem.campaign.update({
-          where: { id: kampanya.id },
-          data: { kullanim: { increment: 1 } },
-        });
-      }
+      // Kullanım sınırı işlemin içinde sınanıyor (K-151).
+      if (kampanya && !(await kuponKullan(islem, kampanya.id))) throw new Error("KUPON");
 
       // Stok hareketi siparişle aynı işlemde (K-103).
       await hareketYaz(
@@ -302,6 +298,9 @@ export async function siparisOlustur(
         sebep: "cek",
         hata: "Hediye çekin artık kullanılamıyor ya da bakiyesi değişti.",
       };
+    }
+    if (hata instanceof Error && hata.message === "KUPON") {
+      return { tamam: false, sebep: "kupon", hata: "Kuponun kullanım hakkı bu arada doldu." };
     }
     if (hata instanceof Error && hata.message === "STOK") {
       return {

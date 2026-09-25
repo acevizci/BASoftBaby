@@ -878,3 +878,36 @@ Bu hatırlatmaları almak istemiyorsan tek tıkla çıkabilirsin:
 ${iptal}${await altBilgi()}`,
   );
 }
+
+/**
+ * İkinci sipariş teşviki (K-151): kişiye özel, tek kullanımlık kupon.
+ * Tanıtım; altında listeden çıkma bağlantısı var.
+ */
+export async function tesvikEpostasi(
+  kime: string,
+  bilgi: { adSoyad: string; kod: string; yuzde: number; bitis: Date; iptalJetonu: string },
+): Promise<EpostaSonucu> {
+  const iptal = `${siteAdresi()}/eposta-izni?jeton=${encodeURIComponent(bilgi.iptalJetonu)}`;
+  const son = bilgi.bitis.toLocaleDateString("tr-TR", {
+    dateStyle: "long",
+    timeZone: "Europe/Istanbul",
+  });
+  return gonder(
+    kime,
+    `Sana özel %${bilgi.yuzde} indirim`,
+    `Merhaba ${bilgi.adSoyad},
+
+İlk siparişin eline ulaştı; umarız minik beğenmiştir. Bir sonraki alışverişin için sana özel bir kupon hazırladık:
+
+Kupon kodu: ${bilgi.kod}
+İndirim: %${bilgi.yuzde}
+Son gün: ${son}
+
+Kupon yalnızca senin hesabında ve bir siparişte geçerli. Sepette ya da ödeme sayfasında kodu yazman yeterli; hesabına giriş yapmış olman gerekiyor.
+
+${siteAdresi()}/urunler
+
+Bu e-postaları almak istemiyorsan tek tıkla çıkabilirsin:
+${iptal}${await altBilgi()}`,
+  );
+}

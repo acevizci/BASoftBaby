@@ -13,6 +13,7 @@
 
 import { db } from "@/server/veritabani";
 import { ETIKETLER, paylasilanOnbellek } from "@/server/onbellek";
+import type { Prisma } from "@/db/uretilen/client";
 
 export type KampanyaKaydi = {
   id: string;
@@ -152,22 +153,61 @@ function tarihSuzgeci(simdi: Date) {
 /**
  * O an geçerli kampanyalar. Kuponlu olanlar yalnızca doğru kod yazıldıysa
  * listeye girer; kod büyük-küçük harfe duyarlı değildir.
+ *
+ * Kişiye özel kupon (K-151) yalnızca sahibi giriş yapmışken, kullanım
+ * sınırı dolmuş kupon hiç listeye girmiyor. Sınır sipariş anında işlemin
+ * içinde yeniden sınanıyor (`kuponKullan`).
  */
 export async function gecerliKampanyalar(
   kuponKodu?: string,
   simdi: Date = new Date(),
+  customerId?: string,
 ): Promise<KampanyaKaydi[]> {
   // Kod bir kimlik; Türkçe yerelde büyütmek "i" harfini bozar.
   const kod = kuponKodu?.trim().toUpperCase();
+  const tarih = tarihSuzgeci(simdi);
 
-  return db.campaign.findMany({
+  const kayitlar = await db.campaign.findMany({
     where: {
-      ...tarihSuzgeci(simdi),
-      OR: [{ kuponKodu: null }, ...(kod ? [{ kuponKodu: kod }] : [])],
+      ...tarih,
+      AND: [
+        ...tarih.AND,
+        { OR: [{ kuponKodu: null }, ...(kod ? [{ kuponKodu: kod }] : [])] },
+        { OR: [{ customerId: null }, ...(customerId ? [{ customerId }] : [])] },
+      ],
     },
-    select: SECIM,
+    select: { ...SECIM, kullanim: true, enFazlaKullanim: true },
     orderBy: { olusturuldu: "asc" },
   });
+  return kayitlar
+    .filter((k) => k.enFazlaKullanim === null || k.kullanim < k.enFazlaKullanim)
+    .map((k) => ({
+      id: k.id,
+      ad: k.ad,
+      tip: k.tip,
+      deger: k.deger,
+      kapsam: k.kapsam,
+      categoryId: k.categoryId,
+      productId: k.productId,
+      kuponKodu: k.kuponKodu,
+      enAzSepetKurus: k.enAzSepetKurus,
+    }));
+}
+
+/**
+ * Kampanyanın kullanımını sipariş işleminin içinde bir artırır; kullanım
+ * sınırı dolmuşsa artırmaz ve `false` döner (iki sekmeden aynı anda verilen
+ * sipariş tek kullanımlık kuponu iki kez harcamasın).
+ */
+export async function kuponKullan(
+  islem: Prisma.TransactionClient,
+  kampanyaId: string,
+): Promise<boolean> {
+  const n = await islem.$executeRaw`
+    update "Campaign" set kullanim = kullanim + 1
+     where id = ${kampanyaId}
+       and ("enFazlaKullanim" is null or kullanim < "enFazlaKullanim")`;
+  return n === 1;
 }
 
 /**

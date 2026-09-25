@@ -167,6 +167,10 @@ export async function siparisiTamamla(veri: FormData): Promise<void> {
     redirect("/odeme?hata=cek");
   }
   if (!sonuc.tamam && sonuc.sebep === "liste-adres") redirect("/odeme?hata=liste-adres");
+  if (!sonuc.tamam && sonuc.sebep === "kupon") {
+    (await cookies()).delete(KUPON_CEREZI);
+    redirect("/odeme?hata=kupon");
+  }
   if (!sonuc.tamam) {
     redirect(sonuc.hata.includes("boş") ? "/odeme?hata=bos" : "/odeme?hata=stok");
   }

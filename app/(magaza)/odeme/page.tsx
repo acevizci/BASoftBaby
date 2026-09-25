@@ -37,6 +37,8 @@ const HATALAR: Record<string, string> = {
   "odeme-yok":
     "Şu anda ödeme alınamıyor, bu yüzden siparişin oluşturulmadı ve sepetin duruyor. Lütfen bizimle iletişime geç.",
   cek: "Hediye çekin bu arada kullanılamaz hale geldi ya da bakiyesi değişti; siparişin oluşturulmadı. Çeki yeniden yazıp tekrar dene.",
+  kupon:
+    "Kuponun kullanım hakkı bu arada doldu (tek kullanımlık kupon başka bir siparişte kullanılmış). Siparişin oluşturulmadı; tutarı kontrol edip tekrar dene.",
   "liste-adres":
     "Liste sahibinin adresine gönderim bu sepette kullanılamıyor (liste kapatılmış, adres kaldırılmış ya da sepette listede olmayan ürün var). Teslimat adresini yazıp tekrar dene.",
   "odeme-baslatilamadi":

@@ -245,7 +245,12 @@ export async function sepetGetir(): Promise<Sepet> {
   const araToplamKurus = cikti.reduce((t, s) => t + s.araToplamKurus, 0);
   const toplamAdet = cikti.reduce((t, s) => t + s.adet, 0);
 
-  const kampanyalar = await gecerliKampanyalar(kuponKodu);
+  // Kişiye özel kupon yalnızca sahibine (K-151); kod yoksa sorguya gerek yok.
+  const kampanyalar = await gecerliKampanyalar(
+    kuponKodu,
+    undefined,
+    kuponKodu ? (await girisYapan())?.id : undefined,
+  );
   const kampanya = enIyiKampanya(kampanyalar, cikti, araToplamKurus);
   const indirimKurus = kampanya?.indirimKurus ?? 0;
 
