@@ -63,7 +63,14 @@ export async function birakilanSepetleriHatirlat(): Promise<HatirlatmaSonucu> {
       satirlar: {
         select: {
           adet: true,
-          variant: { select: { beden: true, renk: true, product: { select: { ad: true } } } },
+          variant: {
+            select: {
+              beden: true,
+              renk: true,
+              fiyatKurus: true,
+              product: { select: { ad: true, slug: true, fiyatKurus: true } },
+            },
+          },
         },
       },
     },
@@ -86,6 +93,10 @@ export async function birakilanSepetleriHatirlat(): Promise<HatirlatmaSonucu> {
         beden: s.variant.beden,
         renk: adlar[s.variant.renk] ?? s.variant.renk,
         adet: s.adet,
+        // Kartta fotoğraf, bağlantı ve fiyat (K-161).
+        slug: s.variant.product.slug,
+        renkKodu: s.variant.renk,
+        tutarKurus: (s.variant.fiyatKurus ?? s.variant.product.fiyatKurus) * s.adet,
       })),
       iptalJetonu: jeton,
     });

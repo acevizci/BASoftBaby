@@ -8,11 +8,11 @@ import { epostaHtml } from "@/server/eposta";
 const SITE = "https://www.basoftbaby.com";
 
 describe("e-posta HTML", () => {
-  it("başlıkta tam adresli PNG logo", () => {
+  it("başlıkta tam adresli PNG yatay logo", () => {
     const h = epostaHtml("Merhaba", SITE);
     assert.match(
       h,
-      /<img src="https:\/\/www\.basoftbaby\.com\/marka\/basoftbaby-logo-256\.png"[^>]*alt="BASoftBaby"/,
+      /<img src="https:\/\/www\.basoftbaby\.com\/marka\/basoftbaby-yatay-eposta\.png"[^>]*alt="BASoftBaby"/,
     );
   });
 

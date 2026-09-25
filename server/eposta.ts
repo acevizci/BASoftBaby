@@ -1,6 +1,15 @@
 import "server-only";
 import { kunyeGetir } from "@/server/yasal";
 import { siteAdresi } from "@/server/site";
+import { whatsappDugmeNumarasi } from "@/server/whatsapp";
+import {
+  epostaYap,
+  tutar,
+  type Blok,
+  type Eposta,
+  type EpostaOrtami,
+} from "@/server/eposta-sablon";
+import { bedendekiUrunler, siparisDetayi, urunFotolari } from "@/server/eposta-veri";
 
 /**
  * E-posta gönderimi — Resend.
@@ -66,53 +75,37 @@ function gonderen(): string {
   return process.env.EPOSTA_GONDEREN?.trim() || "BASoftBaby <siparis@basoftbaby.com>";
 }
 
+
+/* ── Şablon ─────────────────────────────────────────────────────────────── */
+
+async function ortam(): Promise<EpostaOrtami> {
+  const kunye = await kunyeGetir();
+  return { site: siteAdresi(), kunye, whatsapp: whatsappDugmeNumarasi(kunye) };
+}
+
 /**
- * Düz metni basit bir HTML'e çevirir.
- *
- * Şablonlar düz yazı olarak yazılıyor: hem e-posta istemcilerinin çoğunda
- * sorunsuz görünüyor hem de metnin içine HTML kaçması mümkün olmuyor.
- */
-/**
- * Düz metinden HTML gövde. Başlıkta mağazanın rozet logosu (K-138): PNG,
- * çünkü Outlook WebP göstermiyor; tam adresle, çünkü e-posta sitenin içinde
- * açılmıyor. Görseli engelleyen istemcide `alt` yazısı kalıyor.
- *
- * Metindeki adresler tıklanır bağlantı: bazı istemciler düz adresi
- * bağlantıya çevirmiyor, müşteri kopyalamak zorunda kalıyordu.
+ * Düz metinden e-posta gövdesi: tek metin bloğu, ortak başlık ve alt bilgi
+ * (K-138, K-161). Metindeki adresler tıklanır, HTML kaçışlanıyor.
  */
 export function epostaHtml(metin: string, site: string = siteAdresi()): string {
-  const kacir = (m: string) =>
-    m.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const baglanti = (m: string) =>
-    m.replace(
-      /https?:\/\/[^\s<]+[^\s<.,;:!?)]/g,
-      (a) => `<a href="${a}" style="color:#2f6e9e;word-break:break-all">${a}</a>`,
-    );
-
-  const govde = metin
-    .trim()
-    .split(/\n{2,}/)
-    .map((p) => `<p style="margin:0 0 14px">${baglanti(kacir(p)).replace(/\n/g, "<br>")}</p>`)
-    .join("");
-
-  return `<!doctype html><html lang="tr"><body style="margin:0;background:#fffcf7;padding:24px;font:16px/1.6 -apple-system,Segoe UI,Roboto,sans-serif;color:#2c2721">
-<div style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #efe7db;border-radius:16px;padding:24px">
-<p style="margin:0 0 18px;text-align:center"><a href="${site}"><img src="${site}/marka/basoftbaby-logo-256.png" width="104" height="104" alt="BASoftBaby" style="display:inline-block;border:0;width:104px;height:104px;font-weight:700;font-size:18px;color:#c2433a"></a></p>
-${govde}
-</div></body></html>`;
+  return epostaYap(
+    { konu: "", bloklar: [{ tur: "metin", metin }] },
+    { site, kunye: { unvan: "", sirketAdresi: "", destekTelefon: "", destekEposta: "" } },
+  ).html;
 }
 
 async function gonder(
   kime: string,
-  konu: string,
-  metin: string,
+  e: Eposta,
+  basliklar?: Record<string, string>,
 ): Promise<EpostaSonucu> {
   if (!epostaAcikMi()) {
-    console.warn(`E-posta gönderilmedi (RESEND_ANAHTARI yok): ${konu} → ${kime}`);
+    console.warn(`E-posta gönderilmedi (RESEND_ANAHTARI yok): ${e.konu} → ${kime}`);
     return { gonderildi: false, sebep: "anahtar-yok" };
   }
 
   try {
+    const { html, text } = epostaYap(e, await ortam());
     const taban = process.env.EPOSTA_TABAN_ADRES?.trim();
     const cevap = await fetch(taban ? `${taban.replace(/\/$/, "")}/emails` : UC, {
       method: "POST",
@@ -123,9 +116,10 @@ async function gonder(
       body: JSON.stringify({
         from: gonderen(),
         to: [kime],
-        subject: konu,
-        text: metin.trim(),
-        html: epostaHtml(metin),
+        subject: e.konu,
+        text,
+        html,
+        ...(basliklar ? { headers: basliklar } : {}),
       }),
     });
 
@@ -138,7 +132,7 @@ async function gonder(
         .then((g: { message?: string }) => g.message)
         .catch(() => undefined);
       console.error(
-        `E-posta gönderilemedi (${cevap.status}${mesaj ? `: ${mesaj}` : ""}): ${konu} → ${kime}`,
+        `E-posta gönderilemedi (${cevap.status}${mesaj ? `: ${mesaj}` : ""}): ${e.konu} → ${kime}`,
       );
       return { gonderildi: false, sebep: `http-${cevap.status}`, mesaj };
     }
@@ -148,6 +142,23 @@ async function gonder(
     return { gonderildi: false, sebep: "ag-hatasi" };
   }
 }
+
+/** Tanıtım e-postalarının tek tıkla listeden çıkma başlıkları (RFC 8058). */
+function iptalBasliklari(iptal: string): Record<string, string> {
+  return { "List-Unsubscribe": `<${iptal}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" };
+}
+
+function iptalAdresi(jeton: string): string {
+  return `${siteAdresi()}/eposta-izni?jeton=${encodeURIComponent(jeton)}`;
+}
+
+const selam = (ad: string) => `Merhaba${ad.trim() ? ` ${ad.trim()}` : ""},`;
+
+function gunYaz(t: Date): string {
+  return t.toLocaleDateString("tr-TR", { dateStyle: "long", timeZone: "Europe/Istanbul" });
+}
+
+/* ── E-bülten ───────────────────────────────────────────────────────────── */
 
 export type TopluEposta = {
   kime: string;
@@ -169,6 +180,7 @@ export async function topluGonder(liste: TopluEposta[]): Promise<{ gonderilen: n
   if (!epostaAcikMi()) return { gonderilen: 0, mesaj: "RESEND_ANAHTARI tanımlı değil." };
   const taban = process.env.EPOSTA_TABAN_ADRES?.trim();
   const uc = taban ? `${taban.replace(/\/$/, "")}/emails/batch` : `${UC}/batch`;
+  const o = await ortam();
   let gonderilen = 0;
   let mesaj: string | undefined;
   for (let i = 0; i < liste.length; i += TOPLU_PARCA) {
@@ -178,17 +190,24 @@ export async function topluGonder(liste: TopluEposta[]): Promise<{ gonderilen: n
         method: "POST",
         headers: { authorization: `Bearer ${resendAnahtari()}`, "content-type": "application/json" },
         body: JSON.stringify(
-          parca.map((e) => ({
-            from: gonderen(),
-            to: [e.kime],
-            subject: e.konu,
-            text: e.metin.trim(),
-            html: epostaHtml(e.metin),
-            headers: {
-              "List-Unsubscribe": `<${e.iptalAdresi}>`,
-              "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-            },
-          })),
+          parca.map((e) => {
+            const { html, text } = epostaYap(
+              {
+                konu: e.konu,
+                bloklar: [{ tur: "metin", metin: e.metin }],
+                iptalAdresi: e.iptalAdresi,
+              },
+              o,
+            );
+            return {
+              from: gonderen(),
+              to: [e.kime],
+              subject: e.konu,
+              text,
+              html,
+              headers: iptalBasliklari(e.iptalAdresi),
+            };
+          }),
         ),
       });
       if (cevap.ok) gonderilen += parca.length;
@@ -207,28 +226,31 @@ export async function topluGonder(liste: TopluEposta[]): Promise<{ gonderilen: n
   return { gonderilen, mesaj };
 }
 
-/** E-bülten gövdesi: selam, mağazanın metni, çıkış bağlantısı, künye. */
+/**
+ * E-bülten gövdesi: selam ve mağazanın metni. Listeden çıkma bağlantısı ve
+ * künye şablonun alt bilgisinde (K-161); `iptalSayfasi` deneme gönderiminde
+ * metne yazılıyor, gerçek gönderimde `TopluEposta.iptalAdresi` ile gidiyor.
+ */
 export async function bultenMetni(adSoyad: string, metin: string, iptalSayfasi: string): Promise<string> {
   const ad = adSoyad.trim().split(/\s+/)[0] || "";
-  return `Merhaba${ad ? ` ${ad}` : ""},
+  void iptalSayfasi;
+  return `${selam(ad)}
 
 ${metin.trim()}
 
-Bu e-postayı, kampanya ve yeniliklerden haberdar olmak istediğini söylediğin için alıyorsun. Almak istemiyorsan tek tıkla çıkabilirsin:
-${iptalSayfasi}${await altBilgi()}`;
+Bu e-postayı, kampanya ve yeniliklerden haberdar olmak istediğini söylediğin için alıyorsun.`;
 }
 
 /** Deneme gönderimi: bülten yöneticinin kendi adresine, gerçek alıcılara değil. */
 export async function bultenDenemesi(kime: string, konu: string, metin: string): Promise<EpostaSonucu> {
-  return gonder(kime, `[Deneme] ${konu}`, metin);
+  return gonder(kime, {
+    konu: `[Deneme] ${konu}`,
+    bloklar: [{ tur: "metin", metin }],
+    iptalAdresi: `${siteAdresi()}/eposta-izni?jeton=ornek`,
+  });
 }
 
-/** Her e-postanın altına giden imza; künye doluysa oradan. */
-async function altBilgi(): Promise<string> {
-  const kunye = await kunyeGetir();
-  const satirlar = [kunye.unvan, kunye.destekTelefon, kunye.destekEposta].filter(Boolean);
-  return satirlar.length > 0 ? `\n\n—\n${satirlar.join(" · ")}` : "\n\n—\nBASoftBaby";
-}
+/* ── Sipariş ────────────────────────────────────────────────────────────── */
 
 export type SiparisEpostasi = {
   numara: string;
@@ -240,19 +262,39 @@ export type SiparisEpostasi = {
   odemeYontemi: string;
 };
 
-/** "Toplam" satırı; hediye çeki varsa çek ve kalan ödenecek de yazılıyor. */
-function tutarSatirlari(s: SiparisEpostasi, sonEtiket: string): string {
-  const cek = s.hediyeCekiKurus ?? 0;
-  if (cek <= 0) return `${sonEtiket}: ${tutar(s.toplamKurus)}`;
-  return [
-    `Sipariş toplamı: ${tutar(s.toplamKurus)}`,
-    `Hediye çeki: -${tutar(cek)}`,
-    `${sonEtiket}: ${tutar(Math.max(0, s.toplamKurus - cek))}`,
-  ].join("\n");
+function takipAdresi(numara: string, eposta: string): string {
+  return `${siteAdresi()}/siparis-takip?numara=${encodeURIComponent(numara)}&eposta=${encodeURIComponent(eposta)}`;
 }
 
-function tutar(kurus: number): string {
-  return `${(kurus / 100).toFixed(2).replace(".", ",")} ₺`;
+/**
+ * Siparişin ürünleri ve tutar tablosu (K-161). Sipariş okunamazsa (silinmiş)
+ * yalnızca toplam satırı.
+ */
+async function siparisBloklari(s: SiparisEpostasi, sonEtiket: string): Promise<Blok[]> {
+  const d = await siparisDetayi(s.numara);
+  const cek = d?.hediyeCekiKurus ?? s.hediyeCekiKurus ?? 0;
+  const toplam = d?.toplamKurus ?? s.toplamKurus;
+  const satirlar: { ad: string; deger: string; vurgu?: boolean }[] = [];
+  if (d) {
+    satirlar.push({ ad: "Ara toplam", deger: tutar(d.araToplamKurus) });
+    if (d.indirimKurus > 0) {
+      satirlar.push({
+        ad: d.kampanyaAdi ? `İndirim (${d.kampanyaAdi})` : "İndirim",
+        deger: `-${tutar(d.indirimKurus)}`,
+      });
+    }
+    satirlar.push({ ad: "Kargo", deger: d.kargoKurus > 0 ? tutar(d.kargoKurus) : "Ücretsiz" });
+    if (d.hediyePaketi) satirlar.push({ ad: "Hediye paketi", deger: "Ücretsiz" });
+  }
+  if (cek > 0) {
+    satirlar.push({ ad: "Sipariş toplamı", deger: tutar(toplam) });
+    satirlar.push({ ad: "Hediye çeki", deger: `-${tutar(cek)}` });
+  }
+  satirlar.push({ ad: sonEtiket, deger: tutar(Math.max(0, toplam - cek)), vurgu: true });
+  return [
+    ...(d && d.satirlar.length > 0 ? [{ tur: "urunler" as const, satirlar: d.satirlar }] : []),
+    { tur: "tutarlar", satirlar },
+  ];
 }
 
 /** Sipariş alındığında: havalede banka bilgisi, kartta ödeme beklendiği yazıyor. */
@@ -260,49 +302,55 @@ export async function siparisAlindiEpostasi(
   siparis: SiparisEpostasi,
   havaleBilgisi: string,
 ): Promise<EpostaSonucu> {
-  const takip = `${siteAdresi()}/siparis-takip?numara=${encodeURIComponent(siparis.numara)}&eposta=${encodeURIComponent(siparis.eposta)}`;
+  if (!epostaAcikMi()) return gonder(siparis.eposta, { konu: "Siparişin alındı", bloklar: [] });
+  const cekle = siparis.odemeYontemi === "hediye-ceki";
+  const havale = siparis.odemeYontemi === "havale";
 
-  const odemeBolumu =
-    siparis.odemeYontemi === "hediye-ceki"
-      ? "Siparişinin tamamı hediye çekinle ödendi; hazırlanmaya başlıyoruz."
-      : siparis.odemeYontemi === "havale"
+  const odeme: Blok[] = cekle
+    ? [{ tur: "metin", metin: "Siparişinin tamamı hediye çekinle ödendi; hazırlanmaya başlıyoruz." }]
+    : havale
       ? havaleBilgisi
-        ? `Ödemeni aşağıdaki hesaba havale/EFT ile yapabilirsin. Açıklama kısmına sipariş numaranı yazmayı unutma.\n\n${havaleBilgisi}`
-        : "Ödeme bilgilerini en kısa sürede ileteceğiz."
-      : "Kart ödemen alındıktan sonra sana ayrıca haber vereceğiz.";
+        ? [
+            {
+              tur: "kutu",
+              baslik: "Havale / EFT bilgileri",
+              metin: `${havaleBilgisi}\n\nAçıklama kısmına sipariş numaranı yaz: ${siparis.numara}`,
+            },
+          ]
+        : [{ tur: "metin", metin: "Ödeme bilgilerini en kısa sürede ileteceğiz." }]
+      : [{ tur: "metin", metin: "Kart ödemen alındıktan sonra sana ayrıca haber vereceğiz." }];
 
-  return gonder(
-    siparis.eposta,
-    `Siparişin alındı · ${siparis.numara}`,
-    `Merhaba ${siparis.adSoyad},
-
-Siparişini aldık. Sipariş numaran: ${siparis.numara}
-${tutarSatirlari(siparis, siparis.odemeYontemi === "hediye-ceki" ? "Toplam tutar" : "Ödenecek tutar")}
-
-${odemeBolumu}
-
-Siparişinin durumunu buradan görebilirsin:
-${takip}${await altBilgi()}`,
-  );
+  return gonder(siparis.eposta, {
+    konu: `Siparişin alındı · ${siparis.numara}`,
+    onizleme: havale
+      ? `${siparis.numara} numaralı siparişin ödeme bekliyor; banka bilgileri içeride.`
+      : `${siparis.numara} numaralı siparişini aldık, teşekkürler!`,
+    bloklar: [
+      { tur: "metin", metin: `${selam(siparis.adSoyad)}\n\nSiparişini aldık, teşekkürler! Sipariş numaran: ${siparis.numara}` },
+      { tur: "durum", adim: 0 },
+      ...(await siparisBloklari(siparis, cekle ? "Toplam tutar" : "Ödenecek tutar")),
+      ...odeme,
+      { tur: "dugme", yazi: "Siparişimi görüntüle", adres: takipAdresi(siparis.numara, siparis.eposta) },
+    ],
+  });
 }
 
 /** Kart ödemesi onaylandığında. */
 export async function odemeAlindiEpostasi(siparis: SiparisEpostasi): Promise<EpostaSonucu> {
-  const takip = `${siteAdresi()}/siparis-takip?numara=${encodeURIComponent(siparis.numara)}&eposta=${encodeURIComponent(siparis.eposta)}`;
-
-  return gonder(
-    siparis.eposta,
-    `Ödemen alındı · ${siparis.numara}`,
-    `Merhaba ${siparis.adSoyad},
-
-${siparis.numara} numaralı siparişinin ödemesi alındı, siparişin hazırlanmaya başlıyor.
-${tutarSatirlari(siparis, "Ödenen tutar")}
-
-Kargoya verildiğinde sana yine haber vereceğiz.
-
-Siparişinin durumu:
-${takip}${await altBilgi()}`,
-  );
+  if (!epostaAcikMi()) return gonder(siparis.eposta, { konu: "Ödemen alındı", bloklar: [] });
+  return gonder(siparis.eposta, {
+    konu: `Ödemen alındı · ${siparis.numara}`,
+    onizleme: "Ödemen alındı, siparişin hazırlanmaya başlıyor.",
+    bloklar: [
+      {
+        tur: "metin",
+        metin: `${selam(siparis.adSoyad)}\n\n${siparis.numara} numaralı siparişinin ödemesi alındı, siparişin hazırlanmaya başlıyor. Kargoya verildiğinde sana yine haber vereceğiz.`,
+      },
+      { tur: "durum", adim: 1 },
+      ...(await siparisBloklari(siparis, "Ödenen tutar")),
+      { tur: "dugme", yazi: "Siparişimi görüntüle", adres: takipAdresi(siparis.numara, siparis.eposta) },
+    ],
+  });
 }
 
 /**
@@ -321,22 +369,21 @@ export async function iadeYapildiEpostasi(
   bilgi: { numara: string; adSoyad: string; tutarKurus: number; yontem: string },
 ): Promise<EpostaSonucu> {
   const kartMi = bilgi.yontem === "kart";
-
-  return gonder(
-    alici,
-    `İaden gönderildi · ${bilgi.numara}`,
-    `Merhaba ${bilgi.adSoyad},
-
-${bilgi.numara} numaralı siparişin için ${tutar(bilgi.tutarKurus)} tutarında iade yapıldı.
-
-${
-  kartMi
-    ? "İade kartına gönderildi. Bankana göre hesabında görünmesi birkaç iş günü sürebiliyor; bu süre bankanın işleyişine bağlı."
-    : "İade, bize bildirdiğin hesaba havale ile gönderildi."
-}
-
-Bir sorun olursa bu e-postayı yanıtlaman yeterli.${await altBilgi()}`,
-  );
+  return gonder(alici, {
+    konu: `İaden gönderildi · ${bilgi.numara}`,
+    onizleme: `${tutar(bilgi.tutarKurus)} iaden gönderildi.`,
+    bloklar: [
+      { tur: "metin", metin: `${selam(bilgi.adSoyad)}\n\n${bilgi.numara} numaralı siparişin için iade yapıldı.` },
+      { tur: "tutarlar", satirlar: [{ ad: "İade tutarı", deger: tutar(bilgi.tutarKurus), vurgu: true }] },
+      {
+        tur: "metin",
+        metin: kartMi
+          ? "İade kartına gönderildi. Bankana göre hesabında görünmesi birkaç iş günü sürebiliyor; bu süre bankanın işleyişine bağlı."
+          : "İade, bize bildirdiğin hesaba havale ile gönderildi.",
+      },
+      { tur: "not", metin: "Bir sorun olursa bu e-postayı yanıtlaman yeterli." },
+    ],
+  });
 }
 
 /**
@@ -351,27 +398,34 @@ export async function havaleHatirlatmaEpostasi(
   alici: string,
   bilgi: { numara: string; adSoyad: string; toplamKurus: number; sonTarih: Date },
 ): Promise<EpostaSonucu> {
-  const takip = `${siteAdresi()}/siparis-takip?numara=${encodeURIComponent(bilgi.numara)}&eposta=${encodeURIComponent(alici)}`;
-  const gun = bilgi.sonTarih.toLocaleString("tr-TR", { dateStyle: "long", timeStyle: "short" });
-
-  return gonder(
-    alici,
-    `Siparişin ödeme bekliyor · ${bilgi.numara}`,
-    `Merhaba ${bilgi.adSoyad},
-
-${bilgi.numara} numaralı siparişinin ödemesi henüz hesabımıza geçmedi.
-Tutar: ${tutar(bilgi.toplamKurus)}
-
-Havaleni yaptıysan bu e-postayı yok sayabilirsin; hesaba geçmesi bankalar
-arası aktarımda bir iş gününü bulabiliyor.
-
-Yapmadıysan ${gun} tarihine kadar zamanın var. O saate kadar ödeme
-görünmezse sipariş kendiliğinden iptal oluyor ve ürünler yeniden satışa
-açılıyor — sonra istersen yeniden sipariş verebilirsin.
-
-Siparişinin durumu ve hesap bilgileri:
-${takip}${await altBilgi()}`,
-  );
+  const gun = bilgi.sonTarih.toLocaleString("tr-TR", {
+    dateStyle: "long",
+    timeStyle: "short",
+    timeZone: "Europe/Istanbul",
+  });
+  return gonder(alici, {
+    konu: `Siparişin ödeme bekliyor · ${bilgi.numara}`,
+    onizleme: `Ödeme için son gün: ${gun}.`,
+    bloklar: [
+      {
+        tur: "metin",
+        metin: `${selam(bilgi.adSoyad)}\n\n${bilgi.numara} numaralı siparişinin ödemesi henüz hesabımıza geçmedi.`,
+      },
+      { tur: "tutarlar", satirlar: [{ ad: "Ödenecek tutar", deger: tutar(bilgi.toplamKurus), vurgu: true }] },
+      {
+        tur: "kutu",
+        baslik: `Son gün: ${gun}`,
+        metin:
+          "O saate kadar ödeme görünmezse sipariş kendiliğinden iptal oluyor ve ürünler yeniden satışa açılıyor; sonra istersen yeniden sipariş verebilirsin.",
+      },
+      {
+        tur: "metin",
+        metin:
+          "Havaleni yaptıysan bu e-postayı yok sayabilirsin; hesaba geçmesi bankalar arası aktarımda bir iş gününü bulabiliyor.",
+      },
+      { tur: "dugme", yazi: "Hesap bilgilerini gör", adres: takipAdresi(bilgi.numara, alici) },
+    ],
+  });
 }
 
 /** Kargoya verildiğinde: takip numarası ve taşıyıcının sorgulama adresi. */
@@ -379,60 +433,65 @@ export async function kargoyaVerildiEpostasi(
   siparis: SiparisEpostasi,
   kargo: { tasiyiciAdi: string; takipNo: string; takipAdresi?: string },
 ): Promise<EpostaSonucu> {
-  const takipSatiri = kargo.takipAdresi
-    ? `\n\nGönderini buradan takip edebilirsin:\n${kargo.takipAdresi}`
-    : "";
-
-  return gonder(
-    siparis.eposta,
-    `Siparişin kargoya verildi · ${siparis.numara}`,
-    `Merhaba ${siparis.adSoyad},
-
-${siparis.numara} numaralı siparişin ${kargo.tasiyiciAdi} ile yola çıktı.
-Takip numarası: ${kargo.takipNo}${takipSatiri}${await altBilgi()}`,
-  );
+  if (!epostaAcikMi()) return gonder(siparis.eposta, { konu: "Siparişin kargoya verildi", bloklar: [] });
+  const d = await siparisDetayi(siparis.numara);
+  return gonder(siparis.eposta, {
+    konu: `Siparişin kargoya verildi · ${siparis.numara}`,
+    onizleme: `${kargo.tasiyiciAdi} ile yola çıktı. Takip no: ${kargo.takipNo}`,
+    bloklar: [
+      {
+        tur: "metin",
+        metin: `${selam(siparis.adSoyad)}\n\n${siparis.numara} numaralı siparişin yola çıktı!`,
+      },
+      { tur: "durum", adim: 2 },
+      { tur: "kutu", baslik: kargo.tasiyiciAdi, metin: `Takip numarası: ${kargo.takipNo}` },
+      kargo.takipAdresi
+        ? { tur: "dugme", yazi: "Kargomu takip et", adres: kargo.takipAdresi }
+        : { tur: "dugme", yazi: "Siparişimi görüntüle", adres: takipAdresi(siparis.numara, siparis.eposta) },
+      ...(d && d.satirlar.length > 0 ? [{ tur: "urunler" as const, satirlar: d.satirlar }] : []),
+    ],
+  });
 }
 
 /** Teslim edildiğinde: iade hakkı bu tarihten işliyor. */
 export async function teslimEdildiEpostasi(siparis: SiparisEpostasi): Promise<EpostaSonucu> {
-  return gonder(
-    siparis.eposta,
-    `Siparişin teslim edildi · ${siparis.numara}`,
-    `Merhaba ${siparis.adSoyad},
-
-${siparis.numara} numaralı siparişin teslim edildi. Ellerine sağlık!
-
-Bir sorun varsa ya da iade etmek istersen 14 gün içinde bize yazman yeterli;
-koşulları "İade ve değişim" sayfasında bulabilirsin.${await altBilgi()}`,
-  );
+  return gonder(siparis.eposta, {
+    konu: `Siparişin teslim edildi · ${siparis.numara}`,
+    onizleme: "Siparişin teslim edildi. Ellerine sağlık!",
+    bloklar: [
+      {
+        tur: "metin",
+        metin: `${selam(siparis.adSoyad)}\n\n${siparis.numara} numaralı siparişin teslim edildi. Ellerine sağlık!`,
+      },
+      { tur: "durum", adim: 3 },
+      {
+        tur: "metin",
+        metin:
+          "Bir sorun varsa ya da iade etmek istersen 14 gün içinde bize yazman yeterli; koşullar \"İade ve değişim\" sayfasında.",
+      },
+      { tur: "dugme", yazi: "Siparişimi görüntüle", adres: takipAdresi(siparis.numara, siparis.eposta) },
+    ],
+  });
 }
+
+/* ── Hesap ──────────────────────────────────────────────────────────────── */
 
 export async function sifreSifirlamaEpostasi(
   kime: string,
   adSoyad: string,
   jeton: string,
 ): Promise<EpostaSonucu> {
-  const adres = `${siteAdresi()}/sifre-sifirla?jeton=${encodeURIComponent(jeton)}`;
-
-  return gonder(
-    kime,
-    "Şifreni sıfırla",
-    `Merhaba ${adSoyad},
-
-Şifreni sıfırlamak için aşağıdaki bağlantıya tıkla. Bağlantı 1 saat geçerli ve bir kez kullanılabiliyor:
-
-${adres}
-
-Bu isteği sen yapmadıysan bu e-postayı yok sayabilirsin; şifren değişmez.${await altBilgi()}`,
-  );
+  return gonder(kime, {
+    konu: "Şifreni sıfırla",
+    onizleme: "Bağlantı 1 saat geçerli.",
+    bloklar: [
+      { tur: "metin", metin: `${selam(adSoyad)}\n\nŞifreni sıfırlamak için aşağıdaki düğmeye dokun. Bağlantı 1 saat geçerli ve bir kez kullanılabiliyor.` },
+      { tur: "dugme", yazi: "Şifremi sıfırla", adres: `${siteAdresi()}/sifre-sifirla?jeton=${encodeURIComponent(jeton)}` },
+      { tur: "not", metin: "Bu isteği sen yapmadıysan bu e-postayı yok sayabilirsin; şifren değişmez." },
+    ],
+  });
 }
 
-/**
- * Panel kullanıcısının şifre sıfırlaması.
- *
- * Müşteri sıfırlamasından ayrı: adresi panelin içine gidiyor ve metni
- * mağazanın değil yönetimin dilinde (K-47).
- */
 /**
  * Panele davet: şifreyi yeni kullanıcı kendisi belirliyor (K-87).
  *
@@ -446,43 +505,43 @@ export async function panelDavetEpostasi(
   jeton: string,
   saat: number,
 ): Promise<EpostaSonucu> {
-  const adres = `${siteAdresi()}/yonetim/sifre-sifirla?jeton=${encodeURIComponent(jeton)}&davet=1`;
-
-  return gonder(
-    kime,
-    "BASoftBaby yönetim paneline davet edildin",
-    `Merhaba ${adSoyad},
-
-${davetEden} seni BASoftBaby yönetim paneline ekledi. Hesabını etkinleştirmek için aşağıdaki bağlantıya tıklayıp şifreni belirle. Bağlantı ${saat} saat geçerli ve bir kez kullanılabiliyor:
-
-${adres}
-
-Şifreni belirledikten sonra panele bu e-posta adresi ve şifrenle giriş yapabilirsin.
-
-Böyle bir daveti beklemiyorsan bu e-postayı yok sayabilirsin; bağlantıya tıklanmadıkça hesap açılmaz.${await altBilgi()}`,
-  );
+  return gonder(kime, {
+    konu: "BASoftBaby yönetim paneline davet edildin",
+    bloklar: [
+      {
+        tur: "metin",
+        metin: `${selam(adSoyad)}\n\n${davetEden} seni BASoftBaby yönetim paneline ekledi. Hesabını etkinleştirmek için şifreni belirle. Bağlantı ${saat} saat geçerli ve bir kez kullanılabiliyor.`,
+      },
+      {
+        tur: "dugme",
+        yazi: "Şifremi belirle",
+        adres: `${siteAdresi()}/yonetim/sifre-sifirla?jeton=${encodeURIComponent(jeton)}&davet=1`,
+      },
+      { tur: "metin", metin: "Şifreni belirledikten sonra panele bu e-posta adresi ve şifrenle giriş yapabilirsin." },
+      { tur: "not", metin: "Böyle bir daveti beklemiyorsan bu e-postayı yok sayabilirsin; bağlantıya tıklanmadıkça hesap açılmaz." },
+    ],
+  });
 }
 
+/**
+ * Panel kullanıcısının şifre sıfırlaması.
+ *
+ * Müşteri sıfırlamasından ayrı: adresi panelin içine gidiyor ve metni
+ * mağazanın değil yönetimin dilinde (K-47).
+ */
 export async function panelSifreSifirlamaEpostasi(
   kime: string,
   adSoyad: string,
   jeton: string,
 ): Promise<EpostaSonucu> {
-  const adres = `${siteAdresi()}/yonetim/sifre-sifirla?jeton=${encodeURIComponent(jeton)}`;
-
-  return gonder(
-    kime,
-    "Yönetim paneli şifreni sıfırla",
-    `Merhaba ${adSoyad},
-
-Yönetim paneli şifreni sıfırlamak için aşağıdaki bağlantıya tıkla. Bağlantı 1 saat geçerli ve bir kez kullanılabiliyor:
-
-${adres}
-
-Sıfırladığında bütün cihazlardaki panel oturumların kapanıyor.
-
-Bu isteği sen yapmadıysan bu e-postayı yok sayabilirsin; şifren değişmez. Ama panelin e-posta adresini bilen biri deniyor demektir, haberin olsun.${await altBilgi()}`,
-  );
+  return gonder(kime, {
+    konu: "Yönetim paneli şifreni sıfırla",
+    bloklar: [
+      { tur: "metin", metin: `${selam(adSoyad)}\n\nYönetim paneli şifreni sıfırlamak için aşağıdaki düğmeye dokun. Bağlantı 1 saat geçerli ve bir kez kullanılabiliyor. Sıfırladığında bütün cihazlardaki panel oturumların kapanıyor.` },
+      { tur: "dugme", yazi: "Şifremi sıfırla", adres: `${siteAdresi()}/yonetim/sifre-sifirla?jeton=${encodeURIComponent(jeton)}` },
+      { tur: "not", metin: "Bu isteği sen yapmadıysan bu e-postayı yok sayabilirsin; şifren değişmez. Ama panelin e-posta adresini bilen biri deniyor demektir, haberin olsun." },
+    ],
+  });
 }
 
 export async function dogrulamaEpostasi(
@@ -490,26 +549,32 @@ export async function dogrulamaEpostasi(
   adSoyad: string,
   jeton: string,
 ): Promise<EpostaSonucu> {
-  const adres = `${siteAdresi()}/eposta-dogrula?jeton=${encodeURIComponent(jeton)}`;
-
-  return gonder(
-    kime,
-    "E-posta adresini doğrula",
-    `Merhaba ${adSoyad},
-
-Hesabını açtığın için teşekkürler. Adresini doğrulamak için aşağıdaki bağlantıya tıkla:
-
-${adres}
-
-Doğruladığında, üye olmadan bu adresle verdiğin eski siparişler de hesabına bağlanır.
-
-Bağlantı 3 gün geçerli.${await altBilgi()}`,
-  );
+  return gonder(kime, {
+    konu: "E-posta adresini doğrula",
+    onizleme: "Hesabını açtığın için teşekkürler.",
+    bloklar: [
+      { tur: "metin", metin: `${selam(adSoyad)}\n\nHesabını açtığın için teşekkürler! Adresini doğrulamak için aşağıdaki düğmeye dokun.` },
+      { tur: "dugme", yazi: "Adresimi doğrula", adres: `${siteAdresi()}/eposta-dogrula?jeton=${encodeURIComponent(jeton)}` },
+      { tur: "metin", metin: "Doğruladığında, üye olmadan bu adresle verdiğin eski siparişler de hesabına bağlanır." },
+      { tur: "not", metin: "Bağlantı 3 gün geçerli." },
+    ],
+  });
 }
+
+/* ── Tanıtım ve bildirimler ─────────────────────────────────────────────── */
 
 export type SepetHatirlatmasi = {
   adSoyad: string;
-  satirlar: { ad: string; beden: string; renk: string; adet: number }[];
+  satirlar: {
+    ad: string;
+    beden: string;
+    renk: string;
+    adet: number;
+    /** Ürün adresi ve varyant rengi: kartta fotoğraf ve bağlantı (K-161). */
+    slug?: string;
+    renkKodu?: string;
+    tutarKurus?: number;
+  }[];
   iptalJetonu: string;
 };
 
@@ -524,29 +589,37 @@ export async function sepetHatirlatmaEpostasi(
   kime: string,
   bilgi: SepetHatirlatmasi,
 ): Promise<EpostaSonucu> {
-  const liste = bilgi.satirlar
-    .map((s) => `• ${s.ad} — ${s.beden}, ${s.renk}${s.adet > 1 ? ` (${s.adet} adet)` : ""}`)
-    .join("\n");
-
-  const iptal = `${siteAdresi()}/eposta-izni?jeton=${encodeURIComponent(bilgi.iptalJetonu)}`;
-
+  const fotolar = epostaAcikMi()
+    ? await urunFotolari(
+        bilgi.satirlar.filter((s) => s.slug).map((s) => ({ slug: s.slug!, renk: s.renkKodu })),
+      )
+    : [];
+  let f = 0;
+  const iptal = iptalAdresi(bilgi.iptalJetonu);
   return gonder(
     kime,
-    "Sepetinde bıraktıkların duruyor",
-    `Merhaba ${bilgi.adSoyad},
-
-Sepetine eklediğin ürünler hâlâ duruyor:
-
-${liste}
-
-Kaldığın yerden devam etmek istersen:
-
-${siteAdresi()}/sepet
-
-Stoklar sınırlı olduğu için ürünler tükenebilir; sepete eklemek ayırmıyor.
-
-Bu hatırlatmaları almak istemiyorsan tek tıkla çıkabilirsin:
-${iptal}${await altBilgi()}`,
+    {
+      konu: "Sepetinde bıraktıkların duruyor",
+      onizleme: "Kaldığın yerden devam etmek ister misin?",
+      bloklar: [
+        { tur: "metin", metin: `${selam(bilgi.adSoyad)}\n\nSepetine eklediğin ürünler hâlâ duruyor:` },
+        {
+          tur: "urunler",
+          satirlar: bilgi.satirlar.map((s) => ({
+            ad: s.ad,
+            detay: `${s.beden} · ${s.renk}`,
+            adet: s.adet,
+            tutarKurus: s.tutarKurus,
+            foto: s.slug ? fotolar[f++] : undefined,
+            adres: s.slug ? `/urun/${s.slug}` : undefined,
+          })),
+        },
+        { tur: "dugme", yazi: "Sepetime dön", adres: `${siteAdresi()}/sepet` },
+        { tur: "not", metin: "Stoklar sınırlı olduğu için ürünler tükenebilir; sepete eklemek ayırmıyor." },
+      ],
+      iptalAdresi: iptal,
+    },
+    iptalBasliklari(iptal),
   );
 }
 
@@ -571,56 +644,62 @@ export async function favoriHaberiEpostasi(
   kime: string,
   bilgi: { adSoyad: string; haberler: FavoriHaberi[]; iptalJetonu: string },
 ): Promise<EpostaSonucu> {
-  const liste = bilgi.haberler
-    .map((h) => {
-      const satirlar = [`• ${h.urunAd}`];
-      if (h.indirim) {
-        satirlar.push(
-          `  Fiyatı düştü: ${tutar(h.indirim.eskiKurus)} → ${tutar(h.indirim.yeniKurus)}`,
-        );
-      }
-      if (h.gelenBedenler.length > 0) {
-        satirlar.push(`  Yeniden stokta: ${h.gelenBedenler.join(", ")}`);
-      }
-      satirlar.push(`  ${siteAdresi()}/urun/${h.slug}`);
-      return satirlar.join("\n");
-    })
-    .join("\n\n");
-
-  const iptal = `${siteAdresi()}/eposta-izni?jeton=${encodeURIComponent(bilgi.iptalJetonu)}`;
+  const fotolar = epostaAcikMi()
+    ? await urunFotolari(bilgi.haberler.map((h) => ({ slug: h.slug })))
+    : [];
+  const iptal = iptalAdresi(bilgi.iptalJetonu);
   const konu =
     bilgi.haberler.length === 1
       ? `Favorindeki ${bilgi.haberler[0].urunAd} için güzel haber`
       : "Favorilerinde güzel haberler var";
-
   return gonder(
     kime,
-    konu,
-    `Merhaba ${bilgi.adSoyad},
-
-Favorilerine eklediğin ürünlerde değişiklik var:
-
-${liste}
-
-Bütün favorilerin: ${siteAdresi()}/hesabim/favoriler
-
-Sepete eklemek ürünü ayırmıyor; adet sınırlı olabilir.
-
-Bu e-postaları almak istemiyorsan tek tıkla çıkabilirsin:
-${iptal}${await altBilgi()}`,
+    {
+      konu,
+      onizleme: "Favorilerine eklediğin ürünlerde indirim ya da yeni stok var.",
+      bloklar: [
+        { tur: "metin", metin: `${selam(bilgi.adSoyad)}\n\nFavorilerine eklediğin ürünlerde değişiklik var:` },
+        {
+          tur: "urunler",
+          satirlar: bilgi.haberler.map((h, i) => ({
+            ad: h.urunAd,
+            tutarKurus: h.indirim?.yeniKurus,
+            eskiKurus: h.indirim?.eskiKurus,
+            foto: fotolar[i],
+            adres: `/urun/${h.slug}`,
+            etiket: [
+              h.indirim ? "Fiyatı düştü" : "",
+              h.gelenBedenler.length > 0 ? `Yeniden stokta: ${h.gelenBedenler.join(", ")}` : "",
+            ]
+              .filter(Boolean)
+              .join(" · "),
+          })),
+        },
+        { tur: "dugme", yazi: "Favorilerime git", adres: `${siteAdresi()}/hesabim/favoriler` },
+        { tur: "not", metin: "Sepete eklemek ürünü ayırmıyor; adet sınırlı olabilir." },
+      ],
+      iptalAdresi: iptal,
+    },
+    iptalBasliklari(iptal),
   );
 }
 
 /**
  * Panel kullanıcılarına sabah özeti (K-101). Metni `server/sabah-ozeti.ts`
- * kuruyor; burada yalnızca imza ekleniyor.
+ * kuruyor; burada yalnızca şablona konuyor.
  */
 export async function sabahOzetiEpostasi(
   kime: string,
   konu: string,
   metin: string,
 ): Promise<EpostaSonucu> {
-  return gonder(kime, konu, `${metin}${await altBilgi()}`);
+  return gonder(kime, {
+    konu,
+    bloklar: [
+      { tur: "metin", metin },
+      { tur: "dugme", yazi: "Panele git", adres: `${siteAdresi()}/yonetim` },
+    ],
+  });
 }
 
 export type StokBildirimi = { urunAd: string; slug: string; beden: string; renk: string };
@@ -636,24 +715,32 @@ export async function stokBildirimEpostasi(
   kime: string,
   bilgi: StokBildirimi,
 ): Promise<EpostaSonucu> {
-  const adres = `${siteAdresi()}/urun/${bilgi.slug}`;
-
-  return gonder(
-    kime,
-    `${bilgi.urunAd} yeniden stokta`,
-    `Merhaba,
-
-Haber vermemizi istediğin ürün yeniden stokta:
-
-${bilgi.urunAd} — ${bilgi.beden}, ${bilgi.renk}
-
-${adres}
-
-Sepete eklemek ürünü ayırmıyor; adet sınırlı olabilir.
-
-Bu e-postayı, bu ürün için haber verilmesini istediğin için aldın. Tek
-seferlik; isteğin kaydı bu e-postayla birlikte silindi.${await altBilgi()}`,
-  );
+  const [foto] = epostaAcikMi() ? await urunFotolari([{ slug: bilgi.slug }]) : [];
+  return gonder(kime, {
+    konu: `${bilgi.urunAd} yeniden stokta`,
+    onizleme: `${bilgi.beden}, ${bilgi.renk} yeniden stokta.`,
+    bloklar: [
+      { tur: "metin", metin: "Merhaba,\n\nHaber vermemizi istediğin ürün yeniden stokta:" },
+      {
+        tur: "urunler",
+        satirlar: [
+          {
+            ad: bilgi.urunAd,
+            detay: `${bilgi.beden} · ${bilgi.renk}`,
+            foto,
+            adres: `/urun/${bilgi.slug}`,
+            etiket: "Yeniden stokta",
+          },
+        ],
+      },
+      { tur: "dugme", yazi: "Ürüne git", adres: `${siteAdresi()}/urun/${bilgi.slug}` },
+      {
+        tur: "not",
+        metin:
+          "Sepete eklemek ürünü ayırmıyor; adet sınırlı olabilir. Bu e-postayı, bu ürün için haber verilmesini istediğin için aldın. Tek seferlik; isteğin kaydı bu e-postayla birlikte silindi.",
+      },
+    ],
+  });
 }
 
 export type TalepEpostasi = {
@@ -668,20 +755,17 @@ export async function talepAlindiEpostasi(
   kime: string,
   bilgi: TalepEpostasi,
 ): Promise<EpostaSonucu> {
-  return gonder(
-    kime,
-    `${bilgi.turAdi} talebin alındı — ${bilgi.numara}`,
-    `Merhaba ${bilgi.adSoyad},
-
-${bilgi.numara} numaralı siparişin için ${bilgi.turAdi.toLocaleLowerCase("tr")} talebini aldık.
-
-${bilgi.satirlar.map((s) => `• ${s}`).join("\n")}
-
-En kısa sürede bakıp sonucu bildireceğiz. Talebinin durumunu sipariş takip
-sayfasından da izleyebilirsin:
-
-${siteAdresi()}/siparis-takip${await altBilgi()}`,
-  );
+  const tur = bilgi.turAdi.toLocaleLowerCase("tr");
+  return gonder(kime, {
+    konu: `${bilgi.turAdi} talebin alındı — ${bilgi.numara}`,
+    onizleme: `${bilgi.numara} için ${tur} talebini aldık.`,
+    bloklar: [
+      { tur: "metin", metin: `${selam(bilgi.adSoyad)}\n\n${bilgi.numara} numaralı siparişin için ${tur} talebini aldık:` },
+      { tur: "kutu", metin: bilgi.satirlar.map((s) => `• ${s}`).join("\n") },
+      { tur: "metin", metin: "En kısa sürede bakıp sonucu bildireceğiz. Talebinin durumunu sipariş takip sayfasından da izleyebilirsin." },
+      { tur: "dugme", yazi: "Talebimi izle", adres: takipAdresi(bilgi.numara, kime) },
+    ],
+  });
 }
 
 /** Talep sonuçlandı bildirimi — müşteriye. */
@@ -689,18 +773,19 @@ export async function talepCevabiEpostasi(
   kime: string,
   bilgi: TalepEpostasi & { durumAdi: string; cevap: string },
 ): Promise<EpostaSonucu> {
-  return gonder(
-    kime,
-    `${bilgi.turAdi} talebin: ${bilgi.durumAdi} — ${bilgi.numara}`,
-    `Merhaba ${bilgi.adSoyad},
-
-${bilgi.numara} numaralı siparişin için açtığın ${bilgi.turAdi.toLocaleLowerCase("tr")} talebi
-"${bilgi.durumAdi}" olarak sonuçlandı.
-
-${bilgi.cevap || "Ayrıntı için bize yazabilirsin."}
-
-${siteAdresi()}/siparis-takip${await altBilgi()}`,
-  );
+  const tur = bilgi.turAdi.toLocaleLowerCase("tr");
+  return gonder(kime, {
+    konu: `${bilgi.turAdi} talebin: ${bilgi.durumAdi} — ${bilgi.numara}`,
+    onizleme: `Talebin "${bilgi.durumAdi}" olarak sonuçlandı.`,
+    bloklar: [
+      {
+        tur: "metin",
+        metin: `${selam(bilgi.adSoyad)}\n\n${bilgi.numara} numaralı siparişin için açtığın ${tur} talebi "${bilgi.durumAdi}" olarak sonuçlandı.`,
+      },
+      { tur: "kutu", baslik: "Cevabımız", metin: bilgi.cevap || "Ayrıntı için bize yazabilirsin." },
+      { tur: "dugme", yazi: "Siparişimi görüntüle", adres: takipAdresi(bilgi.numara, kime) },
+    ],
+  });
 }
 
 /**
@@ -713,17 +798,15 @@ export async function talepBildirimiEpostasi(bilgi: TalepEpostasi): Promise<Epos
   const kunye = await kunyeGetir();
   const kime = kunye.destekEposta.trim();
   if (!kime) return { gonderildi: false, sebep: "destek-adresi-yok" };
-
-  return gonder(
-    kime,
-    `Yeni ${bilgi.turAdi.toLocaleLowerCase("tr")} talebi — ${bilgi.numara}`,
-    `${bilgi.adSoyad} (${bilgi.numara}) bir ${bilgi.turAdi.toLocaleLowerCase("tr")} talebi açtı.
-
-${bilgi.satirlar.map((s) => `• ${s}`).join("\n")}
-
-Panelden cevaplayabilirsin:
-${siteAdresi()}/yonetim/talepler`,
-  );
+  const tur = bilgi.turAdi.toLocaleLowerCase("tr");
+  return gonder(kime, {
+    konu: `Yeni ${tur} talebi — ${bilgi.numara}`,
+    bloklar: [
+      { tur: "metin", metin: `${bilgi.adSoyad} (${bilgi.numara}) bir ${tur} talebi açtı.` },
+      { tur: "kutu", metin: bilgi.satirlar.map((s) => `• ${s}`).join("\n") },
+      { tur: "dugme", yazi: "Panelde cevapla", adres: `${siteAdresi()}/yonetim/talepler` },
+    ],
+  });
 }
 
 /**
@@ -734,15 +817,19 @@ ${siteAdresi()}/yonetim/talepler`,
  * gönderip Resend'in cevabını ekrana getiriyor (K-85).
  */
 export async function denemeEpostasi(kime: string): Promise<EpostaSonucu> {
-  return gonder(
-    kime,
-    "BASoftBaby deneme e-postası",
-    `Merhaba,
-
-Bu e-posta yönetim panelindeki "Deneme e-postası gönder" düğmesiyle gönderildi. Bunu okuyorsan mağazanın e-postaları çalışıyor: sipariş onayı, ödeme onayı, kargo bildirimi ve şifre sıfırlama bu adresten gidiyor.
-
-Gönderen: ${gonderen()}${await altBilgi()}`,
-  );
+  return gonder(kime, {
+    konu: "BASoftBaby deneme e-postası",
+    onizleme: "Mağazanın e-postaları çalışıyor.",
+    bloklar: [
+      {
+        tur: "metin",
+        metin:
+          'Merhaba,\n\nBu e-posta yönetim panelindeki "Deneme e-postası gönder" düğmesiyle gönderildi. Bunu okuyorsan mağazanın e-postaları çalışıyor: sipariş onayı, ödeme onayı, kargo bildirimi ve şifre sıfırlama bu adresten gidiyor.',
+      },
+      { tur: "kutu", baslik: "Gönderen", metin: gonderen() },
+      { tur: "dugme", yazi: "Mağazaya git", adres: siteAdresi() },
+    ],
+  });
 }
 
 /**
@@ -753,20 +840,16 @@ export async function soruCevaplandiEpostasi(
   kime: string,
   bilgi: { urunAd: string; slug: string; soru: string; cevap: string },
 ): Promise<EpostaSonucu> {
-  return gonder(
-    kime,
-    `Sorunu cevapladık: ${bilgi.urunAd}`,
-    `Merhaba,
-
-"${bilgi.urunAd}" hakkında sorduğun soruyu cevapladık.
-
-Soru: ${bilgi.soru}
-
-Cevap: ${bilgi.cevap}
-
-Ürüne bakmak için:
-${siteAdresi()}/urun/${bilgi.slug}#sorular${await altBilgi()}`,
-  );
+  return gonder(kime, {
+    konu: `Sorunu cevapladık: ${bilgi.urunAd}`,
+    onizleme: bilgi.cevap.slice(0, 90),
+    bloklar: [
+      { tur: "metin", metin: `Merhaba,\n\n"${bilgi.urunAd}" hakkında sorduğun soruyu cevapladık.` },
+      { tur: "kutu", baslik: "Sorun", metin: bilgi.soru },
+      { tur: "kutu", baslik: "Cevabımız", metin: bilgi.cevap },
+      { tur: "dugme", yazi: "Ürüne git", adres: `${siteAdresi()}/urun/${bilgi.slug}#sorular` },
+    ],
+  });
 }
 
 /** Panelden oluşturulan hediye çekinin kodu, alıcıya (K-137). */
@@ -774,25 +857,25 @@ export async function hediyeCekiEpostasi(
   kime: string,
   bilgi: { kod: string; aliciAd: string; tutarKurus: number; sonKullanma: Date | null },
 ): Promise<EpostaSonucu> {
-  const tarih = bilgi.sonKullanma
-    ? `\nSon kullanma: ${bilgi.sonKullanma.toLocaleDateString("tr-TR", { dateStyle: "long", timeZone: "Europe/Istanbul" })}`
-    : "";
-  return gonder(
-    kime,
-    `${tutar(bilgi.tutarKurus)} değerinde hediye çekin var`,
-    `Merhaba${bilgi.aliciAd ? ` ${bilgi.aliciAd}` : ""},
-
-Sana ${tutar(bilgi.tutarKurus)} değerinde bir BASoftBaby hediye çeki tanımlandı.
-
-Kod: ${bilgi.kod}${tarih}
-
-Siparişini verirken ödeme sayfasındaki "Hediye çeki" alanına bu kodu yazman
-yeterli. Tutarın tamamını tek siparişte kullanmak zorunda değilsin; kalan
-bakiye sonraki siparişlerinde kullanılabiliyor.
-
-Alışverişe başlamak için:
-${siteAdresi()}${await altBilgi()}`,
-  );
+  return gonder(kime, {
+    konu: `${tutar(bilgi.tutarKurus)} değerinde hediye çekin var`,
+    onizleme: `Sana ${tutar(bilgi.tutarKurus)} değerinde BASoftBaby hediye çeki tanımlandı.`,
+    bloklar: [
+      { tur: "metin", metin: `${selam(bilgi.aliciAd)}\n\nSana ${tutar(bilgi.tutarKurus)} değerinde bir BASoftBaby hediye çeki tanımlandı.` },
+      {
+        tur: "kupon",
+        baslik: "Hediye çeki kodun",
+        kod: bilgi.kod,
+        alt: bilgi.sonKullanma ? `Son kullanma: ${gunYaz(bilgi.sonKullanma)}` : undefined,
+      },
+      {
+        tur: "metin",
+        metin:
+          'Siparişini verirken ödeme sayfasındaki "Hediye çeki" alanına bu kodu yazman yeterli. Tutarın tamamını tek siparişte kullanmak zorunda değilsin; kalan bakiye sonraki siparişlerinde kullanılabiliyor.',
+      },
+      { tur: "dugme", yazi: "Alışverişe başla", adres: `${siteAdresi()}/urunler` },
+    ],
+  });
 }
 
 /**
@@ -802,29 +885,33 @@ ${siteAdresi()}${await altBilgi()}`,
  */
 export async function yorumIstegiEpostasi(
   kime: string,
-  bilgi: { numara: string; adSoyad: string; urunler: string[] },
+  bilgi: { numara: string; adSoyad: string; urunler: string[]; sluglar?: string[] },
 ): Promise<EpostaSonucu> {
-  const adres = `${siteAdresi()}/siparis-takip?numara=${encodeURIComponent(bilgi.numara)}&eposta=${encodeURIComponent(kime)}#degerlendir`;
-  const liste = bilgi.urunler.map((u) => `- ${u}`).join("\n");
-  return gonder(
-    kime,
-    `Ürünler nasıl oldu? · ${bilgi.numara}`,
-    `Merhaba ${bilgi.adSoyad},
-
-${bilgi.numara} numaralı siparişin birkaç gün önce teslim edildi. Umarız minik
-için her şey yolundadır.
-
-Bedeni tuttu mu, kumaşı nasıl? Birkaç satırlık bir değerlendirme, başka
-ailelerin doğru bedeni seçmesine çok yardım ediyor. İstersen bir fotoğraf da
-ekleyebilirsin.
-
-${liste}
-
-Değerlendirmek için:
-${adres}
-
-Bu e-posta bir kez gönderiliyor.${await altBilgi()}`,
-  );
+  const sluglar = bilgi.sluglar ?? [];
+  const fotolar =
+    epostaAcikMi() && sluglar.length > 0
+      ? await urunFotolari(sluglar.map((slug) => ({ slug })))
+      : [];
+  return gonder(kime, {
+    konu: `Ürünler nasıl oldu? · ${bilgi.numara}`,
+    onizleme: "Birkaç satırlık değerlendirmen başka ailelere çok yardım ediyor.",
+    bloklar: [
+      {
+        tur: "metin",
+        metin: `${selam(bilgi.adSoyad)}\n\n${bilgi.numara} numaralı siparişin birkaç gün önce teslim edildi. Umarız minik için her şey yolundadır.\n\nBedeni tuttu mu, kumaşı nasıl? Birkaç satırlık bir değerlendirme, başka ailelerin doğru bedeni seçmesine çok yardım ediyor. İstersen bir fotoğraf da ekleyebilirsin.`,
+      },
+      {
+        tur: "urunler",
+        satirlar: bilgi.urunler.map((ad, i) => ({ ad, foto: fotolar[i] })),
+      },
+      {
+        tur: "dugme",
+        yazi: "Değerlendir",
+        adres: `${takipAdresi(bilgi.numara, kime)}#degerlendir`,
+      },
+      { tur: "not", metin: "Bu e-posta bir kez gönderiliyor." },
+    ],
+  });
 }
 
 /**
@@ -836,20 +923,17 @@ export async function listeHediyesiEpostasi(
   bilgi: { sahipAdi: string; gonderen: string; not: string; urunler: string[]; kod: string },
 ): Promise<EpostaSonucu> {
   const kimden = bilgi.gonderen ? `${bilgi.gonderen} listenden` : "Bir yakının listenden";
-  return gonder(
-    kime,
-    "Doğum listenden bir hediye alındı",
-    `Merhaba ${bilgi.sahipAdi},
-
-${kimden} hediye aldı:
-
-${bilgi.urunler.map((u) => `- ${u}`).join("\n")}
-${bilgi.not ? `\nNotu:\n"${bilgi.not}"\n` : ""}
-Listen güncellendi; alınanlar işaretli. Listeni görmek için:
-${siteAdresi()}/liste/${bilgi.kod}
-
-Gelen hediyelerin hepsi hesabındaki "Doğum listem" sayfasında.${await altBilgi()}`,
-  );
+  return gonder(kime, {
+    konu: "Doğum listenden bir hediye alındı",
+    onizleme: `${kimden} hediye aldı.`,
+    bloklar: [
+      { tur: "metin", metin: `${selam(bilgi.sahipAdi)}\n\n${kimden} hediye aldı:` },
+      { tur: "urunler", satirlar: bilgi.urunler.map((ad) => ({ ad })) },
+      ...(bilgi.not ? [{ tur: "kutu" as const, baslik: "Notu", metin: `"${bilgi.not}"` }] : []),
+      { tur: "metin", metin: 'Listen güncellendi; alınanlar işaretli. Gelen hediyelerin hepsi hesabındaki "Doğum listem" sayfasında.' },
+      { tur: "dugme", yazi: "Listemi gör", adres: `${siteAdresi()}/liste/${bilgi.kod}` },
+    ],
+  });
 }
 
 /**
@@ -860,22 +944,37 @@ export async function buyumeEpostasi(
   kime: string,
   bilgi: { adSoyad: string; ay: number; beden: string; iptalJetonu: string },
 ): Promise<EpostaSonucu> {
-  const iptal = `${siteAdresi()}/eposta-izni?jeton=${encodeURIComponent(bilgi.iptalJetonu)}`;
+  const urunler = epostaAcikMi() ? await bedendekiUrunler(bilgi.beden) : [];
+  const iptal = iptalAdresi(bilgi.iptalJetonu);
   return gonder(
     kime,
-    `Bebeğin ${bilgi.ay} aylık oluyor: ${bilgi.beden} zamanı`,
-    `Merhaba ${bilgi.adSoyad},
-
-Bebeğin birkaç hafta içinde ${bilgi.ay} aylık oluyor. Bebekler bu dönemde hızlı büyüyor; ${bilgi.beden} bedenine geçme zamanı yaklaşıyor.
-
-${bilgi.beden} bedeninde stokta olanlar:
-${siteAdresi()}/urunler?beden=${encodeURIComponent(bilgi.beden)}
-
-Bedenden emin değilsen boy ve kiloya göre bakabileceğin tablo:
-${siteAdresi()}/beden-rehberi
-
-Bu hatırlatmaları almak istemiyorsan tek tıkla çıkabilirsin:
-${iptal}${await altBilgi()}`,
+    {
+      konu: `Bebeğin ${bilgi.ay} aylık oluyor: ${bilgi.beden} zamanı`,
+      onizleme: `${bilgi.beden} bedenine geçme zamanı yaklaşıyor.`,
+      bloklar: [
+        {
+          tur: "metin",
+          metin: `${selam(bilgi.adSoyad)}\n\nBebeğin birkaç hafta içinde ${bilgi.ay} aylık oluyor. Bebekler bu dönemde hızlı büyüyor; ${bilgi.beden} bedenine geçme zamanı yaklaşıyor.`,
+        },
+        ...(urunler.length > 0
+          ? [
+              { tur: "metin" as const, metin: `${bilgi.beden} bedeninde stokta olanlardan birkaçı:` },
+              { tur: "urunler" as const, satirlar: urunler },
+            ]
+          : []),
+        {
+          tur: "dugme",
+          yazi: `${bilgi.beden} ürünlerini gör`,
+          adres: `${siteAdresi()}/urunler?beden=${encodeURIComponent(bilgi.beden)}`,
+        },
+        {
+          tur: "not",
+          metin: `Bedenden emin değilsen boy ve kiloya göre bakabileceğin tablo: ${siteAdresi()}/beden-rehberi`,
+        },
+      ],
+      iptalAdresi: iptal,
+    },
+    iptalBasliklari(iptal),
   );
 }
 
@@ -887,28 +986,32 @@ export async function tesvikEpostasi(
   kime: string,
   bilgi: { adSoyad: string; kod: string; yuzde: number; bitis: Date; iptalJetonu: string },
 ): Promise<EpostaSonucu> {
-  const iptal = `${siteAdresi()}/eposta-izni?jeton=${encodeURIComponent(bilgi.iptalJetonu)}`;
-  const son = bilgi.bitis.toLocaleDateString("tr-TR", {
-    dateStyle: "long",
-    timeZone: "Europe/Istanbul",
-  });
+  const iptal = iptalAdresi(bilgi.iptalJetonu);
   return gonder(
     kime,
-    `Sana özel %${bilgi.yuzde} indirim`,
-    `Merhaba ${bilgi.adSoyad},
-
-İlk siparişin eline ulaştı; umarız minik beğenmiştir. Bir sonraki alışverişin için sana özel bir kupon hazırladık:
-
-Kupon kodu: ${bilgi.kod}
-İndirim: %${bilgi.yuzde}
-Son gün: ${son}
-
-Kupon yalnızca senin hesabında ve bir siparişte geçerli. Hesabına giriş yapıp sepet sayfasındaki kupon alanına kodu yazman yeterli.
-
-${siteAdresi()}/urunler
-
-Bu e-postaları almak istemiyorsan tek tıkla çıkabilirsin:
-${iptal}${await altBilgi()}`,
+    {
+      konu: `Sana özel %${bilgi.yuzde} indirim`,
+      onizleme: `Bir sonraki alışverişin için %${bilgi.yuzde} indirim kuponun hazır.`,
+      bloklar: [
+        {
+          tur: "metin",
+          metin: `${selam(bilgi.adSoyad)}\n\nİlk siparişin eline ulaştı; umarız minik beğenmiştir. Bir sonraki alışverişin için sana özel bir kupon hazırladık:`,
+        },
+        {
+          tur: "kupon",
+          baslik: `%${bilgi.yuzde} indirim kuponun`,
+          kod: bilgi.kod,
+          alt: `Son gün: ${gunYaz(bilgi.bitis)} · tek siparişte geçerli`,
+        },
+        {
+          tur: "metin",
+          metin: "Kupon yalnızca senin hesabında geçerli. Hesabına giriş yapıp sepet sayfasındaki kupon alanına kodu yazman yeterli.",
+        },
+        { tur: "dugme", yazi: "Alışverişe başla", adres: `${siteAdresi()}/urunler` },
+      ],
+      iptalAdresi: iptal,
+    },
+    iptalBasliklari(iptal),
   );
 }
 
@@ -917,22 +1020,25 @@ export async function davetOdulEpostasi(
   kime: string,
   bilgi: { adSoyad: string; arkadas: string; kod: string; tutarKurus: number; sonKullanma: Date },
 ): Promise<EpostaSonucu> {
-  const son = bilgi.sonKullanma.toLocaleDateString("tr-TR", {
-    dateStyle: "long",
-    timeZone: "Europe/Istanbul",
+  return gonder(kime, {
+    konu: `Davetin için ${tutar(bilgi.tutarKurus)} hediye çeki`,
+    onizleme: `${bilgi.arkadas} ilk alışverişini yaptı; hediye çekin hazır.`,
+    bloklar: [
+      {
+        tur: "metin",
+        metin: `${selam(bilgi.adSoyad)}\n\nDavet ettiğin ${bilgi.arkadas} ilk alışverişini yaptı. Teşekkür olarak sana ${tutar(bilgi.tutarKurus)} değerinde hediye çeki tanımladık:`,
+      },
+      {
+        tur: "kupon",
+        baslik: "Hediye çeki kodun",
+        kod: bilgi.kod,
+        alt: `Son kullanma: ${gunYaz(bilgi.sonKullanma)}`,
+      },
+      {
+        tur: "metin",
+        metin: 'Ödeme sayfasındaki "Hediye çeki" alanına yazman yeterli. Kodun hesabındaki "Arkadaşını davet et" sayfasında da duruyor.',
+      },
+      { tur: "dugme", yazi: "Davet sayfama git", adres: `${siteAdresi()}/hesabim/davet` },
+    ],
   });
-  return gonder(
-    kime,
-    `Davetin için ${tutar(bilgi.tutarKurus)} hediye çeki`,
-    `Merhaba ${bilgi.adSoyad},
-
-Davet ettiğin ${bilgi.arkadas} ilk alışverişini yaptı. Teşekkür olarak sana ${tutar(bilgi.tutarKurus)} değerinde hediye çeki tanımladık:
-
-Kod: ${bilgi.kod}
-Son kullanma: ${son}
-
-Ödeme sayfasındaki "Hediye çeki" alanına yazman yeterli. Kodun hesabındaki "Arkadaşını davet et" sayfasında da duruyor.
-
-${siteAdresi()}/hesabim/davet${await altBilgi()}`,
-  );
 }

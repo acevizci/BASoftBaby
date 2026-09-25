@@ -6218,6 +6218,42 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
 - Yuvarlak rozet diğer yerlerde (giriş sayfaları, paylaşım görseli, favicon,
   e-posta başlığı) aynen kullanılıyor.
 
+### K-161 · E-posta tasarımı
+
+- E-postalar düz metinden basit HTML'e çevriliyordu (logo + beyaz kutu).
+  Artık **bloklardan** kuruluyor (`server/eposta-sablon.ts`): metin, düğme,
+  fotoğraflı ürün listesi, tutar tablosu, sipariş durum çubuğu, bilgi kutusu,
+  kesikli çerçeveli kupon kutusu, küçük not. Aynı bloklardan hem HTML hem düz
+  metin sürümü çıkıyor.
+- **Ortak çerçeve:** üstte mint bant ve yatay logo
+  (`basoftbaby-yatay-eposta.png`, 440 px, 22 KB; Outlook WebP göstermediği
+  için PNG), gelen kutusu önizleme satırı, altta sipariş takibi · iade ve
+  değişim · WhatsApp destek · hesabım bağlantıları, destek telefonu/e-postası
+  ve künye (unvan, adres). Tanıtım e-postalarında alt bilgide "listeden çık"
+  ve tek tıkla çıkma başlıkları (RFC 8058); e-bültende de aynı.
+- **Sipariş e-postaları** (alındı, ödeme alındı, kargoda, teslim): durum
+  çubuğu; ürünler fotoğrafı, beden-renk, adet ve tutarıyla; ara toplam,
+  kampanya indirimi, kargo, hediye paketi, hediye çeki ve toplam tablosu.
+  Havale bilgisi ayrı kutuda, açıklamaya yazılacak sipariş numarasıyla.
+  Kargoda büyük "Kargomu takip et" düğmesi. Satırlar ve tutarlar e-posta
+  gönderilirken siparişten okunuyor (`siparisDetayi`); çağıran kodlar
+  değişmedi.
+- **Tanıtım e-postaları:** sepet hatırlatma ve favori haberi fotoğraflı ürün
+  kartlarıyla (favoride eski fiyat üstü çizili, "fiyatı düştü" / "yeniden
+  stokta" etiketi), büyüme hatırlatmasında o bedende stokta olan 4 ürün,
+  ikinci sipariş kuponu / hediye çeki / davet ödülü kupon kutusunda.
+- Uzun adresler yerine düğmeler ("Siparişimi görüntüle", "Şifremi sıfırla",
+  "Adresimi doğrula", "Sepetime dön", "Değerlendir"…). Renk şeması açık
+  olarak bildiriliyor: koyu temalı istemciler renkleri kendi başına çevirip
+  bozmasın. Düzen tablolarla ve satır içi stille (e-posta istemcileri flex,
+  grid ve `<style>` tanımıyor), telefonda tek sütun.
+- Ürün fotoğrafları WebP: Gmail, Apple Mail, Yahoo gösteriyor; Outlook'ta
+  yerinde ürün adı yazıyor.
+
+**Nerede:** [`../server/eposta-sablon.ts`](../server/eposta-sablon.ts),
+[`../server/eposta-veri.ts`](../server/eposta-veri.ts),
+[`../server/eposta.ts`](../server/eposta.ts)
+
 
 ---
 

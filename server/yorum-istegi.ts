@@ -46,7 +46,7 @@ export async function yorumIstekleriniGonder(
           beden: true,
           renk: true,
           yorum: { select: { id: true } },
-          variant: { select: { productId: true } },
+          variant: { select: { productId: true, product: { select: { slug: true } } } },
         },
       },
     },
@@ -67,6 +67,8 @@ export async function yorumIstekleriniGonder(
       numara: s.numara,
       adSoyad: s.adSoyad,
       urunler: bekleyen.map((x) => `${x.urunAd} (${x.beden}, ${adlar[x.renk] ?? x.renk})`),
+      // Kartlarda fotoğraf için (K-161); sırası `urunler` ile aynı.
+      sluglar: bekleyen.map((x) => x.variant?.product.slug ?? ""),
     });
     if (!sonuc.gonderildi) continue;
     await db.order.update({ where: { id: s.id }, data: { yorumIstendi: simdi } });
