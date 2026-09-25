@@ -6169,6 +6169,22 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
 
 **Nerede:** [`../server/rehber-urunleri.ts`](../server/rehber-urunleri.ts)
 
+### K-158 · WhatsApp numarası ayrı alan, görünmüyorsa panel söylüyor
+
+- WhatsApp düğmesi (K-99) yalnızca künyedeki destek telefonu **cep
+  numarasıysa** çıkıyordu. Destek telefonu boşsa ya da sabit hatsa düğme
+  sessizce yoktu; mağazada "eklemiştik ama görünmüyor" diye fark edildi.
+- Künyeye ayrı **WhatsApp numarası** alanı (`StoreSetting.whatsappNumara`):
+  destek telefonu sabit hat kalabilir. Önce bu alan, geçersiz ya da boşsa cep
+  numarasıysa destek telefonu kullanılıyor (`whatsappDugmeNumarasi`).
+- Alanın altında durum yazıyor ("düğme görünüyor: +90…" / "görünmüyor: cep
+  numarası yok"); düğme kapalıysa panel ana sayfasındaki "Tamamlanmamış
+  ayarlar"da **WhatsApp düğmesi kapalı** maddesi çıkıyor.
+- Aynı listedeki "Satıcı künyesi eksik" maddesi künyenin olmadığı Satış
+  ayarları'na gidiyordu; Yasal metinler'e düzeltildi.
+- Çerez bandı (K-124) seçim yapılana kadar düğmenin üstünde; seçimden sonra
+  düğme görünüyor.
+
 
 ---
 

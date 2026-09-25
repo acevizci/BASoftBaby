@@ -16,6 +16,7 @@ import { db } from "@/server/veritabani";
 import { epostaAcikMi } from "@/server/eposta";
 import { ayarlariGetir } from "@/server/sepet";
 import { kunyeGetir } from "@/server/yasal";
+import { whatsappDugmeNumarasi } from "@/server/whatsapp";
 import { bekleyenTalepSayisi } from "@/server/talep";
 import { OLUMSUZ_PUAN, yanitsizOlumsuzYorum } from "@/server/yorum";
 import { AZALAN_ESIK } from "@/server/stok-ekrani";
@@ -274,7 +275,15 @@ export async function panelOzetiGetir(): Promise<PanelOzeti> {
       ad: "Satıcı künyesi eksik",
       aciklama:
         "Unvan ve vergi numarası mesafeli satışta müşteriye gösterilmesi zorunlu bilgiler.",
-      adres: "/yonetim/ayarlar",
+      adres: "/yonetim/yasal",
+    });
+  }
+  if (!whatsappDugmeNumarasi(kunye)) {
+    eksikler.push({
+      ad: "WhatsApp düğmesi kapalı",
+      aciklama:
+        "Cep numarası girilmediği için mağazada WhatsApp düğmesi görünmüyor. Yasal metinler › Künye'de WhatsApp numarasını yaz.",
+      adres: "/yonetim/yasal",
     });
   }
   if (taslakYasal > 0) {

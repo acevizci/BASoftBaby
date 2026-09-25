@@ -38,6 +38,8 @@ export type Kunye = {
   sirketAdresi: string;
   destekTelefon: string;
   destekEposta: string;
+  /** WhatsApp düğmesinin numarası (K-158); künyede gösterilmiyor. */
+  whatsappNumara: string;
   /** Künyede tek bir dolu alan bile yoksa ekranda hiç gösterilmiyor. */
   bosMu: boolean;
 };
@@ -80,6 +82,7 @@ export const kunyeGetir = paylasilanOnbellek(async function kunyeGetir(): Promis
       sirketAdresi: true,
       destekTelefon: true,
       destekEposta: true,
+      whatsappNumara: true,
     },
   });
 
@@ -94,5 +97,9 @@ export const kunyeGetir = paylasilanOnbellek(async function kunyeGetir(): Promis
     destekEposta: ayar?.destekEposta ?? "",
   };
 
-  return { ...kunye, bosMu: Object.values(kunye).every((d) => d === "") };
+  return {
+    ...kunye,
+    whatsappNumara: ayar?.whatsappNumara ?? "",
+    bosMu: Object.values(kunye).every((d) => d === ""),
+  };
 }, ["kunye"], [ETIKETLER.ayarlar]);

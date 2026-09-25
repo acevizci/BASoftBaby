@@ -1076,6 +1076,7 @@ export async function kunyeKaydet(veri: FormData): Promise<void> {
     sirketAdresi: al("sirketAdresi", 400),
     destekTelefon: al("destekTelefon", 40),
     destekEposta: al("destekEposta", 120),
+    whatsappNumara: al("whatsappNumara", 40),
   };
 
   await db.storeSetting.upsert({

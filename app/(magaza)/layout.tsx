@@ -4,7 +4,7 @@ import AltBilgi from "@/ui/alt-bilgi";
 import { FavoriSaglayici } from "@/ui/favori";
 import { ZiyaretciSaglayici } from "@/ui/ziyaretci";
 import { kunyeGetir } from "@/server/yasal";
-import { whatsappNumarasi } from "@/server/whatsapp";
+import { whatsappDugmeNumarasi } from "@/server/whatsapp";
 import WhatsappDugmesi from "@/ui/whatsapp-dugmesi";
 import CerezOnayi from "@/ui/cerez-onayi";
 import { olcumAyari } from "@/server/olcum";
@@ -25,8 +25,9 @@ export default async function MagazaDuzeni({ children }: LayoutProps<"/">) {
   // sayfalar önbellekten verilebiliyor. Giriş, sepet ve favoriler tarayıcıda
   // (K-131).
   const [kunye, olcum] = await Promise.all([kunyeGetir(), olcumAyari()]);
-  // WhatsApp düğmesi künyedeki destek telefonu cep numarasıysa çıkıyor (K-99).
-  const whatsapp = whatsappNumarasi(kunye.destekTelefon);
+  // WhatsApp düğmesi: paneldeki WhatsApp numarası, yoksa cep numarasıysa
+  // destek telefonu (K-99, K-158).
+  const whatsapp = whatsappDugmeNumarasi(kunye);
   // Reklam ölçümü panelde açıksa çerez onay bandı (K-124); değilse site
   // çerez kullanmıyor ve bant da yok (K-16).
   const olcumVar = Boolean(olcum.metaPikselId || olcum.googleEtiketId);

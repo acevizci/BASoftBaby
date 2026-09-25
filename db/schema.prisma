@@ -313,6 +313,9 @@ model StoreSetting {
   etbisNo       String @default("")
   sirketAdresi  String @default("")
   destekTelefon String @default("")
+  /// WhatsApp düğmesinin numarası (K-158); boşsa destek telefonu cep
+  /// numarasıysa o kullanılıyor.
+  whatsappNumara String @default("")
   destekEposta  String @default("")
 
   /// Faturada kullanılan KDV oranı (yüzde). Bebek tekstilinde 10; ürün

@@ -2,6 +2,7 @@ import Link from "next/link";
 import Katlanir from "@/ui/katlanir";
 import { kunyeKaydet, yasalKaydet } from "@/server/yonetim";
 import { kunyeGetir, yasalSayfaGetir, yasalSayfalariGetir } from "@/server/yasal";
+import { whatsappDugmeNumarasi } from "@/server/whatsapp";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +41,7 @@ export default async function YasalEkrani({ searchParams }: PageProps<"/yonetim/
   // Mesafeli satışta satıcının unvanı, adresi, bir iletişim yolu ve ETBİS
   // numarası sitede bulunmak zorunda. Eksikse künye kendini açıyor: kapalı
   // bir bölümün içinde saklanan eksik, olmayan eksikle aynı şey.
+  const whatsapp = whatsappDugmeNumarasi(kunye);
   const kunyeEksikMi =
     !kunye.unvan ||
     !kunye.sirketAdresi ||
@@ -227,7 +229,23 @@ export default async function YasalEkrani({ searchParams }: PageProps<"/yonetim/
               className={`${GIRDI} rakam`}
             />
             <span className="text-xs text-metin-3">
-              Cep numarasıysa mağazada sağ altta WhatsApp düğmesi çıkar.
+              Künyede gösteriliyor. Sabit hat olabilir; WhatsApp için aşağıdaki alan.
+            </span>
+          </label>
+
+          <label className="flex flex-col gap-1.5">
+            <span className={ETIKET}>WhatsApp numarası</span>
+            <input
+              name="whatsappNumara"
+              defaultValue={kunye.whatsappNumara}
+              placeholder="0555 123 45 67"
+              className={`${GIRDI} rakam`}
+            />
+            <span className="text-xs text-metin-3">
+              {whatsapp
+                ? `Mağazada sağ altta WhatsApp düğmesi görünüyor: +${whatsapp}.`
+                : "Düğme görünmüyor: cep numarası yok. Buraya WhatsApp kullanan cep numaranı yaz."}{" "}
+              Boş bırakırsan destek telefonu cep numarasıysa o kullanılır.
             </span>
           </label>
 

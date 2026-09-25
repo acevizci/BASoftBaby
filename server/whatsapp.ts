@@ -16,3 +16,14 @@ export function whatsappNumarasi(telefon: string): string | undefined {
   if (r.startsWith("0") && r.length === 11) r = r.slice(1);
   return /^5\d{9}$/.test(r) ? `90${r}` : undefined;
 }
+
+/**
+ * Düğmede kullanılacak numara (K-158): panelde ayrıca girilen WhatsApp
+ * numarası; yoksa destek telefonu cep numarasıysa o. İkisi de yoksa düğme yok.
+ */
+export function whatsappDugmeNumarasi(kunye: {
+  whatsappNumara: string;
+  destekTelefon: string;
+}): string | undefined {
+  return whatsappNumarasi(kunye.whatsappNumara) ?? whatsappNumarasi(kunye.destekTelefon);
+}
