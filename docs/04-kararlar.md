@@ -5819,6 +5819,20 @@ yayının yerinin boşalması Vercel tarafında gecikebiliyor; birkaç gün dü�
 Vercel desteğine yazılmalı.
 
 
+### K-140 · E-postalarda logo ve tıklanır bağlantılar
+
+Bütün e-postaların başında düz yazıyla "BASoftBaby" duruyordu. Artık rozet
+logo (K-138), siteye bağlantılı. PNG ve tam adresle: Outlook WebP göstermiyor,
+e-posta sitenin içinde açılmıyor. Görseli engelleyen istemcide yerine `alt`
+yazısı çıkıyor.
+
+Metindeki adresler de bağlantı oluyor: bazı istemciler düz adresi bağlantıya
+çevirmiyordu (sipariş takibi, şifre sıfırlama, doğrulama bağlantıları).
+Cümle sonundaki nokta bağlantıya girmiyor.
+
+**Nerede:** `epostaHtml` — [`../server/eposta.ts`](../server/eposta.ts)
+
+
 ---
 
 ## Açık sorular

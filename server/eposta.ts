@@ -72,19 +72,32 @@ function gonderen(): string {
  * Şablonlar düz yazı olarak yazılıyor: hem e-posta istemcilerinin çoğunda
  * sorunsuz görünüyor hem de metnin içine HTML kaçması mümkün olmuyor.
  */
-function htmlYap(metin: string): string {
+/**
+ * Düz metinden HTML gövde. Başlıkta mağazanın rozet logosu (K-138): PNG,
+ * çünkü Outlook WebP göstermiyor; tam adresle, çünkü e-posta sitenin içinde
+ * açılmıyor. Görseli engelleyen istemcide `alt` yazısı kalıyor.
+ *
+ * Metindeki adresler tıklanır bağlantı: bazı istemciler düz adresi
+ * bağlantıya çevirmiyor, müşteri kopyalamak zorunda kalıyordu.
+ */
+export function epostaHtml(metin: string, site: string = siteAdresi()): string {
   const kacir = (m: string) =>
     m.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const baglanti = (m: string) =>
+    m.replace(
+      /https?:\/\/[^\s<]+[^\s<.,;:!?)]/g,
+      (a) => `<a href="${a}" style="color:#2f6e9e;word-break:break-all">${a}</a>`,
+    );
 
   const govde = metin
     .trim()
     .split(/\n{2,}/)
-    .map((p) => `<p style="margin:0 0 14px">${kacir(p).replace(/\n/g, "<br>")}</p>`)
+    .map((p) => `<p style="margin:0 0 14px">${baglanti(kacir(p)).replace(/\n/g, "<br>")}</p>`)
     .join("");
 
   return `<!doctype html><html lang="tr"><body style="margin:0;background:#fffcf7;padding:24px;font:16px/1.6 -apple-system,Segoe UI,Roboto,sans-serif;color:#2c2721">
 <div style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #efe7db;border-radius:16px;padding:24px">
-<p style="margin:0 0 18px;font-weight:700;font-size:18px;color:#c2433a">BASoftBaby</p>
+<p style="margin:0 0 18px;text-align:center"><a href="${site}"><img src="${site}/marka/basoftbaby-logo-256.png" width="104" height="104" alt="BASoftBaby" style="display:inline-block;border:0;width:104px;height:104px;font-weight:700;font-size:18px;color:#c2433a"></a></p>
 ${govde}
 </div></body></html>`;
 }
@@ -112,7 +125,7 @@ async function gonder(
         to: [kime],
         subject: konu,
         text: metin.trim(),
-        html: htmlYap(metin),
+        html: epostaHtml(metin),
       }),
     });
 
@@ -170,7 +183,7 @@ export async function topluGonder(liste: TopluEposta[]): Promise<{ gonderilen: n
             to: [e.kime],
             subject: e.konu,
             text: e.metin.trim(),
-            html: htmlYap(e.metin),
+            html: epostaHtml(e.metin),
             headers: {
               "List-Unsubscribe": `<${e.iptalAdresi}>`,
               "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
