@@ -6273,6 +6273,32 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
   Yeniden çekmek için panel açıkken ekran görüntüleri alınıp aynı adlarla
   `gorsel/` klasörüne konması yeterli.
 
+### K-163 · Deneme siparişlerini silme
+
+- Satışa başlamadan önce denemek için verilen siparişler raporları, kâr
+  hesabını, stoğu ve sipariş numaralarını kirletiyordu; panelde sipariş
+  silmenin bir yolu yoktu. **Ayarlar › Satışa hazırlık › Deneme
+  siparişlerini temizle**: son 200 sipariş listeleniyor (kartla ödenmiş
+  olanlar "gerçek ödemeyse önce iade et" uyarısıyla, faturası kesilmiş
+  olanlar fatura numarasıyla), seçilenler onay kutusuna **SİL** yazılınca
+  kalıcı olarak siliniyor. "Hepsini seç" bağlantısı var; kimin sildiği
+  sunucu günlüğüne yazılıyor.
+- Silinen siparişle birlikte ödemeler, gönderiler, talepler, iadeler, fatura,
+  irsaliye ve değerlendirmeler gidiyor (`Cascade`). **Yan etkiler geri
+  alınıyor**, her sipariş kendi işleminde: siparişin stok hareketlerinin net
+  etkisi ters çevrilip hareketler siliniyor (iptal edilmiş siparişte net etki
+  sıfır, stok iki kez eklenmiyor; hareket kaydı öncesi eski siparişte satılan
+  adet geri); doğum listesinde alınan adet iade edilmemiş kısım kadar
+  düşüyor; hediye çekinden harcanıp geri verilmemiş tutar bakiyeye dönüyor;
+  silinen değerlendirmelerin ürünlerinde puan yeniden hesaplanıyor.
+- Sipariş, fatura ve irsaliye sayaçları kalan en büyük numaraya çekiliyor:
+  bütün deneme siparişleri silinince ilk gerçek sipariş BA-…-0001.
+- Geri alınmayanlar: kampanya kullanım sayısı (yalnızca rapor) ve tek
+  kullanımlık kişisel kuponun kullanılmışlığı. Deneme sırasında açılan müşteri
+  hesapları silinmiyor.
+
+**Nerede:** [`../server/siparis-silme.ts`](../server/siparis-silme.ts)
+
 
 ---
 

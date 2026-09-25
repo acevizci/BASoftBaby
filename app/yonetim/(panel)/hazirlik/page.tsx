@@ -4,6 +4,10 @@ import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { anahtarOzeti, epostaAcikMi, gonderenAdresi } from "@/server/eposta";
 import { denemeEpostasiGonder } from "@/server/eposta-deneme";
 import GonderDugmesi from "@/ui/gonder-dugmesi";
+import { db } from "@/server/veritabani";
+import { denemeSiparisleriniSil } from "@/server/siparis-silme-islem";
+import { fiyatYaz } from "@/ui/katalog-bicim";
+import { durumAdi, odemeAdi, yontemAdi } from "@/ui/siparis-bicim";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +40,7 @@ const ROZET_YAZI: Record<Agirlik, string> = {
 export default async function HazirlikEkrani({ searchParams }: PageProps<"/yonetim/hazirlik">) {
   // Düzendeki kontrol istemci tarafı gezinmede çalışmıyor (K-51).
   const ben = await yoneticiGerekli();
-  const { eposta, sebep, mesaj } = await searchParams;
+  const { eposta, sebep, mesaj, silme, silindi, hepsi } = await searchParams;
 
   const rapor = await hazirlikRaporu();
 
@@ -91,8 +95,14 @@ export default async function HazirlikEkrani({ searchParams }: PageProps<"/yonet
         mesaj={typeof mesaj === "string" ? mesaj : undefined}
       />
 
+      <DenemeSiparisleri
+        silme={typeof silme === "string" ? silme : undefined}
+        silindi={typeof silindi === "string" ? Number(silindi) : undefined}
+        hepsi={hepsi === "1"}
+      />
+
       <p className="text-xs text-metin-3">
-        Bu ekran yalnızca bakıyor; değiştirdiği tek şey yok, gönderdiği tek şey deneme e-postası. Her satır düzeltmenin
+        Bu ekran kontrolleri yalnızca gösteriyor; gönderdiği tek şey deneme e-postası, sildiği tek şey seçip onayladığın deneme siparişleri. Her satır düzeltmenin
         yapıldığı ekrana bağlanıyor; anahtar ve hesap isteyenler (kart ödemesi, e-posta
         servisi, alan adı) Vercel ortam değişkenlerinden geliyor ve yeniden dağıtım
         gerektiriyor.
@@ -250,5 +260,162 @@ function AnahtarSatiri() {
         <span> · Vercel&apos;deki değerde boşluk ya da tırnak vardı, temizlenerek kullanılıyor</span>
       )}
     </p>
+  );
+}
+
+/**
+ * Deneme siparişlerini temizleme (K-163). Seçilenler kalıcı olarak siliniyor;
+ * stok, doğum listesi ve hediye çeki etkileri geri alınıyor, sayaçlar
+ * kalan en büyük numaraya çekiliyor. Onay kutusuna "SİL" yazılmadan
+ * hiçbir şey silinmiyor.
+ */
+async function DenemeSiparisleri({
+  silme,
+  silindi,
+  hepsi,
+}: {
+  silme?: string;
+  silindi?: number;
+  hepsi: boolean;
+}) {
+  const siparisler = await db.order.findMany({
+    orderBy: { olusturuldu: "desc" },
+    take: 200,
+    select: {
+      numara: true,
+      olusturuldu: true,
+      adSoyad: true,
+      eposta: true,
+      toplamKurus: true,
+      durum: true,
+      odemeDurumu: true,
+      odemeYontemi: true,
+      fatura: { select: { numara: true } },
+    },
+  });
+
+  return (
+    <section id="deneme-siparisleri" className={KART}>
+      <h2 className="text-lg">Deneme siparişlerini temizle</h2>
+      <p className="mt-1 text-sm text-metin-2">
+        Satışa başlamadan önce denemek için verdiğin siparişleri seç ve kalıcı olarak sil. Stoğa
+        geri eklenirler, doğum listesi ve hediye çeki etkileri geri alınır, raporlardan ve kâr
+        hesabından çıkarlar. Bütün deneme siparişleri silinince ilk gerçek sipariş{" "}
+        <span className="rakam">0001</span> numarasıyla başlar.
+      </p>
+
+      {typeof silindi === "number" && Number.isFinite(silindi) && (
+        <p className="mt-3 rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">
+          <span className="rakam">{silindi}</span> sipariş silindi.
+        </p>
+      )}
+      {silme === "onay" && (
+        <p className="mt-3 rounded-marka bg-mercan-soluk px-4 py-3 text-sm font-semibold text-mercan-koyu">
+          Silinmedi: onay kutusuna büyük harflerle SİL yazman gerekiyor.
+        </p>
+      )}
+      {silme === "secim" && (
+        <p className="mt-3 rounded-marka bg-mercan-soluk px-4 py-3 text-sm font-semibold text-mercan-koyu">
+          Silinmedi: hiç sipariş seçilmedi.
+        </p>
+      )}
+
+      {siparisler.length === 0 ? (
+        <p className="mt-3 text-sm text-metin-3">Hiç sipariş yok.</p>
+      ) : (
+        <form action={denemeSiparisleriniSil} className="mt-4 flex flex-col gap-4">
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <Link
+              href={hepsi ? "/yonetim/hazirlik#deneme-siparisleri" : "/yonetim/hazirlik?hepsi=1#deneme-siparisleri"}
+              className="font-bold text-mavi-koyu hover:underline"
+            >
+              {hepsi ? "Seçimleri kaldır" : "Hepsini seç"}
+            </Link>
+            <span className="text-metin-3">
+              <span className="rakam">{siparisler.length}</span> sipariş
+            </span>
+          </div>
+          <div className="overflow-x-auto rounded-[12px] border border-cizgi">
+            <table className="w-full min-w-[640px] text-sm">
+              <thead className="bg-yuzey-sicak text-left text-xs uppercase tracking-wide text-metin-3">
+                <tr>
+                  <th className="p-2.5">Sil</th>
+                  <th className="p-2.5">Sipariş</th>
+                  <th className="p-2.5">Müşteri</th>
+                  <th className="p-2.5 text-right">Tutar</th>
+                  <th className="p-2.5">Durum</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-cizgi-soluk">
+                {siparisler.map((s) => {
+                  const kartlaOdendi = s.odemeYontemi === "kart" && s.odemeDurumu === "odendi";
+                  return (
+                    <tr key={s.numara} className={kartlaOdendi ? "bg-mercan-soluk/40" : undefined}>
+                      <td className="p-2.5">
+                        <input
+                          type="checkbox"
+                          name="numara"
+                          value={s.numara}
+                          defaultChecked={hepsi}
+                          aria-label={`${s.numara} siparişini sil`}
+                          className="h-4 w-4 accent-[var(--mercan)]"
+                        />
+                      </td>
+                      <td className="p-2.5">
+                        <Link
+                          href={`/yonetim/siparisler/${s.numara}`}
+                          className="rakam font-bold hover:underline"
+                        >
+                          {s.numara}
+                        </Link>
+                        <span className="rakam block text-xs text-metin-3">
+                          {s.olusturuldu.toLocaleDateString("tr-TR", { timeZone: "Europe/Istanbul" })}
+                        </span>
+                      </td>
+                      <td className="p-2.5">
+                        {s.adSoyad}
+                        <span className="block text-xs text-metin-3">{s.eposta}</span>
+                      </td>
+                      <td className="rakam p-2.5 text-right">{fiyatYaz(s.toplamKurus)}</td>
+                      <td className="p-2.5 text-xs">
+                        {durumAdi(s.durum)} · {odemeAdi(s.odemeDurumu)}
+                        <span className="block text-metin-3">{yontemAdi(s.odemeYontemi)}</span>
+                        {kartlaOdendi && (
+                          <span className="block font-bold text-mercan-koyu">
+                            Kartla ödenmiş: gerçek ödemeyse önce iade et
+                          </span>
+                        )}
+                        {s.fatura && (
+                          <span className="rakam block text-metin-3">Fatura {s.fatura.numara}</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex flex-wrap items-end gap-3 rounded-[12px] border border-mercan bg-mercan-soluk p-4">
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="text-xs font-bold text-mercan-koyu">
+                Geri alınamaz. Onaylamak için SİL yaz
+              </span>
+              <input
+                name="onay"
+                autoComplete="off"
+                placeholder="SİL"
+                className="w-32 rounded-[10px] border-[1.5px] border-cizgi bg-yuzey px-3 py-2 text-sm outline-none focus:border-mercan"
+              />
+            </label>
+            <GonderDugmesi
+              bekleyen="Siliniyor…"
+              className="rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi"
+            >
+              Seçilen siparişleri sil
+            </GonderDugmesi>
+          </div>
+        </form>
+      )}
+    </section>
   );
 }
