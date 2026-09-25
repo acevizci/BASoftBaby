@@ -75,3 +75,10 @@ açık zemin + koyu yazı.
 Logo raster (piksel) bir görsel; vektör sürüm yok. Suluboya bir çizimin iyi
 vektörünü ancak bir illüstratör çizebilir, otomatik dönüştürme dokuyu bozar
 (bkz. [`04-kararlar.md`](04-kararlar.md) A-04).
+
+## Yatay logo (K-160)
+
+`public/marka/basoftbaby-yatay.webp` / `.png`: amblem + "BAsoftbaby" yazısı yan
+yana, orijinal görselden kesilmiş (yeniden çizim değil). Başlıkta kullanılıyor.
+Yatay alanın dar olduğu yerlerde (başlık, e-posta üstü) bu; kare alanlarda
+(favicon, profil resmi, paylaşım görseli) yuvarlak rozet.

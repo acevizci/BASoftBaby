@@ -6197,6 +6197,22 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
   yanlarda boşluk kalır, 3:1 (örneğin 2400×800) yükle; bunu telefon resmi
   olarak kullanabilirsin".
 
+### K-160 · Başlıkta yatay logo
+
+- Başlıkta yuvarlak rozet (76 px) vardı; "BAsoftbaby" yazısı rozetin içinde
+  küçük kalıyordu. Yatay sürüm: solda amblem (ay üstündeki ayıcık), sağda
+  yazı; `public/marka/basoftbaby-yatay.webp` (732×185, ayrıca `.png`).
+  Başlıkta telefonda 44, geniş ekranda 56 px yükseklik.
+- **Yeniden çizilmedi**, orijinal görselden (`assets/logo-kaynak.webp`)
+  kesildi. Yazı rozetin krem zeminine basılı olduğu için zemin renkle
+  ayıklanamıyordu (krem ile beyaz arasında değişiyor, harflerin beyaz kenarı
+  da aynı tonda). Yöntem: doygun renkli harf pikselleri tohum; rozet
+  çerçevesinin küçük noktaları alan boyutuyla atıldı; maske harflerin beyaz
+  kenarı kadar (6 px) genişletildi. Harflerin kendi beyaz kenarı ve gölgesi
+  duruyor, arkadaki rozet zemini ve slogan ("comfort for little ones") yok.
+- Yuvarlak rozet diğer yerlerde (giriş sayfaları, paylaşım görseli, favicon,
+  e-posta başlığı) aynen kullanılıyor.
+
 
 ---
 

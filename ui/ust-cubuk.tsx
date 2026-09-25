@@ -43,15 +43,17 @@ export default async function UstCubuk() {
       {/* Üst sıra: logo · arama · hesap ve sepet */}
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3">
         <Link href="/" className="flex-none" aria-label="BASoftBaby ana sayfa">
-          {/* Mağazanın kendi rozet logosu; yazısı küçükte de okunsun diye 64-76 px. */}
+          {/* Yatay logo (K-160): rozetin amblemi ve yazısı yan yana, orijinal
+              görselden kesildi; yeniden çizilmedi. Yuvarlak rozet yazıyı
+              küçültüyordu, yatayda "BAsoftbaby" aynı yükseklikte okunuyor. */}
           <Image
-            src="/marka/basoftbaby-logo-256.webp"
+            src="/marka/basoftbaby-yatay.webp"
             alt="BASoftBaby"
-            width={76}
-            height={76}
+            width={732}
+            height={185}
             priority
             unoptimized
-            className="h-16 w-16 sm:h-[76px] sm:w-[76px]"
+            className="h-11 w-auto sm:h-14"
           />
         </Link>
 
