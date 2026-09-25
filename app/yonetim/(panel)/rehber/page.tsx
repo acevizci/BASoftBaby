@@ -123,6 +123,20 @@ export default async function RehberYonetimi({ searchParams }: PageProps<"/yonet
               className={`${GIRDI} font-mono`}
             />
           </label>
+          <label className="flex flex-col gap-1.5">
+            <span className={ETIKET}>Ürün anahtar kelimeleri</span>
+            <input
+              name="urunArama"
+              maxLength={120}
+              defaultValue={duzenlenen?.urunArama}
+              placeholder="zıbın body tulum"
+              className={GIRDI}
+            />
+            <span className="text-xs text-metin-3">
+              Yukarıda 3&apos;ten az ürün varsa yazının altı bu kelimelerden birini içeren stoktaki
+              ürünlerle tamamlanır; yeni ürün ekledikçe kendiliğinden güncellenir.
+            </span>
+          </label>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" name="yayinda" defaultChecked={duzenlenen?.yayinda ?? false} />
             Yayında

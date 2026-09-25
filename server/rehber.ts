@@ -17,7 +17,12 @@ export type RehberOzeti = {
   guncellendi: string;
 };
 
-export type RehberYazisi = RehberOzeti & { metin: string; urunSluglari: string[] };
+export type RehberYazisi = RehberOzeti & {
+  metin: string;
+  urunSluglari: string[];
+  /** Ürün anahtar kelimeleri (K-157). */
+  urunArama: string;
+};
 
 export const yayindakiRehberler = paylasilanOnbellek(
   async function yayindakiRehberler(): Promise<RehberOzeti[]> {
@@ -48,6 +53,7 @@ export const rehberGetir = paylasilanOnbellekli(
       ozet: s.ozet,
       metin: s.metin,
       urunSluglari: s.urunSluglari,
+      urunArama: s.urunArama,
       yayinTarihi: (s.yayinTarihi ?? s.olusturuldu).toISOString(),
       guncellendi: s.guncellendi.toISOString(),
     };

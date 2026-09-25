@@ -1374,6 +1374,9 @@ model Article {
   metin       String    @default("")
   /// Yazının altında kart olarak gösterilen ürünler, sırasıyla.
   urunSluglari String[] @default([])
+  /// Elle seçilen ürün azsa yazının altı bu kelimelerle eşleşen stoktaki
+  /// ürünlerle tamamlanıyor (K-157): "zıbın body tulum".
+  urunArama    String   @default("")
   yayinda     Boolean   @default(false)
   /// İlk yayına alındığı an; listedeki sıra ve yapısal verideki tarih.
   yayinTarihi DateTime?

@@ -6153,6 +6153,22 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
   (ücretsiz hediye paketi, fiyatsız paket, not kartı, doğum tarihiyle beden
   önerisi, liste sahibine gönderim) koddaki davranışla aynı.
 
+### K-157 · Rehber yazılarına ürünler: anahtar kelimeyle
+
+- Canlıdaki ürün adresleri buradan görülemediği için yazılara sabit ürün
+  yazılmadı. Yazıya **ürün anahtar kelimeleri** alanı eklendi
+  (`Article.urunArama`, panelde düzenleniyor). Elle seçilen ürün 3'ten azsa
+  yazının altı, bu kelimelerden **herhangi birini** içeren stoktaki ürünlerle
+  (en çok 6) tamamlanıyor; başlık "Bu yazıyla ilgili ürünler".
+- Sıralama: önce yazılan kelime daha ağır ("zıbın body tulum"da zıbın en
+  önemli; "uyku tulumu" iki kelime tutsa da zıbın setinin önüne geçmiyor),
+  eşitse daha çok değerlendirilen. Tükenmiş, pasif ürün çıkmıyor. Yeni ürün
+  eklendikçe yazılar kendiliğinden güncelleniyor (10 dakikalık önbellek).
+- On bir başlangıç yazısına kelimeler göçle yazıldı; panelden değiştirilmiş
+  bir alan varsa dokunulmuyor.
+
+**Nerede:** [`../server/rehber-urunleri.ts`](../server/rehber-urunleri.ts)
+
 
 ---
 

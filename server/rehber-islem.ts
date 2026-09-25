@@ -39,6 +39,7 @@ export async function rehberKaydet(form: FormData): Promise<void> {
   const ozet = String(form.get("ozet") ?? "").trim().slice(0, 200);
   const metin = String(form.get("metin") ?? "").trim().slice(0, 30_000);
   const urunSluglari = sluglar(String(form.get("urunler") ?? ""));
+  const urunArama = String(form.get("urunArama") ?? "").trim().slice(0, 120);
   const yayinda = form.get("yayinda") === "on";
   if (!baslik) redirect(`${SAYFA}?hata=baslik${id ? `&duzenle=${id}` : ""}`);
 
@@ -52,6 +53,7 @@ export async function rehberKaydet(form: FormData): Promise<void> {
         ozet,
         metin,
         urunSluglari,
+        urunArama,
         yayinda,
         // İlk yayın anı bir kez yazılıyor; geri çekip tekrar yayınlamak tarihi değiştirmiyor.
         yayinTarihi: onceki.yayinTarihi ?? (yayinda ? new Date() : null),
@@ -67,7 +69,16 @@ export async function rehberKaydet(form: FormData): Promise<void> {
   let slug = taban;
   for (let n = 2; await db.article.findUnique({ where: { slug } }); n++) slug = `${taban}-${n}`;
   const yeni = await db.article.create({
-    data: { slug, baslik, ozet, metin, urunSluglari, yayinda, yayinTarihi: yayinda ? new Date() : null },
+    data: {
+      slug,
+      baslik,
+      ozet,
+      metin,
+      urunSluglari,
+      urunArama,
+      yayinda,
+      yayinTarihi: yayinda ? new Date() : null,
+    },
   });
   yenile(slug);
   if (yayinda) after(() => indexNowBildir([`/rehber/${slug}`, "/rehber"]));

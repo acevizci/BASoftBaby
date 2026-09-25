@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { rehberGetir, yayindakiRehberler } from "@/server/rehber";
-import { urunleriSec } from "@/server/katalog";
+import { rehberUrunleri } from "@/server/rehber-urunleri";
 import { tamAdres } from "@/server/site";
 import { sayfaYolu } from "@/server/yapisal-veri";
 import { duzMetin } from "@/ui/rehber-bicim";
@@ -45,8 +45,9 @@ export default async function RehberYazisi({ params }: PageProps<"/rehber/[slug]
   const { slug } = await params;
   const y = await rehberGetir(slug);
   if (!y) notFound();
-  // Yayından kalkmış ya da silinmiş ürün sessizce atlanıyor.
-  const urunler = await urunleriSec({ sluglar: y.urunSluglari });
+  // Yayından kalkmış ya da silinmiş ürün sessizce atlanıyor; elle seçilen
+  // azsa anahtar kelimelerle tamamlanıyor (K-157).
+  const { urunler, elle } = await rehberUrunleri(y.urunSluglari, y.urunArama);
 
   return (
     <article className="mx-auto max-w-3xl px-4 py-10">
@@ -94,7 +95,7 @@ export default async function RehberYazisi({ params }: PageProps<"/rehber/[slug]
 
       {urunler.length > 0 && (
         <section className="mt-12 border-t border-cizgi-soluk pt-8">
-          <h2 className="text-xl">Yazıda geçen ürünler</h2>
+          <h2 className="text-xl">{elle ? "Yazıda geçen ürünler" : "Bu yazıyla ilgili ürünler"}</h2>
           <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
             {urunler.map((u) => (
               <UrunKarti key={u.slug} urun={u} />
