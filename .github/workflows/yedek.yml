@@ -1,0 +1,81 @@
+name: Veritabanı yedeği
+
+# Her gece canlı veritabanının şifreli yedeği (K-143). Yedek boş bir
+# veritabanına geri yüklenip denetleniyor, sonra 30 gün saklanıyor
+# (Actions → bu iş → çalıştırma → Artifacts).
+#
+# Gereken gizli değişkenler (Settings → Secrets and variables → Actions):
+#   YEDEK_DATABASE_URL  Neon'un havuzsuz (doğrudan) bağlantı adresi
+#   YEDEK_PAROLASI      yedeği açacak parola; kaybolursa yedek açılamaz
+#
+# İkisi yoksa iş uyarı verip çıkıyor, hata vermiyor.
+
+on:
+  schedule:
+    # 01:00 UTC, Türkiye'de 04:00: sipariş en az.
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  yedek:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      deneme:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: geri_yukleme
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Gizli değişkenler var mı
+        id: hazir
+        env:
+          KAYNAK: ${{ secrets.YEDEK_DATABASE_URL }}
+          PAROLA: ${{ secrets.YEDEK_PAROLASI }}
+        run: |
+          if [ -z "$KAYNAK" ] || [ -z "$PAROLA" ]; then
+            echo "::warning::YEDEK_DATABASE_URL ve YEDEK_PAROLASI tanımlı değil; yedek alınmadı."
+            echo "var=hayir" >> "$GITHUB_OUTPUT"
+          else
+            echo "var=evet" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.hazir.outputs.var == 'evet'
+
+      # Neon PostgreSQL 17 çalıştırıyor; pg_dump sunucudan eski olamaz.
+      - name: PostgreSQL 17 istemcisi
+        if: steps.hazir.outputs.var == 'evet'
+        run: |
+          sudo apt-get install -y -q postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -q postgresql-client-17
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+
+      - name: Yedekle, dene, şifrele
+        if: steps.hazir.outputs.var == 'evet'
+        env:
+          YEDEK_KAYNAK: ${{ secrets.YEDEK_DATABASE_URL }}
+          YEDEK_PAROLASI: ${{ secrets.YEDEK_PAROLASI }}
+          YEDEK_HEDEF: postgresql://postgres:postgres@127.0.0.1:5432/geri_yukleme
+          YEDEK_KLASOR: yedek
+        run: ./db/yedek.sh
+
+      - uses: actions/upload-artifact@v4
+        if: steps.hazir.outputs.var == 'evet'
+        with:
+          name: veritabani-yedegi
+          path: yedek/*.gpg
+          retention-days: 30
+          if-no-files-found: error

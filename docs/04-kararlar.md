@@ -5872,6 +5872,38 @@ Instagram gönderilerinde ürün etiketi ve "Mağaza" sekmesi için Meta'nın bi
 [`../server/urun-beslemesi.ts`](../server/urun-beslemesi.ts)
 
 
+### K-143 · Veritabanı yedeği
+
+Siparişler, müşteriler ve stok yalnızca Neon'da duruyordu. Neon'un ücretsiz
+planındaki geri dönüş penceresi kısa; birkaç gün sonra fark edilen bir hata
+(yanlışlıkla silinen ürün, bozuk toplu yükleme) geri alınamıyordu.
+
+- **Her gece 04:00'te** (GitHub Actions, `.github/workflows/yedek.yml`) tam
+  kopya: `pg_dump`, sıkıştırılmış.
+- **Her yedek denetleniyor:** boş bir veritabanına geri yükleniyor, sipariş,
+  ürün ve müşteri sayıları kaynakla karşılaştırılıyor. Tutmazsa iş hata veriyor
+  ve GitHub e-posta atıyor.
+- **Şifreli** (AES-256, parolayla); şifresiz hali hiç saklanmıyor. İçinde
+  adresler ve siparişler var.
+- **30 gün** saklanıyor: Actions → "Veritabanı yedeği" → çalıştırma → Artifacts.
+- Gereken iki gizli değişken (Settings → Secrets and variables → Actions):
+  `YEDEK_DATABASE_URL` (Neon'un havuzsuz adresi, sunucu adında `-pooler`
+  geçmeyen) ve `YEDEK_PAROLASI`. **Parola kaybolursa yedekler açılamaz**;
+  parolayı ayrı bir yerde sakla.
+
+**Geri yükleme:**
+1. Yedeği indir, zip'ten çıkar.
+2. `gpg -d basoftbaby-TARİH.dump.gpg > yedek.dump` (parolayı soruyor).
+3. Önce ayrı bir Neon dalına (branch) yükle, bak, sonra karar ver:
+   `pg_restore --no-owner --no-privileges --clean --if-exists -d "ADRES" yedek.dump`
+
+Betik yerelde denendi: yedek, geri yükleme, sayım, şifreleme ve şifre çözme;
+yanlış parola reddediliyor.
+
+**Nerede:** [`../db/yedek.sh`](../db/yedek.sh),
+[`../.github/workflows/yedek.yml`](../.github/workflows/yedek.yml)
+
+
 ---
 
 ## Açık sorular
