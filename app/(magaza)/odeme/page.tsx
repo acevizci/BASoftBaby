@@ -11,7 +11,8 @@ import { fiyatYaz } from "@/ui/katalog-bicim";
 import GonderDugmesi from "@/ui/gonder-dugmesi";
 import OlcumOlayi from "@/ui/olcum-olayi";
 import { sepetteCek } from "@/server/hediye-ceki";
-import { sepettenListeler } from "@/server/dogum-listesi";
+import { sepetListeAdresi, sepettenListeler } from "@/server/dogum-listesi";
+import ListeTeslimat from "@/ui/liste-teslimat";
 import { hediyeCekiKaldir, hediyeCekiUygula } from "@/server/hediye-ceki-islem";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +37,8 @@ const HATALAR: Record<string, string> = {
   "odeme-yok":
     "Şu anda ödeme alınamıyor, bu yüzden siparişin oluşturulmadı ve sepetin duruyor. Lütfen bizimle iletişime geç.",
   cek: "Hediye çekin bu arada kullanılamaz hale geldi ya da bakiyesi değişti; siparişin oluşturulmadı. Çeki yeniden yazıp tekrar dene.",
+  "liste-adres":
+    "Liste sahibinin adresine gönderim bu sepette kullanılamıyor (liste kapatılmış, adres kaldırılmış ya da sepette listede olmayan ürün var). Teslimat adresini yazıp tekrar dene.",
   "odeme-baslatilamadi":
     "Ödeme sayfası açılamadı ve siparişin oluşturulmadı; kartından bir tahsilat yapılmadı. Tekrar deneyebilir ya da havale/EFT ile ödeyebilirsin.",
 };
@@ -70,7 +73,7 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
 
   const cek = await sepetteCek(sepet.toplamKurus);
   // Sepette doğum listesinden ürün varsa liste sahiplerinin adları (K-146).
-  const listeler = await sepettenListeler();
+  const [listeler, listeAdresi] = await Promise.all([sepettenListeler(), sepetListeAdresi()]);
   const cekKurus = cek && "kullanilanKurus" in cek ? cek.kullanilanKurus : 0;
   const odenecekKurus = sepet.toplamKurus - cekKurus;
   const cekleOdeniyor = cekKurus > 0 && odenecekKurus === 0;
@@ -248,6 +251,9 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
           <section className="rounded-marka border border-cizgi bg-yuzey p-5">
             <h2 className="text-lg">Teslimat adresi</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              {/* Doğum listesi sahibinin adresi (K-149): yalnızca sepetin tamamı
+                  adres seçmiş tek bir açık listedense. */}
+              {listeAdresi && <ListeTeslimat sahipAdi={listeAdresi} />}
               <label className="flex flex-col gap-1.5 sm:col-span-2">
                 <span className={ETIKET}>Ad soyad</span>
                 <input
@@ -286,7 +292,7 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
                 />
               </label>
 
-              <label className="flex flex-col gap-1.5 sm:col-span-2">
+              <label data-adres-alani className="flex flex-col gap-1.5 sm:col-span-2">
                 <span className={ETIKET}>Adres</span>
                 <textarea
                   name="adres"
@@ -299,7 +305,7 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
                 />
               </label>
 
-              <label className="flex flex-col gap-1.5">
+              <label data-adres-alani className="flex flex-col gap-1.5">
                 <span className={ETIKET}>İlçe</span>
                 <input
                   name="ilce"
@@ -310,7 +316,7 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
                 />
               </label>
 
-              <label className="flex flex-col gap-1.5">
+              <label data-adres-alani className="flex flex-col gap-1.5">
                 <span className={ETIKET}>İl</span>
                 <input
                   name="il"
@@ -321,7 +327,7 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
                 />
               </label>
 
-              <label className="flex flex-col gap-1.5">
+              <label data-adres-alani className="flex flex-col gap-1.5">
                 <span className={ETIKET}>Posta kodu</span>
                 <input
                   name="postaKodu"

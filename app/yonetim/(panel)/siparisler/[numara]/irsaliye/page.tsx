@@ -112,12 +112,12 @@ export default async function IrsaliyeSayfasi({
 
         <div className="mt-4">
           <p className="text-xs font-bold uppercase">Alıcı</p>
-          <p className="font-bold">{siparis.adSoyad}</p>
+          <p className="font-bold">{siparis.teslimAlan || siparis.adSoyad}</p>
           <p className="text-sm">{siparis.adres}</p>
           <p className="text-sm">
             {siparis.ilce} / {siparis.il} {siparis.postaKodu}
           </p>
-          <p className="rakam text-sm">{siparis.telefon}</p>
+          <p className="rakam text-sm">{siparis.teslimTelefon || siparis.telefon}</p>
         </div>
 
         {/* Fiyat sütunu yok: irsaliye malın belgesi, satışın değil. */}

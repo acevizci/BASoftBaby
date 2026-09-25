@@ -1,7 +1,7 @@
 import { atlamaSebebi, kimlik, sepetKur, temizle, testDb, urunKur } from "./veritabani";
 import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { siparisOlustur } from "@/server/siparis";
+import { aliciyaGoster, siparisGetirPanel, siparisOlustur } from "@/server/siparis";
 import { siparisiIptalEtVeStoguIadeEt } from "@/server/odeme-akis";
 import {
   gelenHediyeler,
@@ -69,6 +69,49 @@ async function listedenSiparis(variantId: string, kalemId: string, adet: number)
   );
   assert.ok(s.tamam);
   return s.numara;
+}
+
+/** Liste sahibinin adresine gönderim denemesi (K-149); adres alanları boş. */
+async function adreseSiparis(variantId: string, kalemId: string, ekVaryant?: string) {
+  const cartId = await sepetKur(variantId, 1);
+  await testDb().cartItem.updateMany({ where: { cartId }, data: { giftListItemId: kalemId } });
+  if (ekVaryant) {
+    await testDb().cartItem.create({
+      data: { id: kimlik("sat"), cartId, variantId: ekVaryant, adet: 1 },
+    });
+  }
+  return siparisOlustur(
+    {
+      adSoyad: "Hediye Eden",
+      eposta: `${ON_EK}${kimlik("e").toLowerCase()}@deneme.test`,
+      telefon: "05001112233",
+      adres: "",
+      ilce: "",
+      il: "",
+      postaKodu: "",
+      not: "",
+      hediyePaketi: false,
+      hediyeNotu: "",
+      sozlesmeOnayi: new Date(),
+      listeAdresine: true,
+    },
+    AYAR,
+  );
+}
+
+async function adresSec(customerId: string, kod: string) {
+  const adres = await testDb().address.create({
+    data: {
+      customerId,
+      adSoyad: "Ayşe Sahip",
+      telefon: "05009998877",
+      adres: "Gizli Mahalle Saklı Sokak No 7",
+      ilce: "Çankaya",
+      il: "Ankara",
+      postaKodu: "06000",
+    },
+  });
+  await testDb().giftList.update({ where: { kod }, data: { adresId: adres.id } });
 }
 
 const alinan = async (id: string) =>
@@ -144,5 +187,44 @@ describe("doğum listesi (veritabanı)", { skip: atlamaSebebi }, () => {
     assert.equal(gelen.length, 1);
     assert.equal(gelen[0].gonderen, "Ayşe teyzesi");
     assert.ok(!JSON.stringify(gelen).includes("@deneme.test"));
+  });
+
+  it("liste sahibinin adresine gönderim: adres sahibinki, hediye edene gizli (K-149)", async () => {
+    const { variantId, kalem, kod, customerId } = await listeKur(2);
+
+    // Sahip adres seçmemişken seçenek yok.
+    const once = await adreseSiparis(variantId, kalem.id);
+    assert.ok(!once.tamam && once.sebep === "liste-adres");
+
+    await adresSec(customerId, kod);
+    const s = await adreseSiparis(variantId, kalem.id);
+    assert.ok(s.tamam);
+    const kayit = await testDb().order.findUniqueOrThrow({ where: { numara: s.numara } });
+    assert.equal(kayit.listeAdresi, true);
+    assert.equal(kayit.adres, "Gizli Mahalle Saklı Sokak No 7");
+    assert.equal(kayit.il, "Ankara");
+    assert.equal(kayit.teslimAlan, "Ayşe Sahip");
+    assert.equal(kayit.teslimTelefon, "05009998877");
+    // Sipariş veren yine hediye eden: e-postalar ona, onun adıyla.
+    assert.equal(kayit.adSoyad, "Hediye Eden");
+
+    const gorunen = aliciyaGoster((await siparisGetirPanel(s.numara))!);
+    assert.equal(gorunen.adres, "");
+    assert.equal(gorunen.il, "");
+    assert.equal(gorunen.teslimAlan, "");
+  });
+
+  it("sepette listede olmayan ürün ya da kapalı liste varsa adrese gönderim yok (K-149)", async () => {
+    const { variantId, kalem, kod, customerId } = await listeKur(2);
+    await adresSec(customerId, kod);
+    const baska = await urunKur(3);
+    const karisik = await adreseSiparis(variantId, kalem.id, baska.variantId);
+    assert.ok(!karisik.tamam && karisik.sebep === "liste-adres");
+
+    await testDb().giftList.update({ where: { kod }, data: { acik: false } });
+    const kapali = await adreseSiparis(variantId, kalem.id);
+    assert.ok(!kapali.tamam && kapali.sebep === "liste-adres");
+    // Stok ve alınan adet değişmedi.
+    assert.equal(await alinan(kalem.id), 0);
   });
 });

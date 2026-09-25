@@ -48,11 +48,14 @@ function eksikMi(g: {
   adres: string;
   ilce: string;
   il: string;
+  listeAdresine: boolean;
 }): boolean {
   if (g.adSoyad.length < 3) return true;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(g.eposta)) return true;
   // Türkiye cep telefonu: rakamları say, 10 veya 11 hane bekle
   if (g.telefon.replace(/\D/g, "").length < 10) return true;
+  // Liste sahibinin adresine gidiyorsa adres sunucuda dolduruluyor (K-149).
+  if (g.listeAdresine) return false;
   if (g.adres.length < 10) return true;
   if (g.ilce.length < 2 || g.il.length < 2) return true;
   return false;
@@ -82,6 +85,7 @@ export async function siparisiTamamla(veri: FormData): Promise<void> {
     hediyeNotu: temiz(veri, "hediyeNotu").slice(0, 200),
     listeGonderen: temiz(veri, "listeGonderen").slice(0, 60),
     listeNotu: temiz(veri, "listeNotu").slice(0, 300),
+    listeAdresine: temiz(veri, "teslimat") === "liste",
   };
 
   if (eksikMi(girdi)) redirect("/odeme?hata=eksik");
@@ -162,13 +166,14 @@ export async function siparisiTamamla(veri: FormData): Promise<void> {
     (await cookies()).delete(HEDIYE_CEKI_CEREZI);
     redirect("/odeme?hata=cek");
   }
+  if (!sonuc.tamam && sonuc.sebep === "liste-adres") redirect("/odeme?hata=liste-adres");
   if (!sonuc.tamam) {
     redirect(sonuc.hata.includes("boş") ? "/odeme?hata=bos" : "/odeme?hata=stok");
   }
 
   // Adres defterine kaydetme siparişten sonra: sipariş tutmadıysa deftere de
   // yazılmasın. Yazılamaması siparişi bozmamalı, o yüzden sessizce geçiliyor.
-  if (customerId && veri.get("adresiKaydet") !== null) {
+  if (customerId && !girdi.listeAdresine && veri.get("adresiKaydet") !== null) {
     try {
       const adetVar = await db.address.count({ where: { customerId } });
       await db.address.create({

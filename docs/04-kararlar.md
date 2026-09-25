@@ -6005,6 +6005,31 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
 
 **Nerede:** [`../server/birlikte-alinanlar.ts`](../server/birlikte-alinanlar.ts)
 
+### K-149 · Doğum listesi: "liste sahibinin adresine gönder"
+
+- Liste sahibi Doğum listem'de kayıtlı adreslerinden birini seçebiliyor
+  (`GiftList.adresId`; adres silinirse seçim boşalıyor).
+- Seçtiyse, sepetin **tamamı** bu listedense ve liste açıksa ödemede
+  "X adresine gönder" seçeneği çıkıyor. Seçilince adres alanları gizlenip
+  devre dışı kalıyor; hediye eden yalnızca kendi adını, e-postasını ve
+  telefonunu yazıyor. Karışık sepette (listede olmayan ürün, iki liste)
+  seçenek yok: bir siparişin bir kısmı başka adrese gidemez.
+- Adres **sunucuda** sahibin kayıtlı adresinden yazılıyor; formdan gelen
+  kullanılmıyor. Arada liste kapanır ya da adres kaldırılırsa sipariş açılmıyor,
+  müşteri adresini yazıp yeniden deniyor.
+- Siparişte `adSoyad`/`eposta`/`telefon` **sipariş verenin** kalıyor (e-postalar,
+  yorum adı, ödeme kişisi değişmesin); adres alanları sahibin, teslim alanın
+  adı ve telefonu `teslimAlan`/`teslimTelefon`'da, `listeAdresi` işaretli.
+  Kargo etiketi ve irsaliye teslim alanı kullanıyor.
+- **Gizlilik:** onay sayfası, sipariş takibi, Siparişlerim (`aliciyaGoster`) ve
+  hediye edenin kişisel veri dökümü bu siparişin adresini göstermiyor ("Adres
+  gizli"). Panel tam adresi görüyor.
+
+**Nerede:** `listeAdresiBul`, `sepetListeAdresi` —
+[`../server/dogum-listesi.ts`](../server/dogum-listesi.ts);
+[`../ui/liste-teslimat.tsx`](../ui/liste-teslimat.tsx); `aliciyaGoster` —
+[`../server/siparis.ts`](../server/siparis.ts)
+
 
 ---
 

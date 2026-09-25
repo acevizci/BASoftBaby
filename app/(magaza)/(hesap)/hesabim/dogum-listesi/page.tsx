@@ -5,6 +5,7 @@ import { girisYapan } from "@/server/uyelik";
 import { gelenHediyeler, musterininListesi } from "@/server/dogum-listesi";
 import { kalemAdedi, kalemSil, listeKaydet } from "@/server/dogum-listesi-islem";
 import { tamAdres } from "@/server/site";
+import { db } from "@/server/veritabani";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import GonderDugmesi from "@/ui/gonder-dugmesi";
 import KopyalaDugmesi from "@/ui/kopyala-dugmesi";
@@ -24,9 +25,14 @@ export default async function DogumListesiSayfasi({
   const musteri = await girisYapan();
   if (!musteri) redirect("/giris?hata=giris&nereye=%2Fhesabim%2Fdogum-listesi");
   const p = await searchParams;
-  const [liste, hediyeler] = await Promise.all([
+  const [liste, hediyeler, adresler] = await Promise.all([
     musterininListesi(musteri.id),
     gelenHediyeler(musteri.id),
+    db.address.findMany({
+      where: { customerId: musteri.id },
+      orderBy: [{ varsayilan: "desc" }, { olusturuldu: "asc" }],
+      select: { id: true, baslik: true, ilce: true, il: true },
+    }),
   ]);
   const baglanti = liste ? tamAdres(`/liste/${liste.kod}`) : "";
   const tarih = liste?.tarih ? liste.tarih.slice(0, 10) : "";
@@ -101,6 +107,32 @@ export default async function DogumListesiSayfasi({
             className="h-4 w-4 accent-[var(--mercan)]"
           />
           Liste açık, alışveriş yapılabilir
+        </label>
+        {/* K-149: hediye eden adresi görmeden bu adrese gönderebiliyor. */}
+        <label className="flex flex-col gap-1.5 sm:col-span-2">
+          <span className={ETIKET}>Hediyeler adresime gönderilebilsin</span>
+          {adresler.length > 0 ? (
+            <select name="adresId" defaultValue={liste?.adresId ?? ""} className={GIRDI}>
+              <option value="">Hayır, hediye eden kendi adresine alsın</option>
+              {adresler.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.baslik} · {a.ilce} / {a.il}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="text-sm text-metin-2">
+              Önce{" "}
+              <Link href="/hesabim/adresler" className="font-bold text-mavi-koyu hover:underline">
+                Adreslerim
+              </Link>
+              &apos;e bir adres ekle.
+            </span>
+          )}
+          <span className="text-xs text-metin-3">
+            Seçersen hediye eden ödemede &ldquo;liste sahibinin adresine gönder&rdquo;i
+            seçebilir. Adresin ona hiçbir yerde gösterilmez; yalnızca kargoya yazılır.
+          </span>
         </label>
         <label className="flex flex-col gap-1.5 sm:col-span-2">
           <span className={ETIKET}>Yakınlarına not (isteğe bağlı)</span>

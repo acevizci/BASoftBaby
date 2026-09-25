@@ -41,7 +41,7 @@ const SORULAR = [
   },
   {
     s: "Hediyeler kime gönderiliyor?",
-    c: "Hediyeyi alan kişi siparişte kendi girdiği adrese gönderir. Hediye paketi ve not ekleyebilir; kendisi getirebilir ya da sana ulaştırır.",
+    c: "Listende bir adresini seçersen hediye eden ödemede “liste sahibinin adresine gönder”i seçebilir; kargo doğrudan sana gelir, adresin ona hiçbir yerde görünmez. Seçmezsen kendi adresine alır, getirir ya da sana ulaştırır. Hediye paketi ve not da ekleyebilir.",
   },
   {
     s: "Tükenen bir ürünü listeye ekleyebilir miyim?",

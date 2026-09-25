@@ -60,7 +60,7 @@ export async function kisiselVeriyiTopla(customerId: string): Promise<KisiselVer
         select: {
           numara: true, durum: true, odemeYontemi: true, odemeDurumu: true,
           adSoyad: true, eposta: true, telefon: true,
-          adres: true, ilce: true, il: true, postaKodu: true, not: true,
+          adres: true, ilce: true, il: true, postaKodu: true, not: true, listeAdresi: true,
           araToplamKurus: true, indirimKurus: true, kargoKurus: true, toplamKurus: true,
           kargoTakipNo: true, teslimTarihi: true, olusturuldu: true,
           satirlar: {
@@ -107,7 +107,14 @@ export async function kisiselVeriyiTopla(customerId: string): Promise<KisiselVer
     },
     hesap,
     adresler,
-    siparisler: siparisler.map(({ talepler, ...s }) => ({ ...s, talepler })),
+    // Liste sahibinin adresine gidenlerde adres başkasının kişisel verisi (K-149).
+    siparisler: siparisler.map(({ talepler, listeAdresi, ...s }) => ({
+      ...s,
+      ...(listeAdresi
+        ? { adres: "Doğum listesi sahibinin adresi (gizli)", ilce: "", il: "", postaKodu: "" }
+        : {}),
+      talepler,
+    })),
     talepler: siparisler.flatMap((s) => s.talepler.map((t) => ({ ...t, siparis: s.numara }))),
     degerlendirmeler,
     favoriler: favoriler.map((f) => ({ urun: f.product.ad, eklendi: f.olusturuldu })),

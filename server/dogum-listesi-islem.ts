@@ -79,11 +79,19 @@ export async function listeKaydet(form: FormData): Promise<void> {
     ? new Date(`${tarihHam}T12:00:00+03:00`)
     : null;
   const acik = form.get("acik") !== null;
+  // Hediyelerin gönderileceği adres (K-149): yalnızca kendi kayıtlı adresi.
+  const adresHam = metin(form, "adresId", 40);
+  const adres = adresHam
+    ? await db.address.findFirst({
+        where: { id: adresHam, customerId: musteri.id },
+        select: { id: true },
+      })
+    : null;
 
   const listId = await listeAlVeyaAc(musteri.id, musteri.adSoyad);
   await db.giftList.update({
     where: { id: listId },
-    data: { baslik, sahipAdi, mesaj, tarih, acik },
+    data: { baslik, sahipAdi, mesaj, tarih, acik, adresId: adres?.id ?? null },
   });
   revalidatePath(SAYFA);
   redirect(`${SAYFA}?kayit=1`);

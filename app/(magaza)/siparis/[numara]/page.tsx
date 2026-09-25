@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 import SiparisKarti from "@/ui/siparis-karti";
 import { ayarlariGetir } from "@/server/sepet";
 import { kunyeGetir } from "@/server/yasal";
-import { SON_SIPARIS_CEREZI, siparisGetirPanel } from "@/server/siparis";
+import { SON_SIPARIS_CEREZI, aliciyaGoster, siparisGetirPanel } from "@/server/siparis";
 import OlcumOlayi from "@/ui/olcum-olayi";
 
 export const dynamic = "force-dynamic";
@@ -28,8 +28,9 @@ export default async function SiparisOnayi({
 
   if (kavanoz.get(SON_SIPARIS_CEREZI)?.value !== numara) notFound();
 
+  // Liste sahibinin adresine gidiyorsa adres hediye edene gösterilmiyor (K-149).
   const [siparis, ayar, kunye] = await Promise.all([
-    siparisGetirPanel(numara),
+    siparisGetirPanel(numara).then((s) => s && aliciyaGoster(s)),
     ayarlariGetir(),
     kunyeGetir(),
   ]);

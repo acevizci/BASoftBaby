@@ -109,12 +109,29 @@ export default function SiparisKarti({
       <div className="mt-4 grid gap-4 border-t border-cizgi pt-4 text-sm sm:grid-cols-2">
         <div>
           <p className="text-xs font-bold text-metin-2">Teslimat</p>
-          <p className="mt-1 font-semibold">{siparis.adSoyad}</p>
-          <p className="text-metin-2">{siparis.adres}</p>
-          <p className="text-metin-2">
-            {siparis.ilce} / {siparis.il}
-            {siparis.postaKodu ? <span className="rakam"> · {siparis.postaKodu}</span> : null}
-          </p>
+          {/* K-149: hediye edenin gördüğü hâlde adres boşaltılmış geliyor. */}
+          {siparis.listeAdresi && !siparis.adres ? (
+            <p className="mt-1 text-metin-2">
+              Doğum listesi sahibinin adresine gönderiliyor. Adres gizli.
+            </p>
+          ) : (
+            <>
+              {siparis.listeAdresi && (
+                <p className="mt-1 text-xs font-bold text-nane-koyu">
+                  Doğum listesi sahibinin adresi · sipariş veren {siparis.adSoyad}
+                </p>
+              )}
+              <p className="mt-1 font-semibold">{siparis.teslimAlan || siparis.adSoyad}</p>
+              <p className="text-metin-2">{siparis.adres}</p>
+              <p className="text-metin-2">
+                {siparis.ilce} / {siparis.il}
+                {siparis.postaKodu ? <span className="rakam"> · {siparis.postaKodu}</span> : null}
+              </p>
+              {siparis.teslimTelefon && (
+                <p className="rakam text-metin-2">{siparis.teslimTelefon}</p>
+              )}
+            </>
+          )}
         </div>
         <div>
           <p className="text-xs font-bold text-metin-2">İletişim</p>

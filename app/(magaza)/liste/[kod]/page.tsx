@@ -71,7 +71,9 @@ export default async function PaylasilanListe({ params, searchParams }: PageProp
         <>
           <p className="mt-6 text-sm text-metin-2">
             {kalan > 0
-              ? "Seçtiğin hediye sepetine eklenir; siparişi kendi adresine ya da hediye paketiyle istediğin adrese gönderebilirsin. Alındığında listede işaretlenir."
+              ? liste.adresId
+                ? `Seçtiğin hediye sepetine eklenir. Ödemede "${liste.sahipAdi} adresine gönder"i seçersen kargo doğrudan ona gider; adresi bilmen gerekmez. Alındığında listede işaretlenir.`
+                : "Seçtiğin hediye sepetine eklenir; siparişi kendi adresine ya da hediye paketiyle istediğin adrese gönderebilirsin. Alındığında listede işaretlenir."
               : "Listedeki her şey alınmış. Teşekkürler!"}
           </p>
           <ul className="mt-4 grid gap-4 sm:grid-cols-2">

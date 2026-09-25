@@ -410,6 +410,12 @@ model Order {
   listeGonderen   String    @default("")
   listeNotu       String    @default("")
   listeBildirildi DateTime?
+  /// Liste sahibinin adresine gönderildi (K-149): adres alanları sahibin
+  /// adresi, hediye edene gösterilmiyor. `adSoyad`/`telefon` sipariş verenin;
+  /// kargoyu teslim alanınki bu iki alanda.
+  listeAdresi     Boolean   @default(false)
+  teslimAlan      String    @default("")
+  teslimTelefon   String    @default("")
 
   /// Müşterinin ön bilgilendirme formu ile mesafeli satış sözleşmesini
   /// onayladığı an. Onay kutusu işaretlenmeden sipariş oluşmuyor; kaydı
@@ -646,6 +652,9 @@ model Address {
 
   olusturuldu DateTime @default(now())
   guncellendi DateTime @updatedAt
+
+  /// Hediyelerin gönderileceği adres olarak seçildiği doğum listesi (K-149).
+  dogumListeleri GiftList[]
 
   @@index([customerId, varsayilan])
 }
@@ -1430,6 +1439,10 @@ model GiftList {
   mesaj       String         @default("")
   /// Kapalı listenin sayfası "kapatıldı" diyor, alışveriş yapılamıyor.
   acik        Boolean        @default(true)
+  /// Hediye eden "liste sahibinin adresine gönder" diyebilsin diye sahibin
+  /// seçtiği kayıtlı adres (K-149). Adres hediye edene hiç gösterilmiyor.
+  adresId     String?
+  adres       Address?       @relation(fields: [adresId], references: [id], onDelete: SetNull)
   olusturuldu DateTime       @default(now())
   guncellendi DateTime       @updatedAt
   kalemler    GiftListItem[]

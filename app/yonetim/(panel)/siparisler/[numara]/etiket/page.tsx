@@ -59,12 +59,13 @@ export default async function EtiketSayfasi({
       <KargoEtiketi
         siparis={{
           numara: siparis.numara,
-          adSoyad: siparis.adSoyad,
+          // Liste sahibinin adresine gidiyorsa teslim alan o (K-149).
+          adSoyad: siparis.teslimAlan || siparis.adSoyad,
           adres: siparis.adres,
           ilce: siparis.ilce,
           il: siparis.il,
           postaKodu: siparis.postaKodu,
-          telefon: siparis.telefon,
+          telefon: siparis.teslimTelefon || siparis.telefon,
           odemeDurumu: siparis.odemeDurumu,
           odemeYontemi: siparis.odemeYontemi,
           parca: siparis.satirlar.reduce((t, s) => t + s.adet, 0),

@@ -22,7 +22,7 @@ import { takipAdresi, tasiyiciAdi } from "@/server/kargo";
 import { suresiDolanlariKapat } from "@/server/odeme-suresi";
 import { cekHarca, hediyeCekiOku } from "@/server/hediye-ceki";
 import { tahsilat } from "@/server/hediye-ceki-bicim";
-import { alinanlariIsle } from "@/server/dogum-listesi";
+import { alinanlariIsle, listeAdresiBul } from "@/server/dogum-listesi";
 
 /**
  * Onay sayfasını açan çerezin adı. Burada duruyor çünkü "use server" işaretli
@@ -51,6 +51,11 @@ export type SiparisGirdisi = {
   /** Doğum listesi hediyesi (K-146): liste sahibine görünecek ad ve not. */
   listeGonderen?: string;
   listeNotu?: string;
+  /**
+   * Liste sahibinin adresine gönder (K-149). Adres alanları boş gelebilir;
+   * sunucu sahibin seçtiği kayıtlı adresi yazıyor, formdan geleni değil.
+   */
+  listeAdresine?: boolean;
 };
 
 export type SiparisSonucu =
@@ -62,7 +67,7 @@ export type SiparisSonucu =
       hediyeCekiKurus: number;
       tahsilatKurus: number;
     }
-  | { tamam: false; hata: string; sebep?: "cek" };
+  | { tamam: false; hata: string; sebep?: "cek" | "liste-adres" };
 
 /** BA-2026-0001 */
 function numaraYaz(sayac: number, tarih: Date): string {
@@ -143,6 +148,29 @@ export async function siparisOlustur(
     };
   });
 
+  // Liste sahibinin adresi (K-149): sepetteki bütün ürünler aynı, açık ve
+  // adres seçmiş listeden olmalı. Karışık sepetin bir kısmı başka adrese
+  // gidemez; öyleyse müşteri kendi adresini yazıyor.
+  let teslimat = {
+    adSoyad: "",
+    telefon: "",
+    adres: girdi.adres,
+    ilce: girdi.ilce,
+    il: girdi.il,
+    postaKodu: girdi.postaKodu,
+  };
+  if (girdi.listeAdresine) {
+    const listeAdresi = await listeAdresiBul(gecerli.map((s) => s.giftListItemId));
+    if (!listeAdresi) {
+      return {
+        tamam: false,
+        sebep: "liste-adres",
+        hata: "Liste sahibinin adresine gönderim bu sepette kullanılamıyor.",
+      };
+    }
+    teslimat = listeAdresi;
+  }
+
   const araToplamKurus = kalemler.reduce((t, k) => t + k.fiyatKurus * k.adet, 0);
 
   // İndirim sepetteki hesabın aynısından geçer; müşterinin gördüğü tutarla
@@ -211,10 +239,13 @@ export async function siparisOlustur(
           adSoyad: girdi.adSoyad,
           eposta: girdi.eposta,
           telefon: girdi.telefon,
-          adres: girdi.adres,
-          ilce: girdi.ilce,
-          il: girdi.il,
-          postaKodu: girdi.postaKodu,
+          adres: teslimat.adres,
+          ilce: teslimat.ilce,
+          il: teslimat.il,
+          postaKodu: teslimat.postaKodu,
+          ...(girdi.listeAdresine
+            ? { listeAdresi: true, teslimAlan: teslimat.adSoyad, teslimTelefon: teslimat.telefon }
+            : {}),
           not: girdi.not,
           hediyePaketi: girdi.hediyePaketi,
           hediyeNotu: girdi.hediyePaketi ? girdi.hediyeNotu : "",
@@ -305,6 +336,10 @@ export type Siparis = {
   ilce: string;
   il: string;
   postaKodu: string;
+  /** Liste sahibinin adresine gidiyor (K-149); teslim alanın adı ve telefonu. */
+  listeAdresi: boolean;
+  teslimAlan: string;
+  teslimTelefon: string;
   not: string;
   hediyePaketi: boolean;
   hediyeNotu: string;
@@ -411,7 +446,17 @@ export async function siparisGetir(numara: string, eposta: string): Promise<Sipa
   if (kayit.eposta.toLowerCase() !== eposta.trim().toLowerCase()) {
     return undefined;
   }
-  return siparisYap(await renkAdlari(), kayit);
+  return aliciyaGoster(siparisYap(await renkAdlari(), kayit));
+}
+
+/**
+ * Siparişi veren kişinin gördüğü hâli (K-149): liste sahibinin adresine
+ * gidiyorsa adres ve teslim alanın bilgileri boşaltılıyor. Onay sayfası,
+ * sipariş takibi ve Siparişlerim bundan geçiyor; panel geçmiyor.
+ */
+export function aliciyaGoster(s: Siparis): Siparis {
+  if (!s.listeAdresi) return s;
+  return { ...s, adres: "", ilce: "", il: "", postaKodu: "", teslimAlan: "", teslimTelefon: "" };
 }
 
 /** Panel için: e-posta doğrulaması aranmaz, panel zaten şifreli. */

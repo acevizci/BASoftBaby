@@ -48,6 +48,8 @@ export type Liste = {
   tarih: string | null;
   mesaj: string;
   acik: boolean;
+  /** Hediyelerin gönderilebileceği kayıtlı adres (K-149); yalnızca sahip görüyor. */
+  adresId: string | null;
   kalemler: ListeKalemi[];
 };
 
@@ -59,6 +61,7 @@ const SECIM = {
   tarih: true,
   mesaj: true,
   acik: true,
+  adresId: true,
   kalemler: {
     orderBy: { olusturuldu: "asc" as const },
     select: {
@@ -101,6 +104,7 @@ function listeYap(k: Kayit, adlar: Record<string, string>): Liste {
     tarih: k.tarih?.toISOString() ?? null,
     mesaj: k.mesaj,
     acik: k.acik,
+    adresId: k.adresId,
     kalemler: k.kalemler.map((x) => {
       const v = x.variant;
       const resimler = v.product.images;
@@ -170,6 +174,69 @@ export async function sepettenListeler(): Promise<string[]> {
   return [
     ...new Set(satirlar.map((s) => s.giftListItem?.list.sahipAdi).filter((x): x is string => !!x)),
   ];
+}
+
+export type ListeTeslimAdresi = {
+  sahipAdi: string;
+  adSoyad: string;
+  telefon: string;
+  adres: string;
+  ilce: string;
+  il: string;
+  postaKodu: string;
+};
+
+/**
+ * "Liste sahibinin adresine gönder" (K-149) kullanılabilir mi: bütün satırlar
+ * listeden, hepsi aynı listeden, liste açık ve sahibi bir adres seçmiş. Öyleyse
+ * o adres; değilse `undefined`. Karışık sepetin bir kısmı başka adrese
+ * gidemez, o yüzden tek bir listeden olmayan satır varsa seçenek yok.
+ */
+export async function listeAdresiBul(
+  kalemIdleri: (string | null)[],
+): Promise<ListeTeslimAdresi | undefined> {
+  if (kalemIdleri.length === 0 || kalemIdleri.some((k) => !k)) return undefined;
+  const kalemler = await db.giftListItem.findMany({
+    where: { id: { in: kalemIdleri as string[] } },
+    select: {
+      listId: true,
+      list: {
+        select: {
+          acik: true,
+          sahipAdi: true,
+          adres: {
+            select: {
+              adSoyad: true,
+              telefon: true,
+              adres: true,
+              ilce: true,
+              il: true,
+              postaKodu: true,
+            },
+          },
+        },
+      },
+    },
+  });
+  const listeler = new Set(kalemler.map((k) => k.listId));
+  const liste = kalemler[0]?.list;
+  if (kalemler.length !== new Set(kalemIdleri).size || listeler.size !== 1) return undefined;
+  if (!liste?.acik || !liste.adres) return undefined;
+  return { sahipAdi: liste.sahipAdi, ...liste.adres };
+}
+
+/** Ödeme sayfası için: sepet liste sahibinin adresine gönderilebiliyorsa sahibin adı. */
+export async function sepetListeAdresi(): Promise<string | undefined> {
+  const { sepetIdOku } = await import("@/server/sepet");
+  const cartId = await sepetIdOku();
+  if (!cartId) return undefined;
+  const satirlar = await db.cartItem.findMany({
+    where: { cartId },
+    select: { giftListItemId: true, variant: { select: { stok: true, product: { select: { aktif: true } } } } },
+  });
+  // Sipariş yalnızca satılabilir satırları alıyor; kontrol de aynılarına.
+  const gecerli = satirlar.filter((s) => s.variant.product.aktif && s.variant.stok > 0);
+  return (await listeAdresiBul(gecerli.map((s) => s.giftListItemId)))?.sahipAdi;
 }
 
 export type GelenHediye = {
