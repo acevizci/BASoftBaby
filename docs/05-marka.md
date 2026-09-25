@@ -78,7 +78,8 @@ vektörünü ancak bir illüstratör çizebilir, otomatik dönüştürme dokuyu 
 
 ## Yatay logo (K-160)
 
-`public/marka/basoftbaby-yatay.webp` / `.png`: amblem + "BAsoftbaby" yazısı yan
-yana, orijinal görselden kesilmiş (yeniden çizim değil). Başlıkta kullanılıyor.
+`public/marka/basoftbaby-yatay.webp` / `.png`: amblem + "BAsoftbaby" yazısı ve
+altında slogan yan yana (koyu tema için `basoftbaby-yatay-koyu.webp`, slogan açık
+renkli), orijinal görselden kesilmiş (yeniden çizim değil). Başlıkta kullanılıyor.
 Yatay alanın dar olduğu yerlerde (başlık, e-posta üstü) bu; kare alanlarda
 (favicon, profil resmi, paylaşım görseli) yuvarlak rozet.

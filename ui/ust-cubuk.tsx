@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import AramaKutusu from "@/ui/arama-kutusu";
 import { HesapBaglantisi, SepetSayaci } from "@/ui/ziyaretci";
@@ -43,18 +42,20 @@ export default async function UstCubuk() {
       {/* Üst sıra: logo · arama · hesap ve sepet */}
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3">
         <Link href="/" className="flex-none" aria-label="BASoftBaby ana sayfa">
-          {/* Yatay logo (K-160): rozetin amblemi ve yazısı yan yana, orijinal
-              görselden kesildi; yeniden çizilmedi. Yuvarlak rozet yazıyı
-              küçültüyordu, yatayda "BAsoftbaby" aynı yükseklikte okunuyor. */}
-          <Image
-            src="/marka/basoftbaby-yatay.webp"
-            alt="BASoftBaby"
-            width={732}
-            height={185}
-            priority
-            unoptimized
-            className="h-11 w-auto sm:h-14"
-          />
+          {/* Yatay logo (K-160): rozetin amblemi, yazısı ve sloganı yan yana,
+              orijinal görselden kesildi; yeniden çizilmedi. Koyu temada
+              slogan açık renkli dosyadan (koyu gri yazı zeminde kayboluyor). */}
+          <picture>
+            <source srcSet="/marka/basoftbaby-yatay-koyu.webp" media="(prefers-color-scheme: dark)" />
+            <img
+              src="/marka/basoftbaby-yatay.webp"
+              alt="BASoftBaby"
+              width={730}
+              height={183}
+              fetchPriority="high"
+              className="h-12 w-auto sm:h-[60px]"
+            />
+          </picture>
         </Link>
 
         <div className="ml-auto flex flex-none items-center gap-2 sm:order-last sm:ml-0">

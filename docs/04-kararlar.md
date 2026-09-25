@@ -6209,7 +6209,12 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
   da aynı tonda). Yöntem: doygun renkli harf pikselleri tohum; rozet
   çerçevesinin küçük noktaları alan boyutuyla atıldı; maske harflerin beyaz
   kenarı kadar (6 px) genişletildi. Harflerin kendi beyaz kenarı ve gölgesi
-  duruyor, arkadaki rozet zemini ve slogan ("comfort for little ones") yok.
+  duruyor, arkadaki rozet zemini yok.
+- **Slogan** ("comfort for little ones") da aynı görselden, aynı ölçekte
+  kesilip yazının altına orijinaldeki gibi ortalandı: koyu yazı zeminden
+  koyuluğuna göre ayrıldı (renkli benekler atıldı). Koyu temada koyu gri
+  slogan kayboluyordu; `basoftbaby-yatay-koyu.webp` sloganı açık renkte,
+  `<picture>` cihazın temasına göre seçiyor. Başlıkta 48 / 60 px.
 - Yuvarlak rozet diğer yerlerde (giriş sayfaları, paylaşım görseli, favicon,
   e-posta başlığı) aynen kullanılıyor.
 
