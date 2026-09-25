@@ -6030,6 +6030,19 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
 [`../ui/liste-teslimat.tsx`](../ui/liste-teslimat.tsx); `aliciyaGoster` —
 [`../server/siparis.ts`](../server/siparis.ts)
 
+### K-150 · Panelde doğum listesi özeti
+
+- Müşteriler › **Doğum listeleri**: liste sayısı (açık, ürünlü, adres seçmiş),
+  istenen/alınan adet ve oranı, listeden gelen satış (son 30 gün ve toplam),
+  en çok istenen 10 ürün (kaç listede, kaç adet) ve son 30 liste (müşteriye ve
+  herkese açık liste sayfasına bağlantıyla).
+- Satış: ödemesi alınmış, iptal edilmemiş siparişlerde **listeden gelen
+  satırlar**; satır tutarı eksi satıra düşen kampanya payı, kargo hariç.
+  Alınan adet istenenden fazla sayılmıyor.
+- Yalnızca okuma; listeyi sahibi yönetiyor.
+
+**Nerede:** [`../server/dogum-listesi-rapor.ts`](../server/dogum-listesi-rapor.ts)
+
 
 ---
 

@@ -10,6 +10,7 @@ import {
   listeKoduUret,
 } from "@/server/dogum-listesi";
 import type { SatisAyari } from "@/server/sepet";
+import { listeOzeti } from "@/server/dogum-listesi-rapor";
 
 /** Doğum listesi (K-144): alınan adet siparişle artıyor, iptalle düşüyor. */
 
@@ -226,5 +227,24 @@ describe("doğum listesi (veritabanı)", { skip: atlamaSebebi }, () => {
     assert.ok(!kapali.tamam && kapali.sebep === "liste-adres");
     // Stok ve alınan adet değişmedi.
     assert.equal(await alinan(kalem.id), 0);
+  });
+
+  it("panel özeti listeyi, alınanı ve yalnızca ödenmiş liste satışını sayıyor (K-150)", async () => {
+    const once = await listeOzeti();
+    const { variantId, kalem } = await listeKur(3);
+    const numara = await listedenSiparis(variantId, kalem.id, 2);
+    const ara = await listeOzeti();
+    assert.equal(ara.liste - once.liste, 1);
+    assert.equal(ara.istenen - once.istenen, 3);
+    assert.equal(ara.alinan - once.alinan, 2);
+    // Havale bekliyor: satışa girmiyor.
+    assert.equal(ara.siparis30, once.siparis30);
+
+    await testDb().order.update({ where: { numara }, data: { odemeDurumu: "odendi" } });
+    const sonra = await listeOzeti();
+    assert.equal(sonra.siparis30 - once.siparis30, 1);
+    assert.equal(sonra.ciro30Kurus - once.ciro30Kurus, 2 * 10000);
+    assert.equal(sonra.ciroHepsiKurus - once.ciroHepsiKurus, 2 * 10000);
+    assert.ok(sonra.sonListeler.some((l) => l.istenen === 3 && l.alinan === 2));
   });
 });

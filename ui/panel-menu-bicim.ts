@@ -149,6 +149,7 @@ export const BOLUMLER: Bolum[] = [
         ton: "bekleyen",
       },
       { yol: "/yonetim/bulten", ad: "E-bülten", anahtar: "bulten kampanya duyuru eposta iys izin" },
+      { yol: "/yonetim/dogum-listeleri", ad: "Doğum listeleri", anahtar: "hediye listesi bebek" },
     ],
   },
   {
