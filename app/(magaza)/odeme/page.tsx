@@ -11,6 +11,7 @@ import { fiyatYaz } from "@/ui/katalog-bicim";
 import GonderDugmesi from "@/ui/gonder-dugmesi";
 import OlcumOlayi from "@/ui/olcum-olayi";
 import { sepetteCek } from "@/server/hediye-ceki";
+import { sepettenListeler } from "@/server/dogum-listesi";
 import { hediyeCekiKaldir, hediyeCekiUygula } from "@/server/hediye-ceki-islem";
 
 export const dynamic = "force-dynamic";
@@ -68,6 +69,8 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
   if (sepet.satirlar.length === 0) redirect("/sepet");
 
   const cek = await sepetteCek(sepet.toplamKurus);
+  // Sepette doğum listesinden ürün varsa liste sahiplerinin adları (K-146).
+  const listeler = await sepettenListeler();
   const cekKurus = cek && "kullanilanKurus" in cek ? cek.kullanilanKurus : 0;
   const odenecekKurus = sepet.toplamKurus - cekKurus;
   const cekleOdeniyor = cekKurus > 0 && odenecekKurus === 0;
@@ -371,6 +374,39 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
                   </span>
                 </label>
               </div>
+
+              {/* Doğum listesi hediyesi (K-146): liste sahibine ödeme alınınca
+                  haber gidiyor; burada yazılan ad ve not o habere giriyor. */}
+              {listeler.length > 0 && (
+                <div className="flex flex-col gap-3 rounded-[10px] border border-nane bg-nane-soluk p-4 sm:col-span-2">
+                  <p className="text-sm font-bold text-nane-koyu">
+                    Doğum listesi hediyesi · {listeler.join(", ")}
+                  </p>
+                  <p className="text-xs text-metin-2">
+                    Ödemen alınınca liste sahibine hediye alındığını haber veriyoruz. Adresin ve
+                    e-postan paylaşılmaz; yalnızca aşağıya yazdığın ad ve not gider.
+                  </p>
+                  <label className="flex flex-col gap-1.5">
+                    <span className={ETIKET}>Listede görünecek adın (isteğe bağlı)</span>
+                    <input
+                      name="listeGonderen"
+                      maxLength={60}
+                      placeholder="Ayşe teyzesi"
+                      className={GIRDI}
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1.5">
+                    <span className={ETIKET}>Kısa bir not (isteğe bağlı)</span>
+                    <textarea
+                      name="listeNotu"
+                      maxLength={300}
+                      rows={2}
+                      placeholder="Minik Ada'ya sevgilerle, sağlıkla büyüsün."
+                      className={GIRDI}
+                    />
+                  </label>
+                </div>
+              )}
             </div>
           </section>
 

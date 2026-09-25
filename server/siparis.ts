@@ -48,6 +48,9 @@ export type SiparisGirdisi = {
   /** Hediye paketi ve paketin içine konacak not (K-98). */
   hediyePaketi: boolean;
   hediyeNotu: string;
+  /** Doğum listesi hediyesi (K-146): liste sahibine görünecek ad ve not. */
+  listeGonderen?: string;
+  listeNotu?: string;
 };
 
 export type SiparisSonucu =
@@ -215,6 +218,10 @@ export async function siparisOlustur(
           not: girdi.not,
           hediyePaketi: girdi.hediyePaketi,
           hediyeNotu: girdi.hediyePaketi ? girdi.hediyeNotu : "",
+          // Yalnızca listeden ürün varsa anlamlı; yoksa boş kalıyor.
+          ...(kalemler.some((k) => k.giftListItemId)
+            ? { listeGonderen: girdi.listeGonderen ?? "", listeNotu: girdi.listeNotu ?? "" }
+            : {}),
           araToplamKurus,
           indirimKurus,
           kampanyaAdi: kampanya?.ad ?? null,

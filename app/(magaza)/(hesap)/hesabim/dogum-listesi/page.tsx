@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { girisYapan } from "@/server/uyelik";
-import { musterininListesi } from "@/server/dogum-listesi";
+import { gelenHediyeler, musterininListesi } from "@/server/dogum-listesi";
 import { kalemAdedi, kalemSil, listeKaydet } from "@/server/dogum-listesi-islem";
 import { tamAdres } from "@/server/site";
 import { fiyatYaz } from "@/ui/katalog-bicim";
@@ -24,7 +24,10 @@ export default async function DogumListesiSayfasi({
   const musteri = await girisYapan();
   if (!musteri) redirect("/giris?hata=giris&nereye=%2Fhesabim%2Fdogum-listesi");
   const p = await searchParams;
-  const liste = await musterininListesi(musteri.id);
+  const [liste, hediyeler] = await Promise.all([
+    musterininListesi(musteri.id),
+    gelenHediyeler(musteri.id),
+  ]);
   const baglanti = liste ? tamAdres(`/liste/${liste.kod}`) : "";
   const tarih = liste?.tarih ? liste.tarih.slice(0, 10) : "";
   const whatsapp = liste
@@ -182,6 +185,30 @@ export default async function DogumListesiSayfasi({
             </li>
           ))}
         </ul>
+      )}
+
+      {/* Gelen hediyeler (K-146): ödemesi alınmış olanlar, hediye edenin yazdığı ad ve notla. */}
+      {hediyeler.length > 0 && (
+        <div className={KART}>
+          <h3 className="text-base">Gelen hediyeler</h3>
+          <ul className="mt-3 flex flex-col divide-y divide-cizgi-soluk">
+            {hediyeler.map((h) => (
+              <li key={h.numara} className="py-3 text-sm">
+                <p className="font-bold">
+                  {h.gonderen || "Bir yakının"}
+                  <span className="ml-2 text-xs font-normal text-metin-3">
+                    {new Date(h.tarih).toLocaleDateString("tr-TR", {
+                      dateStyle: "medium",
+                      timeZone: "Europe/Istanbul",
+                    })}
+                  </span>
+                </p>
+                <p className="text-metin-2">{h.urunler.join(", ")}</p>
+                {h.not && <p className="mt-1 italic text-metin-2">&ldquo;{h.not}&rdquo;</p>}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </section>
   );

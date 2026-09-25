@@ -5956,6 +5956,27 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
 [`../ui/ust-cubuk.tsx`](../ui/ust-cubuk.tsx)
 
 
+### K-146 · Doğum listesi: hediye alınınca haber
+
+- Ödeme sayfasında sepette listeden ürün varsa hediye edene iki isteğe bağlı
+  alan: **listede görünecek ad** ve **kısa not** (`Order.listeGonderen`,
+  `listeNotu`).
+- Liste sahibine **ödeme alındıktan sonra** e-posta: kim (yazdığı adla),
+  hangi ürünler, not ve liste bağlantısı. Günlük zamanlanmış işte; kart,
+  havale ve hediye çeki yollarının hepsi "ödendi"de yakalanıyor, ödenmeyen ya
+  da iptal edilen sipariş için "hediye alındı" denmiyor. Bir kez
+  (`listeBildirildi`); gönderilemezse ertesi gün yeniden. 30 günden eski
+  siparişe bakılmıyor. Bir siparişte birden çok listenin ürünü varsa her sahibe
+  yalnız kendi ürünleri.
+- Hesabım › Doğum listem'de **Gelen hediyeler**: ödemesi alınmış, iptal
+  edilmemiş siparişler.
+- Hediye edenin adresi, e-postası ve siparişteki gerçek adı liste sahibine hiç
+  gitmiyor; yalnızca kendi yazdığı ad ve not.
+
+**Nerede:** `listeBildirimleriniGonder`, `gelenHediyeler` —
+[`../server/dogum-listesi.ts`](../server/dogum-listesi.ts)
+
+
 ---
 
 ## Açık sorular

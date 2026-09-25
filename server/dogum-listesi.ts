@@ -157,3 +157,150 @@ export async function alinanlariIsle(
     }
   }
 }
+
+/** Ödeme sayfası için: sepette listeden ürün varsa o listelerin sahip adları. */
+export async function sepettenListeler(): Promise<string[]> {
+  const { sepetIdOku } = await import("@/server/sepet");
+  const cartId = await sepetIdOku();
+  if (!cartId) return [];
+  const satirlar = await db.cartItem.findMany({
+    where: { cartId, giftListItemId: { not: null } },
+    select: { giftListItem: { select: { list: { select: { sahipAdi: true } } } } },
+  });
+  return [
+    ...new Set(satirlar.map((s) => s.giftListItem?.list.sahipAdi).filter((x): x is string => !!x)),
+  ];
+}
+
+export type GelenHediye = {
+  numara: string;
+  tarih: string;
+  gonderen: string;
+  not: string;
+  urunler: string[];
+};
+
+/**
+ * Liste sahibinin hesabında "Gelen hediyeler" (K-146). Yalnızca ödemesi
+ * alınmış ve iptal edilmemiş siparişler; hediye edenin adresi, e-postası ve
+ * gerçek adı yok, yalnızca yazdığı ad ve not.
+ */
+export async function gelenHediyeler(customerId: string): Promise<GelenHediye[]> {
+  const siparisler = await db.order.findMany({
+    where: {
+      durum: { not: "iptal" },
+      odemeDurumu: "odendi",
+      satirlar: { some: { giftListItem: { list: { customerId } } } },
+    },
+    orderBy: { olusturuldu: "desc" },
+    take: 100,
+    select: {
+      numara: true,
+      olusturuldu: true,
+      listeGonderen: true,
+      listeNotu: true,
+      satirlar: {
+        where: { giftListItem: { list: { customerId } } },
+        select: { urunAd: true, beden: true, adet: true },
+      },
+    },
+  });
+  return siparisler.map((s) => ({
+    numara: s.numara,
+    tarih: s.olusturuldu.toISOString(),
+    gonderen: s.listeGonderen,
+    not: s.listeNotu,
+    urunler: s.satirlar.map((x) => `${x.urunAd} (${x.beden})${x.adet > 1 ? ` × ${x.adet}` : ""}`),
+  }));
+}
+
+type ListeHediyesiGonderici = (
+  kime: string,
+  bilgi: { sahipAdi: string; gonderen: string; not: string; urunler: string[]; kod: string },
+) => Promise<{ gonderildi: boolean }>;
+
+/**
+ * Ödemesi alınmış liste hediyeleri için liste sahibine haber (K-146).
+ * Günlük zamanlanmış işte çalışıyor: kart, havale ve hediye çeki yollarının
+ * hepsi "ödendi"ye burada yakalanıyor; ödenmeyen ya da iptal edilen sipariş
+ * için "hediye alındı" denmiyor. 30 günden eski siparişe bakılmıyor.
+ */
+export async function listeBildirimleriniGonder(
+  gonder?: ListeHediyesiGonderici,
+  simdi: Date = new Date(),
+): Promise<{ bakilan: number; gonderilen: number }> {
+  const gonderici: ListeHediyesiGonderici =
+    gonder ?? (await import("@/server/eposta")).listeHediyesiEpostasi;
+  const siparisler = await db.order.findMany({
+    where: {
+      listeBildirildi: null,
+      durum: { not: "iptal" },
+      odemeDurumu: "odendi",
+      olusturuldu: { gte: new Date(simdi.getTime() - 30 * 24 * 60 * 60 * 1000) },
+      satirlar: { some: { giftListItemId: { not: null } } },
+    },
+    select: {
+      id: true,
+      listeGonderen: true,
+      listeNotu: true,
+      satirlar: {
+        where: { giftListItemId: { not: null } },
+        select: {
+          urunAd: true,
+          beden: true,
+          adet: true,
+          giftListItem: {
+            select: {
+              list: {
+                select: {
+                  id: true,
+                  kod: true,
+                  sahipAdi: true,
+                  customer: { select: { eposta: true } },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    take: 100,
+  });
+
+  let gonderilen = 0;
+  for (const s of siparisler) {
+    // Bir siparişte birden çok listenin ürünü olabilir: her sahibe kendi ürünleri.
+    const listeler = new Map<
+      string,
+      { kime: string; kod: string; sahipAdi: string; urunler: string[] }
+    >();
+    for (const x of s.satirlar) {
+      const l = x.giftListItem?.list;
+      if (!l) continue;
+      const g = listeler.get(l.id) ?? {
+        kime: l.customer.eposta,
+        kod: l.kod,
+        sahipAdi: l.sahipAdi,
+        urunler: [],
+      };
+      g.urunler.push(`${x.urunAd} (${x.beden})${x.adet > 1 ? ` × ${x.adet}` : ""}`);
+      listeler.set(l.id, g);
+    }
+    let hepsi = true;
+    for (const l of listeler.values()) {
+      const sonuc = await gonderici(l.kime, {
+        sahipAdi: l.sahipAdi,
+        gonderen: s.listeGonderen,
+        not: s.listeNotu,
+        urunler: l.urunler,
+        kod: l.kod,
+      });
+      if (!sonuc.gonderildi) hepsi = false;
+    }
+    // Gönderilemeyen yarın yeniden denenecek (liste yoksa da işaretleniyor).
+    if (!hepsi) continue;
+    await db.order.update({ where: { id: s.id }, data: { listeBildirildi: simdi } });
+    gonderilen += 1;
+  }
+  return { bakilan: siparisler.length, gonderilen };
+}

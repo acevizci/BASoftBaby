@@ -826,3 +826,28 @@ ${adres}
 Bu e-posta bir kez gönderiliyor.${await altBilgi()}`,
   );
 }
+
+/**
+ * Doğum listesinden hediye alındı (K-146). Liste sahibine; hediye edenin
+ * adresi ve e-postası yok, yalnızca kendi yazdığı ad ve not.
+ */
+export async function listeHediyesiEpostasi(
+  kime: string,
+  bilgi: { sahipAdi: string; gonderen: string; not: string; urunler: string[]; kod: string },
+): Promise<EpostaSonucu> {
+  const kimden = bilgi.gonderen ? `${bilgi.gonderen} listenden` : "Bir yakının listenden";
+  return gonder(
+    kime,
+    "Doğum listenden bir hediye alındı",
+    `Merhaba ${bilgi.sahipAdi},
+
+${kimden} hediye aldı:
+
+${bilgi.urunler.map((u) => `- ${u}`).join("\n")}
+${bilgi.not ? `\nNotu:\n"${bilgi.not}"\n` : ""}
+Listen güncellendi; alınanlar işaretli. Listeni görmek için:
+${siteAdresi()}/liste/${bilgi.kod}
+
+Gelen hediyelerin hepsi hesabındaki "Doğum listem" sayfasında.${await altBilgi()}`,
+  );
+}

@@ -3,7 +3,12 @@ import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { siparisOlustur } from "@/server/siparis";
 import { siparisiIptalEtVeStoguIadeEt } from "@/server/odeme-akis";
-import { kodlaListe, listeKoduUret } from "@/server/dogum-listesi";
+import {
+  gelenHediyeler,
+  kodlaListe,
+  listeBildirimleriniGonder,
+  listeKoduUret,
+} from "@/server/dogum-listesi";
 import type { SatisAyari } from "@/server/sepet";
 
 /** Doğum listesi (K-144): alınan adet siparişle artıyor, iptalle düşüyor. */
@@ -38,7 +43,7 @@ async function listeKur(istenen: number) {
   const kalem = await testDb().giftListItem.create({
     data: { listId: liste.id, variantId, istenen },
   });
-  return { variantId, kalem, kod: liste.kod };
+  return { variantId, kalem, kod: liste.kod, customerId };
 }
 
 async function listedenSiparis(variantId: string, kalemId: string, adet: number) {
@@ -57,6 +62,8 @@ async function listedenSiparis(variantId: string, kalemId: string, adet: number)
       hediyePaketi: true,
       hediyeNotu: "Hoş geldin minik",
       sozlesmeOnayi: new Date(),
+      listeGonderen: "Ayşe teyzesi",
+      listeNotu: "Sağlıkla büyüsün",
     },
     AYAR,
   );
@@ -107,5 +114,35 @@ describe("doğum listesi (veritabanı)", { skip: atlamaSebebi }, () => {
     assert.ok(!metin.includes("@deneme.test"));
     assert.equal(await kodlaListe("yok-boyle-kod"), undefined);
     assert.equal(await kodlaListe("../x"), undefined);
+  });
+
+  it("liste sahibine ödeme alınınca bir kez haber gidiyor, hediye edenin e-postası yok (K-146)", async () => {
+    const { variantId, kalem, kod, customerId } = await listeKur(1);
+    const numara = await listedenSiparis(variantId, kalem.id, 1);
+    const giden: { kime: string; bilgi: Record<string, unknown> }[] = [];
+    const gonder = async (kime: string, bilgi: Record<string, unknown>) => {
+      giden.push({ kime, bilgi });
+      return { gonderildi: true };
+    };
+    await listeBildirimleriniGonder(gonder);
+    assert.equal(giden.filter((g) => g.bilgi.kod === kod).length, 0, "ödenmeden gitmemeli");
+    assert.equal((await gelenHediyeler(customerId)).length, 0);
+
+    await testDb().order.update({ where: { numara }, data: { odemeDurumu: "odendi" } });
+    await listeBildirimleriniGonder(gonder);
+    const bu = giden.filter((g) => g.bilgi.kod === kod);
+    assert.equal(bu.length, 1);
+    assert.equal(bu[0].bilgi.gonderen, "Ayşe teyzesi");
+    assert.equal(bu[0].bilgi.not, "Sağlıkla büyüsün");
+    assert.ok(bu[0].kime.startsWith("t_dogumlistesi_"));
+    assert.ok(!JSON.stringify(bu[0].bilgi).includes("@deneme.test"));
+
+    await listeBildirimleriniGonder(gonder);
+    assert.equal(giden.filter((g) => g.bilgi.kod === kod).length, 1, "ikinci kez gitmemeli");
+
+    const gelen = await gelenHediyeler(customerId);
+    assert.equal(gelen.length, 1);
+    assert.equal(gelen[0].gonderen, "Ayşe teyzesi");
+    assert.ok(!JSON.stringify(gelen).includes("@deneme.test"));
   });
 });

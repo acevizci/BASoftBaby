@@ -405,6 +405,11 @@ model Order {
   teslimTarihi DateTime?
   /// Değerlendirme isteği e-postasının gittiği an (K-141). Bir kez.
   yorumIstendi DateTime?
+  /// Doğum listesinden hediye (K-146): liste sahibine görünecek ad ve not,
+  /// hediye edenin yazdığı. Bildirim ödeme alındıktan sonra bir kez gidiyor.
+  listeGonderen   String    @default("")
+  listeNotu       String    @default("")
+  listeBildirildi DateTime?
 
   /// Müşterinin ön bilgilendirme formu ile mesafeli satış sözleşmesini
   /// onayladığı an. Onay kutusu işaretlenmeden sipariş oluşmuyor; kaydı
