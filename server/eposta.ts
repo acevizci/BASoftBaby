@@ -794,3 +794,35 @@ Alışverişe başlamak için:
 ${siteAdresi()}${await altBilgi()}`,
   );
 }
+
+/**
+ * Teslimden birkaç gün sonra değerlendirme isteği (K-141). Bir kez gidiyor ve
+ * tanıtım içermiyor: indirim, kampanya ya da başka ürün önerisi yok. Amaç
+ * alınan ürünün değerlendirilmesi, satış değil.
+ */
+export async function yorumIstegiEpostasi(
+  kime: string,
+  bilgi: { numara: string; adSoyad: string; urunler: string[] },
+): Promise<EpostaSonucu> {
+  const adres = `${siteAdresi()}/siparis-takip?numara=${encodeURIComponent(bilgi.numara)}&eposta=${encodeURIComponent(kime)}#degerlendir`;
+  const liste = bilgi.urunler.map((u) => `- ${u}`).join("\n");
+  return gonder(
+    kime,
+    `Ürünler nasıl oldu? · ${bilgi.numara}`,
+    `Merhaba ${bilgi.adSoyad},
+
+${bilgi.numara} numaralı siparişin birkaç gün önce teslim edildi. Umarız minik
+için her şey yolundadır.
+
+Bedeni tuttu mu, kumaşı nasıl? Birkaç satırlık bir değerlendirme, başka
+ailelerin doğru bedeni seçmesine çok yardım ediyor. İstersen bir fotoğraf da
+ekleyebilirsin.
+
+${liste}
+
+Değerlendirmek için:
+${adres}
+
+Bu e-posta bir kez gönderiliyor.${await altBilgi()}`,
+  );
+}

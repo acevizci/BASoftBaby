@@ -5833,6 +5833,28 @@ Cümle sonundaki nokta bağlantıya girmiyor.
 **Nerede:** `epostaHtml` — [`../server/eposta.ts`](../server/eposta.ts)
 
 
+### K-141 · Teslimden sonra değerlendirme isteği
+
+Değerlendirme formu sipariş takibinde duruyordu ama müşteriye hatırlatılmıyordu;
+yorum sayısı düşük kalıyordu. Google'daki yıldızlar (K-126) ve beden kararı
+(K-136) değerlendirmelerden besleniyor.
+
+- Teslimden **5 gün sonra** (ürün giyilmiş, beden belli olmuş), günlük zamanlanmış
+  işte. **30 günden** eski teslime gitmiyor.
+- **Bir kez** (`Order.yorumIstendi`). Değerlendirilecek ürünü kalmamış sipariş
+  gönderilmeden işaretleniyor. Gönderilemeyen işaretlenmiyor, ertesi gün
+  yeniden deneniyor.
+- E-postada değerlendirilmemiş ürünler ve doğrudan forma giden bağlantı
+  (`/siparis-takip?…#degerlendir`); giriş gerekmiyor, numara ve e-posta
+  bağlantıda.
+- **Tanıtım içermiyor:** indirim, kampanya, başka ürün yok. Alınan ürünle ilgili
+  bilgilendirme; bu yüzden pazarlama izni aranmıyor. İçeriğe tanıtım eklenirse
+  izin şartı gelir (K-125).
+
+**Nerede:** [`../server/yorum-istegi.ts`](../server/yorum-istegi.ts),
+`yorumIstegiEpostasi` — [`../server/eposta.ts`](../server/eposta.ts)
+
+
 ---
 
 ## Açık sorular

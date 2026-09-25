@@ -399,6 +399,8 @@ model Order {
   /// Teslim edildiği an. Cayma hakkının 14 günü buradan sayılıyor (K-33);
   /// `guncellendi` kullanılamaz, o her panel dokunuşunda değişiyor.
   teslimTarihi DateTime?
+  /// Değerlendirme isteği e-postasının gittiği an (K-141). Bir kez.
+  yorumIstendi DateTime?
 
   /// Müşterinin ön bilgilendirme formu ile mesafeli satış sözleşmesini
   /// onayladığı an. Onay kutusu işaretlenmeden sipariş oluşmuyor; kaydı

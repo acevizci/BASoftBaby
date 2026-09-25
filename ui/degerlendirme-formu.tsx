@@ -35,7 +35,7 @@ export default function DegerlendirmeFormu({
   if (satirlar.length === 0 && sonuc !== "alindi") return null;
 
   return (
-    <section className="mt-6 rounded-marka border border-cizgi bg-yuzey p-5">
+    <section id="degerlendir" className="mt-6 scroll-mt-4 rounded-marka border border-cizgi bg-yuzey p-5">
       <h2 className="text-lg">Ürünleri değerlendir</h2>
       <p className="mt-1 text-xs text-metin-3">
         Değerlendirmeler ürün sayfasında adının baş harfiyle yayımlanıyor (&quot;Ayşe
