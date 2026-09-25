@@ -112,7 +112,10 @@ function ResimSlayt({
         loading={ilk && !kopya ? "eager" : "lazy"}
         fetchPriority={ilk && !kopya ? "high" : undefined}
         decoding="async"
-        className="mx-auto block h-auto w-full max-w-[2400px]"
+        // Yükseklik sınırlı (K-159): kare ya da dikey bir resim tam genişliğe
+        // açılınca ekrandan uzun oluyor, ana sayfanın geri kalanını aşağı
+        // itiyordu. Oran korunuyor, resim kırpılmıyor; dar kalırsa ortalanıyor.
+        className="mx-auto block h-auto max-h-[min(60vh,520px)] w-auto max-w-full object-contain"
       />
     </picture>
   );

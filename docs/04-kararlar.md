@@ -6185,6 +6185,18 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
 - Çerez bandı (K-124) seçim yapılana kadar düğmenin üstünde; seçimden sonra
   düğme görünüyor.
 
+### K-159 · Banner resmine yükseklik sınırı
+
+- Resimli banner (K-89) tam genişliğe açılıyor, yüksekliği resmin oranından
+  geliyordu. Kare ya da dikey bir resim masaüstünde bir ekrandan uzun oluyor,
+  ana sayfanın geri kalanını aşağı itiyordu ("çok fazla boşluk"); birden çok
+  banner varsa diğer slaytlar da en uzun olanın boyuna esniyordu.
+- Resim artık en çok `min(60vh, 520px)` yükseklikte; oran korunuyor,
+  kırpılmıyor (içindeki yazı kesilmesin), dar kalırsa ortalanıyor.
+- Panelde yatay olmayan (genişlik/yükseklik < 2) resim için uyarı: "masaüstünde
+  yanlarda boşluk kalır, 3:1 (örneğin 2400×800) yükle; bunu telefon resmi
+  olarak kullanabilirsin".
+
 
 ---
 

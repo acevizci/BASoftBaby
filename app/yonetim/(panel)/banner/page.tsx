@@ -247,6 +247,21 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
                       </Link>
                     </p>
                   )}
+                {/* Yatay olmayan resim ana sayfada en çok 520 piksel yükseklikte
+                    gösteriliyor, iki yanında boşluk kalıyor (K-159). */}
+                {b.resimYol &&
+                  b.resimYukseklik > 0 &&
+                  b.resimGenislik / b.resimYukseklik < 2 && (
+                    <p className="w-full rounded-marka bg-sari-soluk px-3 py-2 text-xs text-sari-koyu">
+                      <strong>Masaüstünde yanlarda boşluk kalır.</strong> Resim yatay değil (
+                      <span className="rakam">
+                        {b.resimGenislik}×{b.resimYukseklik}
+                      </span>
+                      ); banner yüksekliği sınırlı olduğu için resim ekranı kaplamaz. Masaüstü
+                      için 3:1 oranında (örneğin 2400×800) bir resim yükle; bu resmi telefon resmi
+                      olarak kullanabilirsin.
+                    </p>
+                  )}
                 {duzenle === b.id && (
                   <div className="mt-2 w-full rounded-marka border border-cizgi-soluk bg-yuzey-sicak p-4">
                     <BannerFormu b={b} />
