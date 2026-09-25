@@ -5904,6 +5904,38 @@ yanlış parola reddediliyor.
 [`../.github/workflows/yedek.yml`](../.github/workflows/yedek.yml)
 
 
+### K-144 · Doğum listesi
+
+Bebek alışverişinin büyük kısmı hediye; yakınlar ne alacağını, hangi bedeni
+bilmiyor, aynı şey iki kez alınıyor. Doğum listesi bunu çözüyor ve her liste
+mağazaya yeni ziyaretçi getiriyor.
+
+- **Anne adayı (üye)** ürün sayfasındaki **Doğum listeme ekle** ile seçili
+  beden-rengi ekliyor; liste ilk eklemede kendiliğinden açılıyor. Tükenmiş
+  beden de eklenebiliyor. Üye değilse giriş sayfasına, dönüşte ürüne.
+- **Hesabım › Doğum listem:** başlık, listede görünen ad, beklenen tarih, not,
+  açık/kapalı; kalemlerin istenen adedi (1-20), alınan sayısı, çıkarma.
+  Paylaşım bağlantısı, kopyalama ve WhatsApp'ta paylaşma.
+- **Paylaşılan sayfa** `/liste/<kod>`: kod rastgele ve tahmin edilemiyor, sayfa
+  arama motorlarına kapalı. **Yalnızca sahibin seçtiği ad**, başlık, tarih ve
+  not; adres, e-posta ve telefon hiçbir zaman.
+- **Hediye olarak al:** kalem hediye edenin sepetine, kalan adetten ve stoktan
+  fazla olmadan, kalemle bağlantısıyla gidiyor (`CartItem.giftListItemId`).
+  Sipariş verilince bağlantı satıra geçiyor ve **alınan adet aynı işlemde
+  artıyor**; iptalde geri düşüyor, eksiye inmiyor.
+- Teslimat hediye edenin girdiği adrese; hediye paketi ve notu (K-98)
+  kullanılabiliyor.
+
+**Bilerek yapılmayan:** "liste sahibinin adresine gönder" (adres görünmeden).
+Ödeme sayfasına gizli adres akışı ve iade/cayma sürecinde kimin hakkı olduğu
+sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
+
+**Nerede:** [`../server/dogum-listesi.ts`](../server/dogum-listesi.ts),
+[`../server/dogum-listesi-islem.ts`](../server/dogum-listesi-islem.ts),
+[`../app/(magaza)/liste/[kod]/page.tsx`](../app/(magaza)/liste/[kod]/page.tsx),
+[`../app/(magaza)/(hesap)/hesabim/dogum-listesi/page.tsx`](../app/(magaza)/(hesap)/hesabim/dogum-listesi/page.tsx)
+
+
 ---
 
 ## Açık sorular

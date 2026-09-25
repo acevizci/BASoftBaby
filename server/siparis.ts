@@ -22,6 +22,7 @@ import { takipAdresi, tasiyiciAdi } from "@/server/kargo";
 import { suresiDolanlariKapat } from "@/server/odeme-suresi";
 import { cekHarca, hediyeCekiOku } from "@/server/hediye-ceki";
 import { tahsilat } from "@/server/hediye-ceki-bicim";
+import { alinanlariIsle } from "@/server/dogum-listesi";
 
 /**
  * Onay sayfasını açan çerezin adı. Burada duruyor çünkü "use server" işaretli
@@ -134,6 +135,8 @@ export async function siparisOlustur(
       fiyatKurus,
       // Satış anındaki maliyet; sonradan değişse de bu kalıyor (K-111).
       alisFiyatKurus: s.variant.product.alisFiyatKurus,
+      // Doğum listesinden eklendiyse o kalem (K-144).
+      giftListItemId: s.giftListItemId,
     };
   });
 
@@ -221,6 +224,9 @@ export async function siparisOlustur(
         },
         select: { numara: true },
       });
+
+      // Doğum listesinden alınanlar işaretleniyor; aynı hediye iki kez alınmasın.
+      await alinanlariIsle(islem, kalemler, 1);
 
       if (kampanya) {
         await islem.campaign.update({

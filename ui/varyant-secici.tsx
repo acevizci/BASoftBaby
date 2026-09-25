@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import ListeyeEkle from "@/ui/listeye-ekle";
 import SepeteEkle from "@/ui/sepete-ekle";
 import StokBildirimi from "@/ui/stok-bildirimi";
 import { renkYaz, type RenkAdi, type RenkSecenegi, type Varyant } from "@/ui/katalog-bicim";
@@ -165,6 +166,9 @@ export default function VaryantSecici({
       </p>
 
       <SepeteEkle variantId={secili?.id} devreDisi={stok === 0} tamGenislik />
+
+      {/* Tükenmiş beden de listeye eklenebilir: gelince alınır (K-144). */}
+      <ListeyeEkle variantId={secili?.id} slug={slug} />
 
       {stok === 0 && secili && (
         <StokBildirimi variantId={secili.id} slug={slug} renk={renk} durum={bildirimDurumu} />

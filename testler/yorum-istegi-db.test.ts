@@ -86,7 +86,10 @@ describe("değerlendirme isteği (veritabanı)", { skip: atlamaSebebi }, () => {
     assert.equal(once.yorumIstendi, null);
 
     const giden: string[] = [];
-    await yorumIstekleriniGonder(async (_k, b) => (giden.push(b.numara), { gonderildi: true }), SIMDI);
+    await yorumIstekleriniGonder(
+      async (_k, b) => (giden.push(b.numara), { gonderildi: true }),
+      SIMDI,
+    );
     assert.ok(giden.includes(numara));
   });
 });

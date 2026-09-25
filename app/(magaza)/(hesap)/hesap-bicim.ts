@@ -6,6 +6,7 @@
 export const HESAP_SAYFALARI = [
   { yol: "/hesabim", ad: "Siparişlerim" },
   { yol: "/hesabim/favoriler", ad: "Favorilerim" },
+  { yol: "/hesabim/dogum-listesi", ad: "Doğum listem" },
   { yol: "/hesabim/adresler", ad: "Adreslerim" },
   { yol: "/hesabim/bilgiler", ad: "Bilgilerim" },
   { yol: "/hesabim/verilerim", ad: "Verilerim" },

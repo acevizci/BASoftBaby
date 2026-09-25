@@ -178,6 +178,7 @@ model ProductVariant {
 
   @@unique([productId, beden, renk])
   @@index([productId])
+  listeKalemleri GiftListItem[]
 }
 
 model ProductImage {
@@ -343,6 +344,9 @@ model CartItem {
   variantId String
   variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
   adet      Int            @default(1)
+  /// Doğum listesinden eklendiyse o kalem (K-144); sipariş satırına taşınıyor.
+  giftListItemId String?
+  giftListItem   GiftListItem? @relation(fields: [giftListItemId], references: [id], onDelete: SetNull)
 
   @@unique([cartId, variantId])
   @@index([cartId])
@@ -457,6 +461,10 @@ model OrderItem {
   talepSatirlari OrderRequestItem[]
   yorum          Review?
 
+  /// Doğum listesinden alındıysa o kalem (K-144): alınan adet buradan sayılıyor.
+  giftListItemId String?
+  giftListItem   GiftListItem? @relation(fields: [giftListItemId], references: [id], onDelete: SetNull)
+
   @@index([orderId])
 }
 
@@ -566,6 +574,7 @@ model Customer {
   pazarlamaIzniTarihi DateTime?
 
   oturumlar  CustomerSession[]
+  hediyeListesi GiftList?
   adresler   Address[]
   siparisler Order[]
   jetonlar   CustomerToken[]
@@ -1392,4 +1401,44 @@ model GiftCardUse {
   olusturuldu DateTime @default(now())
 
   @@index([giftCardId])
+}
+
+/// Doğum listesi (K-144). Anne adayı istediği ürünleri listeler, bağlantıyı
+/// paylaşır; yakınları listeden alır, alınanlar işaretlenir. Müşteri başına
+/// bir liste. Paylaşılan sayfada yalnızca sahibin seçtiği ad görünüyor;
+/// adres ve e-posta hiçbir zaman.
+model GiftList {
+  id          String         @id @default(cuid())
+  /// Paylaşım bağlantısındaki kod; tahmin edilemesin diye rastgele.
+  kod         String         @unique
+  customerId  String         @unique
+  customer    Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  baslik      String
+  /// Sayfada görünen ad ("Ayşe & Mehmet"); hesap adı değil, sahibin seçtiği.
+  sahipAdi    String
+  /// Beklenen doğum tarihi, isteğe bağlı.
+  tarih       DateTime?
+  mesaj       String         @default("")
+  /// Kapalı listenin sayfası "kapatıldı" diyor, alışveriş yapılamıyor.
+  acik        Boolean        @default(true)
+  olusturuldu DateTime       @default(now())
+  guncellendi DateTime       @updatedAt
+  kalemler    GiftListItem[]
+}
+
+model GiftListItem {
+  id               String         @id @default(cuid())
+  listId           String
+  list             GiftList       @relation(fields: [listId], references: [id], onDelete: Cascade)
+  variantId        String
+  variant          ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  istenen          Int            @default(1)
+  /// Verilmiş siparişlerle alınan; iptalde geri düşüyor.
+  alinan           Int            @default(0)
+  olusturuldu      DateTime       @default(now())
+  sepetSatirlari   CartItem[]
+  siparisSatirlari OrderItem[]
+
+  @@unique([listId, variantId])
+  @@index([variantId])
 }

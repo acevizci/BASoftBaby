@@ -6,6 +6,7 @@ import { odemeSorgula } from "@/server/odeme";
 import { odemeAlindiEpostasi } from "@/server/eposta";
 import { iadeKaydiAc, iadeTutari } from "@/server/iade";
 import { cekeIadeEt } from "@/server/hediye-ceki";
+import { alinanlariIsle } from "@/server/dogum-listesi";
 import { tahsilat } from "@/server/hediye-ceki-bicim";
 
 /**
@@ -110,8 +111,10 @@ export async function siparisiIptalEtVeStoguIadeEt(
 
     const satirlar = await islem.orderItem.findMany({
       where: { orderId },
-      select: { variantId: true, adet: true },
+      select: { variantId: true, adet: true, giftListItemId: true },
     });
+    // İptal edilen hediye listeden yeniden alınabilsin (K-144).
+    await alinanlariIsle(islem, satirlar, -1);
 
     const idler: string[] = [];
     for (const satir of satirlar) {

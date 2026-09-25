@@ -59,6 +59,7 @@ export const AYRILMIS_ADRESLER: ReadonlySet<string> = new Set([
   "icon",
   "apple-icon",
   "rehber",
+  "liste",
 ]);
 
 export function adresAyrilmisMi(slug: string): boolean {
