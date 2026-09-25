@@ -115,7 +115,8 @@ export async function kalemAdedi(form: FormData): Promise<void> {
     Math.min(EN_FAZLA, Math.floor(Number(form.get("istenen") ?? 1)) || 1),
   );
   if (await sahibinKalemi(id)) {
-    await db.giftListItem.update({ where: { id }, data: { istenen } });
+    // Alınandan aza inmiyor: alınmış hediye listeden düşmesin.
+    await db.$executeRaw`update "GiftListItem" set istenen = greatest(${istenen}::int, alinan) where id = ${id}`;
   }
   revalidatePath(SAYFA);
   redirect(SAYFA);
@@ -124,7 +125,14 @@ export async function kalemAdedi(form: FormData): Promise<void> {
 export async function kalemSil(form: FormData): Promise<void> {
   const id = String(form.get("id") ?? "");
   if (await sahibinKalemi(id)) {
-    await db.giftListItem.delete({ where: { id } });
+    // Alınmış kalem silinmiyor, istenen alınana indiriliyor: siparişlerle bağı
+    // kopsa "Gelen hediyeler"den düşer, bekleyen haber de gitmezdi.
+    const kalem = await db.giftListItem.findUnique({ where: { id }, select: { alinan: true } });
+    if (kalem && kalem.alinan > 0) {
+      await db.giftListItem.update({ where: { id }, data: { istenen: kalem.alinan } });
+    } else {
+      await db.giftListItem.delete({ where: { id } });
+    }
   }
   revalidatePath(SAYFA);
   redirect(SAYFA);

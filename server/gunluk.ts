@@ -43,6 +43,9 @@ export type GunlukSatir = {
   urunAdedi: number;
   /** Paketlerken atlanmasın diye listede işaretli (K-98). */
   hediyePaketi: boolean;
+  /** Doğum listesi sahibinin adresine gidiyor (K-149): teslim alan başka biri. */
+  listeAdresi: boolean;
+  teslimAlan: string;
 };
 
 export type ToplamaSatiri = {
@@ -97,6 +100,8 @@ export async function gunlukListe(simdi: Date = new Date()): Promise<Gunluk> {
       toplamKurus: true,
       olusturuldu: true,
       hediyePaketi: true,
+      listeAdresi: true,
+      teslimAlan: true,
       satirlar: {
         orderBy: { id: "asc" },
         select: { urunAd: true, beden: true, renk: true, adet: true },
@@ -148,6 +153,8 @@ export async function gunlukListe(simdi: Date = new Date()): Promise<Gunluk> {
       olusturuldu: k.olusturuldu,
       urunAdedi: k.satirlar.reduce((t, s) => t + s.adet, 0),
       hediyePaketi: k.hediyePaketi,
+      listeAdresi: k.listeAdresi,
+      teslimAlan: k.teslimAlan,
     })),
     toplama,
     toplamKurus: hazirlanacak.reduce((t, k) => t + k.toplamKurus, 0),

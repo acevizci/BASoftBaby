@@ -6092,6 +6092,27 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
 **Nerede:** [`../server/davet.ts`](../server/davet.ts),
 [`../app/(magaza)/davet/[kod]/route.ts`](<../app/(magaza)/davet/[kod]/route.ts>)
 
+### K-153 · K-144…K-152 gözden geçirme düzeltmeleri
+
+- **Doğum listesi:** alınmış kalem artık silinmiyor; "Çıkar" istenen adedi
+  alınana indiriyor ("Kalanı çıkar"), tamamı alınmışsa düğme yok. Silinince
+  siparişlerle bağ kopuyor, hediye "Gelen hediyeler"den düşüyor ve bekleyen
+  haber hiç gitmeden gönderildi sayılıyordu. İstenen adet de alınandan aza
+  indirilemiyor.
+- **Büyüme hatırlatması:** sorgu bütün izinli üyeleri 500'le sınırlı ve
+  sırasız okuyup süzüyordu; üye sayısı büyüyünce bazılarına hiç sıra
+  gelmezdi. Artık yalnızca bugün bir beden eşiğine yaklaşan doğum tarihi
+  aralıkları okunuyor (`dogumAraliklari`; test, aralıkların
+  `siradakiBeden` kararıyla gün gün aynı olduğunu sınıyor).
+- **Kişiye özel kupon metinleri:** kupon alanı yalnızca sepette; e-posta ve
+  Hesabım "ödeme sayfasında da yaz" diyordu, düzeltildi. Girişsiz yazılan
+  kişiye özel kupon "geçersiz" görünüyordu; sepette "sana özel bir kuponsa
+  önce giriş yap" bağlantısı eklendi.
+- **Liste sahibinin adresine giden sipariş (K-149):** Günün işi listesinde
+  "liste → teslim alan" etiketi; irsaliye ekranında (baskıya çıkmayan) "pakete
+  fatura ya da fiyatlı belge koyma, faturayı sipariş verene e-postayla gönder"
+  notu. Kutu hediye edene değil liste sahibine gidiyor.
+
 
 ---
 

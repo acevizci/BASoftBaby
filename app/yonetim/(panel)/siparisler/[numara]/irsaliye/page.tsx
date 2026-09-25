@@ -152,6 +152,17 @@ export default async function IrsaliyeSayfasi({
 
         {/* Hediye notu irsaliyede (K-98): paketleyen kişi karta ne
             yazacağını buradan okuyor; irsaliyede zaten fiyat yok. */}
+        {/* K-149: kutu hediye edene değil liste sahibine gidiyor. */}
+        {siparis.listeAdresi && (
+          <div className="mt-4 rounded border border-black/30 p-3 text-sm yazdirma-gizle">
+            <p className="font-bold">Doğum listesi hediyesi</p>
+            <p className="mt-1">
+              Liste sahibinin adresine gidiyor; sipariş veren {siparis.adSoyad}. Pakete fatura ya
+              da fiyat yazan belge koyma, faturayı sipariş verene e-postayla gönder.
+            </p>
+          </div>
+        )}
+
         {siparis.hediyePaketi && (
           <div className="mt-4 rounded border border-black/30 p-3 text-sm">
             <p className="font-bold">Hediye paketi</p>

@@ -70,7 +70,7 @@ export default async function SiparislerimSayfasi({ searchParams }: PageProps<"/
             Sana özel %{k.yuzde} indirim: <span className="rakam select-all">{k.kod}</span>
           </p>
           <p className="mt-0.5 text-xs">
-            Tek siparişte geçerli; sepette ya da ödeme sayfasında kupon alanına yaz.
+            Tek siparişte geçerli; sepet sayfasındaki kupon alanına yaz.
             {k.bitis &&
               ` Son gün ${k.bitis.toLocaleDateString("tr-TR", { dateStyle: "long", timeZone: "Europe/Istanbul" })}.`}
           </p>

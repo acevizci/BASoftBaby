@@ -4,7 +4,7 @@
 
 import { ayAraligi } from "@/ui/beden-onerici-bicim";
 
-const AY_MS = 30.4375 * 24 * 60 * 60 * 1000;
+export const AY_MS = 30.4375 * 24 * 60 * 60 * 1000;
 
 /** Doğum tarihinden bugüne kesirli ay; doğmamışsa `undefined`. */
 export function aylik(dogum: Date, simdi: Date): number | undefined {
@@ -30,4 +30,25 @@ export function siradakiBeden(
     .sort((a, b) => a.aralik[0] - b.aralik[0]);
   const ilk = adaylar[0];
   return ilk ? { beden: ilk.beden, ay: ilk.aralik[0] } : undefined;
+}
+
+/**
+ * Bugün hatırlatma alacak doğum tarihi aralıkları: her bedenin alt sınırı L
+ * için `siradakiBeden`in seçtiği yaş [L - pencere, L) aralığı, tarihe
+ * çevrilmiş. Sorgu yalnızca bu aralıklardaki üyeleri okusun diye.
+ */
+export function dogumAraliklari(
+  bedenAdlari: string[],
+  simdi: Date,
+  pencere = 0.5,
+): { gt: Date; lte: Date }[] {
+  const sinirlar = new Set(
+    bedenAdlari
+      .map((b) => ayAraligi(b)?.[0])
+      .filter((l): l is number => l !== undefined && l > 0 && l <= 36),
+  );
+  return [...sinirlar].map((l) => ({
+    gt: new Date(simdi.getTime() - l * AY_MS),
+    lte: new Date(simdi.getTime() - (l - pencere) * AY_MS),
+  }));
 }

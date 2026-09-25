@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { aylik, siradakiBeden } from "@/server/buyume-bicim";
+import { aylik, dogumAraliklari, siradakiBeden } from "@/server/buyume-bicim";
 
 /** Büyüme hatırlatması hesabı (K-147). */
 
@@ -27,5 +27,16 @@ describe("büyüme hatırlatması", () => {
     assert.equal(siradakiBeden(BEDENLER, 30), undefined);
     assert.equal(siradakiBeden(BEDENLER, 40), undefined);
     assert.equal(siradakiBeden(["Standart"], 5.8), undefined);
+  });
+
+  it("sorgu aralıkları siradakiBeden'in seçtiği doğum tarihleriyle birebir aynı", () => {
+    const simdi = new Date("2026-09-25T06:00:00Z");
+    const araliklar = dogumAraliklari(BEDENLER, simdi);
+    for (let gun = 0; gun < 40 * 31; gun++) {
+      const dogum = new Date(simdi.getTime() - gun * GUN - 3600 * 1000);
+      const secilir = siradakiBeden(BEDENLER, aylik(dogum, simdi)!) !== undefined;
+      const aralikta = araliklar.some((r) => dogum > r.gt && dogum <= r.lte);
+      assert.equal(aralikta, secilir, `${gun} gün`);
+    }
   });
 });

@@ -903,7 +903,7 @@ Kupon kodu: ${bilgi.kod}
 İndirim: %${bilgi.yuzde}
 Son gün: ${son}
 
-Kupon yalnızca senin hesabında ve bir siparişte geçerli. Sepette ya da ödeme sayfasında kodu yazman yeterli; hesabına giriş yapmış olman gerekiyor.
+Kupon yalnızca senin hesabında ve bir siparişte geçerli. Hesabına giriş yapıp sepet sayfasındaki kupon alanına kodu yazman yeterli.
 
 ${siteAdresi()}/urunler
 

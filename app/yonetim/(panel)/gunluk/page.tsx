@@ -162,6 +162,15 @@ export default async function GunlukEkrani() {
                             🎁 hediye
                           </span>
                         )}
+                        {/* K-149: kutu liste sahibine gidiyor; fiyatlı belge konmasın. */}
+                        {s.listeAdresi && (
+                          <span
+                            title="Doğum listesi sahibinin adresine: pakete fatura koyma"
+                            className="ml-1.5 rounded-full bg-nane-soluk px-1.5 py-0.5 text-xs font-bold text-nane-koyu"
+                          >
+                            liste → {s.teslimAlan}
+                          </span>
+                        )}
                         <span className="block text-xs text-metin-3">
                           {s.ilce} / {s.il}
                         </span>

@@ -3,7 +3,7 @@ import { db } from "@/server/veritabani";
 import { buyumeEpostasi } from "@/server/eposta";
 import { jetonUret } from "@/server/uyelik";
 import { bedenAdlari } from "@/server/bedenler";
-import { aylik, siradakiBeden } from "@/server/buyume-bicim";
+import { aylik, dogumAraliklari, siradakiBeden } from "@/server/buyume-bicim";
 
 /**
  * Büyüme hatırlatması (K-147). Bebek bir sonraki bedene geçmeden yaklaşık iki
@@ -22,28 +22,31 @@ export async function buyumeHatirlatmalariniGonder(
   gonder: Gonderici = buyumeEpostasi,
   simdi: Date = new Date(),
 ): Promise<{ bakilan: number; gonderilen: number }> {
-  const [musteriler, bedenler] = await Promise.all([
-    db.customer.findMany({
-      where: {
-        pazarlamaIzni: true,
-        epostaDogrulandi: { not: null },
-        OR: [
-          { bebekDogum: { not: null } },
-          { hediyeListesi: { tarih: { not: null, lte: simdi } } },
-        ],
-      },
-      select: {
-        id: true,
-        eposta: true,
-        adSoyad: true,
-        bebekDogum: true,
-        buyumeBedeni: true,
-        hediyeListesi: { select: { tarih: true } },
-      },
-      take: 500,
-    }),
-    bedenAdlari(),
-  ]);
+  // Yalnızca bugün bir bedenin eşiğine yaklaşan bebekler okunuyor; üye sayısı
+  // büyüse de sorgu bu kadarla sınırlı kalıyor.
+  const bedenler = await bedenAdlari();
+  const araliklar = dogumAraliklari(bedenler, simdi);
+  if (araliklar.length === 0) return { bakilan: 0, gonderilen: 0 };
+  const musteriler = await db.customer.findMany({
+    where: {
+      pazarlamaIzni: true,
+      epostaDogrulandi: { not: null },
+      OR: [
+        ...araliklar.map((r) => ({ bebekDogum: r })),
+        ...araliklar.map((r) => ({ bebekDogum: null, hediyeListesi: { tarih: r } })),
+      ],
+    },
+    select: {
+      id: true,
+      eposta: true,
+      adSoyad: true,
+      bebekDogum: true,
+      buyumeBedeni: true,
+      hediyeListesi: { select: { tarih: true } },
+    },
+    orderBy: { id: "asc" },
+    take: 2000,
+  });
 
   let gonderilen = 0;
   for (const m of musteriler) {

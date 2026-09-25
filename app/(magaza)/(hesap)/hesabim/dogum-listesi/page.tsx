@@ -208,12 +208,15 @@ export default async function DogumListesiSayfasi({
                 />
                 <button className={IKINCIL_DUGME}>Güncelle</button>
               </form>
-              <form action={kalemSil}>
-                <input type="hidden" name="id" value={k.id} />
-                <button className="text-xs font-bold text-metin-3 hover:text-mercan-koyu hover:underline">
-                  Çıkar
-                </button>
-              </form>
+              {/* Alınmış kalem silinmiyor, kalanı kaldırılıyor. */}
+              {k.alinan < k.istenen && (
+                <form action={kalemSil}>
+                  <input type="hidden" name="id" value={k.id} />
+                  <button className="text-xs font-bold text-metin-3 hover:text-mercan-koyu hover:underline">
+                    {k.alinan > 0 ? "Kalanı çıkar" : "Çıkar"}
+                  </button>
+                </form>
+              )}
             </li>
           ))}
         </ul>

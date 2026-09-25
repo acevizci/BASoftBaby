@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import UrunFoto from "@/ui/urun-foto";
 import { sepetGetir } from "@/server/sepet";
 import { adetDegistir, kuponKaldir, kuponUygula, satirSil } from "@/server/sepet-islem";
+import { girisYapan } from "@/server/uyelik";
 import GonderDugmesi from "@/ui/gonder-dugmesi";
 import { fiyatYaz, type GorselTipi } from "@/ui/katalog-bicim";
 
@@ -12,7 +13,10 @@ export const metadata: Metadata = { title: "Sepetim", robots: { index: false } }
 
 export default async function SepetSayfasi({ searchParams }: PageProps<"/sepet">) {
   const { kupon } = await searchParams;
-  const sepet = await sepetGetir();
+  const [sepet, girisli] = await Promise.all([
+    sepetGetir(),
+    girisYapan().then(Boolean),
+  ]);
 
   if (sepet.satirlar.length === 0) {
     return (
@@ -206,6 +210,17 @@ export default async function SepetSayfasi({ searchParams }: PageProps<"/sepet">
             {sepet.kuponGecersizMi && (
               <p className="mt-2 text-xs font-semibold text-mercan-koyu">
                 Bu kupon geçerli değil ya da süresi dolmuş.
+                {/* Kişiye özel kuponlar (K-151, K-152) yalnızca sahibi girişliyken. */}
+                {!girisli && (
+                  <>
+                    {" "}
+                    Sana özel bir kuponsa önce{" "}
+                    <Link href="/giris?nereye=%2Fsepet" className="underline">
+                      giriş yap
+                    </Link>
+                    .
+                  </>
+                )}
               </p>
             )}
             {sepet.kuponYetersizMi && (
