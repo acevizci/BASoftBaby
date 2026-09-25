@@ -6142,6 +6142,17 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
 - Sağlıkla ilgili kısımlar (uyku güvenliği, oda sıcaklığı, araç koltuğu)
   genel kabul görmüş önerilerle sınırlı, tıbbi tavsiye içermiyor.
 
+### K-156 · Rehbere dört yazı daha
+
+- K-155'te önerilen konular aynı yolla (veri göçü, `ON CONFLICT DO NOTHING`)
+  yayına alındı: uyku tulumu TOG seçimi, organik pamuk nedir, bebek hediyesi
+  seçerken 5 öneri, bebeğin ilk bayramlığı. Rehberde toplam 11 yazı.
+- TOG tablosu "yaklaşık, üreticinin tablosu önceliklidir" diye verildi.
+  Organik pamuk yazısı ürünlerimizin sertifikalı olduğunu iddia etmiyor;
+  sertifikanın etikette aranmasını söylüyor. Mağazaya dair söylenenler
+  (ücretsiz hediye paketi, fiyatsız paket, not kartı, doğum tarihiyle beden
+  önerisi, liste sahibine gönderim) koddaki davranışla aynı.
+
 
 ---
 
