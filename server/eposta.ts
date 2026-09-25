@@ -851,3 +851,30 @@ ${siteAdresi()}/liste/${bilgi.kod}
 Gelen hediyelerin hepsi hesabındaki "Doğum listem" sayfasında.${await altBilgi()}`,
   );
 }
+
+/**
+ * Büyüme hatırlatması (K-147): bebek bir sonraki bedene geçmek üzere. Ürün
+ * önerdiği için tanıtım sayılıyor; altında listeden çıkma bağlantısı var.
+ */
+export async function buyumeEpostasi(
+  kime: string,
+  bilgi: { adSoyad: string; ay: number; beden: string; iptalJetonu: string },
+): Promise<EpostaSonucu> {
+  const iptal = `${siteAdresi()}/eposta-izni?jeton=${encodeURIComponent(bilgi.iptalJetonu)}`;
+  return gonder(
+    kime,
+    `Bebeğin ${bilgi.ay} aylık oluyor: ${bilgi.beden} zamanı`,
+    `Merhaba ${bilgi.adSoyad},
+
+Bebeğin birkaç hafta içinde ${bilgi.ay} aylık oluyor. Bebekler bu dönemde hızlı büyüyor; ${bilgi.beden} bedenine geçme zamanı yaklaşıyor.
+
+${bilgi.beden} bedeninde stokta olanlar:
+${siteAdresi()}/urunler?beden=${encodeURIComponent(bilgi.beden)}
+
+Bedenden emin değilsen boy ve kiloya göre bakabileceğin tablo:
+${siteAdresi()}/beden-rehberi
+
+Bu hatırlatmaları almak istemiyorsan tek tıkla çıkabilirsin:
+${iptal}${await altBilgi()}`,
+  );
+}

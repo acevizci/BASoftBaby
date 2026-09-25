@@ -9,6 +9,7 @@ import { favoriBildirimleriniGonder } from "@/server/favori-bildirimi";
 import { sabahOzetiniGonder } from "@/server/sabah-ozeti";
 import { yorumIstekleriniGonder } from "@/server/yorum-istegi";
 import { listeBildirimleriniGonder } from "@/server/dogum-listesi";
+import { buyumeHatirlatmalariniGonder } from "@/server/buyume";
 import { eskiBildirimIsteklerimiTemizle } from "@/server/stok-bildirimi";
 import { eskiGirisSayaclariniTemizle } from "@/server/giris-sinir";
 import { eskiPanelKayitlariniTemizle } from "@/server/yonetim-kimlik";
@@ -50,6 +51,8 @@ export async function GET(istek: NextRequest) {
   const yorumIstegi = await yorumIstekleriniGonder();
   // Ödemesi alınan doğum listesi hediyeleri için liste sahibine haber (K-146).
   const listeHediyesi = await listeBildirimleriniGonder();
+  // Bebek bir sonraki bedene geçmeden önce hatırlatma, beden başına bir kez (K-147).
+  const buyume = await buyumeHatirlatmalariniGonder();
   // Bir yıldır stoğa girmemiş ürünün bekleyen adresini tutmanın anlamı yok.
   const bildirim = await eskiBildirimIsteklerimiTemizle();
   // Giriş sayaçları: sayaç için gereken şey adresin kendisi değil, aynı
@@ -68,6 +71,7 @@ export async function GET(istek: NextRequest) {
     favori,
     yorumIstegi,
     listeHediyesi,
+    buyume,
     bildirim,
     girisSayaci,
     panel,

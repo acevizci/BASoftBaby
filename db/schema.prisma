@@ -580,6 +580,10 @@ model Customer {
 
   oturumlar  CustomerSession[]
   hediyeListesi GiftList?
+  /// Bebeğin doğum tarihi, isteğe bağlı (K-147): büyüme hatırlatması için.
+  bebekDogum    DateTime?
+  /// En son haber verilen beden; aynı beden için ikinci e-posta gitmesin.
+  buyumeBedeni  String    @default("")
   adresler   Address[]
   siparisler Order[]
   jetonlar   CustomerToken[]

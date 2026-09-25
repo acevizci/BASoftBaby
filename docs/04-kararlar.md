@@ -5976,6 +5976,23 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
 **Nerede:** `listeBildirimleriniGonder`, `gelenHediyeler` —
 [`../server/dogum-listesi.ts`](../server/dogum-listesi.ts)
 
+### K-147 · Büyüme hatırlatması: "sıradaki beden" e-postası
+
+- Bilgilerim'de isteğe bağlı **bebeğin doğum tarihi** (`Customer.bebekDogum`).
+  Yoksa doğum listesindeki beklenen tarih, geçmişse (bebek doğmuş) kullanılıyor.
+  Gelecek ya da 4 yıldan eski tarih kaydedilmiyor.
+- Günlük işte bebek bir bedenin alt sınırına **yarım aydan az** kalmışsa
+  ("6-9 ay" için 5,5–6. ay) e-posta: "Bebeğin 6 aylık oluyor: 6-9 ay zamanı",
+  o bedende süzülmüş ürün listesine ve beden rehberine bağlantıyla. Yaş aralığı
+  adından okunamayan beden ("Standart") ve 36 aydan büyük bebek yok sayılıyor.
+- Ürün önerdiği için **tanıtım**: yalnızca pazarlama izni açık, e-postası
+  doğrulanmış üyeye; altında listeden çıkma bağlantısı.
+- Aynı beden için bir kez (`Customer.buyumeBedeni`); gönderilemezse ertesi gün
+  yeniden. Doğum tarihi değişince sıra sıfırlanıyor.
+
+**Nerede:** [`../server/buyume.ts`](../server/buyume.ts),
+[`../server/buyume-bicim.ts`](../server/buyume-bicim.ts), `buyumeEpostasi`
+
 
 ---
 

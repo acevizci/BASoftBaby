@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { bilgileriKaydet, sifreDegistir } from "@/server/uyelik-islem";
 import { EN_KISA_SIFRE, girisYapan } from "@/server/uyelik";
+import { db } from "@/server/veritabani";
 import {
   ANA_DUGME,
   BILDIRIMLER,
@@ -21,6 +22,13 @@ export default async function BilgilerSayfasi({ searchParams }: PageProps<"/hesa
   if (!musteri) redirect("/giris?hata=giris&nereye=%2Fhesabim%2Fbilgiler");
 
   const { hata, kayit } = await searchParams;
+  const ek = await db.customer.findUnique({
+    where: { id: musteri.id },
+    select: { bebekDogum: true },
+  });
+  const bebekDogum = ek?.bebekDogum
+    ? ek.bebekDogum.toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" })
+    : "";
   const hataMetni = typeof hata === "string" ? HATALAR[hata] : undefined;
   const bildirim = typeof kayit === "string" ? BILDIRIMLER[kayit] : undefined;
 
@@ -66,6 +74,14 @@ export default async function BilgilerSayfasi({ searchParams }: PageProps<"/hesa
               henüz yok.
             </span>
           </label>
+
+          <label className="flex flex-col gap-1.5">
+            <span className={ETIKET}>Bebeğin doğum tarihi (isteğe bağlı)</span>
+            <input name="bebekDogum" type="date" defaultValue={bebekDogum} className={GIRDI} />
+            <span className="text-xs text-metin-3">
+              Bebeğin bir sonraki bedene geçmeden önce haber veririz (tanıtım izni açıksa).
+            </span>
+          </label>
         </div>
 
         <label className="mt-4 flex items-start gap-2.5">
@@ -76,7 +92,7 @@ export default async function BilgilerSayfasi({ searchParams }: PageProps<"/hesa
             className="mt-0.5 h-4 w-4 flex-none accent-[var(--mercan)]"
           />
           <span className="text-sm text-metin-2">
-            Kampanya, sepet hatırlatma ve favori haberi e-postaları
+            Kampanya, sepet hatırlatma, favori haberi ve beden hatırlatma e-postaları
             <span className="block text-xs text-metin-3">
               Kaldırırsan tanıtım e-postası gelmez. Sipariş onayı, kargo bildirimi ve
               şifre sıfırlama gelmeye devam eder; onlar tanıtım değil, işlemin parçası.

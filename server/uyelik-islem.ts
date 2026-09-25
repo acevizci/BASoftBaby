@@ -157,14 +157,28 @@ export async function bilgileriKaydet(veri: FormData): Promise<void> {
   const izin = veri.get("pazarlamaIzni") === "on";
   const onceki = await db.customer.findUnique({
     where: { id: musteri.id },
-    select: { pazarlamaIzni: true, pazarlamaIzniTarihi: true, eposta: true },
+    select: { pazarlamaIzni: true, pazarlamaIzniTarihi: true, eposta: true, bebekDogum: true },
   });
+
+  // Bebeğin doğum tarihi (K-147): büyüme hatırlatması buna bakıyor. Boş
+  // bırakılabilir; saçma tarih (gelecek, 4 yıldan eski) kaydedilmiyor.
+  const dogumHam = temiz(veri, "bebekDogum");
+  let bebekDogum: Date | null = null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dogumHam)) {
+    const t = new Date(`${dogumHam}T12:00:00+03:00`);
+    const yas = Date.now() - t.getTime();
+    if (yas >= -24 * 60 * 60 * 1000 && yas < 4 * 366 * 24 * 60 * 60 * 1000) bebekDogum = t;
+  }
+  const dogumDegisti = (onceki?.bebekDogum?.getTime() ?? null) !== (bebekDogum?.getTime() ?? null);
 
   await db.customer.update({
     where: { id: musteri.id },
     data: {
       adSoyad,
       telefon,
+      bebekDogum,
+      // Tarih değiştiyse hatırlatma sırası baştan hesaplansın.
+      ...(dogumDegisti ? { buyumeBedeni: "" } : {}),
       pazarlamaIzni: izin,
       pazarlamaIzniTarihi: izin
         ? (onceki?.pazarlamaIzni ? onceki.pazarlamaIzniTarihi : new Date())
