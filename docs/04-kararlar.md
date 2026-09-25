@@ -6113,6 +6113,19 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
   fatura ya da fiyatlı belge koyma, faturayı sipariş verene e-postayla gönder"
   notu. Kutu hediye edene değil liste sahibine gidiyor.
 
+### K-154 · Doğum listesi: iade, çok listeli haber, fatura adresi
+
+- **İade:** iade talebi "tamamlandı" olup ürün stoğa döndüğünde, satır
+  listeden alındıysa listedeki alınan adet aynı işlemde düşüyor; hediye
+  listede yeniden alınabilir hale geliyor. Değişimde düşmüyor (hediye yerinde
+  kalıyor). İptal zaten düşürüyordu (K-144).
+- **Çok listeli sipariş:** haberi gitmiş listeler siparişte tutuluyor
+  (`Order.listeBildirilenler`). Bir liste sahibine gönderilemezse ertesi gün
+  yalnız ona yeniden deneniyor; diğerleri aynı haberi ikinci kez almıyor.
+- **Fatura:** liste sahibinin adresine giden siparişte (K-149) faturadaki
+  alıcı sipariş veren; sokak adresi o kişinin olmadığı için yazılmıyor,
+  yerine "Hediye gönderimi (doğum listesi)".
+
 
 ---
 

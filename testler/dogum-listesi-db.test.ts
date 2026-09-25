@@ -11,6 +11,7 @@ import {
 } from "@/server/dogum-listesi";
 import type { SatisAyari } from "@/server/sepet";
 import { listeOzeti } from "@/server/dogum-listesi-rapor";
+import { talebiSonuclandir } from "@/server/talep";
 
 /** Doğum listesi (K-144): alınan adet siparişle artıyor, iptalle düşüyor. */
 
@@ -246,5 +247,96 @@ describe("doğum listesi (veritabanı)", { skip: atlamaSebebi }, () => {
     assert.equal(sonra.ciro30Kurus - once.ciro30Kurus, 2 * 10000);
     assert.equal(sonra.ciroHepsiKurus - once.ciroHepsiKurus, 2 * 10000);
     assert.ok(sonra.sonListeler.some((l) => l.istenen === 3 && l.alinan === 2));
+  });
+
+  it("iade edilen hediye listede yeniden alınabilir, değişim sayılmıyor (K-154)", async () => {
+    const { variantId, kalem } = await listeKur(3);
+    const numara = await listedenSiparis(variantId, kalem.id, 2);
+    const o = await testDb().order.update({
+      where: { numara },
+      data: { odemeDurumu: "odendi", durum: "teslim", teslimTarihi: new Date() },
+      include: { satirlar: true },
+    });
+    assert.equal(await alinan(kalem.id), 2);
+
+    const degisim = await testDb().orderRequest.create({
+      data: {
+        orderId: o.id,
+        tur: "degisim",
+        sebep: "beden",
+        satirlar: { create: [{ orderItemId: o.satirlar[0].id, adet: 1 }] },
+      },
+    });
+    await talebiSonuclandir(degisim.id, "tamamlandi", "");
+    assert.equal(await alinan(kalem.id), 2);
+
+    const iade = await testDb().orderRequest.create({
+      data: {
+        orderId: o.id,
+        tur: "iade",
+        sebep: "beden",
+        satirlar: { create: [{ orderItemId: o.satirlar[0].id, adet: 1 }] },
+      },
+    });
+    await talebiSonuclandir(iade.id, "tamamlandi", "");
+    assert.equal(await alinan(kalem.id), 1);
+    // Aynı sonucu ikinci kez uygulamak bir daha düşürmüyor.
+    await talebiSonuclandir(iade.id, "tamamlandi", "");
+    assert.equal(await alinan(kalem.id), 1);
+  });
+
+  it("iki listeli siparişte haberi gitmiş liste ikinci kez almıyor (K-154)", async () => {
+    const a = await listeKur(1);
+    const b = await listeKur(1);
+    const cartId = await sepetKur(a.variantId, 1);
+    await testDb().cartItem.updateMany({ where: { cartId }, data: { giftListItemId: a.kalem.id } });
+    await testDb().cartItem.create({
+      data: {
+        id: kimlik("sat"),
+        cartId,
+        variantId: b.variantId,
+        adet: 1,
+        giftListItemId: b.kalem.id,
+      },
+    });
+    const s = await siparisOlustur(
+      {
+        adSoyad: "Hediye Eden",
+        eposta: `${ON_EK}${kimlik("e").toLowerCase()}@deneme.test`,
+        telefon: "05001112233",
+        adres: "Deneme Mahallesi Deneme Sokak No 1",
+        ilce: "Kadıköy",
+        il: "İstanbul",
+        postaKodu: "34000",
+        not: "",
+        hediyePaketi: false,
+        hediyeNotu: "",
+        sozlesmeOnayi: new Date(),
+      },
+      AYAR,
+    );
+    assert.ok(s.tamam);
+    await testDb().order.update({ where: { numara: s.numara }, data: { odemeDurumu: "odendi" } });
+
+    const bKime = `${ON_EK}${b.customerId.toLowerCase()}@deneme.test`;
+    const giden: string[] = [];
+    const ilk = async (kime: string) => {
+      if (kime === bKime) return { gonderildi: false };
+      giden.push(kime);
+      return { gonderildi: true };
+    };
+    await listeBildirimleriniGonder(ilk);
+    const ikinci = async (kime: string) => {
+      giden.push(kime);
+      return { gonderildi: true };
+    };
+    await listeBildirimleriniGonder(ikinci);
+    await listeBildirimleriniGonder(ikinci);
+
+    const aKime = `${ON_EK}${a.customerId.toLowerCase()}@deneme.test`;
+    assert.deepEqual(
+      giden.filter((k) => k === aKime || k === bKime),
+      [aKime, bKime],
+    );
   });
 });

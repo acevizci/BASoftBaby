@@ -27,6 +27,7 @@ import { db } from "@/server/veritabani";
 import { siparisiIptalEtVeStoguIadeEt } from "@/server/odeme-akis";
 import { hareketYaz, type Yapan } from "@/server/stok-hareket";
 import { iadeKaydiAc, iadeTutari } from "@/server/iade";
+import { alinanlariIsle } from "@/server/dogum-listesi";
 import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
 import { CAYMA_GUN, TALEP_TURLERI, type TalepTuru } from "@/ui/talep-bicim";
 
@@ -308,7 +309,7 @@ export async function talebiSonuclandir(
         select: {
           adet: true,
           orderItemId: true,
-          orderItem: { select: { variantId: true, fiyatKurus: true } },
+          orderItem: { select: { variantId: true, fiyatKurus: true, giftListItemId: true } },
         },
       },
     },
@@ -362,7 +363,7 @@ async function urunGeriGeldi(
   satirlar: {
     adet: number;
     orderItemId: string;
-    orderItem: { variantId: string | null; fiyatKurus: number };
+    orderItem: { variantId: string | null; fiyatKurus: number; giftListItemId: string | null };
   }[],
   durumVerisi: { durum: string; cevap: string },
   yeniVaryantId?: string,
@@ -430,6 +431,14 @@ async function urunGeriGeldi(
       }
       return; // Değişimde para hareketi yok.
     }
+
+    // İade edilen doğum listesi hediyesi listede yeniden alınabilir (K-154);
+    // değişimde hediye yerinde kalıyor, sayılmıyor.
+    await alinanlariIsle(
+      islem,
+      satirlar.map((s) => ({ giftListItemId: s.orderItem.giftListItemId, adet: s.adet })),
+      -1,
+    );
 
     const tutar = await iadeTutari(
       orderId,

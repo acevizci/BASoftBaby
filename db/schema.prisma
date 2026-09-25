@@ -423,6 +423,9 @@ model Order {
   listeGonderen   String    @default("")
   listeNotu       String    @default("")
   listeBildirildi DateTime?
+  /// Haberi gitmiş listeler (K-154): bir siparişte birden çok listenin ürünü
+  /// varken biri gönderilemezse ertesi gün yalnız o yeniden denensin.
+  listeBildirilenler String[] @default([])
   /// Liste sahibinin adresine gönderildi (K-149): adres alanları sahibin
   /// adresi, hediye edene gösterilmiyor. `adSoyad`/`telefon` sipariş verenin;
   /// kargoyu teslim alanınki bu iki alanda.

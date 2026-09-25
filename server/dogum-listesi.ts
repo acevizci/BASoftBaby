@@ -310,6 +310,7 @@ export async function listeBildirimleriniGonder(
       id: true,
       listeGonderen: true,
       listeNotu: true,
+      listeBildirilenler: true,
       satirlar: {
         where: { giftListItemId: { not: null } },
         select: {
@@ -354,7 +355,9 @@ export async function listeBildirimleriniGonder(
       listeler.set(l.id, g);
     }
     let hepsi = true;
-    for (const l of listeler.values()) {
+    for (const [listId, l] of listeler) {
+      // Önceki denemede haberi gitmiş liste yeniden almıyor.
+      if (s.listeBildirilenler.includes(listId)) continue;
       const sonuc = await gonderici(l.kime, {
         sahipAdi: l.sahipAdi,
         gonderen: s.listeGonderen,
@@ -362,7 +365,14 @@ export async function listeBildirimleriniGonder(
         urunler: l.urunler,
         kod: l.kod,
       });
-      if (!sonuc.gonderildi) hepsi = false;
+      if (sonuc.gonderildi) {
+        await db.order.update({
+          where: { id: s.id },
+          data: { listeBildirilenler: { push: listId } },
+        });
+      } else {
+        hepsi = false;
+      }
     }
     // Gönderilemeyen yarın yeniden denenecek (liste yoksa da işaretleniyor).
     if (!hepsi) continue;

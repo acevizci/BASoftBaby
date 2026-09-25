@@ -107,10 +107,18 @@ export default async function FaturaSayfasi({
         <div className="mt-4">
           <p className="text-xs font-bold uppercase">Alıcı</p>
           <p className="font-bold">{siparis.adSoyad}</p>
-          <p className="text-sm">{siparis.adres}</p>
-          <p className="text-sm">
-            {siparis.ilce} / {siparis.il}
-          </p>
+          {/* K-154: liste sahibinin adresine giden siparişte alıcı sipariş
+              veren; o adres onun değil, faturaya yazılmıyor. */}
+          {siparis.listeAdresi ? (
+            <p className="text-sm">Hediye gönderimi (doğum listesi)</p>
+          ) : (
+            <>
+              <p className="text-sm">{siparis.adres}</p>
+              <p className="text-sm">
+                {siparis.ilce} / {siparis.il}
+              </p>
+            </>
+          )}
           <p className="rakam text-sm">
             {siparis.telefon} · {siparis.eposta}
           </p>
