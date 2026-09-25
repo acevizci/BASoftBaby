@@ -293,6 +293,12 @@ model StoreSetting {
   tesvikGun        Int @default(10)
   tesvikGecerlilik Int @default(30)
 
+  /// Arkadaşını davet et (K-152): davet edene hediye çeki tutarı (0 = kapalı),
+  /// davet edilenin ilk sipariş kuponu (%) ve yılda en fazla ödül sayısı.
+  davetOdulKurus Int @default(0)
+  davetYuzde     Int @default(10)
+  davetEnFazla   Int @default(10)
+
   /// Örnek bannerlar bir kez yazıldı mı. Silinen banner yayında geri gelmesin diye.
   bannerTohumu Boolean @default(false)
 
@@ -607,6 +613,17 @@ model Customer {
   /// İkinci sipariş teşvik kuponu gönderildiği an (K-151); bir kez.
   tesvikGonderildi DateTime?
   kisiselKuponlar  Campaign[]
+
+  /// Arkadaşını davet et (K-152): paylaşım bağlantısındaki kod, ilk
+  /// istendiğinde üretiliyor. Bu üyeyi davet eden ve davet edene ödülün
+  /// verildiği (ya da uygun bulunmadığı) an.
+  davetKodu       String?    @unique
+  davetEdenId     String?
+  davetEden       Customer?  @relation("Davet", fields: [davetEdenId], references: [id], onDelete: SetNull)
+  davetEdilenler  Customer[] @relation("Davet")
+  davetSonuclandi DateTime?
+  /// Ödül verildiyse hediye çekinin kodu; boşsa uygun bulunmadı.
+  davetOdulKodu   String     @default("")
   adresler   Address[]
   siparisler Order[]
   jetonlar   CustomerToken[]

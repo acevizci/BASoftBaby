@@ -11,6 +11,7 @@ import { yorumIstekleriniGonder } from "@/server/yorum-istegi";
 import { listeBildirimleriniGonder } from "@/server/dogum-listesi";
 import { buyumeHatirlatmalariniGonder } from "@/server/buyume";
 import { tesvikleriGonder } from "@/server/tesvik";
+import { davetOdulleriniVer } from "@/server/davet";
 import { eskiBildirimIsteklerimiTemizle } from "@/server/stok-bildirimi";
 import { eskiGirisSayaclariniTemizle } from "@/server/giris-sinir";
 import { eskiPanelKayitlariniTemizle } from "@/server/yonetim-kimlik";
@@ -56,6 +57,8 @@ export async function GET(istek: NextRequest) {
   const buyume = await buyumeHatirlatmalariniGonder();
   // İlk siparişi teslim edilen üyeye kişiye özel ikinci sipariş kuponu (K-151).
   const tesvik = await tesvikleriGonder();
+  // Davet edilenin ilk siparişi cayma süresini geçince davet edene çek (K-152).
+  const davet = await davetOdulleriniVer();
   // Bir yıldır stoğa girmemiş ürünün bekleyen adresini tutmanın anlamı yok.
   const bildirim = await eskiBildirimIsteklerimiTemizle();
   // Giriş sayaçları: sayaç için gereken şey adresin kendisi değil, aynı
@@ -76,6 +79,7 @@ export async function GET(istek: NextRequest) {
     listeHediyesi,
     buyume,
     tesvik,
+    davet,
     bildirim,
     girisSayaci,
     panel,

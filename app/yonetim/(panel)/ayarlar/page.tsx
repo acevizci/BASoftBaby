@@ -25,8 +25,22 @@ export default async function AyarEkrani({ searchParams }: PageProps<"/yonetim/a
   const ayar = await ayarlariGetir();
   const tesvik = (await db.storeSetting.findUnique({
     where: { id: "tek" },
-    select: { tesvikYuzde: true, tesvikGun: true, tesvikGecerlilik: true },
-  })) ?? { tesvikYuzde: 0, tesvikGun: 10, tesvikGecerlilik: 30 };
+    select: {
+      tesvikYuzde: true,
+      tesvikGun: true,
+      tesvikGecerlilik: true,
+      davetOdulKurus: true,
+      davetYuzde: true,
+      davetEnFazla: true,
+    },
+  })) ?? {
+    tesvikYuzde: 0,
+    tesvikGun: 10,
+    tesvikGecerlilik: 30,
+    davetOdulKurus: 0,
+    davetYuzde: 10,
+    davetEnFazla: 10,
+  };
 
   return (
     <div className="flex flex-col gap-5">
@@ -236,6 +250,60 @@ export default async function AyarEkrani({ searchParams }: PageProps<"/yonetim/a
             )}{" "}
             Yalnızca tanıtım e-postasına izin vermiş, e-postasını doğrulamış üyelere; her üyeye bir
             kez. Kupon yalnızca o üyenin hesabında geçerli, kampanyalar listesinde görünmez.
+          </p>
+        </section>
+
+        {/* Arkadaşını davet et (K-152). */}
+        <section className="rounded-marka border border-cizgi bg-yuzey p-5">
+          <h2 className="text-lg">Arkadaşını davet et</h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <label className="flex flex-col gap-1.5">
+              <span className={ETIKET}>Davet edene çek (₺) · 0 kapalı</span>
+              <input
+                name="davetOdul"
+                inputMode="decimal"
+                defaultValue={kurusYaz(tesvik.davetOdulKurus)}
+                className={`${GIRDI} rakam`}
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={ETIKET}>Davet edilene ilk sipariş (%)</span>
+              <input
+                name="davetYuzde"
+                type="number"
+                min={0}
+                max={50}
+                defaultValue={tesvik.davetYuzde}
+                className={`${GIRDI} rakam`}
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={ETIKET}>Üye başına yılda en fazla ödül</span>
+              <input
+                name="davetEnFazla"
+                type="number"
+                min={1}
+                max={100}
+                defaultValue={tesvik.davetEnFazla}
+                className={`${GIRDI} rakam`}
+              />
+            </label>
+          </div>
+          <p className="mt-3 text-xs text-metin-3">
+            {tesvik.davetOdulKurus > 0 ? (
+              <>
+                Açık. Her üyenin Hesabım&apos;da davet bağlantısı var. Bağlantıyla üye olan
+                arkadaşa kendine özel, tek kullanımlık{" "}
+                <span className="rakam font-bold">%{tesvik.davetYuzde}</span> ilk sipariş kuponu
+                (30 gün); arkadaşın ilk siparişi teslim edilip 14 günlük cayma süresi geçince
+                davet edene{" "}
+                <span className="rakam font-bold">{fiyatYaz(tesvik.davetOdulKurus)}</span> hediye
+                çeki (1 yıl geçerli).
+              </>
+            ) : (
+              <>Kapalı: davet bağlantıları çalışmıyor, Hesabım&apos;da görünmüyor.</>
+            )}{" "}
+            Siparişin telefonu ya da adresi davet edeninkiyle aynıysa ödül verilmiyor.
           </p>
         </section>
 

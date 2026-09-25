@@ -11,6 +11,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { DAVET_CEREZI, davetiBagla } from "@/server/davet";
 import { db } from "@/server/veritabani";
 import { islemSinirla } from "@/server/istek-siniri";
 import { izinDegisti } from "@/server/iys";
@@ -89,6 +91,18 @@ export async function kayitOl(veri: FormData): Promise<void> {
   });
 
   if (izin) await izinDegisti(eposta, true);
+  // Davet bağlantısıyla geldiyse davet edene bağlanıyor, ilk sipariş kuponu
+  // açılıyor (K-152). Tutmaması kaydı bozmamalı.
+  const kavanoz = await cookies();
+  const davetKodu = kavanoz.get(DAVET_CEREZI)?.value;
+  if (davetKodu) {
+    try {
+      await davetiBagla(musteri.id, davetKodu);
+    } catch (hata) {
+      console.error("Davet bağlanamadı:", hata);
+    }
+    kavanoz.delete(DAVET_CEREZI);
+  }
   await dogrulamaGonder(musteri.id, eposta, adSoyad);
   await oturumAc(musteri.id);
   // Üye olmadan doldurulmuş sepet varsa artık sahibi belli.

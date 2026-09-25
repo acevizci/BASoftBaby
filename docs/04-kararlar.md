@@ -6066,6 +6066,32 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
 **Nerede:** [`../server/tesvik.ts`](../server/tesvik.ts), `gecerliKampanyalar` ve
 `kuponKullan` — [`../server/kampanya.ts`](../server/kampanya.ts), `tesvikEpostasi`
 
+### K-152 · Arkadaşını davet et
+
+- Her üyenin Hesabım › **Arkadaşını davet et** sayfasında bir bağlantısı var
+  (`/davet/<kod>`; kod ilk açılışta üretiliyor). Bağlantı kodu 30 günlük
+  çereze yazıp kayıt sayfasına gönderiyor; kayıt sayfası "X seni davet etti"
+  diyor.
+- Bağlantıyla üye olan arkadaş davet edene bağlanıyor (`davetEdenId`) ve ona
+  kendine özel, tek kullanımlık **%`davetYuzde`** ilk sipariş kuponu açılıyor
+  (`HOSGELDIN-…`, 30 gün; K-151 altyapısı). Kişiye özel kuponlar Hesabım'ın
+  başında görünüyor. Ödeme sırasında hesap açanlar bağlanmıyor: sipariş zaten
+  veriliyor.
+- Arkadaşın ilk siparişi **teslim edilip 14 günlük cayma süresi geçince**
+  (ödenmiş, iptal/iade değil) davet edene **`davetOdulKurus`** tutarında,
+  1 yıl geçerli hediye çeki (K-137) ve e-posta. Çek davet sayfasında da
+  listeleniyor; e-posta gitmese de kaybolmuyor.
+- **Kötüye kullanım:** siparişin telefonu davet edenin hesap ya da adres
+  telefonlarından biriyle, ya da adresi kayıtlı adreslerinden biriyle aynıysa
+  ödül yok (kendini davet etme); kendi koduyla bağlanılamıyor; üye başına
+  yılda en fazla `davetEnFazla` ödül. Her davetli bir kez sonuçlanıyor
+  (`davetSonuclandi`, ödül verildiyse `davetOdulKodu`).
+- Ayarlar › Satış ayarları'ndan; **varsayılan kapalı** (ödül 0 ₺): kapalıyken
+  bağlantılar ana sayfaya gidiyor, menüde görünmüyor.
+
+**Nerede:** [`../server/davet.ts`](../server/davet.ts),
+[`../app/(magaza)/davet/[kod]/route.ts`](<../app/(magaza)/davet/[kod]/route.ts>)
+
 
 ---
 

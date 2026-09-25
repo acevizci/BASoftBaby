@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import { kayitOl } from "@/server/uyelik-islem";
 import { EN_KISA_SIFRE, girisYapan } from "@/server/uyelik";
 import GonderDugmesi from "@/ui/gonder-dugmesi";
+import { cookies } from "next/headers";
+import { DAVET_CEREZI, davetAyari, davetEdeniBul } from "@/server/davet";
 import { ANA_DUGME, ETIKET, GIRDI, HATALAR, HATA_KUTUSU, KART } from "../hesap-bicim";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +22,11 @@ export default async function KayitSayfasi({ searchParams }: PageProps<"/kayit">
       : "/hesabim";
   if (await girisYapan()) redirect(hedef);
   const hataMetni = typeof hata === "string" ? HATALAR[hata] : undefined;
+  // Davet bağlantısıyla gelindiyse (K-152) kimin davet ettiği ve kupon.
+  const davetKodu = (await cookies()).get(DAVET_CEREZI)?.value;
+  const davet = davetKodu ? await davetAyari() : undefined;
+  const davetEden =
+    davetKodu && davet && davet.odulKurus > 0 ? await davetEdeniBul(davetKodu) : undefined;
 
   return (
     <div className="mx-auto max-w-md px-4 py-10">
@@ -27,6 +34,14 @@ export default async function KayitSayfasi({ searchParams }: PageProps<"/kayit">
       <p className="mt-2 text-sm text-metin-2">
         Siparişlerin bir arada dursun, adresini her seferinde yazma.
       </p>
+
+      {davetEden && davet && (
+        <p className="mt-4 rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">
+          {davetEden.ad} seni davet etti.
+          {davet.yuzde > 0 &&
+            ` Üye olunca ilk siparişine özel %${davet.yuzde} indirim kuponun hesabında olacak.`}
+        </p>
+      )}
 
       {hataMetni && <p className={HATA_KUTUSU}>{hataMetni}</p>}
 

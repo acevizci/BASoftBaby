@@ -987,6 +987,10 @@ export async function satisAyariKaydet(veri: FormData): Promise<void> {
     tesvikYuzde: tamSayi("tesvikYuzde", 0, 50, 0),
     tesvikGun: tamSayi("tesvikGun", 1, 365, 10),
     tesvikGecerlilik: tamSayi("tesvikGecerlilik", 1, 365, 30),
+    // Arkadaşını davet et (K-152): ödül en çok 5.000 ₺.
+    davetOdulKurus: Math.min(500000, Math.max(0, kurusaCevir(veri.get("davetOdul")) ?? 0)),
+    davetYuzde: tamSayi("davetYuzde", 0, 50, 10),
+    davetEnFazla: tamSayi("davetEnFazla", 1, 100, 10),
   };
 
   const tasiyiciKodu = String(veri.get("varsayilanTasiyici") ?? "yurtici");

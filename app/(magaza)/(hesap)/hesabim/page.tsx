@@ -6,6 +6,7 @@ import Sayfalama from "@/ui/sayfalama";
 import { sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import { durumAdi, durumRengi, odemeAdi } from "@/ui/siparis-bicim";
+import { kisiselKuponlar } from "@/server/davet";
 import { BILDIRIMLER, HATALAR, HATA_KUTUSU, IYI_KUTU, KART } from "../hesap-bicim";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +34,10 @@ export default async function SiparislerimSayfasi({ searchParams }: PageProps<"/
   const { kayit, baglanan, sayfa, hata } = await searchParams;
   const toplamAdet = await siparisAdedim(musteri.id);
   const durum = sayfaCoz(sayfa, toplamAdet, LISTE_BOYU);
-  const siparisler = await siparislerimiGetir(musteri.id, durum.atla, durum.boy);
+  const [siparisler, kuponlar] = await Promise.all([
+    siparislerimiGetir(musteri.id, durum.atla, durum.boy),
+    kisiselKuponlar(musteri.id),
+  ]);
   const adres = (n: number) => sayfaAdresi("/hesabim", n);
 
   const bildirim = typeof kayit === "string" ? BILDIRIMLER[kayit] : undefined;
@@ -55,6 +59,23 @@ export default async function SiparislerimSayfasi({ searchParams }: PageProps<"/
           {baglamaNotu}
         </p>
       )}
+
+      {/* Kişiye özel kuponlar (K-151, K-152): ödeme sayfasında yazılıyor. */}
+      {kuponlar.map((k) => (
+        <div
+          key={k.kod}
+          className="mt-4 rounded-marka border border-nane bg-nane-soluk px-4 py-3 text-sm text-nane-koyu"
+        >
+          <p className="font-bold">
+            Sana özel %{k.yuzde} indirim: <span className="rakam select-all">{k.kod}</span>
+          </p>
+          <p className="mt-0.5 text-xs">
+            Tek siparişte geçerli; sepette ya da ödeme sayfasında kupon alanına yaz.
+            {k.bitis &&
+              ` Son gün ${k.bitis.toLocaleDateString("tr-TR", { dateStyle: "long", timeZone: "Europe/Istanbul" })}.`}
+          </p>
+        </div>
+      ))}
 
       <h2 className="mt-4 text-lg">Siparişlerim</h2>
 

@@ -61,6 +61,7 @@ export const AYRILMIS_ADRESLER: ReadonlySet<string> = new Set([
   "rehber",
   "liste",
   "dogum-listesi",
+  "davet",
 ]);
 
 export function adresAyrilmisMi(slug: string): boolean {

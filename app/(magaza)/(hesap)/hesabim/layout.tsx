@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cikisYap, dogrulamayiTekrarGonder } from "@/server/uyelik-islem";
 import { girisYapan } from "@/server/uyelik";
+import { davetAyari } from "@/server/davet";
 import { HESAP_SAYFALARI, IKINCIL_DUGME } from "../hesap-bicim";
 
 /**
@@ -14,6 +15,8 @@ import { HESAP_SAYFALARI, IKINCIL_DUGME } from "../hesap-bicim";
 export default async function HesapDuzeni({ children }: { children: React.ReactNode }) {
   const musteri = await girisYapan();
   if (!musteri) redirect("/giris?hata=giris&nereye=%2Fhesabim");
+  const davetAcik = (await davetAyari()).odulKurus > 0;
+  const sayfalar = HESAP_SAYFALARI.filter((s) => davetAcik || s.yol !== "/hesabim/davet");
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
@@ -50,7 +53,7 @@ export default async function HesapDuzeni({ children }: { children: React.ReactN
       )}
 
       <nav aria-label="Hesap sayfaları" className="mt-5 flex flex-wrap gap-2">
-        {HESAP_SAYFALARI.map((s) => (
+        {sayfalar.map((s) => (
           <Link
             key={s.yol}
             href={s.yol}

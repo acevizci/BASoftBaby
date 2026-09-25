@@ -911,3 +911,28 @@ Bu e-postaları almak istemiyorsan tek tıkla çıkabilirsin:
 ${iptal}${await altBilgi()}`,
   );
 }
+
+/** Arkadaşını davet et (K-152): davet edene ödül çeki. İşlem bildirimi. */
+export async function davetOdulEpostasi(
+  kime: string,
+  bilgi: { adSoyad: string; arkadas: string; kod: string; tutarKurus: number; sonKullanma: Date },
+): Promise<EpostaSonucu> {
+  const son = bilgi.sonKullanma.toLocaleDateString("tr-TR", {
+    dateStyle: "long",
+    timeZone: "Europe/Istanbul",
+  });
+  return gonder(
+    kime,
+    `Davetin için ${tutar(bilgi.tutarKurus)} hediye çeki`,
+    `Merhaba ${bilgi.adSoyad},
+
+Davet ettiğin ${bilgi.arkadas} ilk alışverişini yaptı. Teşekkür olarak sana ${tutar(bilgi.tutarKurus)} değerinde hediye çeki tanımladık:
+
+Kod: ${bilgi.kod}
+Son kullanma: ${son}
+
+Ödeme sayfasındaki "Hediye çeki" alanına yazman yeterli. Kodun hesabındaki "Arkadaşını davet et" sayfasında da duruyor.
+
+${siteAdresi()}/hesabim/davet${await altBilgi()}`,
+  );
+}
