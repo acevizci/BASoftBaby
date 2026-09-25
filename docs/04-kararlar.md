@@ -6126,6 +6126,22 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
   alıcı sipariş veren; sokak adresi o kişinin olmadığı için yazılmıyor,
   yerine "Hediye gönderimi (doğum listesi)".
 
+### K-155 · Rehbere başlangıç yazıları
+
+- Rehber boştu. Anne-babaların en çok aradığı konularda yedi yazı veri
+  göçüyle yayına alındı: yenidoğan kıyafet listesi, hastane çantası, beden
+  seçimi, bebek kıyafeti yıkama, mevsime göre giydirme, zıbın-body-tulum
+  farkı, doğum listesi nasıl hazırlanır.
+- Yazılar sıradan rehber kayıtları: panelde Vitrin › Rehber yazıları'ndan
+  düzenlenip kaldırılabilir ya da yayından alınabilir. Göç aynı adreste yazı
+  varsa dokunmuyor (`ON CONFLICT (slug) DO NOTHING`).
+- Bağlantılar yalnızca kesin var olan sayfalara: tüm ürünler, beden süzgeci,
+  beden rehberi, doğum listesi ve birbirlerine. Kategori ve ürün adresleri
+  canlıda farklı olabileceği için yazı altı ürün kartları boş; panelden
+  "Ürünler" alanına ürün adresleri yazılarak eklenebilir.
+- Sağlıkla ilgili kısımlar (uyku güvenliği, oda sıcaklığı, araç koltuğu)
+  genel kabul görmüş önerilerle sınırlı, tıbbi tavsiye içermiyor.
+
 
 ---
 
