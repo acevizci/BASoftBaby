@@ -16,6 +16,7 @@ import SetIcerigi from "@/ui/set-icerigi";
 import UrunSorulari from "@/ui/urun-sorulari";
 import { urunSorulari } from "@/server/soru";
 import { setIcerikleri } from "@/server/set";
+import { birlikteAlinanlar } from "@/server/birlikte-alinanlar";
 import { sayfaYolu, urunYapisalVerisi } from "@/server/yapisal-veri";
 import { ayarlariGetir } from "@/server/sepet";
 import { CAYMA_GUN } from "@/ui/talep-bicim";
@@ -64,14 +65,18 @@ export default async function UrunSayfasi({
     redirect(yon.hedef);
   }
 
-  const [kategori, benzerler, yorumOzeti, ayar, setler, sorular] = await Promise.all([
+  const [kategori, benzerHepsi, yorumOzeti, ayar, setler, sorular, birlikte] = await Promise.all([
     kategoriGetir(urun.kategori),
-    benzerUrunler(urun),
+    benzerUrunler(urun, 8),
     urunYorumlari(urun.id, yorumSayfa),
     ayarlariGetir(),
     setIcerikleri(urun.id),
     urunSorulari(urun.id),
+    birlikteAlinanlar(urun),
   ]);
+  // "Birlikte alınanlar"da çıkan ürün "Bunlara da bakabilirsin"de tekrar etmesin.
+  const birlikteSluglar = new Set(birlikte.map((u) => u.slug));
+  const benzerler = benzerHepsi.filter((u) => !birlikteSluglar.has(u.slug)).slice(0, 4);
   const bedenler = urununBedenleri(urun);
   // Boy-kilo bilgisi istemci bileşenine sunucudan geçiyor: bedenler artık
   // veritabanında (K-56).
@@ -235,6 +240,18 @@ export default async function UrunSayfasi({
       <YorumListesi ozet={yorumOzeti} slug={urun.slug} renk={seciliRenk} />
 
       <UrunSorulari slug={urun.slug} sorular={sorular} sonuc={typeof soru === "string" ? soru : undefined} />
+
+      {/* Aynı siparişte bu ürünle alınanlar (K-148); sipariş yoksa şerit yok. */}
+      {birlikte.length > 0 && (
+        <section className="mt-14">
+          <h2 className="text-xl">Bununla birlikte alınanlar</h2>
+          <div className="mt-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {birlikte.map((u) => (
+              <UrunKarti key={u.slug} urun={u} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="mt-14">
         <h2 className="text-xl">Bunlara da bakabilirsin</h2>

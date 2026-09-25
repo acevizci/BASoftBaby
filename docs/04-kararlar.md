@@ -5993,6 +5993,18 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
 **Nerede:** [`../server/buyume.ts`](../server/buyume.ts),
 [`../server/buyume-bicim.ts`](../server/buyume-bicim.ts), `buyumeEpostasi`
 
+### K-148 · Ürün sayfasında "Bununla birlikte alınanlar"
+
+- Bu ürünü içeren siparişlerde başka hangi ürünler vardı: ödemesi alınmış,
+  iptal edilmemiş, son bir yılın siparişleri. Kaç **ayrı siparişte** birlikte
+  geçtiğine göre sıralanıyor; eşitlikte daha yeni satış önde. En çok 4 ürün.
+- Tükenmiş, pasif ya da kategorisi kapalı ürün çıkmıyor. Hiç yoksa (yeni ürün,
+  az sipariş) şerit görünmüyor; elle seçim yok, siparişler geldikçe doluyor.
+- Bu şeritte çıkan ürün altındaki "Bunlara da bakabilirsin"de tekrar etmiyor.
+- Sorgu saatte bir yenileniyor; bir saatlik gecikme bu şerit için önemsiz.
+
+**Nerede:** [`../server/birlikte-alinanlar.ts`](../server/birlikte-alinanlar.ts)
+
 
 ---
 
