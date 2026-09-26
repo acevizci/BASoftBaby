@@ -212,6 +212,15 @@ export default function UrunKarti({ urun }: { urun: Urun }) {
           </p>
         )}
 
+        {urun.adetKampanyasi && (
+          <p className="text-xs font-bold text-nane-koyu">
+            <span className="rounded-full bg-nane-soluk px-1.5 py-0.5 uppercase">
+              {urun.adetKampanyasi.etiket}
+            </span>{" "}
+            {urun.adetKampanyasi.ad}
+          </p>
+        )}
+
         <SepeteEkle
           tamGenislik
           kucuk

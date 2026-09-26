@@ -223,6 +223,19 @@ export default async function SepetSayfasi({ searchParams }: PageProps<"/sepet">
                 )}
               </p>
             )}
+            {sepet.kuponUymuyor?.sebep === "alt-sinir" && (
+              <p className="mt-2 text-xs font-semibold text-metin-2">
+                Kuponun geçerli; sepetine{" "}
+                <span className="rakam">{fiyatYaz(sepet.kuponUymuyor.kalanKurus)}</span> daha
+                eklersen uygulanacak.
+              </p>
+            )}
+            {sepet.kuponUymuyor?.sebep === "kapsam" && (
+              <p className="mt-2 text-xs font-semibold text-metin-2">
+                Kuponun geçerli, ama sepetindeki ürünler bu kampanyanın kapsamında değil (ya da
+                adet kampanyası için yeterli adet yok).
+              </p>
+            )}
             {sepet.kuponYetersizMi && (
               <p className="mt-2 text-xs font-semibold text-metin-2">
                 Kuponun geçerli, ama şu an sepetinde daha çok indiren bir kampanya var; o

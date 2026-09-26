@@ -25,6 +25,9 @@ export type KampanyaKaydi = {
   productId: string | null;
   kuponKodu: string | null;
   enAzSepetKurus: number;
+  /** "X al Y öde" (K-168); yalnızca tip "al-ode" iken dolu. */
+  alAdet?: number | null;
+  odeAdet?: number | null;
   /** Bitiş anı (ISO); vitrindeki "son 3 gün" notu için, yalnızca ürün indirimlerinde dolu. */
   bitis?: string | null;
 };
@@ -34,6 +37,8 @@ export type IndirimSatiri = {
   productId: string;
   categoryId: string;
   araToplamKurus: number;
+  /** Satırdaki adet; "X al Y öde" birim fiyatları buradan çıkarıyor. Yoksa 1. */
+  adet?: number;
 };
 
 export type UygulananKampanya = {
@@ -68,9 +73,48 @@ export function kampanyaIndirimi(
     .reduce((t, s) => t + s.araToplamKurus, 0);
   if (taban <= 0) return 0;
 
+  if (k.tip === "al-ode") return alOdeIndirimi(k, satirlar.filter((s) => kapsamdaMi(k, s)));
   if (k.tip === "tutar") return Math.min(k.deger, taban);
   if (k.deger <= 0) return 0;
   return Math.floor((taban * Math.min(k.deger, 100)) / 100);
+}
+
+/** Tek bir sepette sayılacak en çok birim; bozuk bir adet döngüyü şişirmesin. */
+const EN_COK_BIRIM = 1000;
+
+/**
+ * "X al Y öde" indirimi (K-168).
+ *
+ * Kapsamdaki ürünler birim birim açılıyor ve ucuzdan pahalıya diziliyor;
+ * her X birimde X − Y tanesi bedava ve bedava olanlar **en ucuzlar**.
+ * Farklı fiyatlı ürünler karışabildiği için bu, mağazanın pahalı ürünü
+ * bedava vermesini önlüyor ve sektördeki yaygın kural ("en ucuzu bizden").
+ * 3 al 2 öde, 5 ürün: 5 / 3 = 1 grup, 1 bedava; 6 ürün: 2 bedava.
+ *
+ * Geçersiz tanım (Y ≥ X, Y < 1) hiç indirim vermiyor.
+ */
+export function alOdeIndirimi(
+  k: Pick<KampanyaKaydi, "alAdet" | "odeAdet">,
+  satirlar: IndirimSatiri[],
+): number {
+  const al = k.alAdet ?? 0;
+  const ode = k.odeAdet ?? 0;
+  if (!Number.isInteger(al) || !Number.isInteger(ode) || ode < 1 || ode >= al) return 0;
+
+  const birimler: number[] = [];
+  for (const s of satirlar) {
+    const adet = Math.max(1, Math.floor(s.adet ?? 1));
+    const birim = Math.floor(s.araToplamKurus / adet);
+    for (let i = 0; i < adet && birimler.length < EN_COK_BIRIM; i++) birimler.push(birim);
+  }
+  birimler.sort((a, b) => a - b);
+  const bedava = Math.floor(birimler.length / al) * (al - ode);
+  return birimler.slice(0, bedava).reduce((t, b) => t + b, 0);
+}
+
+/** Kampanyanın panelde ve vitrinde okunan kısa adı: "%20", "50 ₺", "3 al 2 öde". */
+export function alOdeEtiketi(k: Pick<KampanyaKaydi, "alAdet" | "odeAdet">): string {
+  return `${k.alAdet ?? "?"} al ${k.odeAdet ?? "?"} öde`;
 }
 
 /**
@@ -84,12 +128,37 @@ export function kampanyaIndirimi(
  * alıyordu.
  */
 export function indirimiDagit(
-  k: Pick<KampanyaKaydi, "kapsam" | "categoryId" | "productId"> | undefined,
+  k:
+    | (Pick<KampanyaKaydi, "kapsam" | "categoryId" | "productId"> &
+        Partial<Pick<KampanyaKaydi, "tip" | "alAdet" | "odeAdet">>)
+    | undefined,
   satirlar: IndirimSatiri[],
   indirimKurus: number,
 ): number[] {
   const paylar = satirlar.map(() => 0);
   if (!k || indirimKurus <= 0) return paylar;
+
+  // "X al Y öde"de indirim, bedava sayılan en ucuz birimlerin satırlarına
+  // yazılıyor (K-168): orantılı dağıtılsaydı pahalı ürünü iade eden, bedava
+  // gelen ucuz ürünün indirimini de geri ödemiş olurdu.
+  if (k.tip === "al-ode") {
+    const birimler: { i: number; birim: number }[] = [];
+    satirlar.forEach((s, i) => {
+      if (!kapsamdaMi(k as KampanyaKaydi, s)) return;
+      const adet = Math.max(1, Math.floor(s.adet ?? 1));
+      const birim = Math.floor(s.araToplamKurus / adet);
+      for (let j = 0; j < adet && birimler.length < EN_COK_BIRIM; j++) birimler.push({ i, birim });
+    });
+    birimler.sort((a, b) => a.birim - b.birim);
+    let kalan = indirimKurus;
+    for (const b of birimler) {
+      if (kalan <= 0) break;
+      const pay = Math.min(b.birim, kalan);
+      paylar[b.i] += pay;
+      kalan -= pay;
+    }
+    return paylar;
+  }
 
   const kapsanan = satirlar
     .map((s, i) => ({ i, tutar: s.araToplamKurus }))
@@ -140,6 +209,8 @@ const SECIM = {
   productId: true,
   kuponKodu: true,
   enAzSepetKurus: true,
+  alAdet: true,
+  odeAdet: true,
 } as const;
 
 function tarihSuzgeci(simdi: Date) {
@@ -193,6 +264,8 @@ export async function gecerliKampanyalar(
       productId: k.productId,
       kuponKodu: k.kuponKodu,
       enAzSepetKurus: k.enAzSepetKurus,
+      alAdet: k.alAdet,
+      odeAdet: k.odeAdet,
     }));
 }
 

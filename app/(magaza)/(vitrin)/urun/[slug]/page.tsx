@@ -198,6 +198,15 @@ export default async function UrunSayfasi({
                 </>
               )}
             </p>
+            {urun.adetKampanyasi && (
+              <p className="mt-2 text-sm text-metin-2">
+                <span className="rounded-full bg-nane-soluk px-2 py-0.5 text-xs font-bold uppercase text-nane-koyu">
+                  {urun.adetKampanyasi.etiket}
+                </span>{" "}
+                <span className="font-bold text-nane-koyu">{urun.adetKampanyasi.ad}</span>
+                {" · "}sepette en ucuz ürün bedava; kampanyadaki ürünleri karıştırabilirsin.
+              </p>
+            )}
             {urun.kampanya && (
               <p className="mt-1 text-sm font-bold text-nane-koyu">
                 {urun.kampanya.ad}

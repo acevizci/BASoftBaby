@@ -78,6 +78,11 @@ export type Urun = {
   eskiFiyatKurus?: number;
   /** O an geçerli kampanyanın ürüne düşen hâli; yoksa indirim yok */
   kampanya?: { ad: string; indirimliFiyatKurus: number; bitis?: string };
+  /**
+   * Ürüne uyan "X al Y öde" kampanyası (K-168): fiyata yansımıyor, sepette
+   * hesaplanıyor; kartta ve ürün sayfasında etiket olarak görünüyor.
+   */
+  adetKampanyasi?: { ad: string; etiket: string; bitis?: string };
   rozet?: { ton: RozetTonu; yazi: string };
   puan: number;
   yorumSayisi: number;

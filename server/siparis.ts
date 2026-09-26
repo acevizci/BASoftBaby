@@ -186,6 +186,7 @@ export async function siparisOlustur(
     productId: s.variant.productId,
     categoryId: s.variant.product.categoryId,
     araToplamKurus: (s.variant.fiyatKurus ?? s.variant.product.fiyatKurus) * s.adet,
+    adet: s.adet,
   }));
   const kampanyalar = await gecerliKampanyalar(await kuponOku(), undefined, customerId);
   const kampanya = enIyiKampanya(kampanyalar, indirimSatirlari, araToplamKurus);

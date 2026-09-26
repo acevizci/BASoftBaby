@@ -6493,6 +6493,40 @@ sayım (K-165).
 [`../server/siparis-islem.ts`](../server/siparis-islem.ts),
 [`../server/yonetim.ts`](../server/yonetim.ts)
 
+### K-168 · "X al Y öde" kampanyası ve kampanya formunun mantık kontrolü
+
+- **Yeni tür "X al Y öde"** (`tip = "al-ode"`, `alAdet`, `odeAdet`).
+  - Kapsamdaki ürünler birim birim ucuzdan pahalıya diziliyor; her X
+    birimde X − Y tanesi bedava ve bedava olanlar **en ucuzlar**. Farklı
+    ürünler karışabiliyor; kapsam tüm ürünler, bir kategori ya da tek ürün.
+  - 3 al 2 öde: 5 ürün → 1 bedava, 6 ürün → 2 bedava.
+  - Sepet alt sınırı ve kupon koduyla birlikte kullanılabiliyor.
+  - Öteki kampanyalarla üst üste binmiyor; sepete uyanlardan en çok indiren
+    uygulanıyor.
+  - Ürün fiyatına yansımıyor, sepette hesaplanıyor; kartta ve ürün
+    sayfasında "3 AL 2 ÖDE" etiketi (kuponsuz, alt sınırsız olanlar).
+- **Satır payı:** indirim bedava sayılan birimlerin satırına yazılıyor
+  (orantılı değil). Pahalı ürünü iade eden, ucuz ürünün bedava payını geri
+  ödemiyor.
+  - Sınır: grubun bir parçası iade edilince kampanya yeniden
+    hesaplanmıyor. 3 al 2 öde'de ücretli bir ürünü iade eden, kalan ikisi
+    için kampanya bozulmuş olsa da o ürünün ödediği tutarı geri alıyor.
+- **Zarar uyarısı:** "X al Y öde"de ürün başına ortalama indirim,
+  (X − Y) / X.
+- **Kampanya formu:**
+  - Geçersiz girişte sebep yazıyor. Eskiden form sessizce hiçbir şey
+    yapmıyordu; sayı olmayan yüzde ise %1 oluyordu.
+  - Bitiş başlangıçtan önce olamıyor.
+  - Kupon kodu yalnızca A-Z, rakam, tire: "İNDİRİM" müşterinin yazdığı
+    "indirim"le tutmuyordu.
+  - Açıklama metni güncel (tutar indirimi ürün fiyatına yansımıyor, K-165).
+- **Sepette kupon mesajı:** kupon geçerli ama sepet alt sınırın altındaysa
+  "X ₺ daha ekle", kapsamı sepette yoksa "ürünler kapsamda değil" yazıyor.
+  Eskiden ikisinde de "daha çok indiren kampanya var" deniyordu.
+
+**Nerede:** [`../server/kampanya.ts`](../server/kampanya.ts),
+[`../testler/al-ode.test.ts`](../testler/al-ode.test.ts)
+
 ---
 
 ## Açık sorular

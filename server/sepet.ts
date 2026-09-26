@@ -16,6 +16,7 @@ import {
   KUPON_CEREZI,
   enIyiKampanya,
   gecerliKampanyalar,
+  kampanyaIndirimi,
   type UygulananKampanya,
 } from "@/server/kampanya";
 import { paletCoz, type Palet } from "@/ui/katalog-bicim";
@@ -68,6 +69,12 @@ export type Sepet = {
   kuponGecersizMi: boolean;
   /** Kod geçerli ama başka bir kampanya daha çok indirdiği için uygulanmadı */
   kuponYetersizMi: boolean;
+  /**
+   * Kod geçerli ama bu sepete uymuyor (K-168): alt sınırın altında (`kalanKurus`
+   * kadar eksik) ya da kapsamındaki ürün sepette yok / "X al Y öde" için adet az.
+   * Eskiden ikisinde de "daha çok indiren kampanya var" deniyordu.
+   */
+  kuponUymuyor?: { sebep: "alt-sinir"; kalanKurus: number } | { sebep: "kapsam" };
   kargoKurus: number;
   toplamKurus: number;
   /** Bedava kargoya kalan tutar; kargo zaten bedavaysa sıfır */
@@ -259,6 +266,16 @@ export async function sepetGetir(): Promise<Sepet> {
   const kuponVar = Boolean(kuponKodu);
   const kuponEslesti = kuponVar && kampanyalar.some((k) => k.kuponKodu);
   const kuponUygulandi = kampanya?.kuponMu ?? false;
+  // Kupon neden uygulanmadı: sepete uymuyor mu, yoksa başka kampanya mı kazandı.
+  const kuponKampanyasi = kampanyalar.find((k) => k.kuponKodu);
+  const kuponUymuyor: Sepet["kuponUymuyor"] =
+    kuponKampanyasi && !kuponUygulandi
+      ? araToplamKurus < kuponKampanyasi.enAzSepetKurus
+        ? { sebep: "alt-sinir", kalanKurus: kuponKampanyasi.enAzSepetKurus - araToplamKurus }
+        : kampanyaIndirimi(kuponKampanyasi, cikti, araToplamKurus) <= 0
+          ? { sebep: "kapsam" }
+          : undefined
+      : undefined;
 
   // Bedava kargo eşiği indirimden SONRAKİ tutara bakar.
   const indirimliAraToplam = araToplamKurus - indirimKurus;
@@ -273,7 +290,8 @@ export async function sepetGetir(): Promise<Sepet> {
     indirimKurus,
     kuponKodu,
     kuponGecersizMi: kuponVar && !kuponEslesti,
-    kuponYetersizMi: kuponEslesti && !kuponUygulandi,
+    kuponYetersizMi: kuponEslesti && !kuponUygulandi && !kuponUymuyor,
+    kuponUymuyor,
     kargoKurus,
     toplamKurus: indirimliAraToplam + kargoKurus,
     bedavayaKalanKurus: kargoKurus > 0 && kalan > 0 ? kalan : 0,

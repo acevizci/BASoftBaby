@@ -519,10 +519,16 @@ model Campaign {
   id String @id @default(cuid())
   ad String
 
-  /// yuzde · tutar
+  /// yuzde · tutar · al-ode
   tip   String @default("yuzde")
-  /// yuzde ise 20 (= %20), tutar ise kuruş
+  /// yuzde ise 20 (= %20), tutar ise kuruş; al-ode'de kullanılmıyor (0)
   deger Int
+
+  /// "X al Y öde" (K-168): her `alAdet` üründen `odeAdet` kadarı ücretli,
+  /// kalanı bedava; bedava olanlar kapsamdaki en ucuz ürünler. 3 al 2 öde →
+  /// alAdet 3, odeAdet 2. Yalnızca tip "al-ode" iken dolu.
+  alAdet  Int?
+  odeAdet Int?
 
   /// tumu · kategori · urun
   kapsam     String    @default("tumu")

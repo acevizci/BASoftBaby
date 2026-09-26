@@ -212,7 +212,15 @@ export type ZararliUrun = { ad: string; indirimliKurus: number; netKurus: number
  * olmayan ürün hesaba girmiyor.
  */
 export function kampanyaZarari(
-  k: { tip: string; deger: number; kapsam: string; categoryId: string | null; productId: string | null },
+  k: {
+    tip: string;
+    deger: number;
+    kapsam: string;
+    categoryId: string | null;
+    productId: string | null;
+    alAdet?: number | null;
+    odeAdet?: number | null;
+  },
   urunler: { id: string; ad: string; categoryId: string; fiyatKurus: number; alisFiyatKurus: number | null }[],
   kdvOrani: number,
 ): ZararliUrun[] {
@@ -220,10 +228,15 @@ export function kampanyaZarari(
     if (u.alisFiyatKurus === null) return [];
     if (k.kapsam === "urun" && k.productId !== u.id) return [];
     if (k.kapsam === "kategori" && k.categoryId !== u.categoryId) return [];
+    // "X al Y öde"de ürün başına ortalama indirim (X − Y) / X (K-168).
     const indirim =
       k.tip === "yuzde"
         ? Math.floor((u.fiyatKurus * Math.min(Math.max(k.deger, 0), 100)) / 100)
-        : Math.min(Math.max(k.deger, 0), u.fiyatKurus);
+        : k.tip === "al-ode"
+          ? k.alAdet && k.odeAdet && k.odeAdet < k.alAdet
+            ? Math.floor((u.fiyatKurus * (k.alAdet - k.odeAdet)) / k.alAdet)
+            : 0
+          : Math.min(Math.max(k.deger, 0), u.fiyatKurus);
     const indirimliKurus = u.fiyatKurus - indirim;
     const netKurus = kdvHaric(indirimliKurus, kdvOrani);
     return netKurus < u.alisFiyatKurus

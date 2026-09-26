@@ -1,6 +1,7 @@
 import { db } from "@/server/veritabani";
 import { kampanyaCevir, kampanyaKaydet, kampanyaSil } from "@/server/yonetim";
 import { fiyatYaz } from "@/ui/katalog-bicim";
+import { alOdeEtiketi } from "@/server/kampanya";
 import { kampanyaZarari, type ZararliUrun } from "@/server/kar";
 import { ayarlariGetir } from "@/server/sepet";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
@@ -31,8 +32,9 @@ function tarihYaz(t: Date | null): string {
   return t ? t.toLocaleDateString("tr-TR", { timeZone: "Europe/Istanbul" }) : "—";
 }
 
-function degerYaz(tip: string, deger: number): string {
-  return tip === "yuzde" ? `%${deger}` : fiyatYaz(deger);
+function degerYaz(k: { tip: string; deger: number; alAdet: number | null; odeAdet: number | null }): string {
+  if (k.tip === "al-ode") return alOdeEtiketi(k);
+  return k.tip === "yuzde" ? `%${k.deger}` : fiyatYaz(k.deger);
 }
 
 const UYARI = <>Kampanya kalıcı olarak siliniyor; geri alınamıyor. Sepetlerde artık uygulanmayacak. Yalnızca durdurmak istiyorsan &quot;Kapat&quot; yeter.</>;
@@ -48,6 +50,17 @@ const BILDIRIMLER: Record<string, string> = {
 const HATALAR: Record<string, string> = {
   ...ORTAK_HATALAR,
   kupon: "Bu kupon kodu başka bir kampanyada kullanılıyor. Başka bir kod seç.",
+  ad: "Kampanya adı boş olamaz.",
+  gecersiz: "Tanınmayan indirim türü ya da kapsam.",
+  yuzde: "Yüzde 1 ile 100 arasında bir sayı olmalı.",
+  tutar: "Geçerli bir indirim tutarı yaz (ör. 50,00).",
+  "al-ode":
+    "\"X al Y öde\" için X en az 2, en çok 20; Y en az 1 ve X'ten küçük olmalı (ör. 3 al 2 öde).",
+  "kupon-harf":
+    "Kupon kodu 3-40 karakter; yalnızca Türkçe olmayan büyük harf (A-Z), rakam, tire ve alt çizgi. Ör. HOSGELDIN10.",
+  kategori: "Kapsam \"Tek kategori\" seçildiyse bir kategori seç.",
+  urun: "Kapsam \"Tek ürün\" seçildiyse bir ürün seç.",
+  tarih: "Bitiş tarihi başlangıçtan önce olamaz.",
 };
 
 export default async function KampanyaEkrani({
@@ -151,7 +164,7 @@ export default async function KampanyaEkrani({
                       <ZararUyarisi zararlilar={kampanyaZarari(k, maliyetliler, satisAyari.kdvOrani)} tutarMi={k.tip === "tutar"} />
                       <FiyatUyarisi urunler={fiyatUyarilari.get(k.id) ?? []} />
                     </td>
-                    <td className="rakam py-2 font-semibold">{degerYaz(k.tip, k.deger)}</td>
+                    <td className="rakam py-2 font-semibold">{degerYaz(k)}</td>
                     <td className="py-2 text-metin-2">
                       {k.kapsam === "tumu"
                         ? "Tüm ürünler"
@@ -218,13 +231,42 @@ export default async function KampanyaEkrani({
               <select name="tip" defaultValue="yuzde" className={GIRDI}>
                 <option value="yuzde">Yüzde</option>
                 <option value="tutar">Tutar (₺)</option>
+                <option value="al-ode">X al Y öde (ör. 3 al 2 öde)</option>
               </select>
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <span className={ETIKET}>Değer — yüzdede 20, tutarda 50,00</span>
-              <input name="deger" required inputMode="decimal" className={`${GIRDI} rakam`} />
+              <span className={ETIKET}>Değer — yüzdede 20, tutarda 50,00 (X al Y öde&apos;de boş)</span>
+              <input name="deger" inputMode="decimal" className={`${GIRDI} rakam`} />
             </label>
+
+            {/* "X al Y öde" (K-168): en ucuz ürünler bedava. */}
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <span className={ETIKET}>X al Y öde — yalnızca bu tür seçiliyse</span>
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <input
+                  name="alAdet"
+                  inputMode="numeric"
+                  placeholder="3"
+                  aria-label="Alınan adet"
+                  className={`${GIRDI} rakam w-20`}
+                />
+                <span>al</span>
+                <input
+                  name="odeAdet"
+                  inputMode="numeric"
+                  placeholder="2"
+                  aria-label="Ödenen adet"
+                  className={`${GIRDI} rakam w-20`}
+                />
+                <span>öde</span>
+              </div>
+              <span className="text-xs text-metin-3">
+                Kapsamdaki ürünlerden her X adette Y tanesi ücretli; bedava olanlar sepetteki en
+                ucuz ürünler. Farklı ürünler karışabilir (kapsamı kategori ya da tek ürün yaparak
+                sınırlayabilirsin). 5 ürün alan 3 al 2 öde&apos;de 1, 6 ürün alan 2 ürün bedava alır.
+              </span>
+            </div>
 
             <label className="flex flex-col gap-1.5">
               <span className={ETIKET}>Kapsam</span>
@@ -300,9 +342,11 @@ export default async function KampanyaEkrani({
           </label>
 
           <p className="text-xs text-metin-3">
-            Sepet alt sınırı olan ve kupon isteyen kampanyalar ürün kartlarında indirimli fiyat
-            olarak görünmez; onlar sepette hesaplanır. Alt sınırsız ve kuponsuz kampanyalar ise
-            ürün fiyatına doğrudan yansır.
+            Ürün fiyatına yalnızca kuponsuz, sepet alt sınırı olmayan <strong>yüzde</strong>{" "}
+            kampanyaları yansır. Tutar indirimi ve &quot;X al Y öde&quot; sepette hesaplanır;
+            &quot;X al Y öde&quot; ürün sayfasında ve kartta etiket olarak görünür. Kupon isteyen ya
+            da alt sınırı olan kampanyalar yalnızca sepette çıkar. İndirimler üst üste binmez:
+            sepete uyan kampanyalardan en çok indireni uygulanır.
           </p>
 
           <button

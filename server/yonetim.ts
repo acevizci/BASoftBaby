@@ -1161,7 +1161,7 @@ export async function kunyeKaydet(veri: FormData): Promise<void> {
 
 /* ── Kampanyalar ────────────────────────────────────────────────────────── */
 
-const TIPLER = ["yuzde", "tutar"];
+const TIPLER = ["yuzde", "tutar", "al-ode"];
 const KAPSAMLAR = ["tumu", "kategori", "urun"];
 
 /**
@@ -1187,23 +1187,54 @@ export async function kampanyaKaydet(veri: FormData): Promise<void> {
   const ad = String(veri.get("ad") ?? "").trim().slice(0, 80);
   const tip = String(veri.get("tip") ?? "yuzde");
   const kapsam = String(veri.get("kapsam") ?? "tumu");
-  if (!ad || !TIPLER.includes(tip) || !KAPSAMLAR.includes(kapsam)) return;
+  // Geçersiz giriş sebebiyle geri dönüyor (K-168): eskiden form sessizce
+  // hiçbir şey yapmıyordu, kampanya kaydedildi sanılıyordu.
+  const hata = (kod: string): never => redirect(`/yonetim/kampanyalar?hata=${kod}`);
+  if (!ad) hata("ad");
+  if (!TIPLER.includes(tip) || !KAPSAMLAR.includes(kapsam)) hata("gecersiz");
 
-  // Yüzde tam sayı, tutar kuruş. İkisi de aynı kutudan geliyor.
+  // Yüzde tam sayı, tutar kuruş. İkisi de aynı kutudan geliyor. Sayı
+  // olmayan yüzde eskiden sessizce %1 oluyordu.
   const ham = String(veri.get("deger") ?? "").trim();
-  const deger =
-    tip === "yuzde"
-      ? Math.max(1, Math.min(100, Math.round(Number(ham.replace(",", ".")) || 0)))
-      : (kurusaCevir(ham) ?? 0);
-  if (deger <= 0) return;
+  let deger = 0;
+  if (tip === "yuzde") {
+    const n = Number(ham.replace(",", "."));
+    if (!Number.isFinite(n) || n < 1 || n > 100) hata("yuzde");
+    deger = Math.round(n);
+  } else if (tip === "tutar") {
+    deger = kurusaCevir(ham) ?? 0;
+    if (deger <= 0) hata("tutar");
+  }
 
+  // "X al Y öde" (K-168): 2 ≤ X ≤ 20, 1 ≤ Y < X.
+  const alAdet = tip === "al-ode" ? Number(veri.get("alAdet")) : null;
+  const odeAdet = tip === "al-ode" ? Number(veri.get("odeAdet")) : null;
+  if (
+    tip === "al-ode" &&
+    !(
+      Number.isInteger(alAdet) &&
+      Number.isInteger(odeAdet) &&
+      alAdet! >= 2 &&
+      alAdet! <= 20 &&
+      odeAdet! >= 1 &&
+      odeAdet! < alAdet!
+    )
+  ) {
+    hata("al-ode");
+  }
+
+  // Kupon kodu yalnızca Latin harf, rakam, tire: "İNDİRİM" gibi bir kod
+  // müşterinin yazdığı "indirim" ile tutmuyordu (büyütünce "INDIRIM").
   const kuponKodu =
     String(veri.get("kuponKodu") ?? "").trim().toUpperCase().slice(0, 40) || null;
+  if (kuponKodu && !/^[A-Z0-9_-]{3,40}$/.test(kuponKodu)) hata("kupon-harf");
 
   const veriler = {
     ad,
     tip,
     deger,
+    alAdet,
+    odeAdet,
     kapsam,
     categoryId: kapsam === "kategori" ? String(veri.get("categoryId") ?? "") || null : null,
     productId: kapsam === "urun" ? String(veri.get("productId") ?? "") || null : null,
@@ -1216,8 +1247,10 @@ export async function kampanyaKaydet(veri: FormData): Promise<void> {
 
   // Kapsam kategori ya da ürünse hedef seçilmiş olmalı, yoksa kampanya
   // sessizce herkese uygulanırdı.
-  if (kapsam === "kategori" && !veriler.categoryId) return;
-  if (kapsam === "urun" && !veriler.productId) return;
+  if (kapsam === "kategori" && !veriler.categoryId) hata("kategori");
+  if (kapsam === "urun" && !veriler.productId) hata("urun");
+  // Bitiş başlangıçtan önceyse kampanya hiç çalışmaz.
+  if (veriler.baslangic && veriler.bitis && veriler.bitis < veriler.baslangic) hata("tarih");
 
   // Kupon kodu benzersiz; aynı kodu ikinci kez vermek çökme değil, uyarı.
   if (kuponKodu) {
