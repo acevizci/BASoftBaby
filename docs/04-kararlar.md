@@ -6411,6 +6411,56 @@ Bütün modüller sırayla okundu; bulunan hatalar:
 [`../instrumentation.ts`](../instrumentation.ts),
 [`../server/talep.ts`](../server/talep.ts)
 
+### K-166 · Çift satış ve peş peşe işlem önlemleri
+
+Aynı işin iki kez yapılması (çift tıklama, iki sekme, geri tuşu, yeniden
+deneme, iki kişinin aynı anda basması) her yerde **koşullu yazma** ya da
+**satır kilidiyle** tek sonuca bağlandı:
+
+- **Sipariş:**
+  - Ödeme formunda bir kerelik anahtar (`Order.istekAnahtari`, tekil). Aynı
+    form ikinci kez gelirse ikinci sipariş açılmıyor, ilk siparişin onay
+    sayfası açılıyor.
+  - Sepet işlemin içinde kilitlenip yeniden okunuyor. Aynı anda gelen ikinci
+    gönderim boşalmış sepeti görüyor; sepet arada değiştiyse sipariş
+    açılmıyor ("sepetin değişti").
+  - Aynı e-posta aynı ürünlerle 15 dakika içinde ikinci sipariş verirse
+    onay isteniyor ("Evet, ikinci bir sipariş vermek istiyorum").
+  - Aynı e-postayla ödenmemiş en çok 3 havale siparişi: ödenmeyen
+    siparişlerle son adetler kilitlenemesin.
+  - Sipariş hız sınırı saatte 15'ten 10'a.
+- **Doğum listesi:** son hediye sipariş anında koşullu düşülüyor; iki misafir
+  aynı anda alırsa ikincisi "başka biri aldı" diye duruyor. Sepette adet
+  listede kalanı aşamıyor.
+- **İade:**
+  - Kart iadesi iyzico'ya gitmeden koşullu olarak `gonderiliyor`a alınıyor.
+    Çift tıklama iki iade (müşteriye iki kez para) gönderiyordu. Yarıda
+    kalan iade kendiliğinden yeniden gönderilmiyor; panel iyzico'dan
+    bakılmasını söylüyor.
+  - Tamamlama koşullu (iki e-posta gitmiyor). Reddedilmiş ya da yarıda
+    kalmış iade varken sipariş "iade edildi" görünmüyor.
+- **Kargo:**
+  - İptal edilmiş sipariş kargoya verilemiyor. Eskiden takip numarası
+    girilince "kargoda"ya dönüyor, stoğu geri verilmiş sipariş yeniden
+    açılıyordu.
+  - Ödemesi beklenen sipariş kargoya ya da teslime geçmiyor (tek tek ve
+    toplu).
+  - Kayıt sipariş satırı kilitliyken yapılıyor: tek gönderi, tek e-posta.
+  - Taşıyıcı bildirimi iptal edilmiş siparişi açmıyor, teslim tarihini
+    yeniden yazmıyor, yinelenince ikinci e-posta göndermiyor.
+- **Zamanlanmış iş:** 20 dakika içinde ikinci çağrı hiçbir şey yapmıyor.
+  Davet ödülü ve teşvik kuponu müşteri satırında koşullu işaretle veriliyor;
+  iki çalışma iki çek ya da iki kupon vermiyor.
+
+Zaten koşullu olanlar: stok düşümü (`stok >= adet`), kupon kullanımı, hediye
+çeki bakiyesi, ödeme dönüşü (K-165), iptal, talep tamamlama, set hazırlama,
+sayım (K-165).
+
+**Nerede:** [`../server/siparis.ts`](../server/siparis.ts),
+[`../server/siparis-islem.ts`](../server/siparis-islem.ts),
+[`../server/iade-islem.ts`](../server/iade-islem.ts),
+[`../testler/cift-satis-db.test.ts`](../testler/cift-satis-db.test.ts)
+
 ---
 
 ## Açık sorular

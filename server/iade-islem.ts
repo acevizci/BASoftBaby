@@ -98,6 +98,17 @@ export async function karttanIadeEt(form: FormData): Promise<void> {
   if (!kayit) redirect(donus(form, "hata=bulunamadi"));
   if (kayit.durum === "tamamlandi") redirect(donus(form, "kayit=zaten"));
 
+  // Kayıt önce koşullu olarak "gonderiliyor"a alınıyor (K-166): düğmeye iki
+  // kez basılınca ya da iki kişi aynı anda basınca ikisi de "bekliyor"
+  // görüyor, iyzico'ya iki iade gidiyordu — müşteriye iki kez para. Yalnızca
+  // bir istek kaydı alabiliyor. Yarıda kalırsa kayıt "gonderiliyor"da
+  // kalıyor ve kendiliğinden yeniden gönderilmiyor: önce iyzico'dan bakılmalı.
+  const alindi = await db.refund.updateMany({
+    where: { id, durum: { in: ["bekliyor", "basarisiz"] } },
+    data: { durum: "gonderiliyor", hata: null },
+  });
+  if (alindi.count === 0) redirect(donus(form, "hata=gonderiliyor"));
+
   const sonuc = await kartIadesiYap(kayit.orderId, kayit.tutarKurus, await istekAdresi());
 
   if (!sonuc.tamam) {

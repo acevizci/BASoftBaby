@@ -51,7 +51,9 @@ export type IslemTuru =
  * aynı adresle çıkabiliyor.
  */
 const SINIRLAR: Record<IslemTuru, { adet: number; pencereDk: number }> = {
-  siparis: { adet: 15, pencereDk: 60 },
+  // Peş peşe sipariş (K-166): bir kişinin saatte ondan fazla sipariş
+  // vermesi olağan değil; ödenmeyen siparişler stoğu kilitliyor.
+  siparis: { adet: 10, pencereDk: 60 },
   yorum: { adet: 5, pencereDk: 60 },
   talep: { adet: 10, pencereDk: 60 },
   "stok-bildirimi": { adet: 10, pencereDk: 60 },

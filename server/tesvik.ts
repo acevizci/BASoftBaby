@@ -66,6 +66,14 @@ export async function tesvikleriGonder(
     // Yalnızca ilk siparişten sonra: ikinciyi zaten vermiş olana gerek yok.
     if (m._count.siparisler !== 1) continue;
 
+    // Önce koşullu işaret (K-166): zamanlanmış iş iki kez çalışırsa (Vercel
+    // yeniden deneyebiliyor) aynı müşteriye iki kupon gitmesin.
+    const alindi = await db.customer.updateMany({
+      where: { id: m.id, tesvikGonderildi: null },
+      data: { tesvikGonderildi: simdi },
+    });
+    if (alindi.count === 0) continue;
+
     const bitis = new Date(simdi.getTime() + ayar.tesvikGecerlilik * GUN);
     const kod = tesvikKoduUret();
     const kupon = await db.campaign.create({
@@ -93,9 +101,9 @@ export async function tesvikleriGonder(
     if (!sonuc.gonderildi) {
       // Gitmeyen kupon kalmasın; ertesi gün yeni kodla yeniden denenir.
       await db.campaign.delete({ where: { id: kupon.id } });
+      await db.customer.update({ where: { id: m.id }, data: { tesvikGonderildi: null } });
       continue;
     }
-    await db.customer.update({ where: { id: m.id }, data: { tesvikGonderildi: simdi } });
     gonderilen += 1;
   }
   return { bakilan: adaylar.length, gonderilen };

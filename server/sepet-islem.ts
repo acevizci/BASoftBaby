@@ -70,15 +70,23 @@ export async function adetDegistir(veri: FormData): Promise<void> {
     return;
   }
 
-  const varyant = await db.productVariant.findUnique({
-    where: { id: variantId },
-    select: { stok: true },
-  });
+  const [varyant, satir] = await Promise.all([
+    db.productVariant.findUnique({ where: { id: variantId }, select: { stok: true } }),
+    db.cartItem.findUnique({
+      where: { cartId_variantId: { cartId, variantId } },
+      select: { giftListItem: { select: { istenen: true, alinan: true } } },
+    }),
+  ]);
   if (!varyant) return;
+  // Doğum listesinden gelen satır listede kalandan fazla olamıyor (K-166):
+  // aynı hediye gereğinden fazla alınmasın.
+  const listeKalani = satir?.giftListItem
+    ? Math.max(1, satir.giftListItem.istenen - satir.giftListItem.alinan)
+    : Infinity;
 
   await db.cartItem.updateMany({
     where: { cartId, variantId },
-    data: { adet: Math.min(istenen, varyant.stok, EN_FAZLA) },
+    data: { adet: Math.min(istenen, varyant.stok, EN_FAZLA, listeKalani) },
   });
   sepetiYenile();
 }

@@ -152,10 +152,18 @@ export async function alinanlariIsle(
   for (const s of satirlar) {
     if (!s.giftListItemId) continue;
     if (yon === 1) {
-      await islem.giftListItem.updateMany({
-        where: { id: s.giftListItemId },
-        data: { alinan: { increment: s.adet } },
-      });
+      // Koşullu (K-166): listedeki son hediyeyi iki misafir aynı anda
+      // alırsa ikisi de geçiyordu, aynı hediye iki kez geliyordu. Sepete
+      // eklerken kalan sınanıyor ama sipariş anında sınanmıyordu. Kalan
+      // yetmezse sipariş işlemi geri alınıyor.
+      const n = await islem.$executeRaw`
+        update "GiftListItem" set "alinan" = "alinan" + ${s.adet}
+         where id = ${s.giftListItemId} and "alinan" + ${s.adet} <= "istenen"`;
+      if (n === 0) {
+        const var_ = await islem.giftListItem.count({ where: { id: s.giftListItemId } });
+        // Kalem listeden silinmişse sipariş engellenmiyor: bağ zaten kopuk.
+        if (var_ > 0) throw new Error("LISTE");
+      }
     } else {
       await islem.$executeRaw`update "GiftListItem" set "alinan" = greatest("alinan" - ${s.adet}, 0) where id = ${s.giftListItemId}`;
     }

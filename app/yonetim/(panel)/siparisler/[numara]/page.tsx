@@ -70,6 +70,18 @@ export default async function SiparisDetayi({
           istiyorsa yeni sipariş vermesi gerekiyor.
         </p>
       )}
+      {hata === "kargo-iptal" && (
+        <p className="rounded-marka border border-sari bg-sari-soluk px-4 py-3 text-sm text-sari-koyu">
+          İptal edilmiş sipariş kargoya verilemez: ürünleri stoğa geri verildi. Kargo kaydı
+          yapılmadı.
+        </p>
+      )}
+      {hata === "kargo-odenmedi" && (
+        <p className="rounded-marka border border-sari bg-sari-soluk px-4 py-3 text-sm text-sari-koyu">
+          Ödemesi beklenen sipariş kargoya verilemez. Havale geldiyse önce ödeme durumunu
+          &quot;Ödendi&quot; yap, sonra kargoyu kaydet. Hiçbir şey değişmedi.
+        </p>
+      )}
       {hata === "odenmedi" && (
         <p className="rounded-marka border border-sari bg-sari-soluk px-4 py-3 text-sm text-sari-koyu">
           Ödemesi tamamlanmamış siparişe fatura kesilmiyor. Havale geldiyse aşağıdan

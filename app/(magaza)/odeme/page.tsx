@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -41,6 +42,12 @@ const HATALAR: Record<string, string> = {
     "Kuponun kullanım hakkı bu arada doldu (tek kullanımlık kupon başka bir siparişte kullanılmış). Siparişin oluşturulmadı; tutarı kontrol edip tekrar dene.",
   "liste-adres":
     "Liste sahibinin adresine gönderim bu sepette kullanılamıyor (liste kapatılmış, adres kaldırılmış ya da sepette listede olmayan ürün var). Teslimat adresini yazıp tekrar dene.",
+  "sepet-degisti":
+    "Sepetin sen formu doldururken değişti (başka bir sekmede ürün eklenmiş ya da çıkarılmış olabilir). Siparişin oluşturulmadı; tutarı kontrol edip tekrar dene.",
+  "liste-alindi":
+    "Doğum listesinden seçtiğin hediyelerden biri bu sırada başka biri tarafından alındı; aynı hediye iki kez gitmesin diye siparişin oluşturulmadı. Sepetini kontrol edip listeden başka bir hediye seçebilirsin.",
+  "acik-siparis":
+    "Bu e-posta ile ödemesi beklenen birden çok havale siparişin var. Yeni sipariş vermeden önce onları öde ya da iptal etmemizi iste; ürünler o siparişler için ayrılmış durumda.",
   "odeme-baslatilamadi":
     "Ödeme sayfası açılamadı ve siparişin oluşturulmadı; kartından bir tahsilat yapılmadı. Tekrar deneyebilir ya da havale/EFT ile ödeyebilirsin.",
 };
@@ -55,7 +62,7 @@ const CEK_HATALARI: Record<string, string> = {
 };
 
 export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">) {
-  const { hata, adres: adresSecimi, cek: cekHataKodu } = await searchParams;
+  const { hata, adres: adresSecimi, cek: cekHataKodu, no: ayniNo } = await searchParams;
   const [sepet, musteri, ayar, kunye] = await Promise.all([
     sepetGetir(),
     girisYapan(),
@@ -174,6 +181,11 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
   }
 
   const hataMetni = typeof hata === "string" && Object.hasOwn(HATALAR, hata) ? HATALAR[hata] : undefined;
+  // Aynı ürünlerle az önce verilmiş sipariş (K-166); numara biçimi sınanıyor.
+  const ayniSiparis =
+    hata === "ayni-siparis" && typeof ayniNo === "string" && /^BA-\d{4}-\d{4,}$/.test(ayniNo)
+      ? ayniNo
+      : undefined;
 
   // Giriş yapan müşterinin adres defteri: seçilen adres, yoksa varsayılanı
   // forma yazılıyor. Seçim JavaScript'siz çalışsın diye bağlantıyla yapılıyor.
@@ -211,6 +223,29 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
         <form action={siparisiTamamla} className="flex flex-col gap-5">
           <input type="hidden" name="cekKurus" value={cekKurus} />
+          {/* Bir kerelik form anahtarı (K-166): aynı form ikinci kez gelirse
+              ikinci sipariş açılmıyor, ilkine yönlendiriliyor. */}
+          <input type="hidden" name="anahtar" value={randomUUID()} />
+          {ayniSiparis && (
+            <div className="rounded-marka border border-sari bg-sari-soluk px-4 py-3 text-sm">
+              <p className="font-bold text-sari-koyu">
+                Aynı ürünlerle az önce{" "}
+                <span className="rakam">{ayniSiparis}</span> numaralı siparişi verdin.
+              </p>
+              <p className="mt-1 text-metin-2">
+                İkinci kez sipariş vermek istediğinden emin değilsen durabilirsin; ilk siparişin
+                geçerli. Gerçekten ikinci bir sipariş istiyorsan kutuyu işaretleyip yeniden gönder.
+              </p>
+              <label className="mt-2 flex items-center gap-2 font-semibold">
+                <input
+                  type="checkbox"
+                  name="ayniOnay"
+                  className="h-4 w-4 accent-[var(--mercan)]"
+                />
+                Evet, ikinci bir sipariş vermek istiyorum
+              </label>
+            </div>
+          )}
           {!musteri && (
             <p className="rounded-marka border border-cizgi bg-yuzey-sicak px-4 py-3 text-sm text-metin-2">
               Hesabın var mı?{" "}

@@ -61,7 +61,87 @@ function eksikMi(g: {
   return false;
 }
 
+/** Ödeme formunun bir kerelik anahtarı: sayfada `randomUUID()` ile üretiliyor. */
+function anahtarOku(veri: FormData): string | undefined {
+  const a = temiz(veri, "anahtar");
+  return /^[0-9a-f-]{36}$/.test(a) ? a : undefined;
+}
+
+/**
+ * Bu formla sipariş zaten açıldıysa ona yönlendirir (K-166).
+ *
+ * Çift tıklama, geri tuşuyla yeniden gönderme ya da yavaş ağda tarayıcının
+ * yeniden denemesi ikinci bir sipariş açmıyor; müşteri ilk siparişin onay
+ * sayfasını görüyor. Anahtar tahmin edilemez (UUID) ve yalnızca formu
+ * gönderen tarayıcıda var.
+ */
+async function oncekiSipariseGit(anahtar: string | undefined): Promise<void> {
+  if (!anahtar) return;
+  const s = await db.order.findUnique({
+    where: { istekAnahtari: anahtar },
+    select: { numara: true },
+  });
+  if (!s) return;
+  (await cookies()).set(SON_SIPARIS_CEREZI, s.numara, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 24,
+  });
+  redirect(`/siparis/${s.numara}`);
+}
+
+/** Aynı e-postayla ödenmemiş en çok bu kadar havale siparişi açık kalabiliyor (K-166). */
+const ACIK_HAVALE_SINIRI = 3;
+/** Aynı ürünlerle bu süre içinde ikinci sipariş onay istiyor (K-166). */
+const AYNI_SIPARIS_DK = 15;
+
+/**
+ * Aynı kişi aynı ürünleri az önce sipariş etti mi? (K-166)
+ *
+ * İki sekmede açık kalmış ödeme sayfası ya da "oldu mu?" diye yeniden
+ * verilen sipariş çift satış demek: iki kez ödeme, iki kargo, iade
+ * zahmeti. Farklı sekmelerin form anahtarı farklı olduğu için anahtar
+ * bunu yakalamıyor; içerik karşılaştırılıyor. Müşteri gerçekten ikinci kez
+ * istiyorsa onay kutusuyla geçebiliyor.
+ */
+async function ayniSiparisVarMi(
+  eposta: string,
+  customerId: string | undefined,
+): Promise<string | undefined> {
+  const cartId = await sepetIdOku();
+  if (!cartId) return undefined;
+  const sepet = await db.cartItem.findMany({
+    where: { cartId },
+    select: { variantId: true, adet: true },
+  });
+  if (sepet.length === 0) return undefined;
+  const imza = (x: { variantId: string | null; adet: number }[]) =>
+    x
+      .map((k) => `${k.variantId}:${k.adet}`)
+      .sort()
+      .join(",");
+  const aranan = imza(sepet);
+  const yakin = await db.order.findMany({
+    where: {
+      OR: [{ eposta }, ...(customerId ? [{ customerId }] : [])],
+      durum: { not: "iptal" },
+      olusturuldu: { gte: new Date(Date.now() - AYNI_SIPARIS_DK * 60_000) },
+    },
+    select: { numara: true, satirlar: { select: { variantId: true, adet: true } } },
+    orderBy: { olusturuldu: "desc" },
+    take: 5,
+  });
+  return yakin.find((o) => imza(o.satirlar) === aranan)?.numara;
+}
+
 export async function siparisiTamamla(veri: FormData): Promise<void> {
+  // Aynı form ikinci kez geldiyse sınır sayacına bile dokunmadan ilk
+  // siparişe (K-166).
+  const istekAnahtari = anahtarOku(veri);
+  await oncekiSipariseGit(istekAnahtari);
+
   // Sipariş açılırken stok hemen düşülüyor; sınırsız çağrı bütün stoğu
   // kilitleyebilirdi (K-64).
   const sinir = await islemSinirla("siparis");
@@ -89,6 +169,12 @@ export async function siparisiTamamla(veri: FormData): Promise<void> {
   };
 
   if (eksikMi(girdi)) redirect("/odeme?hata=eksik");
+
+  // Aynı ürünlerle az önce verilmiş sipariş (K-166): onay kutusu yoksa dur.
+  if (veri.get("ayniOnay") === null) {
+    const ayni = await ayniSiparisVarMi(girdi.eposta, (await girisYapan())?.id);
+    if (ayni) redirect(`/odeme?hata=ayni-siparis&no=${encodeURIComponent(ayni)}`);
+  }
 
   const musteri = await girisYapan();
   let customerId = musteri?.id;
@@ -130,6 +216,20 @@ export async function siparisiTamamla(veri: FormData): Promise<void> {
   // kapalı bir yöntemle sipariş açılmıyor.
   const kartMi = temiz(veri, "odemeYontemi") === "kart" && odemeAcikMi();
 
+  // Ödenmemiş havale siparişleri stoğu süre dolana kadar tutuyor (K-166): bir
+  // kişi peş peşe sipariş verip hiç ödemeyerek son adetleri kilitleyebilirdi.
+  if (!kartMi) {
+    const acik = await db.order.count({
+      where: {
+        OR: [{ eposta: girdi.eposta }, ...(customerId ? [{ customerId }] : [])],
+        odemeYontemi: "havale",
+        durum: "bekliyor",
+        odemeDurumu: "bekliyor",
+      },
+    });
+    if (acik >= ACIK_HAVALE_SINIRI) redirect("/odeme?hata=acik-siparis");
+  }
+
   const ayar = await ayarlariGetir();
 
   /**
@@ -155,7 +255,7 @@ export async function siparisiTamamla(veri: FormData): Promise<void> {
   }
   // Ekranda gösterilen çek tutarı; sunucu yalnızca bunu harcıyor (K-137).
   const beklenenKurus = Number(veri.get("cekKurus") ?? 0);
-  const sonuc = await siparisOlustur(girdi, ayar, customerId, kartMi ? "kart" : "havale", {
+  const sonuc = await siparisOlustur({ ...girdi, istekAnahtari }, ayar, customerId, kartMi ? "kart" : "havale", {
     yalnizCek,
     beklenenKurus: Number.isInteger(beklenenKurus) && beklenenKurus >= 0 ? beklenenKurus : 0,
   });
@@ -167,6 +267,13 @@ export async function siparisiTamamla(veri: FormData): Promise<void> {
     redirect("/odeme?hata=cek");
   }
   if (!sonuc.tamam && sonuc.sebep === "liste-adres") redirect("/odeme?hata=liste-adres");
+  // Eşzamanlı ikinci gönderim ilk siparişe gidiyor; sepet boş göründüyse de
+  // büyük olasılıkla ilk gönderim tamamlanmıştır (K-166).
+  if (!sonuc.tamam && (sonuc.sebep === "tekrar" || sonuc.hata.includes("boş"))) {
+    await oncekiSipariseGit(istekAnahtari);
+  }
+  if (!sonuc.tamam && sonuc.sebep === "sepet-degisti") redirect("/odeme?hata=sepet-degisti");
+  if (!sonuc.tamam && sonuc.sebep === "liste-alindi") redirect("/odeme?hata=liste-alindi");
   if (!sonuc.tamam && sonuc.sebep === "kupon") {
     (await cookies()).delete(KUPON_CEREZI);
     redirect("/odeme?hata=kupon");

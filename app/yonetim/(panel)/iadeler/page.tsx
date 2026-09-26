@@ -41,6 +41,8 @@ const HATALAR: Record<string, string> = {
   "siparis-yok": "Bu numarada sipariş yok.",
   fazla: "İade tutarı siparişin toplamından büyük olamaz.",
   odenmemis: "Bu siparişin parası alınmamış; iade edilecek bir şey yok.",
+  gonderiliyor:
+    "Bu iade şu an gönderiliyor ya da gönderimi yarıda kaldı; ikinci kez gönderilmedi. iyzico panelinden bak.",
 };
 
 function tarihYaz(t: Date): string {
@@ -138,8 +140,16 @@ export default async function IadeEkrani({ searchParams }: PageProps<"/yonetim/i
                   </p>
                 )}
 
+                {i.durum === "gonderiliyor" && (
+                  <p className="rounded-marka bg-sari-soluk px-3 py-2 text-xs text-sari-koyu">
+                    iyzico&apos;ya gönderildi ama sonucu yazılamadı. Çift iade olmasın diye yeniden
+                    gönderilmiyor: iyzico panelinden iadenin geçip geçmediğine bak; geçtiyse
+                    aşağıdan işaretle.
+                  </p>
+                )}
+
                 <div className="flex flex-wrap items-end gap-2">
-                  {i.yontem === "kart" && kartAcik && (
+                  {i.yontem === "kart" && kartAcik && i.durum !== "gonderiliyor" && (
                     <form action={karttanIadeEt}>
                       <input type="hidden" name="id" value={i.id} />
                       <SayfaAlani sayfa={durum.sayfa} />

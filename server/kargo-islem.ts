@@ -64,18 +64,34 @@ export async function gonderiDurumunuIsle(
     return { tamam: true, numara: gonderi.order.numara, durum: yeniDurum };
   }
 
-  await db.shipment.update({ where: { id: gonderi.id }, data: { durum: yeniDurum } });
+  // Koşullu (K-166): aynı bildirim aynı anda iki kez gelirse yalnızca biri
+  // işliyor; müşteriye iki "teslim edildi" e-postası gitmiyor.
+  const { count } = await db.shipment.updateMany({
+    where: { id: gonderi.id, durum: { not: yeniDurum } },
+    data: { durum: yeniDurum },
+  });
+  if (count === 0) return { tamam: true, numara: gonderi.order.numara, durum: yeniDurum };
 
+  // İptal edilmiş sipariş taşıyıcı bildirimiyle yeniden açılmıyor (K-166):
+  // stoğu geri verilmiş sipariş "kargoda"ya dönerse aynı ürün iki kez satılmış
+  // görünürdü. Gönderi kaydı güncelleniyor, sipariş olduğu gibi kalıyor.
   const siparisDurumu = SIPARIS_DURUMU[yeniDurum];
-  if (siparisDurumu && gonderi.order.durum !== siparisDurumu) {
+  if (siparisDurumu && gonderi.order.durum !== siparisDurumu && gonderi.order.durum !== "iptal") {
     await db.order.update({
       where: { id: gonderi.order.id },
-      data: {
-        durum: siparisDurumu,
-        // Teslim anı: cayma hakkının 14 günü buradan sayılıyor (K-33).
-        ...(siparisDurumu === "teslim" ? { teslimTarihi: new Date() } : {}),
-      },
+      data: { durum: siparisDurumu },
     });
+    // Teslim anı bir kez (K-33): cayma hakkının 14 günü buradan sayılıyor;
+    // yinelenen bildirim süreyi baştan başlatmasın.
+    if (siparisDurumu === "teslim") {
+      await db.order.updateMany({
+        where: { id: gonderi.order.id, teslimTarihi: null },
+        data: { teslimTarihi: new Date() },
+      });
+    }
+  }
+  if (gonderi.order.durum === "iptal") {
+    return { tamam: true, numara: gonderi.order.numara, durum: yeniDurum };
   }
 
   if (yeniDurum === "teslim") {

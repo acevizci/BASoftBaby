@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { db } from "@/server/veritabani";
 import {
   havaleHatirlatmalariniGonder,
   suresiDolanlariKapat,
@@ -49,6 +50,21 @@ export async function GET(istek: NextRequest) {
   if (sir && istek.headers.get("authorization") !== `Bearer ${sir}`) {
     return new NextResponse("Yetkisiz", { status: 401 });
   }
+
+  // Yinelenen çalışma (K-166): Vercel çağrıyı yineleyebiliyor, uç elle de
+  // çağrılabiliyor. İki çalışma üst üste binince hatırlatma, teşvik ve davet
+  // işleri aynı müşteriye ikinci kez gidiyordu. 20 dakika içindeki ikinci
+  // çağrı hiçbir şey yapmıyor; işaret koşullu, yalnızca bir çağrı alabiliyor.
+  await db.storeSetting.upsert({ where: { id: "tek" }, create: { id: "tek" }, update: {} });
+  const simdi = new Date();
+  const kilit = await db.storeSetting.updateMany({
+    where: {
+      id: "tek",
+      OR: [{ sonZamanliIs: null }, { sonZamanliIs: { lt: new Date(simdi.getTime() - 20 * 60_000) } }],
+    },
+    data: { sonZamanliIs: simdi },
+  });
+  if (kilit.count === 0) return NextResponse.json({ atlandi: "az önce çalıştı" });
 
   // Süresi dolan bekleyen siparişler: kartta dakikalar, havalede panelden
   // ayarlanan saat. Sipariş verilirken de fırsatçı olarak çalışıyor; burası

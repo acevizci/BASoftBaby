@@ -14,6 +14,7 @@
  */
 
 import { db } from "@/server/veritabani";
+import { Prisma } from "@/db/uretilen/client";
 import { hareketYaz } from "@/server/stok-hareket";
 import { kargoHesapla, kuponOku, sepetIdOku, type SatisAyari } from "@/server/sepet";
 import { enIyiKampanya, gecerliKampanyalar, indirimiDagit, kuponKullan } from "@/server/kampanya";
@@ -56,6 +57,8 @@ export type SiparisGirdisi = {
    * sunucu sahibin seçtiği kayıtlı adresi yazıyor, formdan geleni değil.
    */
   listeAdresine?: boolean;
+  /** Ödeme formunun bir kerelik anahtarı (K-166); aynı anahtarla ikinci sipariş açılmıyor. */
+  istekAnahtari?: string;
 };
 
 export type SiparisSonucu =
@@ -67,7 +70,11 @@ export type SiparisSonucu =
       hediyeCekiKurus: number;
       tahsilatKurus: number;
     }
-  | { tamam: false; hata: string; sebep?: "cek" | "liste-adres" | "kupon" };
+  | {
+      tamam: false;
+      hata: string;
+      sebep?: "cek" | "liste-adres" | "kupon" | "tekrar" | "sepet-degisti" | "liste-alindi";
+    };
 
 /** BA-2026-0001 */
 function numaraYaz(sayac: number, tarih: Date): string {
@@ -198,6 +205,26 @@ export async function siparisOlustur(
 
   try {
     const yazilan = await db.$transaction(async (islem) => {
+      // Sepet kilitlenip işlemin içinde yeniden okunuyor (K-166). Sepet
+      // işlemin dışında okunduğu için aynı anda gelen iki gönderim (iki
+      // sekme, çift tıklama) ikisi de dolu sepeti görüp iki sipariş
+      // açabiliyordu. İkincisi kilidi bekliyor, sonra boşalmış sepeti
+      // görüp duruyor; sepet arada değiştiyse de müşterinin onayladığı
+      // tutar geçersiz, sipariş açılmıyor.
+      await islem.$queryRaw`select id from "Cart" where id = ${cartId} for update`;
+      const simdiki = await islem.cartItem.findMany({
+        where: { cartId },
+        select: { id: true, variantId: true, adet: true },
+      });
+      if (simdiki.length === 0) throw new Error("BOS");
+      const okunan = new Map(satirlar.map((x) => [x.id, `${x.variantId}:${x.adet}`]));
+      if (
+        simdiki.length !== satirlar.length ||
+        simdiki.some((x) => okunan.get(x.id) !== `${x.variantId}:${x.adet}`)
+      ) {
+        throw new Error("SEPET");
+      }
+
       for (const k of kalemler) {
         // Koşullu düşüm: stok yetmiyorsa hiçbir satır güncellenmez.
         const sonuc = await islem.productVariant.updateMany({
@@ -230,6 +257,7 @@ export async function siparisOlustur(
       const siparis = await islem.order.create({
         data: {
           numara,
+          istekAnahtari: girdi.istekAnahtari ?? null,
           customerId: customerId ?? null,
           odemeYontemi: cekleOdendi ? "hediye-ceki" : odemeYontemi,
           ...(cekleOdendi ? { odemeDurumu: "odendi", durum: "hazirlaniyor" } : {}),
@@ -301,6 +329,29 @@ export async function siparisOlustur(
     }
     if (hata instanceof Error && hata.message === "KUPON") {
       return { tamam: false, sebep: "kupon", hata: "Kuponun kullanım hakkı bu arada doldu." };
+    }
+    if (hata instanceof Error && hata.message === "LISTE") {
+      return {
+        tamam: false,
+        sebep: "liste-alindi",
+        hata: "Listeden seçtiğin hediye bu sırada başka biri tarafından alındı.",
+      };
+    }
+    if (hata instanceof Error && hata.message === "BOS") {
+      return { tamam: false, hata: "Sepetin boş görünüyor." };
+    }
+    if (hata instanceof Error && hata.message === "SEPET") {
+      return { tamam: false, sebep: "sepet-degisti", hata: "Sepetin bu sırada değişti." };
+    }
+    // Aynı form anahtarıyla sipariş zaten açılmış (eşzamanlı ikinci gönderim).
+    // Hangi alanın çakıştığı sürücüye göre ayrıntıda yazmayabiliyor; çağıran
+    // anahtarla ilk siparişi arıyor, bulamazsa genel hata gösteriyor.
+    if (
+      girdi.istekAnahtari &&
+      hata instanceof Prisma.PrismaClientKnownRequestError &&
+      hata.code === "P2002"
+    ) {
+      return { tamam: false, sebep: "tekrar", hata: "Bu sipariş zaten alındı." };
     }
     if (hata instanceof Error && hata.message === "STOK") {
       return {

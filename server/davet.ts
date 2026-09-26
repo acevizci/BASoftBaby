@@ -182,10 +182,14 @@ export async function davetOdulleriniVer(
       },
     });
 
-    if (kendisi || yillik >= ayar.enFazla) {
-      await db.customer.update({ where: { id: d.id }, data: { davetSonuclandi: simdi } });
-      continue;
-    }
+    // Önce koşullu işaret (K-166): zamanlanmış iş iki kez çalışırsa aynı
+    // davet için iki çek verilmesin. Yalnızca bir çalışma işareti alabiliyor.
+    const alindi = await db.customer.updateMany({
+      where: { id: d.id, davetSonuclandi: null },
+      data: { davetSonuclandi: simdi },
+    });
+    if (alindi.count === 0) continue;
+    if (kendisi || yillik >= ayar.enFazla) continue;
 
     const kod = kodUret();
     const sonKullanma = new Date(simdi.getTime() + 365 * GUN);
@@ -204,10 +208,7 @@ export async function davetOdulleriniVer(
           yapan: "davet",
         },
       }),
-      db.customer.update({
-        where: { id: d.id },
-        data: { davetSonuclandi: simdi, davetOdulKodu: kod },
-      }),
+      db.customer.update({ where: { id: d.id }, data: { davetOdulKodu: kod } }),
     ]);
     // Çek hesabın Davet sayfasında da görünüyor; e-posta gitmese de kaybolmuyor.
     await gonder(eden.eposta, {

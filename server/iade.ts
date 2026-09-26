@@ -234,8 +234,10 @@ export async function iadeyiTamamla(
     });
     if (!kayit || kayit.durum === "tamamlandi") return undefined;
 
-    await islem.refund.update({
-      where: { id },
+    // Koşullu (K-166): "işaretle"ye iki kez basılınca iki istek de
+    // tamamlanmamış görüyor, müşteriye iki iade e-postası gidiyordu.
+    const { count } = await islem.refund.updateMany({
+      where: { id, durum: { not: "tamamlandi" } },
       data: {
         durum: "tamamlandi",
         tamamlandi: new Date(),
@@ -244,9 +246,12 @@ export async function iadeyiTamamla(
         hata: null,
       },
     });
+    if (count === 0) return undefined;
 
+    // Reddedilmiş ya da gönderimi yarıda kalmış iade de borç (K-166): eskiden
+    // yalnızca "bekliyor" sayılıyordu, sipariş "iade edildi" görünüyordu.
     const kalan = await islem.refund.count({
-      where: { orderId: kayit.orderId, durum: "bekliyor" },
+      where: { orderId: kayit.orderId, durum: { not: "tamamlandi" } },
     });
     if (kalan === 0) {
       await islem.order.update({
@@ -280,7 +285,9 @@ export type BekleyenIade = {
 };
 
 /** Ödenmeyi bekleyen ve reddedilmiş iadeler; panelin iş listesi. */
-const BEKLEYEN_KOSULU = { durum: { in: ["bekliyor", "basarisiz"] } };
+// "gonderiliyor": iyzico'ya gönderimi yarıda kalmış iade (K-166); listede
+// kalıyor, borç görünmeye devam ediyor.
+const BEKLEYEN_KOSULU = { durum: { in: ["bekliyor", "basarisiz", "gonderiliyor"] } };
 
 /** Bekleyen iade koşulu, arama metniyle birlikte (K-69). */
 function bekleyenKosulu(ara = ""): Record<string, unknown> {

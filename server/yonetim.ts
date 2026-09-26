@@ -500,6 +500,13 @@ export async function siparisDurumuKaydet(veri: FormData): Promise<void> {
     redirect(`/yonetim/siparisler/${numara}?hata=iptal-acilmaz`);
   }
 
+  // Ödemesi beklenen sipariş kargoya ya da teslime geçmiyor (K-166): havalesi
+  // gelmemiş ürün yola çıkmasın. Havale geldiyse ödeme de aynı formda
+  // "Ödendi" yapılıyor.
+  if ((durum === "kargoda" || durum === "teslim") && odemeDurumu === "bekliyor") {
+    redirect(`/yonetim/siparisler/${numara}?hata=kargo-odenmedi`);
+  }
+
   // Panelden iptal de müşterinin iptali gibi: stok geri veriliyor, parası
   // alınmışsa iade kaydı açılıyor. Eskiden yalnızca durum yazılıyordu; stok
   // kayboluyor, alınan paranın borcu hiçbir yerde görünmüyordu (K-103).
@@ -566,8 +573,16 @@ export async function topluDurumDegistir(veri: FormData): Promise<void> {
 
   // İptal edilmiş siparişler atlanıyor: yeniden açılırsa ürünleri stoktan
   // düşmeden hazırlanmaya geçerdi (K-103).
+  // Kargoya/teslime yalnızca parası alınmış siparişler geçiyor (K-166); ödeme
+  // bekleyenler atlanıyor ve sayıya girmiyor.
   const sonuc = await db.order.updateMany({
-    where: { numara: { in: numaralar }, durum: { not: "iptal" } },
+    where: {
+      numara: { in: numaralar },
+      durum: { not: "iptal" },
+      ...(durum === "kargoda" || durum === "teslim"
+        ? { odemeDurumu: { not: "bekliyor" } }
+        : {}),
+    },
     data: { durum },
   });
 
@@ -804,56 +819,61 @@ export async function kargoKaydet(veri: FormData): Promise<void> {
   if (!numara) return;
   if (!TASIYICILAR.some((t) => t.kod === tasiyici)) redirect(`/yonetim/siparisler/${numara}`);
 
-  const siparis = await db.order.findUnique({
-    where: { numara },
-    select: {
-      id: true,
-      numara: true,
-      adSoyad: true,
-      eposta: true,
-      toplamKurus: true,
-      odemeYontemi: true,
-      durum: true,
-      gonderiler: { orderBy: { olusturuldu: "desc" }, take: 1 },
-    },
+  // Sipariş satırı kilitlenerek (K-166): "Kaydet"e iki kez basılınca iki
+  // gönderi kaydı açılıyor, müşteriye iki e-posta gidiyordu. Önceki takip
+  // numarası kilidin içinde okunuyor; ikinci istek ilkinin yazdığını görüyor.
+  const sonuc = await db.$transaction(async (islem) => {
+    const [kilitli] = await islem.$queryRaw<{ id: string }[]>`
+      select id from "Order" where numara = ${numara} for update`;
+    if (!kilitli) return { hata: "yok" as const };
+    const siparis = await islem.order.findUniqueOrThrow({
+      where: { id: kilitli.id },
+      select: {
+        id: true,
+        numara: true,
+        adSoyad: true,
+        eposta: true,
+        toplamKurus: true,
+        odemeYontemi: true,
+        odemeDurumu: true,
+        durum: true,
+        gonderiler: { orderBy: { olusturuldu: "desc" }, take: 1 },
+      },
+    });
+    // İptal edilmiş sipariş kargolanamaz (K-166): eskiden takip numarası
+    // girilince "kargoda"ya dönüyordu; stoğu geri verilmiş sipariş yeniden
+    // açılıyor, aynı ürün iki kez satılmış oluyordu.
+    if (siparis.durum === "iptal") return { hata: "kargo-iptal" as const };
+    // Parası alınmamış sipariş kargoya verilmez (K-166).
+    if (takipNo && siparis.odemeDurumu === "bekliyor") return { hata: "kargo-odenmedi" as const };
+
+    const gonderi = siparis.gonderiler[0];
+    const oncekiTakip = gonderi?.takipNo ?? "";
+    const veri = {
+      tasiyici,
+      takipNo,
+      barkod: takipNo || siparis.numara,
+      durum: takipNo ? "verildi" : "hazirlandi",
+      ucretKurus,
+    };
+    if (gonderi) await islem.shipment.update({ where: { id: gonderi.id }, data: veri });
+    else await islem.shipment.create({ data: { orderId: siparis.id, ...veri } });
+
+    // Sipariş kartındaki takip numarası da aynı değeri göstersin.
+    await islem.order.update({
+      where: { id: siparis.id },
+      data: {
+        kargoTakipNo: takipNo || null,
+        durum: takipNo && siparis.durum !== "teslim" ? "kargoda" : siparis.durum,
+      },
+    });
+    return { siparis, oncekiTakip };
   });
-  if (!siparis) redirect("/yonetim/siparisler");
-
-  const oncekiTakip = siparis.gonderiler[0]?.takipNo ?? "";
-  const gonderi = siparis.gonderiler[0];
-
-  if (gonderi) {
-    await db.shipment.update({
-      where: { id: gonderi.id },
-      data: {
-        tasiyici,
-        takipNo,
-        barkod: takipNo || siparis.numara,
-        durum: takipNo ? "verildi" : "hazirlandi",
-        ucretKurus,
-      },
-    });
-  } else {
-    await db.shipment.create({
-      data: {
-        orderId: siparis.id,
-        tasiyici,
-        takipNo,
-        barkod: takipNo || siparis.numara,
-        durum: takipNo ? "verildi" : "hazirlandi",
-        ucretKurus,
-      },
-    });
+  if ("hata" in sonuc) {
+    if (sonuc.hata === "yok") redirect("/yonetim/siparisler");
+    redirect(`/yonetim/siparisler/${numara}?hata=${sonuc.hata}`);
   }
-
-  // Sipariş kartındaki takip numarası da aynı değeri göstersin.
-  await db.order.update({
-    where: { id: siparis.id },
-    data: {
-      kargoTakipNo: takipNo || null,
-      durum: takipNo && siparis.durum !== "teslim" ? "kargoda" : siparis.durum,
-    },
-  });
+  const { siparis, oncekiTakip } = sonuc;
 
   // İrsaliye kargo girilmeden kesilmiş olabiliyor (paket akşam hazırlanır,
   // sabah verilir). Fiili sevk anı burada doluyor — bir kez (K-59).

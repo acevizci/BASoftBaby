@@ -236,6 +236,9 @@ model StoreSetting {
 
   /// Sipariş numarası sayacı. Sipariş oluşturulurken aynı işlem içinde artar.
   sonSiparisNo Int @default(0)
+  /// Zamanlanmış işin son başladığı an (K-166): Vercel çağrıyı yinelerse ya
+  /// da uç elle çağrılırsa ikinci çalışma aynı e-postaları yeniden göndermesin.
+  sonZamanliIs DateTime?
 
   kargoKurus       Int @default(4990)
   /// Bu tutarın üstünde kargo bedava. Sıfır verilirse kargo hep ücretli.
@@ -375,6 +378,10 @@ model Order {
   id     String @id @default(cuid())
   /// Müşteriye gösterilen numara: BA-2026-0001
   numara String @unique
+  /// Ödeme formunun bir kerelik anahtarı (K-166): aynı form iki kez
+  /// gönderilirse (çift tıklama, geri tuşu, yavaş ağda yeniden deneme) ikinci
+  /// sipariş açılmıyor, ilkine yönlendiriliyor.
+  istekAnahtari String? @unique
 
   /// bekliyor · hazirlaniyor · kargoda · teslim · iptal
   durum        String @default("bekliyor")
@@ -793,7 +800,8 @@ model Refund {
   /// havale · kart — siparişin ödeme yöntemi
   yontem     String
 
-  /// bekliyor · tamamlandi · basarisiz
+  /// bekliyor · gonderiliyor · tamamlandi · basarisiz. "gonderiliyor": iyzico'ya
+  /// istek gitti, sonuç yazılmadı (K-166); kendiliğinden yeniden gönderilmez.
   durum String @default("bekliyor")
   /// iyzico iade kimliği ya da havale dekont açıklaması
   saglayiciRef String?
