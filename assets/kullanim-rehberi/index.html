@@ -225,7 +225,7 @@
           <tbody>
             <tr><td><strong>Siparişler</strong></td><td>Sipariş listesi, Günün işi, Talepler, İadeler</td><td>Her gün</td></tr>
             <tr><td><strong>Ürünler</strong></td><td>Ürün listesi, Kategoriler, Bedenler, Renkler, Toplu yükleme</td><td>Yeni ürün gelince</td></tr>
-            <tr><td><strong>Stok</strong></td><td>Stok, Mal kabulü, Sayım, Sipariş listesi, Satmayanlar, Hareketler</td><td>Mal gelince, ayda bir sayım</td></tr>
+            <tr><td><strong>Stok</strong></td><td>Stok (sekmeler: Hareketler, Satmayanlar, Sayımlar), Depo, Sipariş ver</td><td>Mal gelince, ayda bir sayım</td></tr>
             <tr><td><strong>Müşteriler</strong></td><td>Müşteri listesi, Değerlendirmeler, Ürün soruları, E-bülten, Doğum listeleri</td><td>Haftada birkaç kez</td></tr>
             <tr><td><strong>Vitrin</strong></td><td>Kampanyalar, Ana sayfa banner, Duyuru şeridi, Rehber yazıları, Hediye çekleri</td><td>Kampanya dönemlerinde</td></tr>
             <tr><td><strong>Raporlar</strong></td><td>Satış raporu, Aylık kâr</td><td>Hafta ve ay sonu</td></tr>
@@ -356,15 +356,16 @@
             <ol class="adimlar" style="margin-top:10px">
               <li><span><strong>Temel bilgiler</strong>: ad, kısa açıklama, kategori, fiyat. Alış fiyatı yalnızca panelde görünür; kâr raporu için girin.</span></li>
               <li><span><strong>Ürün sayfası bilgileri</strong>: kumaş içeriği ve yıkama talimatı (bebek tekstilinde zorunlu), her satıra bir özellik.</span></li>
+              <li><span>İsterseniz <strong>tedarikçiyi</strong> ve onun model kodunu yazın; sipariş mesajında kullanılır.</span></li>
               <li><span>Kaydedin; ürün sayfası açılır. Buradan <strong>fotoğrafları</strong> yükleyin (sürükleyip bırakabilirsiniz, renge göre işaretlenebilir).</span></li>
-              <li><span><strong>Bedenler ve stok</strong> bölümünde her beden-renk birleşimini ve stoğunu ekleyin. Stoğu sıfır olan beden mağazada seçilemez.</span></li>
+              <li><span><strong>Bedenler ve stok</strong> bölümünde bedenleri ve renkleri işaretleyin; tablo oluşur. Her hücreye stoğu ve ürünün üzerindeki barkodu yazın (el okuyucuyla okutabilirsiniz, Enter sonraki kutuya geçer), bir kez <strong>Kaydet</strong>'e basın. "… gibi seç" düğmesi aynı kategorideki son ürünün bedenlerini işaretler. Stoğu sıfır olan beden mağazada seçilemez.</span></li>
             </ol>
           </div>
         </div>
       </div>
       <div class="alt">
         <div class="ikili">
-          <figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/urun-beden.jpg" alt="Ürün düzenleme: görünüm ve bedenler ve stok" width="1280" height="860" loading="lazy"></button><figcaption>Ürün düzenleme sayfasında Görünüm ve Bedenler ve stok</figcaption></figure>
+          <figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/urun-beden.jpg" alt="Ürün sayfasında beden ve renk tablosu" width="1280" height="860" loading="lazy"></button><figcaption>Ürün sayfasında beden × renk tablosu: stok ve barkod aynı hücrede</figcaption></figure>
           <div>
             <h3>Rozet, görünüm, pasife alma</h3>
             <ul class="maddeler" style="margin-top:10px">
@@ -373,33 +374,48 @@
               <li>"Mağazada yayında" işaretini kaldırmak ürünü gizler ama siparişleri ve geçmişi silmez; silmek yerine bunu tercih edin.</li>
               <li>Kategoriler, Bedenler ve Renkler ayrı sayfalardan yönetilir. Beden adındaki yaş aralığı ("0-3 ay") beden önerisinde ve süzgeçlerde kullanılır.</li>
             </ul>
-            <div class="ipucu"><strong>Çok ürün birden</strong><span class="yol">Ürünler › Toplu yükleme</span> ile Excel (.xlsx) ya da CSV dosyasıyla onlarca ürün ve varyantı tek seferde ekleyebilirsiniz (en fazla 4 MB). Dosya önce kontrol edilir, siz onaylayınca yazılır.</div>
+            <div class="ipucu"><strong>Çok ürün birden</strong><span class="yol">Ürünler › Toplu yükleme</span> ile Excel (.xlsx) ya da CSV dosyasıyla onlarca ürün ve varyantı tek seferde ekleyebilirsiniz (en fazla 4 MB). "Barkod" sütunu doluysa ürünün barkodu Depo ekranında kendiliğinden tanınır. Dosya önce kontrol edilir, siz onaylayınca yazılır.</div>
           </div>
         </div>
       </div>
     </section>
 
     <section class="bolum" id="stok">
-      <div class="baslik"><h2>Stok</h2><span class="menu">Stok</span></div>
+      <div class="baslik"><h2>Stok</h2><span class="menu">Stok · Depo · Sipariş ver</span></div>
       <div class="alt">
         <div class="ikili">
-          <figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/stok.jpg" alt="Stok ekranı: biten ve azalan bedenler" width="1280" height="860" loading="lazy"></button><figcaption>Kırmızı kutu biten, sarı kutu azalan beden</figcaption></figure>
+          <figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/stok.jpg" alt="Stok ekranı: özet kutusu ve beden-renk tabloları" width="1280" height="860" loading="lazy"></button><figcaption>Kırmızı hücre bitti, sarı satış hızına göre yakında bitecek</figcaption></figure>
           <div>
-            <p style="margin:0;color:var(--metin-2)">Stok ekranı biten ve azalan bedenleri önce gösterir. Kutudaki sayı stoğun kendisidir: değiştirip <strong>Stokları kaydet</strong>'e basın.</p>
+            <p style="margin:0;color:var(--metin-2)">Stok menüsünde üç sayfa var: <strong>Stok</strong> (liste), <strong>Depo</strong> (telefonla okutarak mal kabulü, çıkarma ve sayım) ve <strong>Sipariş ver</strong> (tedarikçiye WhatsApp mesajı).</p>
             <ul class="maddeler" style="margin-top:12px">
-              <li><strong>Mal kabulü</strong>: tedarikçiden gelen malı eklemek için. Yalnızca gelen <em>adedi</em> yazın, mevcut stoğun üstüne eklenir; arada gelen siparişler bozulmaz.</li>
-              <li><strong>Sayım</strong>: raftaki gerçek adetleri barkod okutarak ya da elle sayın; farklar tek seferde düzeltilir ve fire olarak kaydedilir.</li>
-              <li><strong>Sipariş listesi</strong>: satış hızına göre bitmek üzere olanlar ve tedarikçiden ne kadar isteneceği.</li>
-              <li><strong>Satmayanlar</strong>: uzun süredir satılmayan ürünler; kampanya için aday.</li>
-              <li><strong>Hareketler</strong>: her stok değişiminin kaydı (sipariş, iade, mal kabulü, sayım, elle düzeltme) ve kimin yaptığı.</li>
+              <li><strong>Özet kutusu</strong>: biten beden, 7 günde bitecek, "gelince haber ver" bekleyen müşteri ve açık sayım. Kutuya tıklayınca ilgili liste açılır.</li>
+              <li>Her ürün <strong>beden × renk tablosu</strong> olarak görünür. Kutudaki sayı stoğun kendisidir: değiştirip <strong>Stokları kaydet</strong>'e basın. Siz düzenlerken sipariş gelirse o satır yazılmaz, uyarı çıkar.</li>
+              <li>"Azaldı" satış hızından hesaplanır: 14 günden kısa sürede bitecekse sarı. Az satan üründe 2 adet ve altı.</li>
+              <li>Sayfanın üstündeki sekmeler: <strong>Hareketler</strong> (her stok değişimi, kim yaptı), <strong>Satmayanlar</strong> (uzun süredir satmayanlar; işaretleyip "Seçilenlerle kampanya yap"), <strong>Sayımlar</strong> (geçmiş sayımlar).</li>
             </ul>
           </div>
         </div>
       </div>
+      <div class="alt">
+        <div class="ikili">
+          <figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/depo.jpg" alt="Depo ekranı: mal geldi listesi" width="1280" height="860" loading="lazy"></button><figcaption>Stok › Depo: telefonda kamerayla ya da el okuyucuyla</figcaption></figure>
+          <div>
+            <h3>Depo: okut, liste birikir, bir kez kaydet</h3>
+            <ol class="adimlar" style="margin-top:10px">
+              <li><span>Üstten işi seçin: <strong>Mal geldi</strong>, <strong>Çıkar</strong> ya da <strong>Say</strong>.</span></li>
+              <li><span><strong>Kamerayla okut</strong>'a basın (iPhone ve Android) ya da el okuyucuyla okutun. Barkodsuz ürün için kutuya adını yazın.</span></li>
+              <li><span>Okuttuğunuz her ürün listeye eklenir; satırda − / + ile düzeltin. Liste telefonda saklanır, sayfa kapansa da kaybolmaz.</span></li>
+              <li><span>Bitince <strong>Stoğa ekle</strong> ya da <strong>Stoktan düş</strong>. Mal gelirken tedarikçi, irsaliye ve değişen alış fiyatı isteğe bağlıdır; yeni alış fiyatı raftaki eski stokla ortalanır. Çıkarırken tek soru: hasarlı mı, kayıp mı, numune mi.</span></li>
+            </ol>
+            <div class="ipucu"><strong>Barkodu bir kez öğretin</strong>Tanınmayan barkod okutulunca hangi ürün ve beden olduğu sorulur; bir kez seçersiniz, bir daha sorulmaz. Paket ya da koli barkodunda "bir okutma kaç adet" yazılır. Yanlış ürün gelirse kartta "Yanlış ürün geldi"; aynı barkod başka renkte de varsa "Bu barkod başka renkte/bedende de var".</div>
+            <div class="dikkat"><strong>İki kez yazılmaz</strong>Bağlantı kopar ya da iki kez basarsanız liste ikinci kez stoğa yazılmaz. Çıkarırken stok eksiye düşmez; yetmeyen satır listede kalır.</div>
+          </div>
+        </div>
+      </div>
       <div class="kartlar">
-        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/mal-kabul.jpg" alt="Mal kabulü ekranı" width="1280" height="860" loading="lazy"></button></figure><h4>Mal kabulü</h4><p>Ürün adı ya da barkodla bulun, gelen adetleri yazın. Tedarikçi ve irsaliye notu hareket kaydına düşer.</p></div>
-        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/sayim.jpg" alt="Sayım ekranı" width="1280" height="860" loading="lazy"></button></figure><h4>Sayım</h4><p>Ayda bir önerilir. Telefon kamerası ya da barkod okuyucuyla hızlıca sayılır.</p></div>
-        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/siparis-listesi.jpg" alt="Tedarik sipariş listesi" width="1280" height="860" loading="lazy"></button></figure><h4>Sipariş listesi</h4><p>Son satışlara göre kaç gün yeteceği ve önerilen sipariş adedi.</p></div>
+        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/sayim.jpg" alt="Depo ekranında sayım" width="1280" height="860" loading="lazy"></button></figure><h4>Sayım</h4><p>Depo › Say: yalnızca okuttuklarınız (raf raf), bir kategori ya da bütün mağaza. Sayarken sistemdeki stok gösterilmez. Sayılanlar kendiliğinden kaydedilir; telefon değişse de sayım sürer. "Sayımı bitir" farkları gösterir; onaylayınca stok düzelir. Okutulmayanlara dokunulmaz, isterseniz "rafta yok, sıfırla" seçilir.</p></div>
+        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/siparis-ver.jpg" alt="Sipariş ver: tedarikçi kartı ve WhatsApp mesajı" width="1280" height="860" loading="lazy"></button></figure><h4>Sipariş ver</h4><p>Satış hızına göre ne alınacağı, tedarikçiye göre kartlarda. Adetleri düzeltin, <strong>WhatsApp'ta aç</strong> ya da <strong>Metni kopyala</strong>. Gönderilen sipariş kaydedilir; aynı ürün 7 gün içinde yeniden listede çıkarsa "istendi" notu görünür.</p></div>
+        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/kar.jpg" alt="Aylık kâr" width="1280" height="860" loading="lazy"></button></figure><h4>Stok kaybı kârda</h4><p>Hasarlı, kayıp, sayımda eksik çıkan ve numune verilen ürünler alış fiyatıyla <span class="yol">Raporlar › Aylık kâr</span>'da net kârdan düşülür. Dün stoktan çıkarılanlar sabah özetinde yazar.</p></div>
       </div>
     </section>
 
@@ -470,7 +486,7 @@
       <div class="baslik"><h2>Raporlar</h2><span class="menu">Raporlar</span></div>
       <div class="kartlar">
         <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/rapor.jpg" alt="Satış raporu" width="1280" height="860" loading="lazy"></button></figure><h4>Satış raporu</h4><p>Bu ay, geçen ay, son 30 gün, son 12 ay ya da istediğiniz tarih aralığı: ciro, sipariş, ortalama sepet, iade ve iptal; günlük grafik, kategoriler, en çok satanlar, bedenler, ödeme yöntemleri. "CSV indir" ile Excel'e aktarılır.</p></div>
-        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/kar.jpg" alt="Aylık kâr" width="1280" height="860" loading="lazy"></button></figure><h4>Aylık kâr</h4><p>Ciro eksi ürün maliyeti, kargo, paket, komisyon ve sabit giderler. Doğru sonuç için ürünlerde alış fiyatı ve Ayarlar › Giderler dolu olmalı; eksikse rapor söyler.</p></div>
+        <div class="kart"><figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/kar.jpg" alt="Aylık kâr" width="1280" height="860" loading="lazy"></button></figure><h4>Aylık kâr</h4><p>Ciro eksi ürün maliyeti, kargo, paket, komisyon, sabit giderler ve stok kaybı (hasarlı, kayıp, sayım eksiği, numune). Doğru sonuç için ürünlerde alış fiyatı ve Ayarlar › Giderler dolu olmalı; eksikse rapor söyler.</p></div>
       </div>
     </section>
 
@@ -510,7 +526,11 @@
           <tr><td>Havale geldi, siparişi onaylamak</td><td>Siparişler › siparişi aç › Ödeme durumu: Ödendi › Kaydet</td></tr>
           <tr><td>Bugün gönderilecekleri hazırlamak</td><td>Siparişler › Günün işi › toplama listesi › Hepsinin etiketini yazdır</td></tr>
           <tr><td>Kargo takip numarası girmek</td><td>Siparişi aç › Kargo › taşıyıcı ve takip no › Kaydet</td></tr>
-          <tr><td>Tedarikçiden gelen malı eklemek</td><td>Stok › Mal kabulü › ürünü bul › gelen adet</td></tr>
+          <tr><td>Tedarikçiden gelen malı eklemek</td><td>Stok › Depo › Mal geldi › okut › Stoğa ekle</td></tr>
+          <tr><td>Hasarlı ürünü stoktan düşmek</td><td>Stok › Depo › Çıkar › okut › Stoktan düş › Hasarlı</td></tr>
+          <tr><td>Rafı saymak</td><td>Stok › Depo › Say › Yalnızca okuttuklarım › okut › Sayımı bitir</td></tr>
+          <tr><td>Tedarikçiye sipariş vermek</td><td>Stok › Sipariş ver › adetleri düzelt › WhatsApp'ta aç</td></tr>
+          <tr><td>Yeni ürünün bedenlerini kurmak</td><td>Ürünü aç › Bedenler ve stok › bedenleri ve renkleri işaretle › stok ve barkod › Kaydet</td></tr>
           <tr><td>Bir bedenin stoğunu düzeltmek</td><td>Stok › kutudaki sayıyı değiştir › Stokları kaydet</td></tr>
           <tr><td>Ürünü satıştan kaldırmak</td><td>Ürünler › ürünü aç › "Mağazada yayında" işaretini kaldır</td></tr>
           <tr><td>Kupon kodlu indirim açmak</td><td>Vitrin › Kampanyalar › Yeni kampanya › 4. adım: Kupon koduyla</td></tr>

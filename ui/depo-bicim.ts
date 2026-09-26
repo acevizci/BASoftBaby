@@ -113,7 +113,13 @@ export function listeyeEkle(liste: DepoSatiri[], b: DepoBedeni, adet: number): D
   const var_ = liste.find((s) => s.variantId === b.variantId);
   if (var_) {
     return [
-      { ...var_, stok: b.stok, adet: Math.min(EN_COK_ADET, var_.adet + adet) },
+      {
+        ...var_,
+        productId: b.productId,
+        alisKurus: b.alisKurus,
+        stok: b.stok,
+        adet: Math.min(EN_COK_ADET, var_.adet + adet),
+      },
       ...liste.filter((s) => s !== var_),
     ];
   }

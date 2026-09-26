@@ -73,6 +73,31 @@ describe("Depo · sayım", { skip: atlamaSebebi }, () => {
     assert.equal(await depoSayimBitir(id, { okutulmayanSifir: false }), undefined);
   });
 
+  it("adedi değişmeyen satırın sayılma anı yeniden yazılmıyor", async () => {
+    const db = testDb();
+    const a = await urunKur(5);
+    const b = await urunKur(5);
+    const id = await depoSayimAc(OKUTULAN);
+    acilanlar.push(id);
+    await depoSayimYaz(id, [{ variantId: a.variantId, adet: 5 }]);
+    const ilk = await db.stockCountLine.findFirstOrThrow({
+      where: { countId: id, variantId: a.variantId },
+    });
+    // Arada stok değişti (sipariş kargoya çıktı); liste yeniden gönderildi.
+    await db.productVariant.update({ where: { id: a.variantId }, data: { stok: 4 } });
+    await depoSayimYaz(id, [
+      { variantId: a.variantId, adet: 5 },
+      { variantId: b.variantId, adet: 5 },
+    ]);
+    const sonra = await db.stockCountLine.findFirstOrThrow({
+      where: { countId: id, variantId: a.variantId },
+    });
+    assert.equal(sonra.sistem, ilk.sistem);
+    assert.equal(sonra.sayildi?.getTime(), ilk.sayildi?.getTime());
+    assert.equal(await db.stockCountLine.count({ where: { countId: id } }), 2);
+    await depoSayimIptal(id);
+  });
+
   it("aynı anda tek açık sayım", async () => {
     const ilk = await depoSayimAc(OKUTULAN);
     acilanlar.push(ilk);

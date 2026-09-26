@@ -1083,6 +1083,9 @@ model StockCountLine {
 
   @@index([countId])
   @@index([variantId])
+  /// Bir sayımda bir bedenin tek satırı (K-180): Depo'dan üst üste gelen iki
+  /// kayıt aynı bedene iki satır açmasın.
+  @@unique([countId, variantId])
 }
 
 /// Sabit gider (K-115): kira, reklam, maaş gibi siparişe bağlı olmayan

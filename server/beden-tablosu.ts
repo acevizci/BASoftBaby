@@ -76,6 +76,20 @@ export type TabloSonucu = {
   gecersiz: number;
 };
 
+/**
+ * Kullanılmayan SKU: önerilen kod başka bir bedende varsa sonuna -2, -3…
+ * Eskiden aynı kod iki ürünün adından üretilince kayıt hata sayfasıyla
+ * düşüyordu (K-180).
+ */
+async function bosSku(oneri: string): Promise<string> {
+  for (let i = 1; i < 50; i++) {
+    const sku = i === 1 ? oneri : `${oneri}-${i}`;
+    const var_ = await db.productVariant.findUnique({ where: { sku }, select: { id: true } });
+    if (!var_) return sku;
+  }
+  return `${oneri}-${Date.now().toString(36)}`;
+}
+
 export async function bedenTablosunuYaz(
   productId: string,
   hucreler: TabloHucresi[],
@@ -122,7 +136,7 @@ export async function bedenTablosunuYaz(
             beden: h.beden,
             renk: h.renk,
             stok: ilk,
-            sku: `${urun.slug}-${h.beden.replace(/\s/g, "")}-${h.renk}`,
+            sku: await bosSku(`${urun.slug}-${h.beden.replace(/\s/g, "")}-${h.renk}`),
           },
           select: { id: true },
         });

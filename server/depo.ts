@@ -324,7 +324,9 @@ export async function depoKaydet(
       await islem.depoIslemi.update({ where: { id: k.anahtar }, data: { sonuc } });
       artan = yazilan.map((s) => s.variantId);
       return sonuc;
-    });
+      // Satır satır yazılıyor: yüzlerce kalemlik liste varsayılan 5 saniyeyi
+      // aşabilir (sunucu ile veritabanı arası gecikme). Toplu yüklemedeki gibi.
+    }, { timeout: 60_000, maxWait: 10_000 });
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       const ilk = await onceki();

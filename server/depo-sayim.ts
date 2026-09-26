@@ -143,17 +143,22 @@ export async function depoSayimYaz(
     }),
     db.stockCountLine.findMany({
       where: { countId, variantId: { in: [...idler, ...kaldirilan] } },
-      select: { id: true, variantId: true },
+      select: { id: true, variantId: true, sayilan: true },
     }),
     ayrilanAdetler(idler),
   ]);
   const satirId = new Map(mevcut.map((m) => [m.variantId, m.id]));
+  const sayilmis = new Map(mevcut.map((m) => [m.variantId, m.sayilan]));
   const bul = new Map(varyantlar.map((v) => [v.id, v]));
   const simdi = new Date();
 
   const yazilacak = liste.flatMap((s) => {
     const v = bul.get(s.variantId);
     if (!v) return [];
+    // Adedi değişmeyen satır yeniden yazılmıyor: "sayıldığı an" (stok ve
+    // ayrılan) ilk sayıldığı anda kalmalı. Her kayıtta tazelenirse sayım
+    // sürerken kargoya çıkan ürün sahte fark gösterirdi (K-180).
+    if (sayilmis.get(v.id) === s.adet) return [];
     const olcum = {
       sayilan: s.adet,
       sistem: v.stok,

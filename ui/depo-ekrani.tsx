@@ -139,7 +139,14 @@ export default function DepoEkrani({
   const [girdi, setGirdi] = useState("");
   const [son, setSon] = useState<DepoBedeni | null>(null);
   const [secim, setSecim] = useState<{ kod: string; bedenler: DepoBedeni[] } | null>(null);
-  const [ogret, setOgret] = useState<{ kod: string } | null>(null);
+  // Öğretme kartı: tanınmayan barkod ya da düzeltme (K-180). `tekBag`: bu
+  // barkodun öteki bağları kalkıyor; yanlışsa "ek" (başka renkte de var).
+  const [ogret, setOgret] = useState<{
+    kod: string;
+    tur: "yeni" | "duzelt" | "ek";
+  } | null>(null);
+  /** Son okutulan barkod: yanlış eşleşme düzeltilebilsin. */
+  const [sonKod, setSonKod] = useState("");
   const [arama, setArama] = useState<AramaUrunu[] | null>(null);
   const [mesaj, setMesaj] = useState<{ iyi: boolean; metin: string } | null>(null);
   const [kayitAcik, setKayitAcik] = useState(false);
@@ -179,36 +186,62 @@ export default function DepoEkrani({
     }
   }
 
+  // Aynı anda tek kayıt (K-180): bitmeden gelen istek sırada bekliyor, sonra
+  // en güncel listeyle bir kez daha yazılıyor.
+  const yaziliyor = useRef<Promise<boolean> | null>(null);
+  const sonListe = useRef<DepoSatiri[]>([]);
+  useEffect(() => {
+    sonListe.current = taslak.satirlar;
+  }, [taslak.satirlar]);
+
   /** Sayılanları sunucuya yazar (mutlak; iki kez gitse de sonuç aynı). */
   const sayimiYaz = useCallback(
     async (liste: DepoSatiri[]): Promise<boolean> => {
       if (!sayim) return false;
-      const silinen = [...kaldirilan.current];
+      if (yaziliyor.current) {
+        await yaziliyor.current;
+        liste = sonListe.current;
+      }
+      const is = sayimiGonder(liste);
+      yaziliyor.current = is;
       try {
-        const r = await depoSayimKaydet(
-          sayim.id,
-          liste.map((x) => ({ variantId: x.variantId, adet: x.adet })),
-          silinen,
-        );
-        if (!r.tamam) {
-          setSenkron("hata");
-          setMesaj({
-            iyi: false,
-            metin:
-              "Bu sayım kapanmış (başka yerden bitirilmiş ya da iptal edilmiş). Sayfayı yenile.",
-          });
-          return false;
-        }
-        for (const id of silinen) kaldirilan.current.delete(id);
-        setSenkron("tamam");
-        return true;
-      } catch {
-        setSenkron("hata");
-        return false;
+        return await is;
+      } finally {
+        if (yaziliyor.current === is) yaziliyor.current = null;
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [sayim],
   );
+
+  async function sayimiGonder(liste: DepoSatiri[]): Promise<boolean> {
+    if (!sayim) return false;
+    const silinen = [...kaldirilan.current];
+    try {
+      const r = await depoSayimKaydet(
+        sayim.id,
+        liste.map((x) => ({ variantId: x.variantId, adet: x.adet })),
+        silinen,
+      );
+      if (!r.tamam) {
+        setSenkron("hata");
+        setMesaj({
+          iyi: false,
+          metin:
+            "Bu sayım kapanmış (başka yerden bitirilmiş ya da iptal edilmiş). Sayfayı yenile.",
+        });
+        return false;
+      }
+      for (const id of silinen) kaldirilan.current.delete(id);
+      // Yazılırken yeni okutma geldiyse "kaydediliyor" kalıyor; sıradaki
+      // kayıt onu da yazacak.
+      setSenkron(sonListe.current === liste ? "tamam" : "bekliyor");
+      return true;
+    } catch {
+      setSenkron("hata");
+      return false;
+    }
+  }
 
   // Sayım listesi değişince 1,5 saniye sonra sunucuya yazılıyor.
   useEffect(() => {
@@ -217,6 +250,18 @@ export default function DepoEkrani({
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [surum]);
+
+  // Sekme gizlenirken (telefon kilitlendi, başka uygulamaya geçildi) bekleyen
+  // sayılanlar hemen yazılıyor; 1,5 saniyelik bekleme kaybolmasın.
+  useEffect(() => {
+    const gizlenince = () => {
+      if (document.visibilityState === "hidden" && mod === "say" && senkron === "bekliyor") {
+        void sayimiYaz(taslak.satirlar);
+      }
+    };
+    document.addEventListener("visibilitychange", gizlenince);
+    return () => document.removeEventListener("visibilitychange", gizlenince);
+  }, [mod, senkron, sayimiYaz, taslak.satirlar]);
 
   const sayimDegisti = () => {
     if (mod !== "say") return;
@@ -232,6 +277,8 @@ export default function DepoEkrani({
 
   const modDegis = (m: Mod) => {
     if (m === mod) return;
+    // Sayımdan çıkarken bekleyen sayılanlar yazılıyor.
+    if (mod === "say" && senkron === "bekliyor") void sayimiYaz(taslak.satirlar);
     taslakYaz(mod, taslak);
     setMod(m);
     setTaslak(taslakOku(m));
@@ -266,18 +313,24 @@ export default function DepoEkrani({
       if (!kod) return;
       setSonuc(null);
       const bilinen = onbellek.current.get(kod);
-      if (bilinen) return ekle(bilinen);
+      if (bilinen) {
+        ekle(bilinen);
+        setSonKod(kod);
+        return;
+      }
       try {
         const c = await depoBarkodCoz(kod);
         if (c.tur === "tek") {
           onbellek.current.set(kod, c.beden);
           ekle(c.beden);
+          setSonKod(kod);
         } else if (c.tur === "coklu") {
           setSecim({ kod, bedenler: c.bedenler });
+          setSonKod(kod);
           sesVer(true, ses);
         } else {
           sesVer(false, ses);
-          setOgret({ kod });
+          setOgret({ kod, tur: "yeni" });
           setArama(null);
         }
       } catch {
@@ -542,9 +595,10 @@ export default function DepoEkrani({
       {ogret && (
         <OgretmeKarti
           kod={ogret.kod}
+          tur={ogret.tur}
           sonuclar={arama}
           ara={adAra}
-          sec={(variantId, carpan) => bedenSec(variantId, ogret.kod, carpan, true)}
+          sec={(variantId, carpan) => bedenSec(variantId, ogret.kod, carpan, ogret.tur !== "ek")}
           vazgec={() => {
             setOgret(null);
             setArama(null);
@@ -589,6 +643,34 @@ export default function DepoEkrani({
             )}
             {son.carpan > 1 && <span className="rakam">paket: ×{son.carpan}</span>}
           </p>
+          {/* Yanlış eşleşme (K-180): son okutma listeden geri alınıp barkod
+              doğru bedene bağlanıyor. */}
+          {sonKod && !ogret && (
+            <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold">
+              {(
+                [
+                  ["duzelt", "Yanlış ürün geldi"],
+                  ["ek", "Bu barkod başka renkte/bedende de var"],
+                ] as const
+              ).map(([tur, ad]) => (
+                <button
+                  key={tur}
+                  type="button"
+                  onClick={() => {
+                    const x = taslak.satirlar.find((s) => s.variantId === son.variantId);
+                    if (x) adetDegis(son.variantId, x.adet - son.carpan);
+                    onbellek.current.delete(sonKod);
+                    setOgret({ kod: sonKod, tur });
+                    setArama(null);
+                    setSon(null);
+                  }}
+                  className="text-mavi-koyu underline"
+                >
+                  {ad}
+                </button>
+              ))}
+            </p>
+          )}
         </div>
       )}
 
@@ -979,12 +1061,14 @@ function SayimBitirPenceresi({
 
 function OgretmeKarti({
   kod,
+  tur,
   sonuclar,
   ara,
   sec,
   vazgec,
 }: {
   kod: string;
+  tur: "yeni" | "duzelt" | "ek";
   sonuclar: AramaUrunu[] | null;
   ara: (metin: string) => void;
   sec: (variantId: string, carpan: number) => void;
@@ -998,10 +1082,19 @@ function OgretmeKarti({
   return (
     <div className="rounded-marka border-[1.5px] border-sari bg-sari-soluk p-4">
       <p className="text-sm font-bold">
-        Bu barkodu tanımıyorum: <span className="rakam">{kod}</span>
+        {tur === "yeni"
+          ? "Bu barkodu tanımıyorum"
+          : tur === "duzelt"
+            ? "Doğru ürünü seç"
+            : "Bu barkodun öteki bedenini seç"}
+        : <span className="rakam">{kod}</span>
       </p>
       <p className="mt-1 text-xs text-metin-2">
-        Hangi ürün olduğunu bir kez seç; bir daha okuttuğunda doğrudan tanınır.
+        {tur === "ek"
+          ? "Barkod iki bedene bağlanır; okutunca hangisi olduğu sorulur."
+          : tur === "duzelt"
+            ? "Yanlış bağ kalkar, barkod seçtiğin bedene bağlanır; son okutma listeden geri alındı."
+            : "Hangi ürün olduğunu bir kez seç; bir daha okuttuğunda doğrudan tanınır."}
       </p>
       {!urun ? (
         <>

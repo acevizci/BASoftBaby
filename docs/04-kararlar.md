@@ -6923,6 +6923,46 @@ tanıyordu. Mal kabulü ürün ürün aranarak yapılıyordu.
 
 ---
 
+### K-180 · Stok işinin baştan sona kontrolü
+
+Dört aşama (K-176…K-179) bittikten sonra yapılan iş yeniden gözden geçirildi.
+Bulunan ve düzeltilenler:
+
+- **Sayım anlık görüntüsü kayıyordu.** Aynı adet yeniden gönderilince satırın
+  "sayıldığı an" ve o anki sistem stoku yeniden yazılıyordu; arada satış
+  olursa fark yanlış çıkıyordu. Artık adedi değişmeyen satıra dokunulmuyor.
+- **Aynı bedenin iki sayım satırı olabiliyordu.** `StockCountLine` artık
+  `(countId, variantId)` başına tek (göç `20260927040000_sayim_satir_tekil`).
+- **Sayımda son okutulanlar kaybolabiliyordu.** Mod değiştirilince ya da
+  telefon kilitlenince/sekme gizlenince bekleyen sayım hemen gönderiliyor.
+  Gönderimler sıraya giriyor; yazılırken liste değişirse "bekliyor" kalıp
+  yeniden gönderiliyor.
+- **Yanlış öğretilmiş barkodun düzeltilmesi yoktu.** Okutmadan sonra "Yanlış
+  ürün geldi" ve "Bu barkod başka renkte/bedende de var" düğmeleri: son okutma
+  listeden geri alınıyor, öğretme kartı açılıyor; ilki eski bağı kaldırıyor,
+  ikincisi yeni bir bağ ekliyor.
+- **Listede eski satır güncellenmiyordu.** Aynı beden yeniden eklenince ürün ve
+  alış fiyatı taslakta tazeleniyor.
+- **Büyük mal girişinde işlem süresi.** Depo kaydı işleminin zaman aşımı 60 sn.
+- **Beden tablosunda SKU çakışması.** Aynı SKU varsa sonuna -2, -3… ekleniyor.
+- **Kullanım rehberi** stok bölümü yeniden yazıldı (Stok, Depo, Sayım, Sipariş
+  ver, Stok kaybı), ekran görüntüleri yenilendi; eski Mal kabul ve Sipariş
+  listesi görselleri kaldırıldı.
+
+Plandan bilerek ayrılınanlar: beden tablosunda mevcut bedenler silinemiyor
+(yalnızca yeni hücre ekleniyor; silme ürün sayfasında), stok listesinde
+mutlak adet düzenleme duruyor, "Bitti" sayısı stoku sıfır olan tüm aktif
+bedenleri sayıyor.
+
+Açık kalan: kamera okuması gerçek telefonda (iPhone ve Android) denenmeli.
+
+**Nerede:** [`../ui/depo-ekrani.tsx`](../ui/depo-ekrani.tsx),
+[`../server/depo-sayim.ts`](../server/depo-sayim.ts),
+[`../server/beden-tablosu.ts`](../server/beden-tablosu.ts),
+[`../testler/depo-sayim.test.ts`](../testler/depo-sayim.test.ts)
+
+---
+
 ## Açık sorular
 
 Liste ikiye ayrılıyor: **bekleyenler** (bir hesap, anahtar ya da onay lazım)

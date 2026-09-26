@@ -574,7 +574,7 @@ rehberi o aşamanın ekranlarıyla güncellenir.
   Boyutu ve iPhone'daki hızı ilk aşamada ölçülecek; yetmezse
   `html5-qrcode`'a bakılacak.
 - **Gerçek telefonda deneme:** kamera okuma otomatik testle doğrulanamıyor.
-  Aşama 1 yayına alınınca mağazanın kendi telefonunda (iPhone ve Android)
+  Yayında; mağazanın kendi telefonunda (iPhone ve Android)
   denenmesi gerekiyor.
 - **El okuyucu:** varsa modeli; Bluetooth okuyucular telefonda da klavye gibi
   çalışıyor, Depo ekranı bunu destekliyor.
