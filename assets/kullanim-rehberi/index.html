@@ -300,12 +300,13 @@
             <h3>Havale siparişi</h3>
             <ol class="adimlar" style="margin-top:10px">
               <li><span>Banka hesabında sipariş numarasıyla gelen parayı görün.</span></li>
-              <li><span>Siparişi açın, <strong>Ödeme durumu</strong>nu <span class="etiket e-yesil">Ödendi</span> yapıp kaydedin. Müşteriye "ödemen alındı" e-postası gider, sipariş Günün işi'ne düşer.</span></li>
+              <li><span>Siparişi açın, <strong>Ödeme durumu</strong>nu <span class="etiket e-yesil">Ödendi</span> yapıp kaydedin. Müşteriye "ödemen alındı" e-postası gider, sipariş kendiliğinden <span class="etiket e-sari">Hazırlanıyor</span> olur ve Günün işi'ne düşer.</span></li>
             </ol>
+            <div class="dikkat"><strong>Ödendi geri alınmaz</strong>Ödeme durumu yalnızca "bekliyor"dan "ödendi"ye çevrilir, geri alınamaz. Parayı banka hesabında görmeden işaretlemeyin: ödendi sayılan sipariş iptal edilirse iade kaydı açılır. Para iadeleri yalnızca <span class="yol">Siparişler › İadeler</span> ekranından yürür.</div>
             <h3 style="margin-top:18px">Kargoya verme</h3>
             <ol class="adimlar" style="margin-top:10px">
               <li><span>Sipariş sayfasındaki <strong>Kargo</strong> bölümünde taşıyıcıyı seçin, takip numarasını yazın.</span></li>
-              <li><span>Kaydedince sipariş kendiliğinden <span class="etiket e-mavi">Kargoda</span> olur ve müşteriye takip bağlantılı e-posta gider.</span></li>
+              <li><span>Kaydedince sipariş kendiliğinden <span class="etiket e-mavi">Kargoda</span> olur ve müşteriye takip bağlantılı e-posta gider. Ödemesi beklenen ya da iptal edilmiş sipariş kargoya verilemez; panel uyarır.</span></li>
               <li><span>Teslim edilince durumu <span class="etiket e-yesil">Teslim edildi</span> yapın. 14 günlük iade süresi bu tarihten başlar.</span></li>
             </ol>
           </div>
@@ -313,7 +314,7 @@
         <div class="tablo"><table>
           <thead><tr><th>Durum</th><th>Anlamı</th><th>Müşteriye giden</th></tr></thead>
           <tbody>
-            <tr><td><span class="etiket e-kirmizi">Ödeme bekliyor</span></td><td>Havale bekleniyor. Süresi dolarsa sipariş kendiliğinden iptal olur, stok geri döner.</td><td>Sipariş alındı (banka bilgisiyle), süre bitmeden hatırlatma</td></tr>
+            <tr><td><span class="etiket e-kirmizi">Ödeme bekliyor</span></td><td>Havale ya da kart ödemesi bekleniyor. Süresi dolarsa sipariş kendiliğinden iptal olur, stok geri döner. Kartla ödemeyi yarıda bırakan müşteri sipariş sayfasındaki "Ödemeyi tamamla" ile aynı siparişi ödeyebilir.</td><td>Sipariş alındı (banka bilgisiyle), süre bitmeden hatırlatma</td></tr>
             <tr><td><span class="etiket e-sari">Hazırlanıyor</span></td><td>Ödeme alındı, paketlenecek.</td><td>Ödemen alındı</td></tr>
             <tr><td><span class="etiket e-mavi">Kargoda</span></td><td>Takip numarası girildi.</td><td>Kargoya verildi, takip düğmesiyle</td></tr>
             <tr><td><span class="etiket e-yesil">Teslim edildi</span></td><td>Müşteride. İade süresi başladı.</td><td>Teslim edildi; birkaç gün sonra değerlendirme isteği</td></tr>
@@ -321,6 +322,7 @@
           </tbody>
         </table></div>
         <div class="ipucu"><strong>Belgeler</strong>Sipariş sayfasının altında <strong>İrsaliye</strong> ve <strong>Fatura</strong> bölümleri var; ikisi de yazdırılabilir sayfa açar. Fatura numarası bir kez kesilince değişmez.</div>
+        <div class="ipucu"><strong>Çift sipariş ve çift ödeme</strong>Müşteri düğmeye iki kez basarsa ya da geri tuşuyla formu yeniden gönderirse ikinci sipariş açılmaz. Aynı ürünlerle kısa sürede ikinci sipariş verecekse site ondan onay ister. Kart iki kez çekilirse ya da çekilen tutar siparişle tutmazsa fazla para <span class="yol">İadeler</span>'e kendiliğinden kayıt olarak düşer; oradan iade edin.</div>
       </div>
     </section>
 
@@ -330,12 +332,14 @@
         <div class="kart">
           <figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/talepler.jpg" alt="Talepler listesi" width="1280" height="860" loading="lazy"></button></figure>
           <h4>Talepler</h4>
-          <p>Müşterinin iptal, iade ya da değişim isteği. Açıp cevabınızı yazın ve sonuçlandırın: <em>Onaylandı</em>, <em>Reddedildi</em> ya da ürün geri geldiğinde <em>Tamamlandı</em>. Tamamlanan iadede ürün stoğa, değişimde yenisi stoktan düşer.</p>
+          <p>Müşterinin iptal, iade ya da değişim isteği. Açıp cevabınızı yazın ve sonuçlandırın: <em>Onaylandı</em>, <em>Reddedildi</em> ya da ürün geri geldiğinde <em>Tamamlandı</em>. Tamamlanan iadede ürün stoğa, değişimde yenisi stoktan düşer. İptal talebi geldiğinde sipariş kargoya verilmişse onay işlemez, panel uyarır. Cayma süresi teslimden sonraki 14. günün sonuna kadardır.</p>
         </div>
         <div class="kart">
           <figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/iadeler.jpg" alt="İadeler listesi" width="1280" height="860" loading="lazy"></button></figure>
           <h4>İadeler</h4>
           <p>Geri ödenecek paralar. Kart ödemesinde iade iyzico'ya gönderilir; havalede müşterinin hesabına gönderdikten sonra "gönderildi" işaretleyin. Müşteriye "iaden gönderildi" e-postası gider.</p>
+          <p>Bir iade <em>gönderiliyor</em>da kaldıysa çift iade olmasın diye yeniden gönderilmez: iyzico panelinden geçip geçmediğine bakın, geçtiyse işaretleyin.</p>
+          <p><strong>Kampanyalı siparişte kısmi iade:</strong> kampanya elde kalan ürünlere yeniden uygulanır. 3 al 2 öde'de üç üründen biri iade edilirse para dönmez, çünkü kalan iki ürün kampanyaya girmez. İade tutarını site hesaplar, müşteriye de önceden yazılır.</p>
         </div>
       </div>
     </section>
@@ -363,7 +367,8 @@
           <div>
             <h3>Rozet, görünüm, pasife alma</h3>
             <ul class="maddeler" style="margin-top:10px">
-              <li><strong>Rozet yazısı</strong> ürün kartında görünür ("Yeni", "%20"). "Son 2 adet" yazmayın; stok azalınca site kendisi yazar.</li>
+              <li><strong>Rozet yazısı</strong> ürün kartında görünür ("Yeni", "Organik"). İndirim yüzdesi ("%20") ve "Son 2 adet" yazmayın; ikisini de site kendisi yazar.</li>
+              <li><strong>Üstü çizili eski fiyat</strong> yalnızca gerçekten indirim varsa girin. Yönetmeliğe göre indirimden önceki fiyat, son 10 günde uygulanan en düşük fiyattan yüksek olamaz. Uymayan fiyatta ürün sayfası sarı uyarı verir. İndirimdeki ürünler mağazadaki <strong>% İndirim</strong> sayfasında kendiliğinden listelenir.</li>
               <li>"Mağazada yayında" işaretini kaldırmak ürünü gizler ama siparişleri ve geçmişi silmez; silmek yerine bunu tercih edin.</li>
               <li>Kategoriler, Bedenler ve Renkler ayrı sayfalardan yönetilir. Beden adındaki yaş aralığı ("0-3 ay") beden önerisinde ve süzgeçlerde kullanılır.</li>
             </ul>
@@ -427,7 +432,28 @@
               <li><span><strong>Özet:</strong> kampanya düz cümleyle anlatılır, ad önerilir; kontrol edip kaydedin.</span></li>
             </ol>
             <p style="margin-top:10px">Listede her kampanyanın "Düzenle" düğmesi aynı adımları açar; değişiklik yalnızca sonraki siparişlere uygulanır.</p>
-            <div class="dikkat"><strong>İndirimler üst üste binmez</strong>Sepete birden çok kampanya uyarsa en çok indiren uygulanır. Maliyetin altına düşen kampanyada sayfa uyarı verir.</div>
+            <div class="dikkat"><strong>İndirimler üst üste binmez</strong>Sepete birden çok kampanya uyarsa müşterinin en az ödeyeceği (kargo dahil) tek kampanya uygulanır; müşteri hangisi olduğunu sepette görür.</div>
+            <ul class="maddeler" style="margin-top:12px">
+              <li><strong>Ürün kartında görünenler:</strong> kodsuz, alt sınırsız yüzde kampanyası indirimli fiyat olarak; "3 al 2 öde" gibi adet kampanyaları etiket olarak. Kuponlu, alt sınırlı ya da üyelere özel kampanyalar yalnızca sepette çıkar.</li>
+              <li><strong>Durum:</strong> listede her kampanyanın yanında Açık, Kapalı, Başlamayı bekliyor, Süresi doldu ya da Kullanım doldu yazar. "Özet" satırı kampanyayı düz cümleyle anlatır.</li>
+              <li><strong>Uyarılar:</strong> kampanya bir ürünü maliyetinin altına düşürüyorsa ya da üstü çizili fiyat son 10 günün en düşük fiyatını aşıyorsa kampanyanın altında uyarı çıkar.</li>
+              <li>Bitişine bir hafta kalan kampanyada mağazada "Son 3 gün" gibi bir not görünür. Sepet alt sınırına yaklaşan müşteriye "X ₺ daha ekle" yazılır.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="alt">
+        <div class="ikili">
+          <figure><button type="button" data-buyut><img src="/yonetim/kullanim-rehberi/gorsel/kampanya-sihirbaz.jpg" alt="Kampanya sihirbazının özet adımı" width="1280" height="860" loading="lazy"></button><figcaption>Sihirbazın son adımı: kampanya düz cümleyle</figcaption></figure>
+          <div>
+            <h3>Sihirbazda dikkat</h3>
+            <ul class="maddeler" style="margin-top:10px">
+              <li>Üstteki adım adlarına tıklayarak geri dönüp değiştirebilirsiniz. Eksik ya da hatalı bir adım varsa ileri geçilmez, sebebi yazılır.</li>
+              <li><kbd>Enter</kbd> kaydetmez, sonraki adıma geçer. Kaydetmek için son adımdaki düğmeye basın.</li>
+              <li>Ad kutusunu boş bırakırsanız ad önerilir. Adımlarda bir şey değiştirince öneri de değişir; elle yazdığınız ada dokunulmaz.</li>
+              <li>Kupon kodu başka bir kampanyada kullanılıyorsa sihirbaz 4. adımı açıp söyler; girdikleriniz kaybolmaz.</li>
+              <li>Bitişi geçmiş bir kampanya açık kaydedilmez; ileri bir tarih seçin ya da kapalı kaydedin.</li>
+            </ul>
           </div>
         </div>
       </div>
@@ -487,6 +513,9 @@
           <tr><td>Bir bedenin stoğunu düzeltmek</td><td>Stok › kutudaki sayıyı değiştir › Stokları kaydet</td></tr>
           <tr><td>Ürünü satıştan kaldırmak</td><td>Ürünler › ürünü aç › "Mağazada yayında" işaretini kaldır</td></tr>
           <tr><td>Kupon kodlu indirim açmak</td><td>Vitrin › Kampanyalar › Yeni kampanya › 4. adım: Kupon koduyla</td></tr>
+          <tr><td>3 al 2 öde ya da flaş indirimi başlatmak</td><td>Vitrin › Kampanyalar › Hazır kampanyalar › kartta Aç</td></tr>
+          <tr><td>Kampanyanın yüzdesini, tarihini değiştirmek</td><td>Vitrin › Kampanyalar › listede Düzenle › ilgili adım › Değişiklikleri kaydet</td></tr>
+          <tr><td>Yeni üyelere hoş geldin indirimi</td><td>Vitrin › Kampanyalar › Hazır kampanyalar › Hoş geldin indirimi › Aç</td></tr>
           <tr><td>Ana sayfa görselini değiştirmek</td><td>Vitrin › Ana sayfa banner (masaüstü 2400×800)</td></tr>
           <tr><td>Müşteriye hediye çeki vermek</td><td>Vitrin › Hediye çekleri › Yeni çek, alıcı e-postasıyla</td></tr>
           <tr><td>İade talebini sonuçlandırmak</td><td>Siparişler › Talepler › talebi aç › cevap yaz › Tamamlandı</td></tr>

@@ -6700,6 +6700,29 @@ K-172'nin baştan okunmasında bulunanlar:
 **Nerede:** [`../ui/kampanya-sihirbazi.tsx`](../ui/kampanya-sihirbazi.tsx),
 [`../server/yonetim.ts`](../server/yonetim.ts)
 
+
+### K-174 · Kullanım rehberinin güncellenmesi
+
+Panel rehberi (K-162) K-163'ten bu yana yapılanlarla yeniden okundu:
+
+- **Sipariş akışı:** havale onayında sipariş kendiliğinden
+  "hazırlanıyor"a geçiyor. "Ödendi" geri alınamıyor; ödendi sayılan
+  sipariş iptal edilirse iade kaydı açılıyor. Ödemesi beklenen ya da iptal
+  edilmiş sipariş kargoya verilemiyor. Kartla ödemeyi yarıda bırakan
+  müşteri "Ödemeyi tamamla"yı kullanabiliyor. Çift sipariş ve çift ödemede
+  ne olduğu anlatılıyor.
+- **Talepler ve iadeler:** kargodaki siparişin iptal talebi, cayma süresi,
+  "gönderiliyor"da kalan iade, kampanyalı siparişte kısmi iade.
+- **Ürünler:** indirim yüzdesi rozete yazılmıyor, site kendisi yazıyor.
+  Üstü çizili fiyatta 10 gün kuralı ve % İndirim sayfası anlatılıyor.
+- **Kampanyalar:** hazır kampanyalar, altı adımlı sihirbaz (yeni ekran
+  görüntüsüyle) ve sihirbazın kuralları. Rehberde ayrıca kartta ve sepette
+  ne göründüğü, durum etiketleri, uyarılar, "Son N gün" notu ve "X ₺ daha
+  ekle" ipucu var. Sık yapılan işlere üç kampanya tarifi eklendi.
+- **Açık kalan:** yanlışlıkla "ödendi" yapılıp iptal edilen siparişte
+  açılan iade kaydını kapatmanın yolu yok; İadeler ekranında yalnızca
+  "iade et" ve "parayı gönderdim" var.
+
 ---
 
 ## Açık sorular
