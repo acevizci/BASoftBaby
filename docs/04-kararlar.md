@@ -6635,6 +6635,39 @@ Türkiye'de e-ticarette yaygın kampanyalar gözden geçirildi; eksikler eklendi
 **Nerede:** [`../server/kampanya-kapsam.ts`](../server/kampanya-kapsam.ts),
 [`../server/sepet.ts`](../server/sepet.ts)
 
+
+### K-172 · Hazır kampanyalar ve kampanya sihirbazı
+
+Tek sayfalık kampanya formu karışıktı: altı türün bütün kutuları aynı anda
+görünüyordu, hangisinin hangi türde okunduğu etiketten anlaşılıyordu.
+
+- **Hazır kampanyalar:** Kampanyalar ekranında sık kullanılan yedi kampanya
+  kart olarak duruyor. Liste `ui/kampanya-bicim.ts`'de: hoş geldin %10,
+  3 al 2 öde, 2. ürüne %50, kademeli, 750 ₺ üzeri %10, ücretsiz kargo
+  kuponu, 24 saatlik flaş.
+  - "Aç" ilk seferde kampanyayı kartın değerleriyle kuruyor
+    (`Campaign.sablon` bağı). Sonra aynı kaydı açıp kapatıyor; "Düzenle"den
+    değişen değerler korunuyor.
+  - Flaş her açılışta açıldığı andan 24 saat. Süresi dolmuş öteki hazır
+    kampanyalarda "Yeniden aç" bitiş tarihini kaldırıyor.
+  - Kupon kodu başka bir kampanyada kullanılıyorsa kurmuyor, söylüyor.
+- **Sihirbaz:** Yeni kampanya ve düzenleme altı adımda yapılıyor: tür →
+  indirim → ürünler → kimlere → ne zaman → özet.
+  - Her adım yalnızca o türün kutularını gösteriyor.
+  - Adım geçmeden sınanıyor; Enter kaydetmiyor, sonraki adıma geçiyor.
+  - Son adım kampanyayı düz cümleyle anlatıyor ve ad öneriyor. Aynı özet
+    listede de var.
+  - Sunucu (`kampanyaKaydet`) her şeyi yeniden sınıyor. Hata sihirbaza
+    dönüyor. Düzenleme şablon bağını ve kullanım sayısını koruyor.
+  - Önceden kampanya düzenlenemiyordu, yalnızca silinip yeniden
+    kuruluyordu.
+- Saatli tarih kutusu artık açıkça İstanbul saatiyle okunuyor; sunucunun
+  saat dilimine bırakılmıyor.
+
+**Nerede:** [`../ui/kampanya-sihirbazi.tsx`](../ui/kampanya-sihirbazi.tsx),
+[`../ui/kampanya-bicim.ts`](../ui/kampanya-bicim.ts),
+[`../server/kampanya-sablon.ts`](../server/kampanya-sablon.ts)
+
 ---
 
 ## Açık sorular

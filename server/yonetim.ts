@@ -44,6 +44,7 @@ import {
 } from "@/server/siparis-arama";
 import { kargoyaVerildiEpostasi, odemeAlindiEpostasi } from "@/server/eposta";
 import { KAMPANYA_TIPLERI } from "@/server/kampanya";
+import { sablonuCevir } from "@/server/kampanya-sablon";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { hareketYaz } from "@/server/stok-hareket";
 import { maliyetiGecmiseYaz } from "@/server/maliyet";
@@ -1180,9 +1181,13 @@ const KAPSAMLAR = ["tumu", "kategori", "urun"];
 function tariheCevir(deger: FormDataEntryValue | null, uc: "bas" | "son" = "bas"): Date | null {
   const metin = String(deger ?? "").trim();
   if (!metin) return null;
+  // Saatli kutu ("2026-09-30T14:00") da İstanbul saati; sunucunun saat
+  // dilimine bırakılmıyor (K-172).
   const t = /^\d{4}-\d{2}-\d{2}$/.test(metin)
     ? new Date(`${metin}T${uc === "bas" ? "00:00:00.000" : "23:59:59.999"}+03:00`)
-    : new Date(metin);
+    : /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(metin)
+      ? new Date(`${metin}:00+03:00`)
+      : new Date(metin);
   return Number.isNaN(t.getTime()) ? null : t;
 }
 
@@ -1239,7 +1244,13 @@ export async function kampanyaKaydet(veri: FormData): Promise<void> {
   const kapsam = String(veri.get("kapsam") ?? "tumu");
   // Geçersiz giriş sebebiyle geri dönüyor (K-168): eskiden form sessizce
   // hiçbir şey yapmıyordu, kampanya kaydedildi sanılıyordu.
-  const hata = (kod: string): never => redirect(`/yonetim/kampanyalar?hata=${kod}`);
+  // Sihirbazdan gelen hata sihirbaza dönüyor (K-172); adres yalnızca
+  // kampanya sayfalarından biri olabilir.
+  const donusHam = String(veri.get("donus") ?? "");
+  const donus = /^\/yonetim\/kampanyalar\/(yeni|duzenle\/[A-Za-z0-9_-]{1,40})$/.test(donusHam)
+    ? donusHam
+    : "/yonetim/kampanyalar";
+  const hata = (kod: string): never => redirect(`${donus}?hata=${kod}`);
   if (!ad) hata("ad");
   if (!TIPLER.includes(tip) || !KAPSAMLAR.includes(kapsam)) hata("gecersiz");
 
@@ -1363,10 +1374,13 @@ export async function kampanyaKaydet(veri: FormData): Promise<void> {
       where: { kuponKodu },
       select: { id: true },
     });
-    if (varOlan && varOlan.id !== id) redirect("/yonetim/kampanyalar?hata=kupon");
+    if (varOlan && varOlan.id !== id) hata("kupon");
   }
 
   if (id) {
+    // Düzenleme (K-172): şablon bağı ve kullanım sayısı korunuyor.
+    const eski = await db.campaign.findUnique({ where: { id }, select: { id: true } });
+    if (!eski) hata("bulunamadi");
     await db.campaign.update({ where: { id }, data: veriler });
   } else {
     await db.campaign.create({ data: veriler });
@@ -1374,6 +1388,18 @@ export async function kampanyaKaydet(veri: FormData): Promise<void> {
 
   vitriniYenile();
   redirect("/yonetim/kampanyalar?kayit=1");
+}
+
+/** Hazır kampanyayı açıp kapatır (K-172); ilk açılışta oluşturur. */
+export async function sablonCevir(veri: FormData): Promise<void> {
+  await yoneticiGerekli();
+
+  const sonuc = await sablonuCevir(String(veri.get("anahtar") ?? ""));
+  if (sonuc === "bulunamadi" || sonuc === "kupon") {
+    redirect(`/yonetim/kampanyalar?hata=${sonuc === "kupon" ? "sablon-kupon" : "bulunamadi"}`);
+  }
+  vitriniYenile();
+  redirect(`/yonetim/kampanyalar?kayit=${sonuc}#hazir`);
 }
 
 export async function kampanyaCevir(veri: FormData): Promise<void> {

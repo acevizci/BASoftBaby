@@ -61,7 +61,7 @@ describe("menü kapsamı", () => {
    * yalnızca sayfa içi sekmelerden bulunuyordu. Parametreli sayfalar
    * (detay) ve bir işin parçası olan sayfalar (yeni ürün, yazdırma) hariç.
    */
-  const HARIC = new Set(["/yonetim/hesabim", "/yonetim/urunler/yeni", "/yonetim/siparisler/etiketler", "/yonetim/stok/etiketler"]);
+  const HARIC = new Set(["/yonetim/hesabim", "/yonetim/urunler/yeni", "/yonetim/kampanyalar/yeni", "/yonetim/siparisler/etiketler", "/yonetim/stok/etiketler"]);
 
   function sayfalar(kok: string, onek = "/yonetim"): string[] {
     return readdirSync(kok).flatMap((ad) => {

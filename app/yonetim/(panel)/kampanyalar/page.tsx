@@ -1,5 +1,5 @@
 import { db } from "@/server/veritabani";
-import { kampanyaCevir, kampanyaKaydet, kampanyaSil } from "@/server/yonetim";
+import { kampanyaCevir, kampanyaSil, sablonCevir } from "@/server/yonetim";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import { alOdeEtiketi, kademeCoz, nciUrunEtiketi } from "@/server/kampanya";
 import { kampanyaZarari, type ZararliUrun } from "@/server/kar";
@@ -11,7 +11,15 @@ import Sayfalama, { SayfaAlani } from "@/ui/sayfalama";
 import { sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
 import PanelArama from "@/ui/panel-arama";
 import { alanAramasi, aramaCoz } from "@/ui/panel-arama-bicim";
-import { kategoriEtiketleri } from "@/ui/kategori-etiketi";
+import {
+  calismaDurumu,
+  KAMPANYA_HATALARI,
+  kampanyaOzeti,
+  SABLONLAR,
+  type CalismaDurumu,
+} from "@/ui/kampanya-bicim";
+import { kaydiTaslaga } from "@/server/kampanya-sablon";
+import { ANA_DUGME, IKINCIL_DUGME } from "@/app/yonetim/panel-bicim";
 import Link from "next/link";
 import {
   INDIRIM_ONCESI_GUN,
@@ -21,9 +29,6 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const GIRDI =
-  "rounded-[10px] border-[1.5px] border-cizgi bg-yuzey px-3 py-2 text-sm text-metin outline-none focus:border-mercan";
-const ETIKET = "text-xs font-bold text-metin-2";
 
 /** Kampanya satırı tablo satırı; sayfaya çok sayıda sığıyor. */
 const LISTE_BOYU = 20;
@@ -33,6 +38,33 @@ function kapsamAdlari(idler: (string | null)[], adlar: Map<string, string>, tur:
   const liste = idler.filter((x): x is string => !!x).map((id) => adlar.get(id) ?? `silinmiş ${tur}`);
   if (liste.length === 0) return `${tur} seçili değil`;
   return liste.length > 3 ? `${liste.slice(0, 3).join(", ")} ve ${liste.length - 3} tane daha` : liste.join(", ");
+}
+
+function tarihSaatYaz(t: Date): string {
+  return t.toLocaleString("tr-TR", {
+    timeZone: "Europe/Istanbul",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+const ROZETLER: Record<CalismaDurumu | "yok", [string, string]> = {
+  acik: ["Açık", "bg-nane-soluk text-nane-koyu"],
+  bekliyor: ["Başlamayı bekliyor", "bg-mavi-soluk text-mavi-koyu"],
+  bitti: ["Süresi doldu", "bg-sari-soluk text-sari-koyu"],
+  kapali: ["Kapalı", "bg-cizgi-soluk text-metin-2"],
+  yok: ["Kurulmadı", "bg-cizgi-soluk text-metin-3"],
+};
+
+function DurumRozeti({ durum }: { durum: CalismaDurumu | "yok" }) {
+  const [ad, renk] = ROZETLER[durum];
+  return (
+    <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-bold ${renk}`}>
+      {ad}
+    </span>
+  );
 }
 
 function tarihYaz(t: Date | null): string {
@@ -78,26 +110,7 @@ const BILDIRIMLER: Record<string, string> = {
   kapatildi: "Kampanya kapatıldı.",
 };
 
-const HATALAR: Record<string, string> = {
-  ...ORTAK_HATALAR,
-  kupon: "Bu kupon kodu başka bir kampanyada kullanılıyor. Başka bir kod seç.",
-  ad: "Kampanya adı boş olamaz.",
-  gecersiz: "Tanınmayan indirim türü ya da kapsam.",
-  yuzde: "Yüzde 1 ile 100 arasında bir sayı olmalı.",
-  tutar: "Geçerli bir indirim tutarı yaz (ör. 50,00).",
-  "al-ode":
-    "\"X al Y öde\" için X en az 2, en çok 20; Y en az 1 ve X'ten küçük olmalı (ör. 3 al 2 öde).",
-  "kupon-harf":
-    "Kupon kodu 3-40 karakter; yalnızca Türkçe olmayan büyük harf (A-Z), rakam, tire ve alt çizgi. Ör. HOSGELDIN10.",
-  kategori: "Kapsam \"Seçili kategoriler\" ise en az bir kategori işaretle.",
-  urun: "Kapsam \"Seçili ürünler\" ise en az bir ürün işaretle.",
-  tarih: "Bitiş tarihi başlangıçtan önce olamaz.",
-  "nci-urun": "N. ürün 2 ile 10 arasında olmalı; yüzdeyi Değer kutusuna yaz (ör. 2. ürüne %50).",
-  kademeli:
-    "Kademeleri her satıra \"eşik = indirim\" diye yaz (ör. 500 = 50). İndirim eşikten küçük olmalı; aynı eşik iki kez olmaz; en çok 10 basamak.",
-  tavan: "İndirim tavanı geçerli bir tutar olmalı (ör. 200).",
-  sinir: "Kullanım sınırları 1 ya da daha büyük tam sayı olmalı.",
-};
+const HATALAR: Record<string, string> = { ...ORTAK_HATALAR, ...KAMPANYA_HATALARI };
 
 export default async function KampanyaEkrani({
   searchParams,
@@ -111,7 +124,7 @@ export default async function KampanyaEkrani({
   // Kişiye özel kuponlar (K-151) listeyi doldurmasın; e-postayla gidiyorlar.
   const kosul = { ...alanAramasi(arama, ["ad", "kuponKodu"]), customerId: null };
 
-  // Kategori ve ürün listeleri kampanya formunun açılır menüleri; onlar
+  // Kategori ve ürün adları kapsam ve özet için; onlar
   // sayfalanmıyor, yalnızca kampanya tablosu (K-67).
   const toplamAdet = await db.campaign.count({ where: kosul });
   const durum = sayfaCoz(sayfa, toplamAdet, LISTE_BOYU);
@@ -120,7 +133,7 @@ export default async function KampanyaEkrani({
     : "/yonetim/kampanyalar";
   const adres = (n: number) => sayfaAdresi(temel, n);
 
-  const [kampanyalar, kategoriler, urunler, maliyetliler, satisAyari] = await Promise.all([
+  const [kampanyalar, kategoriler, urunler, maliyetliler, satisAyari, hazirlar] = await Promise.all([
     db.campaign.findMany({
       where: kosul,
       orderBy: { olusturuldu: "desc" },
@@ -131,7 +144,7 @@ export default async function KampanyaEkrani({
     }),
     db.category.findMany({
       orderBy: { sira: "asc" },
-      select: { id: true, slug: true, ad: true, aktif: true },
+      select: { id: true, ad: true },
     }),
     db.product.findMany({ orderBy: { ad: "asc" }, select: { id: true, ad: true } }),
     // Zarar uyarısı için: satıştaki, alış fiyatı girilmiş ürünler (K-113).
@@ -140,7 +153,9 @@ export default async function KampanyaEkrani({
       select: { id: true, ad: true, categoryId: true, fiyatKurus: true, alisFiyatKurus: true },
     }),
     ayarlariGetir(),
+    db.campaign.findMany({ where: { sablon: { not: null } } }),
   ]);
+  const hazir = new Map(hazirlar.map((k) => [k.sablon, k]));
   const fiyatUyarilari = await kampanyaFiyatUyarilari(kampanyalar.map((k) => k.id));
   const kategoriAdi = new Map(kategoriler.map((k) => [k.id, k.ad]));
   const urunAdi = new Map(urunler.map((u) => [u.id, u.ad]));
@@ -154,6 +169,74 @@ export default async function KampanyaEkrani({
       </p>
 
       <PanelBildirim kayit={kayit} hata={hata} bildirimler={BILDIRIMLER} hatalar={HATALAR} />
+
+      <div>
+        <Link href="/yonetim/kampanyalar/yeni" className={`${ANA_DUGME} inline-block`}>
+          + Yeni kampanya
+        </Link>
+        <p className="mt-2 text-xs text-metin-3">
+          Adım adım: tür, indirim, ürünler, kimlere, ne zaman; sonunda düz cümleyle özet.
+        </p>
+      </div>
+
+      {/* Hazır kampanyalar (K-172): tek tıkla aç/kapat. */}
+      <section id="hazir" className="rounded-marka border border-cizgi bg-yuzey p-5">
+        <h2 className="text-lg">Hazır kampanyalar</h2>
+        <p className="mt-1 text-sm text-metin-2">
+          Sık kullanılan kampanyalar. &quot;Aç&quot; ilk seferde kampanyayı buradaki değerlerle
+          kurar; sonra aynı kampanyayı açıp kapatır. Değerleri &quot;Düzenle&quot;den değiştir.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {SABLONLAR.map((s) => {
+            const k = hazir.get(s.anahtar);
+            const durum: CalismaDurumu | "yok" = k ? calismaDurumu(k) : "yok";
+            const calisiyor = durum === "acik" || durum === "bekliyor";
+            return (
+              <div
+                key={s.anahtar}
+                className={`flex flex-col gap-2 rounded-marka border-[1.5px] p-4 ${
+                  calisiyor ? "border-nane" : "border-cizgi"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-bold">{k?.ad ?? s.baslik}</h3>
+                  <DurumRozeti durum={durum} />
+                </div>
+                {/* Kurulmuşsa kaydın kendisi: "Düzenle"den değişmiş olabilir. */}
+                <p className="text-xs text-metin-2">
+                  {k
+                    ? kampanyaOzeti(kaydiTaslaga(k), { kategori: kategoriAdi, urun: urunAdi })
+                        .slice(0, 2)
+                        .join(" ")
+                    : s.aciklama}
+                </p>
+                {k?.bitis && calisiyor && (
+                  <p className="rakam text-xs text-metin-3">Bitiş: {tarihSaatYaz(k.bitis)}</p>
+                )}
+                <div className="mt-auto flex items-center gap-3 pt-1">
+                  <form action={sablonCevir}>
+                    <input type="hidden" name="anahtar" value={s.anahtar} />
+                    <button
+                      type="submit"
+                      className={calisiyor ? IKINCIL_DUGME : `${ANA_DUGME} !px-4 !py-2 text-xs`}
+                    >
+                      {calisiyor ? "Kapat" : durum === "bitti" ? "Yeniden aç" : "Aç"}
+                    </button>
+                  </form>
+                  {k && (
+                    <Link
+                      href={`/yonetim/kampanyalar/duzenle/${k.id}`}
+                      className="text-xs font-bold text-metin-2 hover:underline"
+                    >
+                      Düzenle
+                    </Link>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       <PanelArama
         yol="/yonetim/kampanyalar"
@@ -186,14 +269,8 @@ export default async function KampanyaEkrani({
                   <tr key={k.id}>
                     <td className="py-2">
                       <span className="font-semibold">{k.ad}</span>
-                      <span
-                        className={`ml-2 rounded-full px-2 py-0.5 text-xs font-bold ${
-                          k.aktif
-                            ? "bg-nane-soluk text-nane-koyu"
-                            : "bg-cizgi-soluk text-metin-2"
-                        }`}
-                      >
-                        {k.aktif ? "Açık" : "Kapalı"}
+                      <span className="ml-2">
+                        <DurumRozeti durum={calismaDurumu(k)} />
                       </span>
                       {k.enAzSepetKurus > 0 && (
                         <span className="rakam block text-xs text-metin-3">
@@ -212,6 +289,17 @@ export default async function KampanyaEkrani({
                             .join(" · ")}
                         </span>
                       )}
+                      <details className="mt-1 text-xs">
+                        <summary className="cursor-pointer text-metin-3">Özet</summary>
+                        <ul className="mt-1 flex max-w-md flex-col gap-0.5 text-metin-2">
+                          {kampanyaOzeti(kaydiTaslaga(k), {
+                            kategori: kategoriAdi,
+                            urun: urunAdi,
+                          }).map((c) => (
+                            <li key={c}>{c}</li>
+                          ))}
+                        </ul>
+                      </details>
                       <ZararUyarisi zararlilar={kampanyaZarari(k, maliyetliler, satisAyari.kdvOrani)} tutarMi={k.tip === "tutar"} />
                       <FiyatUyarisi urunler={fiyatUyarilari.get(k.id) ?? []} />
                     </td>
@@ -238,6 +326,12 @@ export default async function KampanyaEkrani({
                     <td className="rakam py-2">{k.kullanim}</td>
                     <td className="py-2">
                       <div className="flex justify-end gap-2">
+                        <Link
+                          href={`/yonetim/kampanyalar/duzenle/${k.id}`}
+                          className="rounded-full border border-cizgi px-3 py-1.5 text-xs font-bold text-metin-2 hover:border-metin-3"
+                        >
+                          Düzenle
+                        </Link>
                         <form action={kampanyaCevir}>
                           <SayfaAlani sayfa={durum.sayfa} />
                           <input type="hidden" name="id" value={k.id} />
@@ -271,218 +365,6 @@ export default async function KampanyaEkrani({
         </div>
       </section>
 
-      <section className="rounded-marka border border-cizgi bg-yuzey p-5">
-        <h2 className="text-lg">Yeni kampanya</h2>
-        <form action={kampanyaKaydet} className="mt-4 flex flex-col gap-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="flex flex-col gap-1.5 sm:col-span-2">
-              <span className={ETIKET}>Kampanya adı — müşteri bunu görür</span>
-              <input
-                name="ad"
-                required
-                placeholder="Sonbahar indirimi"
-                className={GIRDI}
-              />
-            </label>
-
-            <label className="flex flex-col gap-1.5">
-              <span className={ETIKET}>İndirim türü</span>
-              <select name="tip" defaultValue="yuzde" className={GIRDI}>
-                <option value="yuzde">Yüzde</option>
-                <option value="tutar">Tutar (₺)</option>
-                <option value="al-ode">X al Y öde (ör. 3 al 2 öde)</option>
-                <option value="nci-urun">N. ürüne indirim (ör. 2. ürüne %50)</option>
-                <option value="kademeli">Kademeli sepet indirimi (ör. 500 ₺&apos;ye 50 ₺)</option>
-                <option value="kargo">Ücretsiz kargo</option>
-              </select>
-            </label>
-
-            <label className="flex flex-col gap-1.5">
-              <span className={ETIKET}>
-                Değer — yüzdede ve N. üründe 20 (%), tutarda 50,00 (öteki türlerde boş)
-              </span>
-              <input name="deger" inputMode="decimal" className={`${GIRDI} rakam`} />
-            </label>
-
-            {/* "N. ürüne %X" ve kademeli (K-170). */}
-            <label className="flex flex-col gap-1.5">
-              <span className={ETIKET}>N. ürün — &quot;N. ürüne indirim&quot;de kaçıncı ürün</span>
-              <input name="nciN" inputMode="numeric" placeholder="2" className={`${GIRDI} rakam`} />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className={ETIKET}>İndirim tavanı (₺) — isteğe bağlı, ör. %20 en çok 200 ₺</span>
-              <input name="tavan" inputMode="decimal" placeholder="boş: sınırsız" className={`${GIRDI} rakam`} />
-            </label>
-            <label className="flex flex-col gap-1.5 sm:col-span-2">
-              <span className={ETIKET}>
-                Kademeler — yalnızca kademeli türde; her satır &quot;eşik = indirim&quot; (₺)
-              </span>
-              <textarea
-                name="kademeler"
-                rows={3}
-                placeholder={"500 = 50\n1000 = 150\n2000 = 400"}
-                className={`${GIRDI} rakam`}
-              />
-              <span className="text-xs text-metin-3">
-                Kapsamdaki ürünlerin tutarı hangi eşiği geçtiyse o basamağın indirimi uygulanır.
-                Sepette müşteriye bir sonraki basamağa ne kadar kaldığı yazılır.
-              </span>
-            </label>
-
-            {/* "X al Y öde" (K-168): en ucuz ürünler bedava. */}
-            <div className="flex flex-col gap-1.5 sm:col-span-2">
-              <span className={ETIKET}>X al Y öde — yalnızca bu tür seçiliyse</span>
-              <div className="flex flex-wrap items-center gap-2 text-sm">
-                <input
-                  name="alAdet"
-                  inputMode="numeric"
-                  placeholder="3"
-                  aria-label="Alınan adet"
-                  className={`${GIRDI} rakam w-20`}
-                />
-                <span>al</span>
-                <input
-                  name="odeAdet"
-                  inputMode="numeric"
-                  placeholder="2"
-                  aria-label="Ödenen adet"
-                  className={`${GIRDI} rakam w-20`}
-                />
-                <span>öde</span>
-              </div>
-              <span className="text-xs text-metin-3">
-                Kapsamdaki ürünlerden her X adette Y tanesi ücretli; bedava olanlar sepetteki en
-                ucuz ürünler. Farklı ürünler karışabilir (kapsamı kategori ya da tek ürün yaparak
-                sınırlayabilirsin). 5 ürün alan 3 al 2 öde&apos;de 1, 6 ürün alan 2 ürün bedava alır.
-              </span>
-            </div>
-
-            <label className="flex flex-col gap-1.5">
-              <span className={ETIKET}>Kapsam</span>
-              <select name="kapsam" defaultValue="tumu" className={GIRDI}>
-                <option value="tumu">Tüm ürünler</option>
-                <option value="kategori">Seçili kategoriler</option>
-                <option value="urun">Seçili ürünler</option>
-              </select>
-            </label>
-
-            {/* Çoklu kapsam (K-171): onay kutuları; JavaScript'siz çalışıyor. */}
-            <fieldset className="flex flex-col gap-1.5 sm:col-span-2">
-              <legend className={ETIKET}>Kategoriler — kapsam &quot;Seçili kategoriler&quot;se</legend>
-              <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1.5 rounded-[10px] border-[1.5px] border-cizgi p-3">
-                {kategoriler.map((k) => (
-                  <label key={k.id} className="flex items-center gap-1.5 text-sm">
-                    <input
-                      type="checkbox"
-                      name="kategoriIdleri"
-                      value={k.id}
-                      className="h-4 w-4 accent-[var(--mercan)]"
-                    />
-                    {kategoriEtiketleri(kategoriler).get(k.slug) ?? k.ad}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset className="flex flex-col gap-1.5 sm:col-span-2">
-              <legend className={ETIKET}>Ürünler — kapsam &quot;Seçili ürünler&quot;se</legend>
-              <div className="mt-1.5 grid max-h-64 gap-1.5 overflow-y-auto rounded-[10px] border-[1.5px] border-cizgi p-3 sm:grid-cols-2">
-                {urunler.map((u) => (
-                  <label key={u.id} className="flex items-center gap-1.5 text-sm">
-                    <input
-                      type="checkbox"
-                      name="urunIdleri"
-                      value={u.id}
-                      className="h-4 w-4 accent-[var(--mercan)]"
-                    />
-                    {u.ad}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-
-            <label className="flex flex-col gap-1.5">
-              <span className={ETIKET}>Kupon kodu — boşsa kendiliğinden uygulanır</span>
-              <input
-                name="kuponKodu"
-                placeholder="HOSGELDIN"
-                className={`${GIRDI} rakam uppercase`}
-              />
-            </label>
-
-            <label className="flex flex-col gap-1.5">
-              <span className={ETIKET}>En az sepet tutarı (₺)</span>
-              <input
-                name="enAzSepet"
-                inputMode="decimal"
-                placeholder="0"
-                className={`${GIRDI} rakam`}
-              />
-            </label>
-
-            <label className="flex flex-col gap-1.5">
-              <span className={ETIKET}>Başlangıç — saat isteğe bağlı (flaş kampanya)</span>
-              <input name="baslangic" type="datetime-local" className={GIRDI} />
-            </label>
-
-            <label className="flex flex-col gap-1.5">
-              <span className={ETIKET}>Bitiş</span>
-              <input name="bitis" type="datetime-local" className={GIRDI} />
-            </label>
-
-            {/* Kullanım kuralları (K-170). */}
-            <label className="flex flex-col gap-1.5">
-              <span className={ETIKET}>Toplam kullanım sınırı — ör. ilk 100 sipariş</span>
-              <input name="enFazlaKullanim" inputMode="numeric" placeholder="boş: sınırsız" className={`${GIRDI} rakam`} />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className={ETIKET}>Kişi başı kullanım — bir üye en çok kaç kez</span>
-              <input name="kisiBasiSinir" inputMode="numeric" placeholder="boş: sınırsız" className={`${GIRDI} rakam`} />
-            </label>
-            <div className="flex flex-col gap-2 sm:col-span-2">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" name="uyelereOzel" className="h-4 w-4 accent-[var(--mercan)]" />
-                <span className="text-sm font-semibold">Yalnızca üyelere</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" name="ilkSiparis" className="h-4 w-4 accent-[var(--mercan)]" />
-                <span className="text-sm font-semibold">Yalnızca ilk siparişte (hoş geldin kampanyası)</span>
-              </label>
-              <span className="text-xs text-metin-3">
-                İlk sipariş ve kişi başı sınır, kimin kullandığını bilmek için üye girişi ister;
-                bu kampanyalar yalnızca giriş yapmış müşteriye uygulanır ve ürün kartlarında
-                indirimli fiyat olarak görünmez. Üyeliksiz verilmiş eski siparişler de e-posta
-                adresinden sayılır.
-              </span>
-            </div>
-          </div>
-
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              name="aktif"
-              defaultChecked
-              className="h-4 w-4 accent-[var(--mercan)]"
-            />
-            <span className="text-sm font-semibold">Kampanya açık</span>
-          </label>
-
-          <p className="text-xs text-metin-3">
-            Ürün fiyatına yalnızca kuponsuz, sepet alt sınırı olmayan <strong>yüzde</strong>{" "}
-            kampanyaları yansır. Tutar indirimi ve &quot;X al Y öde&quot; sepette hesaplanır;
-            &quot;X al Y öde&quot; ürün sayfasında ve kartta etiket olarak görünür. Kupon isteyen ya
-            da alt sınırı olan kampanyalar yalnızca sepette çıkar. İndirimler üst üste binmez:
-            sepete uyan kampanyalardan en çok indireni uygulanır.
-          </p>
-
-          <button
-            type="submit"
-            className="self-start rounded-full bg-dugme px-6 py-3 font-bold text-dugme-yazi transition hover:brightness-95"
-          >
-            Kampanyayı oluştur
-          </button>
-        </form>
-      </section>
     </div>
   );
 }

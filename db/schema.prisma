@@ -589,6 +589,10 @@ model Campaign {
   /// En fazla kaç siparişte kullanılabilir; boşsa sınırsız.
   enFazlaKullanim Int?
 
+  /// Hazır kampanyadan açıldıysa şablonun anahtarı (K-172): panelde kartı
+  /// bu kayda bağlıyor; aç/kapat aynı kaydı değiştiriyor, ikinci kopya açmıyor.
+  sablon String? @unique
+
   /// Kaç siparişte uygulandığı; panelde raporlama için.
   kullanim    Int      @default(0)
   olusturuldu DateTime @default(now())
