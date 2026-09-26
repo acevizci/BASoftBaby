@@ -1,6 +1,7 @@
 import { db } from "@/server/veritabani";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { kategoriEtiketleri } from "@/ui/kategori-etiketi";
+import { tedarikciAdlari } from "@/server/tedarik";
 import DepoEkrani from "@/ui/depo-ekrani";
 
 export const dynamic = "force-dynamic";
@@ -12,10 +13,10 @@ export const dynamic = "force-dynamic";
 export default async function Depo({ searchParams }: PageProps<"/yonetim/stok/depo">) {
   await yoneticiGerekli();
   const { mod } = await searchParams;
-  const kategoriler = await db.category.findMany({
-    orderBy: { sira: "asc" },
-    select: { slug: true, ad: true },
-  });
+  const [kategoriler, tedarikciler] = await Promise.all([
+    db.category.findMany({ orderBy: { sira: "asc" }, select: { slug: true, ad: true } }),
+    tedarikciAdlari(),
+  ]);
   const etiketler = kategoriEtiketleri(kategoriler);
 
   return (
@@ -30,6 +31,7 @@ export default async function Depo({ searchParams }: PageProps<"/yonetim/stok/de
       <DepoEkrani
         baslangicModu={mod === "cikar" ? "cikar" : mod === "say" ? "say" : "gelen"}
         kategoriler={kategoriler.map((k) => ({ slug: k.slug, ad: etiketler.get(k.slug) ?? k.ad }))}
+        tedarikciler={tedarikciler}
       />
     </div>
   );

@@ -35,6 +35,8 @@ export type DepoBedeni = {
   ayrilan: number;
   /** "~9 gün", "az veri" gibi. */
   sure: string;
+  /** Ürünün alış fiyatı (kuruş, KDV hariç); mal gelirken güncellenebiliyor (K-179). */
+  alisKurus: number | null;
 };
 
 export type CozSonucu =
@@ -44,6 +46,9 @@ export type CozSonucu =
 
 export type DepoSatiri = {
   variantId: string;
+  /** Eski taslaklarda yok (K-179 öncesi). */
+  productId?: string;
+  alisKurus?: number | null;
   urunAd: string;
   beden: string;
   renkAdi: string;
@@ -115,6 +120,8 @@ export function listeyeEkle(liste: DepoSatiri[], b: DepoBedeni, adet: number): D
   return [
     {
       variantId: b.variantId,
+      productId: b.productId,
+      alisKurus: b.alisKurus,
       urunAd: b.urunAd,
       beden: b.beden,
       renkAdi: b.renkAdi,

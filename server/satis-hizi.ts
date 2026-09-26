@@ -171,6 +171,7 @@ export async function azalanBedenIdleri(simdi: Date = new Date()): Promise<strin
 
 export type ListeSatiri = {
   variantId: string;
+  productId: string;
   urunAd: string;
   slug: string;
   beden: string;
@@ -206,6 +207,7 @@ export async function siparisListesi(hedefGun: number, simdi: Date = new Date())
       renk: true,
       sku: true,
       stok: true,
+      productId: true,
       product: { select: { ad: true, slug: true } },
     },
   });
@@ -218,6 +220,7 @@ export async function siparisListesi(hedefGun: number, simdi: Date = new Date())
     return [
       {
         variantId: v.id,
+        productId: v.productId,
         urunAd: v.product.ad,
         slug: v.product.slug,
         beden: v.beden,

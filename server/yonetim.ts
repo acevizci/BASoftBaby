@@ -45,6 +45,7 @@ import { kargoyaVerildiEpostasi, odemeAlindiEpostasi } from "@/server/eposta";
 import { KAMPANYA_TIPLERI } from "@/server/kampanya";
 import { sablonuCevir } from "@/server/kampanya-sablon";
 import { bedenTablosunuYaz, hucreleriCoz } from "@/server/beden-tablosu";
+import { tedarikciBulYaDaAc } from "@/server/tedarik";
 import { kodTemizle } from "@/ui/depo-bicim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { hareketYaz } from "@/server/stok-hareket";
@@ -131,6 +132,9 @@ export async function urunKaydet(form: FormData): Promise<void> {
     gorsel: metin(form, "gorsel") || "zibin",
     palet: renkler.includes(paletGirdisi) ? paletGirdisi : (renkler[0] ?? paletGirdisi),
     aktif: form.get("aktif") === "on",
+    // Tedarikçi ve kodu (K-179); ad yazılınca tedarikçi açılıyor.
+    tedarikciId: await tedarikciBulYaDaAc(metin(form, "tedarikci")),
+    tedarikciKodu: metin(form, "tedarikciKodu").slice(0, 60) || null,
   };
 
   if (eskiSlug) {

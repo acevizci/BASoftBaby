@@ -11,6 +11,7 @@ import "server-only";
  */
 
 import { db } from "@/server/veritabani";
+import { stokKaybi, type StokKaybi } from "@/server/stok-kaybi";
 import { karRaporu, type KarRaporu } from "@/server/kar-raporu";
 export { tutarCoz } from "@/server/tutar";
 
@@ -94,17 +95,32 @@ export type AylikKar = {
   kar: KarRaporu;
   giderler: SabitGider[];
   sabitKurus: number;
+  /** Hasar, kayıp, sayım eksiği ve numune (K-179). */
+  kayip: StokKaybi;
   netKurus: number;
   /** Net satışa göre net kâr yüzdesi. */
   netMarjYuzde: number | null;
 };
 
 export async function aylikKar(ay: string, secenek: { onceki?: boolean } = {}): Promise<AylikKar> {
-  const [kar, giderler] = await Promise.all([karRaporu(ayAraligi(ay), secenek), ayinGiderleri(ay)]);
+  const aralik = ayAraligi(ay);
+  const [kar, giderler, kayip] = await Promise.all([
+    karRaporu(aralik, secenek),
+    ayinGiderleri(ay),
+    stokKaybi(aralik.baslangic, aralik.bitis),
+  ]);
   const sabitKurus = giderler.reduce((t, g) => t + g.tutarKurus, 0);
-  const netKurus = kar.katkiKurus - sabitKurus;
+  const netKurus = kar.katkiKurus - sabitKurus - kayip.kayipKurus - kayip.numuneKurus;
   const gelir = kar.netSatisKurus + kar.vadeFarkiKurus;
-  return { ay, kar, giderler, sabitKurus, netKurus, netMarjYuzde: gelir > 0 ? (netKurus / gelir) * 100 : null };
+  return {
+    ay,
+    kar,
+    giderler,
+    sabitKurus,
+    kayip,
+    netKurus,
+    netMarjYuzde: gelir > 0 ? (netKurus / gelir) * 100 : null,
+  };
 }
 
 /** Son `n` ayın özeti, en yenisi önce. Karşılaştırma dönemi hesaplanmıyor. */
@@ -118,6 +134,7 @@ export async function sonAylar(n: number, simdi: Date = new Date()) {
     netSatisKurus: s.kar.netSatisKurus,
     katkiKurus: s.kar.katkiKurus,
     sabitKurus: s.sabitKurus,
+    kayipKurus: s.kayip.kayipKurus + s.kayip.numuneKurus,
     netKurus: s.netKurus,
     eksik: s.kar.eksikSiparis,
   }));

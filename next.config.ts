@@ -53,6 +53,11 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: "/yonetim/stok/mal-kabul", destination: "/yonetim/stok/depo", permanent: false },
+      {
+        source: "/yonetim/stok/siparis-listesi/:yol*",
+        destination: "/yonetim/stok/siparis-ver/:yol*",
+        permanent: false,
+      },
     ];
   },
 

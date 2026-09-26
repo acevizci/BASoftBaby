@@ -105,6 +105,10 @@ model Product {
   /// Alış fiyatı (maliyet, K-108), KDV hariç (K-111). Yalnızca panelde;
   /// mağazaya hiç gitmiyor: katalog ürünü alan alan eşliyor.
   alisFiyatKurus Int?
+  /// Tedarikçi ve onun model kodu (K-179); sipariş mesajında yazıyor.
+  tedarikciId   String?
+  tedarikci     Supplier? @relation(fields: [tedarikciId], references: [id], onDelete: SetNull)
+  tedarikciKodu String?
 
   // Bebek tekstilinde yasal zorunluluk (bkz. docs/01-kurulus-plani.md § 3)
   kumasIcerigi   String
@@ -1614,6 +1618,35 @@ model DepoIslemi {
   sonuc       Json
   adminId     String?
   olusturuldu DateTime @default(now())
+
+  @@index([olusturuldu])
+}
+
+/// Tedarikçi (K-179). Ayrı bir ekranı yok: adı yazıldığı yerde (ürün formu,
+/// Depo'da mal geldi, Sipariş ver) oluşuyor. Telefon WhatsApp bağlantısı için.
+model Supplier {
+  id          String   @id @default(cuid())
+  ad          String   @unique
+  /// Uluslararası biçimde, başında + olmadan: 905321234567.
+  telefon     String?
+  not         String   @default("")
+  olusturuldu DateTime @default(now())
+
+  urunler    Product[]
+  siparisler SupplierOrder[]
+}
+
+/// Tedarikçiye gönderilen sipariş mesajının kaydı (K-179). Teslim takibi
+/// yok; yalnızca "ne zaman ne istendi", aynı ürün iki kez sipariş edilmesin.
+model SupplierOrder {
+  id          String    @id @default(cuid())
+  supplierId  String?
+  supplier    Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  /// [{ variantId, adet }]
+  satirlar    Json
+  metin       String
+  adminId     String?
+  olusturuldu DateTime  @default(now())
 
   @@index([olusturuldu])
 }

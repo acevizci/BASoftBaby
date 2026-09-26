@@ -139,7 +139,7 @@ export const BOLUMLER: Bolum[] = [
         anahtar: "mal kabul gelen barkod okut telefon cikar hasar kayip sayim",
       },
       {
-        yol: "/yonetim/stok/siparis-listesi",
+        yol: "/yonetim/stok/siparis-ver",
         ad: "Sipariş ver",
         anahtar: "siparis listesi tedarikci eksik alinacak whatsapp",
       },

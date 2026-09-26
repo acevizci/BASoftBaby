@@ -3,6 +3,7 @@ import { db } from "@/server/veritabani";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { kategoriEtiketleri } from "@/ui/kategori-etiketi";
 import { kodTemizle } from "@/ui/depo-bicim";
+import { tedarikciAdlari } from "@/server/tedarik";
 
 export const dynamic = "force-dynamic";
 
@@ -12,11 +13,15 @@ export default async function YeniUrun({ searchParams }: PageProps<"/yonetim/uru
   await yoneticiGerekli();
 
   const { barkod } = await searchParams;
-  const kategoriler = await db.category.findMany({ orderBy: { sira: "asc" } });
+  const [kategoriler, tedarikciler] = await Promise.all([
+    db.category.findMany({ orderBy: { sira: "asc" } }),
+    tedarikciAdlari(),
+  ]);
   const etiketler = kategoriEtiketleri(kategoriler);
   return (
     <UrunFormu
       kategoriler={kategoriler.map((k) => ({ slug: k.slug, ad: etiketler.get(k.slug) ?? k.ad }))}
+      tedarikciler={tedarikciler}
       bekleyenBarkod={typeof barkod === "string" ? kodTemizle(barkod) || undefined : undefined}
     />
   );

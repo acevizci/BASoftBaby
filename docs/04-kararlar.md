@@ -6882,6 +6882,45 @@ tanıyordu. Mal kabulü ürün ürün aranarak yapılıyordu.
 [`../server/satis-hizi.ts`](../server/satis-hizi.ts),
 [`../testler/beden-tablosu.test.ts`](../testler/beden-tablosu.test.ts)
 
+
+### K-179 · Stok 4: Sipariş ver, tedarikçi, ortalama maliyet, stok kaybı
+
+- **Tedarikçi** (`Supplier`), ayrı ekranı yok. Adı yazıldığı yerde
+  oluşuyor: ürün formu, Depo'da mal geldi, Sipariş ver. Telefonu isteğe
+  bağlı; ürünün tedarikçi model kodu (`tedarikciKodu`) mesajda yazıyor.
+- **Sipariş ver** (`/yonetim/stok/siparis-ver`; eski "Sipariş listesi"
+  adresi yönleniyor):
+  - Satış hızına göre öneri (K-106) tedarikçiye göre kartlarda.
+  - Satırda adet düzeltme ve dahil etme; mesaj kendiliğinden oluşuyor,
+    elle düzenlenebiliyor.
+  - "WhatsApp'ta aç" (`wa.me`, telefon Türkiye biçimine çevriliyor) ve
+    "Metni kopyala". İkisi de gönderimi kaydediyor (`SupplierOrder`);
+    satırda "son 7 günde istendi: N" notu çıkıyor ki aynı ürün iki kez
+    sipariş edilmesin. Teslim takibi bilerek yok.
+  - Tedarikçisi olmayan ürünlere kartta tedarikçi atanabiliyor.
+- **Mal geldi'de tedarikçi ve alış fiyatı:**
+  - Yazılan tedarikçi gelen ürünlere atanıyor.
+  - Ürün başına yeni alış fiyatı isteğe bağlı. Eski stokla ortalanıyor:
+    (eski stok × eski alış + gelen × yeni) / toplam. Eski alış yoksa
+    yeni fiyat yazılıyor, eski satışlara tahmini maliyet işleniyor (K-111).
+  - Verilmiş siparişlerin maliyeti satırda sabit; geçmiş kâr değişmiyor.
+- **Stok kaybı aylık net kârda.**
+  - Kayıp: hasarlı, kayıp ve sayımda eksik çıkanlar. Numune ve hediye ayrı
+    gösteriliyor, ikisi de net kârdan düşülüyor.
+  - Tutar ürünün şimdiki alış fiyatıyla. Alışı olmayan adet ayrıca
+    yazılıyor. Sayımda fazla çıkanlar kayıpla netleşmiyor.
+- **Sabah özeti:** dün Depo'da stoktan çıkarılanlar, sebebe göre ("Dün
+  stoktan çıkarılan: 3 adet (hasarlı 2, kayıp 1)").
+- **Satmayanlardan kampanya:** satırlar işaretlenip "Seçilenlerle kampanya
+  yap" deniyor. Sihirbaz (K-172) kapsam "seçili ürünler" ve o ürünler
+  işaretli açılıyor.
+
+**Nerede:** [`../server/tedarik.ts`](../server/tedarik.ts),
+[`../ui/tedarik-karti.tsx`](../ui/tedarik-karti.tsx),
+[`../ui/tedarik-bicim.ts`](../ui/tedarik-bicim.ts),
+[`../server/stok-kaybi.ts`](../server/stok-kaybi.ts),
+[`../testler/tedarik.test.ts`](../testler/tedarik.test.ts)
+
 ---
 
 ## Açık sorular

@@ -33,6 +33,9 @@ export type FormUrunu = {
   fiyatKurus: number;
   eskiFiyatKurus: number | null;
   alisFiyatKurus: number | null;
+  /** Tedarikçi adı ve model kodu (K-179); yeni üründe boş. */
+  tedarikciAd?: string;
+  tedarikciKodu?: string;
   kumasIcerigi: string;
   yikamaTalimati: string;
   ozellikler: string[];
@@ -73,6 +76,7 @@ export default function UrunFormu({
   tabloSonucu,
   sonUrun = null,
   bekleyenBarkod,
+  tedarikciler = [],
 }: {
   urun?: FormUrunu;
   kategoriler: { slug: string; ad: string }[];
@@ -91,6 +95,8 @@ export default function UrunFormu({
   sonUrun?: { ad: string; bedenler: string[]; renkler: string[] } | null;
   /** Depo'da okutulup tanınmayan barkod (K-176): tabloda bir hücreye yazılacak. */
   bekleyenBarkod?: string;
+  /** Tedarikçi kutusunun önerileri (K-179). */
+  tedarikciler?: string[];
 }) {
   const marj =
     urun && urun.alisFiyatKurus !== null ? birimMarj(urun.fiyatKurus, urun.alisFiyatKurus, kdvOrani) : null;
@@ -199,6 +205,33 @@ export default function UrunFormu({
                   {fiyatYaz(marj.karKurus)} · marj {yuzdeYaz(marj.marjYuzde)}
                 </span>
               )}
+            </label>
+
+            {/* Tedarikçi (K-179): yazdıkça önceki adlar öneriliyor; yoksa açılıyor. */}
+            <label className="flex flex-col gap-1.5">
+              <span className={ETIKET}>Tedarikçi — isteğe bağlı</span>
+              <input
+                name="tedarikci"
+                list="urun-tedarikciler"
+                defaultValue={urun?.tedarikciAd ?? ""}
+                maxLength={80}
+                className={GIRDI}
+              />
+              <datalist id="urun-tedarikciler">
+                {tedarikciler.map((t) => (
+                  <option key={t} value={t} />
+                ))}
+              </datalist>
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={ETIKET}>Tedarikçi kodu — sipariş mesajında</span>
+              <input
+                name="tedarikciKodu"
+                defaultValue={urun?.tedarikciKodu ?? ""}
+                maxLength={60}
+                placeholder="ör. 2045"
+                className={`${GIRDI} rakam`}
+              />
             </label>
 
             <label className="flex items-center gap-2 self-end pb-2">

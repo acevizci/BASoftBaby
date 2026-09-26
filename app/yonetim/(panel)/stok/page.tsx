@@ -365,7 +365,7 @@ function OzetKutusu({ o }: { o: StokOzeti }) {
       ad: "Haber bekleyen",
       sayi: o.haberBekleyen,
       alt: `müşteri · ${o.haberBeden} beden`,
-      href: "/yonetim/stok/siparis-listesi",
+      href: "/yonetim/stok/siparis-ver",
       ton: "text-mavi-koyu",
     },
   ];

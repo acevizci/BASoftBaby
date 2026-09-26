@@ -32,7 +32,8 @@ const HATA: Record<string, string> = {
 };
 
 /**
- * Ay sonu net kâr (K-115): siparişlerin katkı payı − sabit giderler.
+ * Ay sonu net kâr (K-115): siparişlerin katkı payı − sabit giderler − stok
+ * kaybı ve numune (K-179).
  */
 export default async function AylikKarEkrani({ searchParams }: PageProps<"/yonetim/kar">) {
   await yoneticiGerekli();
@@ -49,7 +50,8 @@ export default async function AylikKarEkrani({ searchParams }: PageProps<"/yonet
       <h1 className="text-2xl">Aylık kâr</h1>
       <p className="text-sm text-metin-2">
         Siparişlerin kalanı (katkı payı: satış − maliyet − kargo, paket, komisyon) eksi kira,
-        reklam, maaş gibi sabit giderler. Yalnızca ödemesi alınmış siparişler, KDV hariç.
+        reklam, maaş gibi sabit giderler, eksi stok kaybı (hasarlı, kayıp, sayımda eksik, numune;
+        alış fiyatıyla). Yalnızca ödemesi alınmış siparişler, KDV hariç.
       </p>
 
       {kayit && <p className="rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">{kayit}</p>}
@@ -69,7 +71,7 @@ export default async function AylikKarEkrani({ searchParams }: PageProps<"/yonet
         )}
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className={KART}>
           <p className="text-xs font-bold text-metin-3">Siparişlerden kalan</p>
           <p className="rakam mt-1 text-2xl font-bold">{fiyatYaz(a.kar.katkiKurus)}</p>
@@ -84,6 +86,24 @@ export default async function AylikKarEkrani({ searchParams }: PageProps<"/yonet
           <p className="text-xs font-bold text-metin-3">Sabit giderler</p>
           <p className="rakam mt-1 text-2xl font-bold">−{fiyatYaz(a.sabitKurus)}</p>
           <p className="mt-0.5 text-xs text-metin-3">{a.giderler.length} kalem</p>
+        </div>
+        <div className={KART}>
+          <p className="text-xs font-bold text-metin-3">Stok kaybı</p>
+          <p className="rakam mt-1 text-2xl font-bold">
+            −{fiyatYaz(a.kayip.kayipKurus + a.kayip.numuneKurus)}
+          </p>
+          <p className="rakam mt-0.5 text-xs text-metin-3">
+            {a.kayip.kayipAdet} kayıp/hasar
+            {a.kayip.numuneAdet > 0 && ` · ${a.kayip.numuneAdet} numune (${fiyatYaz(a.kayip.numuneKurus)})`}
+            {a.kayip.maliyetsizAdet > 0 && ` · ${a.kayip.maliyetsizAdet} adedin alışı yok`}
+            {" · "}
+            <Link
+              href={`/yonetim/stok/hareketler?baslangic=${ay}-01&bitis=${aySonGunu(ay)}`}
+              className="font-bold text-mavi-koyu hover:underline"
+            >
+              hareketler
+            </Link>
+          </p>
         </div>
         <div className={`${KART} ${a.netKurus < 0 ? "border-mercan" : "border-nane"}`}>
           <p className="text-xs font-bold text-metin-3">Net kâr</p>
@@ -188,6 +208,7 @@ export default async function AylikKarEkrani({ searchParams }: PageProps<"/yonet
                 <th className="py-2 text-right">Net satış</th>
                 <th className="py-2 text-right">Siparişlerden kalan</th>
                 <th className="py-2 text-right">Sabit gider</th>
+                <th className="py-2 text-right">Stok kaybı</th>
                 <th className="py-2 text-right">Net kâr</th>
               </tr>
             </thead>
@@ -204,6 +225,7 @@ export default async function AylikKarEkrani({ searchParams }: PageProps<"/yonet
                   <td className="rakam py-2 text-right">{fiyatYaz(g.netSatisKurus)}</td>
                   <td className="rakam py-2 text-right">{fiyatYaz(g.katkiKurus)}</td>
                   <td className="rakam py-2 text-right">{g.sabitKurus ? `−${fiyatYaz(g.sabitKurus)}` : "—"}</td>
+                  <td className="rakam py-2 text-right">{g.kayipKurus ? `−${fiyatYaz(g.kayipKurus)}` : "—"}</td>
                   <td className={`rakam py-2 text-right font-bold ${g.netKurus < 0 ? "text-mercan-koyu" : ""}`}>
                     {fiyatYaz(g.netKurus)}
                   </td>

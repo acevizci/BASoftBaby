@@ -26,6 +26,7 @@ const bedenOrnek = (ek: Partial<DepoBedeni> = {}): DepoBedeni => ({
   carpan: 1,
   ayrilan: 0,
   sure: "",
+  alisKurus: null,
   ...ek,
 });
 

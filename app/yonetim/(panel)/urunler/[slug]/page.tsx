@@ -10,6 +10,7 @@ import Link from "next/link";
 import HareketTablosu from "@/ui/hareket-tablosu";
 import { urunHareketleri } from "@/server/stok-hareket";
 import { sonUrunDuzeni } from "@/server/beden-tablosu";
+import { tedarikciAdlari } from "@/server/tedarik";
 import { cakismalariCoz } from "@/server/stok-ekrani";
 import { kodTemizle } from "@/ui/depo-bicim";
 import { renkAdlari } from "@/server/renkler";
@@ -52,6 +53,7 @@ export default async function UrunDuzenle({
       where: { slug },
       include: {
         category: true,
+        tedarikci: { select: { ad: true } },
         // Üretici barkodları (K-176).
         variants: {
           include: {
@@ -123,6 +125,7 @@ export default async function UrunDuzenle({
         tabloSonucu={tabloSonucuCoz(tablo, cakisma)}
         sonUrun={await sonUrunDuzeni(urun.id, urun.categoryId)}
         bekleyenBarkod={typeof barkod === "string" ? kodTemizle(barkod) || undefined : undefined}
+        tedarikciler={await tedarikciAdlari()}
         kdvOrani={satisAyari.kdvOrani}
         kategoriler={kategoriler.map((k) => ({
           slug: k.slug,
@@ -139,6 +142,8 @@ export default async function UrunDuzenle({
           fiyatKurus: urun.fiyatKurus,
           eskiFiyatKurus: urun.eskiFiyatKurus,
           alisFiyatKurus: urun.alisFiyatKurus,
+          tedarikciAd: urun.tedarikci?.ad ?? "",
+          tedarikciKodu: urun.tedarikciKodu ?? "",
           kumasIcerigi: urun.kumasIcerigi,
           yikamaTalimati: urun.yikamaTalimati,
           ozellikler: urun.ozellikler,

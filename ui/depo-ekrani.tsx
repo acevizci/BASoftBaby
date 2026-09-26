@@ -19,6 +19,7 @@ import {
 } from "@/server/depo-islem";
 import type { AcikSayim, SayimFarklari } from "@/server/depo-sayim";
 import { fiyatYaz } from "@/ui/katalog-bicim";
+import { tutarGirdisi, tutarOku } from "@/ui/kampanya-bicim";
 import {
   CIKIS_SEBEPLERI,
   EN_COK_ADET,
@@ -123,9 +124,12 @@ function sesVer(iyi: boolean, acik: boolean) {
 export default function DepoEkrani({
   baslangicModu = "gelen",
   kategoriler = [],
+  tedarikciler = [],
 }: {
   baslangicModu?: Mod;
   kategoriler?: { slug: string; ad: string }[];
+  /** Mal geldi'de tedarikçi önerisi (K-179). */
+  tedarikciler?: string[];
 }) {
   const [mod, setMod] = useState<Mod>(baslangicModu);
   const [taslak, setTaslak] = useState<Taslak>({ anahtar: "", satirlar: [] });
@@ -352,6 +356,7 @@ export default function DepoEkrani({
     tedarikci?: string;
     irsaliye?: string;
     not?: string;
+    alislar?: { productId: string; alisKurus: number }[];
   }) => {
     setBekliyor(true);
     try {
@@ -697,6 +702,8 @@ export default function DepoEkrani({
           bekliyor={bekliyor}
           kaydet={kaydet}
           kapat={() => setKayitAcik(false)}
+          satirlar={taslak.satirlar}
+          tedarikciler={tedarikciler}
         />
       )}
 
@@ -1137,6 +1144,8 @@ function KayitPenceresi({
   bekliyor,
   kaydet,
   kapat,
+  satirlar,
+  tedarikciler,
 }: {
   mod: Mod;
   kalem: number;
@@ -1147,11 +1156,31 @@ function KayitPenceresi({
     tedarikci?: string;
     irsaliye?: string;
     not?: string;
+    alislar?: { productId: string; alisKurus: number }[];
   }) => void;
   kapat: () => void;
+  satirlar: DepoSatiri[];
+  tedarikciler: string[];
 }) {
   const [sebep, setSebep] = useState<CikisSebebi | "">("");
   const [tedarikci, setTedarikci] = useState("");
+  // Mal gelirken alış fiyatı (K-179): ürün başına, şimdiki fiyat dolu gelir.
+  const urunler = [
+    ...new Map(satirlar.filter((x) => x.productId).map((x) => [x.productId!, x])).values(),
+  ];
+  const [alislar, setAlislar] = useState<Record<string, string>>(() =>
+    Object.fromEntries(urunler.map((u) => [u.productId!, tutarGirdisi(u.alisKurus ?? null)])),
+  );
+  const alisHatali = urunler.some((u) => {
+    const h = alislar[u.productId!] ?? "";
+    return h.trim() !== "" && !tutarOku(h);
+  });
+  const degisenAlislar = urunler.flatMap((u) => {
+    const kurus = tutarOku(alislar[u.productId!] ?? "");
+    return kurus && kurus !== (u.alisKurus ?? null)
+      ? [{ productId: u.productId!, alisKurus: kurus }]
+      : [];
+  });
   const [irsaliye, setIrsaliye] = useState("");
   const [not, setNot] = useState("");
 
@@ -1197,8 +1226,14 @@ function KayitPenceresi({
               <input
                 value={tedarikci}
                 onChange={(e) => setTedarikci(e.target.value)}
+                list="depo-tedarikciler"
                 className={GIRDI}
               />
+              <datalist id="depo-tedarikciler">
+                {tedarikciler.map((t) => (
+                  <option key={t} value={t} />
+                ))}
+              </datalist>
             </label>
             <label className="flex flex-col gap-1.5">
               <span className={ETIKET}>İrsaliye no — isteğe bağlı</span>
@@ -1209,6 +1244,34 @@ function KayitPenceresi({
               />
             </label>
           </div>
+        )}
+        {mod === "gelen" && urunler.length > 0 && (
+          <details className="rounded-[10px] border border-cizgi px-3 py-2">
+            <summary className="cursor-pointer text-xs font-bold text-metin-2">
+              Alış fiyatı değişti mi? (isteğe bağlı, KDV hariç ₺)
+            </summary>
+            <p className="mt-2 text-xs text-metin-3">
+              Yeni fiyat raftaki eski stokla ortalanır; boş ya da aynı bırakılana dokunulmaz.
+            </p>
+            <ul className="mt-2 flex flex-col gap-2">
+              {urunler.map((u) => (
+                <li key={u.productId} className="flex items-center gap-2 text-sm">
+                  <span className="min-w-0 flex-1 truncate">{u.urunAd}</span>
+                  <input
+                    value={alislar[u.productId!] ?? ""}
+                    onChange={(e) => setAlislar({ ...alislar, [u.productId!]: e.target.value })}
+                    inputMode="decimal"
+                    placeholder="—"
+                    aria-label={`${u.urunAd} alış fiyatı`}
+                    className={`${GIRDI} rakam w-28 py-1.5`}
+                  />
+                </li>
+              ))}
+            </ul>
+            {alisHatali && (
+              <p className="mt-2 text-xs text-mercan-koyu">Fiyatı 120 ya da 49,90 gibi yaz.</p>
+            )}
+          </details>
         )}
         <label className="flex flex-col gap-1.5">
           <span className={ETIKET}>Not — isteğe bağlı</span>
@@ -1223,12 +1286,12 @@ function KayitPenceresi({
         <div className="flex items-center gap-3">
           <button
             type="button"
-            disabled={bekliyor || (mod === "cikar" && !sebep)}
+            disabled={bekliyor || (mod === "cikar" && !sebep) || alisHatali}
             onClick={() =>
               kaydet(
                 mod === "cikar"
                   ? { sebep: sebep as CikisSebebi, not }
-                  : { tedarikci, irsaliye, not },
+                  : { tedarikci, irsaliye, not, alislar: degisenAlislar },
               )
             }
             className={`${ANA_DUGME} disabled:opacity-50`}

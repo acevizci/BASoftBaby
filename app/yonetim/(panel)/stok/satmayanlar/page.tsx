@@ -78,7 +78,19 @@ export default async function Satmayanlar({ searchParams }: PageProps<"/yonetim/
             </p>
           )}
 
-          <div className="flex justify-end">
+          {/* Satmayanlardan kampanya (K-179): seçilenlerle sihirbaz hazır dolu açılıyor. */}
+          <form id="kampanya-sec" method="get" action="/yonetim/kampanyalar/yeni" />
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <span className="mr-auto text-xs text-metin-3">
+              Eritmek istediklerini işaretle, indirim kampanyası kur:
+            </span>
+            <button
+              type="submit"
+              form="kampanya-sec"
+              className="rounded-full bg-dugme px-4 py-1.5 text-xs font-bold text-dugme-yazi transition hover:brightness-95"
+            >
+              Seçilenlerle kampanya yap
+            </button>
             <a
               href={`/yonetim/stok/satmayanlar/csv?gun=${gun}`}
               download
@@ -92,6 +104,9 @@ export default async function Satmayanlar({ searchParams }: PageProps<"/yonetim/
             <table className="w-full min-w-[720px] text-sm">
               <thead className="border-b border-cizgi text-left text-xs uppercase tracking-wide text-metin-3">
                 <tr>
+                  <th className="w-8 px-4 py-3">
+                    <span className="sr-only">Kampanyaya al</span>
+                  </th>
                   <th className="px-4 py-3">Ürün</th>
                   <th className="px-4 py-3">Beden · renk</th>
                   <th className="px-4 py-3 text-right">Stok</th>
@@ -103,6 +118,16 @@ export default async function Satmayanlar({ searchParams }: PageProps<"/yonetim/
               <tbody className="divide-y divide-cizgi-soluk">
                 {rapor.satirlar.map((s) => (
                   <tr key={s.variantId}>
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        name="urun"
+                        value={s.slug}
+                        form="kampanya-sec"
+                        aria-label={`${s.urunAd} kampanyaya al`}
+                        className="h-4 w-4 accent-[var(--mercan)]"
+                      />
+                    </td>
                     <td className="px-4 py-3">
                       <Link href={`/yonetim/urunler/${s.slug}`} className="font-bold hover:text-mercan-koyu">
                         {s.urunAd}

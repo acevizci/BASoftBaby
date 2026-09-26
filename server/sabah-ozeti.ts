@@ -56,6 +56,8 @@ export type SabahVerisi = {
   dunKar?: { katkiKurus: number; marjYuzde: number | null; eksik: number; siparis: number };
   /** Dünden beri görülen, çözülmemiş farklı hata sayısı (K-121). */
   dunHata?: number;
+  /** Dün Depo'da stoktan çıkarılanlar, sebebe göre adet (K-179). */
+  dunCikan?: { hasar: number; kayip: number; numune: number };
   ozet: Pick<
     PanelOzeti,
     "isler" | "azalanlar" | "azalanToplam" | "bekleyenler" | "bekleyenToplam" | "eksikler"
@@ -118,11 +120,24 @@ export function sabahMetni(v: SabahVerisi): { konu: string; metin: string } {
     );
   }
 
+  const cikan = v.dunCikan;
+  if (cikan && cikan.hasar + cikan.kayip + cikan.numune > 0) {
+    const parca = [
+      cikan.hasar && `hasarlı ${cikan.hasar}`,
+      cikan.kayip && `kayıp ${cikan.kayip}`,
+      cikan.numune && `numune ${cikan.numune}`,
+    ].filter(Boolean);
+    bolumler.push(
+      `Dün stoktan çıkarılan: ${cikan.hasar + cikan.kayip + cikan.numune} adet (${parca.join(", ")})
+  ${site}/yonetim/stok/hareketler`,
+    );
+  }
+
   if (v.bitecekler.length > 0) {
     bolumler.push(
       `Satış hızına göre 7 gün içinde bitecekler:\n\n${v.bitecekler
         .map((b) => `• ${b.urunAd} — ${b.beden}, ${b.renk}: ${b.stok} adet, ~${Math.max(1, Math.round(b.gun))} gün`)
-        .join("\n")}\n  ${site}/yonetim/stok/siparis-listesi`,
+        .join("\n")}\n  ${site}/yonetim/stok/siparis-ver`,
     );
   }
 
@@ -171,7 +186,7 @@ export function sabahMetni(v: SabahVerisi): { konu: string; metin: string } {
 async function veriTopla(simdi: Date): Promise<SabahVerisi> {
   const { bas, son } = dununAraligi(simdi);
   const kosul = { durum: { not: "iptal" }, olusturuldu: { gte: bas, lt: son } };
-  const [toplam, siparisler, ozet, adlar, hizlar, kar, dunHata] = await Promise.all([
+  const [toplam, siparisler, ozet, adlar, hizlar, kar, dunHata, cikislar] = await Promise.all([
     db.order.aggregate({ where: kosul, _count: true, _sum: { toplamKurus: true } }),
     db.order.findMany({
       where: kosul,
@@ -184,7 +199,14 @@ async function veriTopla(simdi: Date): Promise<SabahVerisi> {
     satisHizlari(undefined, simdi),
     karRaporu({ baslangic: bas, bitis: son, ad: "dün" }),
     db.errorLog.count({ where: { cozuldu: false, son: { gte: bas } } }),
+    db.stockMovement.groupBy({
+      by: ["sebep"],
+      where: { olusturuldu: { gte: bas, lt: son }, sebep: { in: ["hasar", "kayip", "numune"] } },
+      _sum: { degisim: true },
+    }),
   ]);
+  const cikanAdet = (sebep: string) =>
+    -(cikislar.find((c) => c.sebep === sebep)?._sum.degisim ?? 0);
   const yakin = [...hizlar.entries()]
     .filter(([, h]) => h.stok > 0 && h.kacGun !== null && h.kacGun <= 7)
     .sort(([, a], [, b]) => (a.kacGun ?? 0) - (b.kacGun ?? 0))
@@ -214,6 +236,7 @@ async function veriTopla(simdi: Date): Promise<SabahVerisi> {
         ? { katkiKurus: kar.katkiKurus, marjYuzde: kar.marjYuzde, eksik: kar.eksikSiparis, siparis: kar.siparis }
         : undefined,
     dunHata,
+    dunCikan: { hasar: cikanAdet("hasar"), kayip: cikanAdet("kayip"), numune: cikanAdet("numune") },
     ozet: { ...ozet, azalanlar: ozet.azalanlar.map(renk), bekleyenler: ozet.bekleyenler.map(renk) },
   };
 }

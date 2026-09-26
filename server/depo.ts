@@ -21,6 +21,9 @@ import { hareketYaz, type Yapan } from "@/server/stok-hareket";
 import { ayrilanAdetler } from "@/server/sayim";
 import { gunYaz, satisHizlari } from "@/server/satis-hizi";
 import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
+import { maliyetiGecmiseYaz } from "@/server/maliyet";
+import { urunlereTedarikciYaz } from "@/server/tedarik";
+import { ortalamaMaliyet } from "@/ui/tedarik-bicim";
 import {
   anahtarGecerli,
   CIKIS_SEBEPLERI,
@@ -40,7 +43,7 @@ const BEDEN_SECIMI = {
   sku: true,
   stok: true,
   productId: true,
-  product: { select: { slug: true, ad: true } },
+  product: { select: { slug: true, ad: true, alisFiyatKurus: true } },
 } as const;
 
 /** Bedenlerin kart bilgisi: stok, siparişte ayrılan, kaç gün yeter. */
@@ -72,6 +75,7 @@ export async function bedenBilgileri(
         carpan: carpanlar.get(v.id) ?? 1,
         ayrilan: ayrilan.get(v.id) ?? 0,
         sure: hiz ? gunYaz(hiz) : "",
+        alisKurus: v.product.alisFiyatKurus,
       };
     })
     .sort((a, b) => (sira.get(a.variantId) ?? 0) - (sira.get(b.variantId) ?? 0));
@@ -179,6 +183,8 @@ export type DepoKaydi = {
   not?: string;
   tedarikci?: string;
   irsaliye?: string;
+  /** Mal geldi'de yeni alış fiyatları (kuruş); ortalama maliyete giriyor (K-179). */
+  alislar?: { productId: string; alisKurus: number }[];
 };
 
 export type DepoHatasi = "anahtar" | "bos" | "fazla" | "sebep";
@@ -223,6 +229,21 @@ export async function depoKaydet(
         data: { id: k.anahtar, tur: k.tur, sonuc: {}, adminId: yapan?.id ?? null },
       });
 
+      // Ortalama maliyet için gelmeden önceki stok ve alış (K-179).
+      const alislar = new Map(
+        (k.tur === "gelen" ? (k.alislar ?? []) : [])
+          .filter((a) => typeof a.productId === "string" && Number.isInteger(a.alisKurus))
+          .filter((a) => a.alisKurus > 0 && a.alisKurus <= 100_000_000)
+          .map((a) => [a.productId, a.alisKurus]),
+      );
+      const oncesi =
+        alislar.size === 0
+          ? []
+          : await islem.product.findMany({
+              where: { id: { in: [...alislar.keys()] } },
+              select: { id: true, alisFiyatKurus: true, variants: { select: { id: true, stok: true } } },
+            });
+
       const yazilan: { variantId: string; adet: number }[] = [];
       const yetmeyen: DepoSonucu["yetmeyen"] = [];
       for (const s of satirlar) {
@@ -263,6 +284,20 @@ export async function depoKaydet(
         })),
       );
 
+      // Yeni alış fiyatı: eski stokla ortalanıyor; verilmiş siparişlerin
+      // maliyeti satırda sabit, geçmiş kâr değişmiyor.
+      for (const u of oncesi) {
+        const gelen = yazilan
+          .filter((s) => u.variants.some((v) => v.id === s.variantId))
+          .reduce((t, s) => t + s.adet, 0);
+        if (gelen === 0) continue;
+        const eskiStok = u.variants.reduce((t, v) => t + Math.max(0, v.stok), 0);
+        const yeni = ortalamaMaliyet(eskiStok, u.alisFiyatKurus, gelen, alislar.get(u.id)!);
+        await islem.product.update({ where: { id: u.id }, data: { alisFiyatKurus: yeni } });
+        // İlk kez girilen alış eski satışlara tahmini yazılıyor (K-111).
+        if (u.alisFiyatKurus === null) await maliyetiGecmiseYaz(u.id, yeni, islem);
+      }
+
       const sonuc: DepoSonucu = {
         tur: k.tur,
         kalem: yazilan.length,
@@ -298,8 +333,16 @@ export async function depoKaydet(
     throw e;
   }
 
-  // Tükenmiş bir bedene mal geldiyse bekleyenlere haber gidiyor.
   if (k.tur === "gelen" && artan.length > 0) {
+    // Tedarikçi yazıldıysa gelen ürünlere (K-179).
+    if (k.tedarikci?.trim()) {
+      const urunler = await db.productVariant.findMany({
+        where: { id: { in: artan } },
+        select: { productId: true },
+      });
+      await urunlereTedarikciYaz([...new Set(urunler.map((u) => u.productId))], k.tedarikci);
+    }
+    // Tükenmiş bir bedene mal geldiyse bekleyenlere haber gidiyor.
     sonuc.bildirim = await stokBildirimleriniGonder(artan);
   }
   return { tamam: true, sonuc };
