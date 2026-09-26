@@ -6508,9 +6508,7 @@ sayım (K-165).
 - **Satır payı:** indirim bedava sayılan birimlerin satırına yazılıyor
   (orantılı değil). Pahalı ürünü iade eden, ucuz ürünün bedava payını geri
   ödemiyor.
-  - Sınır: grubun bir parçası iade edilince kampanya yeniden
-    hesaplanmıyor. 3 al 2 öde'de ücretli bir ürünü iade eden, kalan ikisi
-    için kampanya bozulmuş olsa da o ürünün ödediği tutarı geri alıyor.
+  - Kısmi iadede kampanya yeniden hesaplanıyor (K-169).
 - **Zarar uyarısı:** "X al Y öde"de ürün başına ortalama indirim,
   (X − Y) / X.
 - **Kampanya formu:**
@@ -6525,6 +6523,33 @@ sayım (K-165).
   Eskiden ikisinde de "daha çok indiren kampanya var" deniyordu.
 
 **Nerede:** [`../server/kampanya.ts`](../server/kampanya.ts),
+[`../testler/al-ode.test.ts`](../testler/al-ode.test.ts)
+
+### K-169 · "X al Y öde" siparişinde kısmi iade
+
+- **Kural:** iade tutarı = şimdiye kadar ödenen − elde kalan ürünlerin
+  kampanyalı fiyatı. Hesapta ürün tutarından, iade öncesi ve sonrası
+  kampanya indiriminin farkı düşülüyor.
+  - 3 al 2 öde, 3 × 100 ₺ (200 ₺ ödendi): biri iade edilince 0 ₺ dönüyor,
+    çünkü kalan ikisi kampanyaya girmiyor. Kalan ikisi de iade edilince
+    200 ₺ dönüyor.
+  - 300 + 200 + 100 ₺ (500 ₺ ödendi): 300 ₺'lik ürün iade edilince 200 ₺
+    dönüyor (kalan 200 + 100 ₺ kampanyasız).
+  - Eskiden indirim payı satıra sabitti. Ücretli ürünü iade eden tam
+    parasını alıyor, kampanya bozulduğu hâlde bedava ürün elinde kalıyordu.
+- **Sipariş anındaki tanım kayda yazılıyor:** X ve Y
+  (`Order.kampanyaAlAdet`, `kampanyaOdeAdet`) ve satırın kampanyada olup
+  olmadığı (`OrderItem.kampanyada`). Kampanya sonradan değişse ya da silinse
+  de hesap aynı. Bu alanlardan önceki siparişlerde eski hesap geçerli.
+- **Müşteri önceden biliyor:** ürün sayfasındaki kampanya notunda ve iade
+  talep formunda "kısmi iadede kampanya kalan ürünlere yeniden uygulanır"
+  yazıyor. İade tutarı 0 çıkarsa iade kaydı açılmıyor.
+- **Test düzeneği:** eşzamanlı sipariş testleri ortak sahte çerez kutusunu
+  paylaşıyordu. "On farklı müşteri" aslında çoğunlukla aynı sepetti ve K-166'nın
+  sepet kilidiyle sonuç zamanlamaya bağlıydı. `ayriIstek` her müşteriye
+  kendi çerez kutusunu veriyor.
+
+**Nerede:** [`../server/iade.ts`](../server/iade.ts),
 [`../testler/al-ode.test.ts`](../testler/al-ode.test.ts)
 
 ---

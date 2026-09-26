@@ -47,6 +47,11 @@ export default function TalepFormu({
     <section className="mt-6 rounded-marka border border-cizgi bg-yuzey p-5">
       <h2 className="text-lg">İptal, iade ve değişim</h2>
 
+      {bilgi.kampanyaNotu && bilgi.turler.includes("iade") && (
+        <p className="mt-3 rounded-marka bg-yuzey-sicak px-4 py-3 text-xs text-metin-2">
+          {bilgi.kampanyaNotu}
+        </p>
+      )}
       {sonuc === "alindi" && (
         <p className="mt-3 rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">
           Talebin alındı. Bakıp sonucu e-postayla bildireceğiz; durumunu bu sayfadan da

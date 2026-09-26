@@ -411,6 +411,11 @@ model Order {
   /// Uygulanan kampanyanın kimliği (K-167): sipariş ödenmeden iptal olursa
   /// kuponun kullanımı geri veriliyor. İlişki değil: kampanya silinse de kalır.
   kampanyaId     String?
+  /// "X al Y öde" siparişinin X ve Y'si, sipariş anındaki hâliyle (K-169):
+  /// kısmi iadede kampanya kalan ürünlere yeniden uygulanıyor; kampanya
+  /// sonradan değişse ya da silinse de hesap bununla yapılıyor.
+  kampanyaAlAdet  Int?
+  kampanyaOdeAdet Int?
   kargoKurus     Int
   toplamKurus    Int
   /// Hediye çekiyle ödenen kısım (K-137). Karttan ya da havaleyle tahsil
@@ -489,6 +494,10 @@ model OrderItem {
   adet       Int
   /// Sipariş anındaki birim fiyat. Sonradan fiyat değişse bile bu değişmez.
   fiyatKurus Int
+  /// Sipariş anında uygulanan kampanyanın kapsamında mıydı (K-169). "X al Y
+  /// öde"de kısmi iade, kampanyayı yalnızca bu satırlar üzerinden yeniden
+  /// hesaplıyor.
+  kampanyada Boolean @default(false)
   /// Kampanya indiriminin bu satıra düşen payı (satırın tamamı için, K-109).
   /// Yalnızca kampanyanın kapsadığı satırlara düşüyor. Boşsa eski sipariş:
   /// pay bilinmiyor, iade eski oransal hesapla yapılıyor.

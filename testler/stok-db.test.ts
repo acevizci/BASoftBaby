@@ -1,3 +1,4 @@
+import { ayriIstek } from "./sahte-headers";
 import { atlamaSebebi, kimlik, sepetKur, temizle, testDb, urunKur } from "./veritabani";
 import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
@@ -40,9 +41,12 @@ const girdi = () => ({
 });
 
 /** Sepeti kurup siparişi açar; gerçek yolun tamamı. */
-async function siparisVer(variantId: string, adet: number) {
-  await sepetKur(variantId, adet);
-  return siparisOlustur(girdi(), AYAR);
+/** Her sipariş kendi çerezleriyle: ayrı müşteri, ayrı sepet (K-169). */
+function siparisVer(variantId: string, adet: number) {
+  return ayriIstek(async () => {
+    await sepetKur(variantId, adet);
+    return siparisOlustur(girdi(), AYAR);
+  });
 }
 
 describe("stok ve iade (veritabanı)", { skip: atlamaSebebi }, () => {

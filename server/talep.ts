@@ -72,6 +72,8 @@ export type TalepDurumBilgisi = {
   talepler: Talep[];
   /** Talep edilebilecek satırlar ve kalan adetleri. */
   satirlar: TalepSatiri[];
+  /** "X al Y öde" siparişinde kısmi iadenin nasıl hesaplandığı (K-169). */
+  kampanyaNotu?: string;
 };
 
 /**
@@ -122,6 +124,9 @@ export async function talepDurumu(numara: string): Promise<TalepDurumBilgisi | u
       id: true,
       durum: true,
       teslimTarihi: true,
+      kampanyaAdi: true,
+      kampanyaAlAdet: true,
+      kampanyaOdeAdet: true,
       satirlar: {
         orderBy: { id: "asc" },
         select: { id: true, urunAd: true, beden: true, renk: true, adet: true },
@@ -188,7 +193,18 @@ export async function talepDurumu(numara: string): Promise<TalepDurumBilgisi | u
     ? gunSonu(gunEkle(siparis.teslimTarihi, CAYMA_GUN))
     : undefined;
 
-  const bos = (engel: string): TalepDurumBilgisi => ({ turler: [], engel, sonGun, talepler, satirlar });
+  const kampanyaNotu =
+    siparis.kampanyaAlAdet && siparis.kampanyaOdeAdet
+      ? `Bu sipariş "${siparis.kampanyaAdi ?? "kampanya"}" (${siparis.kampanyaAlAdet} al ${siparis.kampanyaOdeAdet} öde) ile alındı. Bir kısmını iade edersen kampanya elinde kalan ürünlere yeniden uygulanır: iade tutarı, ödediğin ile kalan ürünlerin kampanyalı fiyatı arasındaki fark olur. Kampanya bozulursa iade edilen ürün için para dönmeyebilir.`
+      : undefined;
+  const bos = (engel: string): TalepDurumBilgisi => ({
+    turler: [],
+    engel,
+    sonGun,
+    talepler,
+    satirlar,
+    kampanyaNotu,
+  });
 
   if (siparis.talepler.some((t) => ACIK_DURUMLAR.includes(t.durum))) {
     return bos("Bu sipariş için zaten açık bir talebin var; sonucunu aşağıda görebilirsin.");
@@ -201,12 +217,12 @@ export async function talepDurumu(numara: string): Promise<TalepDurumBilgisi | u
   }
 
   if (siparis.durum === "bekliyor" || siparis.durum === "hazirlaniyor") {
-    return { turler: ["iptal"], sonGun, talepler, satirlar };
+    return { turler: ["iptal"], sonGun, talepler, satirlar, kampanyaNotu };
   }
 
   if (siparis.durum === "kargoda") {
     // Kargoya verilmiş sipariş geri çağrılamıyor ama cayma hakkı işliyor.
-    return { turler: ["iade"], sonGun, talepler, satirlar };
+    return { turler: ["iade"], sonGun, talepler, satirlar, kampanyaNotu };
   }
 
   if (siparis.durum === "teslim") {
@@ -215,7 +231,7 @@ export async function talepDurumu(numara: string): Promise<TalepDurumBilgisi | u
         `Cayma hakkı süresi (${CAYMA_GUN} gün) doldu. Üründe bir ayıp varsa bu süreden bağımsız olarak bize yazabilirsin.`,
       );
     }
-    return { turler: ["iade", "degisim"], sonGun, talepler, satirlar };
+    return { turler: ["iade", "degisim"], sonGun, talepler, satirlar, kampanyaNotu };
   }
 
   return bos("Bu sipariş için şu an talep açılamıyor.");

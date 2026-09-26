@@ -17,7 +17,13 @@ import { db } from "@/server/veritabani";
 import { Prisma } from "@/db/uretilen/client";
 import { hareketYaz } from "@/server/stok-hareket";
 import { kargoHesapla, kuponOku, sepetIdOku, type SatisAyari } from "@/server/sepet";
-import { enIyiKampanya, gecerliKampanyalar, indirimiDagit, kuponKullan } from "@/server/kampanya";
+import {
+  enIyiKampanya,
+  gecerliKampanyalar,
+  indirimiDagit,
+  kapsamdaMi,
+  kuponKullan,
+} from "@/server/kampanya";
 import { renkAdlari } from "@/server/renkler";
 import { takipAdresi, tasiyiciAdi } from "@/server/kargo";
 import { suresiDolanlariKapat } from "@/server/odeme-suresi";
@@ -192,11 +198,12 @@ export async function siparisOlustur(
   const kampanya = enIyiKampanya(kampanyalar, indirimSatirlari, araToplamKurus);
   const indirimKurus = kampanya?.indirimKurus ?? 0;
   // Her satırın indirim payı; yalnızca kampanyanın kapsadığı satırlara (K-109).
-  const paylar = indirimiDagit(
-    kampanyalar.find((k) => k.id === kampanya?.id),
-    indirimSatirlari,
-    indirimKurus,
-  );
+  const uygulanan = kampanyalar.find((k) => k.id === kampanya?.id);
+  const paylar = indirimiDagit(uygulanan, indirimSatirlari, indirimKurus);
+  // Kapsamdaki satırlar ve "X al Y öde"nin X/Y'si siparişe yazılıyor (K-169):
+  // kısmi iadede kampanya kalan ürünlere yeniden uygulanıyor.
+  const kapsamda = indirimSatirlari.map((x) => (uygulanan ? kapsamdaMi(uygulanan, x) : false));
+  const alOde = uygulanan?.tip === "al-ode" ? uygulanan : undefined;
 
   const kargoKurus = kargoHesapla(araToplamKurus - indirimKurus, ayar, true);
   const toplamKurus = araToplamKurus - indirimKurus + kargoKurus;
@@ -286,9 +293,17 @@ export async function siparisOlustur(
           indirimKurus,
           kampanyaAdi: kampanya?.ad ?? null,
           kampanyaId: kampanya?.id ?? null,
+          kampanyaAlAdet: alOde?.alAdet ?? null,
+          kampanyaOdeAdet: alOde?.odeAdet ?? null,
           kargoKurus,
           toplamKurus,
-          satirlar: { create: kalemler.map((k, i) => ({ ...k, indirimKurus: paylar[i] })) },
+          satirlar: {
+            create: kalemler.map((k, i) => ({
+              ...k,
+              indirimKurus: paylar[i],
+              kampanyada: kapsamda[i],
+            })),
+          },
         },
         select: { numara: true },
       });

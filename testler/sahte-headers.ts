@@ -9,30 +9,43 @@
  * yine veritabanından okuyor, stoğu yine kendi koşullu düşümüyle düşürüyor.
  */
 
+import { AsyncLocalStorage } from "node:async_hooks";
+
 type Cerez = { name: string; value: string };
 
-const kutu = new Map<string, string>();
+const ortakKutu = new Map<string, string>();
+/**
+ * Ayrı istek (K-169): eşzamanlı testlerde her "müşteri"nin kendi çerezleri.
+ * Ortak kutuda on müşteri aslında aynı sepeti paylaşıyordu.
+ */
+const istekKutusu = new AsyncLocalStorage<Map<string, string>>();
+const kutuAl = () => istekKutusu.getStore() ?? ortakKutu;
+
+/** `is` kendi çerez kutusuyla çalışıyor; ortak kutunun o anki hâli kopyalanıyor. */
+export function ayriIstek<T>(is: () => Promise<T>): Promise<T> {
+  return istekKutusu.run(new Map(kutuAl()), is);
+}
 
 /** Testler çerezi buradan kuruyor. */
 export function cerezAyarla(ad: string, deger: string): void {
-  kutu.set(ad, deger);
+  kutuAl().set(ad, deger);
 }
 
 export function cerezleriTemizle(): void {
-  kutu.clear();
+  kutuAl().clear();
 }
 
 const kavanoz = {
   get: (ad: string): Cerez | undefined =>
-    kutu.has(ad) ? { name: ad, value: kutu.get(ad)! } : undefined,
-  getAll: (): Cerez[] => [...kutu].map(([name, value]) => ({ name, value })),
-  has: (ad: string): boolean => kutu.has(ad),
+    kutuAl().has(ad) ? { name: ad, value: kutuAl().get(ad)! } : undefined,
+  getAll: (): Cerez[] => [...kutuAl()].map(([name, value]) => ({ name, value })),
+  has: (ad: string): boolean => kutuAl().has(ad),
   set: (ad: string | { name: string; value: string }, deger?: string): void => {
-    if (typeof ad === "string") kutu.set(ad, deger ?? "");
-    else kutu.set(ad.name, ad.value);
+    if (typeof ad === "string") kutuAl().set(ad, deger ?? "");
+    else kutuAl().set(ad.name, ad.value);
   },
   delete: (ad: string): void => {
-    kutu.delete(ad);
+    kutuAl().delete(ad);
   },
 };
 

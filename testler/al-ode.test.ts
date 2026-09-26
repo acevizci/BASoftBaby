@@ -1,5 +1,9 @@
 import "./hazirlik";
-import { describe, it } from "node:test";
+import { after, before, describe, it } from "node:test";
+import { atlamaSebebi, kimlik, ON_EK, sepetKur, temizle, testDb, urunKur } from "./veritabani";
+import { siparisOlustur } from "@/server/siparis";
+import { talebiSonuclandir } from "@/server/talep";
+import type { SatisAyari } from "@/server/sepet";
 import assert from "node:assert/strict";
 import {
   alOdeIndirimi,
@@ -112,5 +116,110 @@ describe("X al Y öde", () => {
     );
     assert.equal(z.length, 1);
     assert.equal(z[0].indirimliKurus, 10000);
+  });
+});
+
+describe("X al Y öde · kısmi iade (veritabanı)", { skip: atlamaSebebi }, () => {
+  before(temizle);
+  after(temizle);
+
+  const AYAR: SatisAyari = {
+    kargoKurus: 0,
+    bedavaKargoEsigi: 0,
+    havaleBilgisi: "Test",
+    havaleSaat: 72,
+    havaleHatirlatmaSaat: 24,
+    kdvOrani: 10,
+    varsayilanTasiyici: "yurtici",
+  };
+  const girdi = () => ({
+    adSoyad: "Test Kişi",
+    eposta: `${ON_EK}${kimlik("m").toLowerCase()}@deneme.test`,
+    telefon: "05001112233",
+    adres: "Deneme Mahallesi No 1",
+    ilce: "Kadıköy",
+    il: "İstanbul",
+    postaKodu: "34000",
+    not: "",
+    hediyePaketi: false,
+    hediyeNotu: "",
+    sozlesmeOnayi: new Date(),
+  });
+
+  /** Kampanyalı sipariş: teslim edilmiş ve ödenmiş. */
+  async function siparis(satirlar: { variantId: string; adet: number }[], productIdler: string[]) {
+    const db = testDb();
+    const k = await db.campaign.create({
+      data: {
+        ad: "T_3al2",
+        tip: "al-ode",
+        deger: 0,
+        alAdet: 3,
+        odeAdet: 2,
+        kapsam: productIdler.length === 1 ? "urun" : "tumu",
+        productId: productIdler.length === 1 ? productIdler[0] : null,
+      },
+      select: { id: true },
+    });
+    const cartId = await sepetKur(satirlar[0].variantId, satirlar[0].adet);
+    for (const x of satirlar.slice(1)) {
+      await db.cartItem.create({
+        data: { id: kimlik("sat"), cartId, variantId: x.variantId, adet: x.adet },
+      });
+    }
+    const s = await siparisOlustur(girdi(), AYAR);
+    await db.campaign.delete({ where: { id: k.id } });
+    assert.ok(s.tamam);
+    return db.order.update({
+      where: { numara: s.numara },
+      data: { durum: "teslim", odemeDurumu: "odendi", teslimTarihi: new Date() },
+      select: { id: true, toplamKurus: true, indirimKurus: true, satirlar: true },
+    });
+  }
+
+  async function iadeEt(orderId: string, kalemler: { orderItemId: string; adet: number }[]) {
+    const db = testDb();
+    const t = await db.orderRequest.create({
+      data: { orderId, tur: "iade", sebep: "beden", satirlar: { create: kalemler } },
+      select: { id: true },
+    });
+    await talebiSonuclandir(t.id, "tamamlandi", "");
+    const r = await db.refund.findFirst({
+      where: { requestId: t.id },
+      select: { tutarKurus: true },
+    });
+    return r?.tutarKurus ?? 0;
+  }
+
+  it("3 al 2 öde'de bir ürün iade edilince para dönmüyor, hepsi edilince ödenenin tamamı", async () => {
+    const { productId, variantId } = await urunKur(10); // 100 ₺
+    const o = await siparis([{ variantId, adet: 3 }], [productId]);
+    assert.equal(o.indirimKurus, 10000);
+    assert.equal(o.toplamKurus, 20000);
+    const satir = o.satirlar[0];
+    assert.equal(await iadeEt(o.id, [{ orderItemId: satir.id, adet: 1 }]), 0);
+    assert.equal(await iadeEt(o.id, [{ orderItemId: satir.id, adet: 2 }]), 20000);
+  });
+
+  it("farklı fiyatlar: pahalıyı iade eden bedava ucuzun bedelini ödüyor", async () => {
+    const db = testDb();
+    const a = await urunKur(10);
+    const b = await urunKur(10);
+    const c = await urunKur(10);
+    await db.product.update({ where: { id: a.productId }, data: { fiyatKurus: 30000 } });
+    await db.product.update({ where: { id: b.productId }, data: { fiyatKurus: 20000 } });
+    // c 100 ₺: bedava olan
+    const o = await siparis(
+      [
+        { variantId: a.variantId, adet: 1 },
+        { variantId: b.variantId, adet: 1 },
+        { variantId: c.variantId, adet: 1 },
+      ],
+      [a.productId, b.productId, c.productId],
+    );
+    assert.equal(o.toplamKurus, 50000);
+    const pahali = o.satirlar.find((x) => x.fiyatKurus === 30000)!;
+    // 300 ₺'yi iade ediyor: elinde 200 + 100 kalıyor, kampanyasız 300 ₺ → iade 200 ₺
+    assert.equal(await iadeEt(o.id, [{ orderItemId: pahali.id, adet: 1 }]), 20000);
   });
 });

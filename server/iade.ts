@@ -4,6 +4,7 @@ import { alanAramasi } from "@/ui/panel-arama-bicim";
 import type { Prisma } from "@/db/uretilen/client";
 import { cekeIadeEt } from "@/server/hediye-ceki";
 import { iadeBolustur } from "@/server/hediye-ceki-bicim";
+import { alOdeIndirimi } from "@/server/kampanya";
 
 /**
  * Para iadesi.
@@ -77,7 +78,11 @@ export async function iadeTutari(
       indirimKurus: true,
       kargoKurus: true,
       toplamKurus: true,
-      satirlar: { select: { id: true, adet: true, fiyatKurus: true, indirimKurus: true } },
+      kampanyaAlAdet: true,
+      kampanyaOdeAdet: true,
+      satirlar: {
+        select: { id: true, adet: true, fiyatKurus: true, indirimKurus: true, kampanyada: true },
+      },
     },
   });
   if (!siparis) return undefined;
@@ -98,7 +103,7 @@ export async function iadeTutari(
     ? []
     : await islem.orderRequestItem.findMany({
         where: { request: { orderId, tur: "iade", durum: "tamamlandi" } },
-        select: { adet: true },
+        select: { adet: true, orderItemId: true },
       });
   const birikenAdet = oncekiler.reduce((t, o) => t + o.adet, 0);
 
@@ -117,6 +122,34 @@ export async function iadeTutari(
     if (payYazili && adet > 0) satirPaylari += Math.round(((s.indirimKurus ?? 0) * adet) / s.adet);
   }
 
+  // "X al Y öde" (K-169): kısmi iadede kampanya elde kalan ürünlere yeniden
+  // uygulanıyor. İade = şimdiye kadar ödenen − kalanların kampanyalı fiyatı;
+  // yani ürün tutarından "iade öncesi ve sonrası kampanya indiriminin farkı"
+  // düşülüyor. 3 al 2 öde'de 3 × 100 ₺ alıp birini iade eden 0 ₺ alıyor:
+  // kalan iki ürün kampanyaya girmiyor, zaten 200 ₺ ödemişti. Eskiden
+  // indirim payı satıra sabit yazıldığı için ücretli ürünü iade eden tam
+  // parasını alıyor, kampanya bozulduğu hâlde bedava ürün elinde kalıyordu.
+  const alOde =
+    !hepsi && siparis.kampanyaAlAdet && siparis.kampanyaOdeAdet
+      ? { alAdet: siparis.kampanyaAlAdet, odeAdet: siparis.kampanyaOdeAdet }
+      : undefined;
+  if (alOde) {
+    // Önceki iadeler: tamamlanmışların toplamından bu talebin kendisi düşülüyor.
+    const onceki = new Map<string, number>();
+    for (const o of oncekiler) onceki.set(o.orderItemId, (onceki.get(o.orderItemId) ?? 0) + o.adet);
+    const elde = (degis: boolean) =>
+      siparis.satirlar.flatMap((s) => {
+        if (!s.kampanyada) return [];
+        const bu = Math.min(Math.max(istenen.get(s.id) ?? 0, 0), s.adet);
+        const once = Math.max(0, s.adet - Math.max(0, (onceki.get(s.id) ?? 0) - bu));
+        const adet = degis ? Math.max(0, once - bu) : once;
+        return adet > 0
+          ? [{ productId: s.id, categoryId: "", araToplamKurus: s.fiyatKurus * adet, adet }]
+          : [];
+      });
+    satirPaylari = Math.max(0, alOdeIndirimi(alOde, elde(false)) - alOdeIndirimi(alOde, elde(true)));
+  }
+
   // Kargo kararı birikimli: bu talep tek başına siparişin tamamını
   // kapsamasa da, önceki iadelerle birlikte kapsıyorsa kargo ekleniyor.
   const tamami = hepsi
@@ -125,7 +158,7 @@ export async function iadeTutari(
 
   // İndirim payı: satır tutarının ara toplama oranı kadar. Ara toplam sıfırsa
   // (hepsi bedava) pay da sıfır — bölme yapılmıyor.
-  const indirimPayiKurus = payYazili
+  const indirimPayiKurus = payYazili || alOde
     ? satirPaylari
     : siparis.indirimKurus > 0 && siparis.araToplamKurus > 0
       ? Math.round(siparis.indirimKurus * (urunKurus / siparis.araToplamKurus))

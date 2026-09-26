@@ -50,7 +50,10 @@ export type UygulananKampanya = {
 
 export const KUPON_CEREZI = "kupon";
 
-function kapsamdaMi(k: KampanyaKaydi, satir: IndirimSatiri): boolean {
+export function kapsamdaMi(
+  k: Pick<KampanyaKaydi, "kapsam" | "categoryId" | "productId">,
+  satir: IndirimSatiri,
+): boolean {
   if (k.kapsam === "urun") return k.productId === satir.productId;
   if (k.kapsam === "kategori") return k.categoryId === satir.categoryId;
   return true;
