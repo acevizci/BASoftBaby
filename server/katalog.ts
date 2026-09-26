@@ -8,6 +8,7 @@
 import { db } from "@/server/veritabani";
 import {
   alOdeEtiketi,
+  nciUrunEtiketi,
   urunIndirimleri,
   urunKampanyasi,
   type KampanyaKaydi,
@@ -112,13 +113,21 @@ function urunYap(
   // "X al Y öde" (K-168): ürün fiyatına yansımıyor, etiket olarak gösteriliyor.
   const adet = kampanyalar.find(
     (k) =>
-      k.tip === "al-ode" &&
+      (k.tip === "al-ode" || k.tip === "nci-urun") &&
       (k.kapsam === "tumu" ||
         (k.kapsam === "kategori" && k.categoryId === satir.categoryId) ||
         (k.kapsam === "urun" && k.productId === satir.id)),
   );
   const adetKampanyasi = adet
-    ? { ad: adet.ad, etiket: alOdeEtiketi(adet), ...(adet.bitis ? { bitis: adet.bitis } : {}) }
+    ? {
+        ad: adet.ad,
+        etiket: adet.tip === "nci-urun" ? nciUrunEtiketi(adet) : alOdeEtiketi(adet),
+        aciklama:
+          adet.tip === "nci-urun"
+            ? "indirim sepette en ucuz ürüne uygulanır"
+            : "sepette en ucuz ürün bedava",
+        ...(adet.bitis ? { bitis: adet.bitis } : {}),
+      }
     : undefined;
 
   return {

@@ -1,7 +1,7 @@
 import { db } from "@/server/veritabani";
 import { kampanyaCevir, kampanyaKaydet, kampanyaSil } from "@/server/yonetim";
 import { fiyatYaz } from "@/ui/katalog-bicim";
-import { alOdeEtiketi } from "@/server/kampanya";
+import { alOdeEtiketi, kademeCoz, nciUrunEtiketi } from "@/server/kampanya";
 import { kampanyaZarari, type ZararliUrun } from "@/server/kar";
 import { ayarlariGetir } from "@/server/sepet";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
@@ -32,9 +32,33 @@ function tarihYaz(t: Date | null): string {
   return t ? t.toLocaleDateString("tr-TR", { timeZone: "Europe/Istanbul" }) : "—";
 }
 
-function degerYaz(k: { tip: string; deger: number; alAdet: number | null; odeAdet: number | null }): string {
-  if (k.tip === "al-ode") return alOdeEtiketi(k);
-  return k.tip === "yuzde" ? `%${k.deger}` : fiyatYaz(k.deger);
+function degerYaz(k: {
+  tip: string;
+  deger: number;
+  alAdet: number | null;
+  odeAdet: number | null;
+  kademeler: unknown;
+  enFazlaIndirimKurus: number | null;
+}): string {
+  const tavan = k.enFazlaIndirimKurus ? ` (en çok ${fiyatYaz(k.enFazlaIndirimKurus)})` : "";
+  switch (k.tip) {
+    case "al-ode":
+      return alOdeEtiketi(k);
+    case "nci-urun":
+      return nciUrunEtiketi(k) + tavan;
+    case "kademeli":
+      return (
+        (kademeCoz(k.kademeler) ?? [])
+          .map((x) => `${fiyatYaz(x.esikKurus)} → ${fiyatYaz(x.indirimKurus)}`)
+          .join(", ") + tavan
+      );
+    case "kargo":
+      return "Ücretsiz kargo";
+    case "yuzde":
+      return `%${k.deger}${tavan}`;
+    default:
+      return fiyatYaz(k.deger);
+  }
 }
 
 const UYARI = <>Kampanya kalıcı olarak siliniyor; geri alınamıyor. Sepetlerde artık uygulanmayacak. Yalnızca durdurmak istiyorsan &quot;Kapat&quot; yeter.</>;
@@ -61,6 +85,11 @@ const HATALAR: Record<string, string> = {
   kategori: "Kapsam \"Tek kategori\" seçildiyse bir kategori seç.",
   urun: "Kapsam \"Tek ürün\" seçildiyse bir ürün seç.",
   tarih: "Bitiş tarihi başlangıçtan önce olamaz.",
+  "nci-urun": "N. ürün 2 ile 10 arasında olmalı; yüzdeyi Değer kutusuna yaz (ör. 2. ürüne %50).",
+  kademeli:
+    "Kademeleri her satıra \"eşik = indirim\" diye yaz (ör. 500 = 50). İndirim eşikten küçük olmalı; aynı eşik iki kez olmaz; en çok 10 basamak.",
+  tavan: "İndirim tavanı geçerli bir tutar olmalı (ör. 200).",
+  sinir: "Kullanım sınırları 1 ya da daha büyük tam sayı olmalı.",
 };
 
 export default async function KampanyaEkrani({
@@ -161,6 +190,18 @@ export default async function KampanyaEkrani({
                           en az {fiyatYaz(k.enAzSepetKurus)} sepet
                         </span>
                       )}
+                      {/* Kullanım kuralları (K-170). */}
+                      {(k.uyelereOzel || k.ilkSiparis || k.kisiBasiSinir || k.enFazlaKullanim) && (
+                        <span className="block text-xs text-metin-3">
+                          {[
+                            k.ilkSiparis ? "ilk siparişe özel" : k.uyelereOzel ? "üyelere özel" : "",
+                            k.kisiBasiSinir ? `kişi başı ${k.kisiBasiSinir}` : "",
+                            k.enFazlaKullanim ? `toplam ${k.kullanim}/${k.enFazlaKullanim}` : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </span>
+                      )}
                       <ZararUyarisi zararlilar={kampanyaZarari(k, maliyetliler, satisAyari.kdvOrani)} tutarMi={k.tip === "tutar"} />
                       <FiyatUyarisi urunler={fiyatUyarilari.get(k.id) ?? []} />
                     </td>
@@ -232,12 +273,42 @@ export default async function KampanyaEkrani({
                 <option value="yuzde">Yüzde</option>
                 <option value="tutar">Tutar (₺)</option>
                 <option value="al-ode">X al Y öde (ör. 3 al 2 öde)</option>
+                <option value="nci-urun">N. ürüne indirim (ör. 2. ürüne %50)</option>
+                <option value="kademeli">Kademeli sepet indirimi (ör. 500 ₺&apos;ye 50 ₺)</option>
+                <option value="kargo">Ücretsiz kargo</option>
               </select>
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <span className={ETIKET}>Değer — yüzdede 20, tutarda 50,00 (X al Y öde&apos;de boş)</span>
+              <span className={ETIKET}>
+                Değer — yüzdede ve N. üründe 20 (%), tutarda 50,00 (öteki türlerde boş)
+              </span>
               <input name="deger" inputMode="decimal" className={`${GIRDI} rakam`} />
+            </label>
+
+            {/* "N. ürüne %X" ve kademeli (K-170). */}
+            <label className="flex flex-col gap-1.5">
+              <span className={ETIKET}>N. ürün — &quot;N. ürüne indirim&quot;de kaçıncı ürün</span>
+              <input name="nciN" inputMode="numeric" placeholder="2" className={`${GIRDI} rakam`} />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={ETIKET}>İndirim tavanı (₺) — isteğe bağlı, ör. %20 en çok 200 ₺</span>
+              <input name="tavan" inputMode="decimal" placeholder="boş: sınırsız" className={`${GIRDI} rakam`} />
+            </label>
+            <label className="flex flex-col gap-1.5 sm:col-span-2">
+              <span className={ETIKET}>
+                Kademeler — yalnızca kademeli türde; her satır &quot;eşik = indirim&quot; (₺)
+              </span>
+              <textarea
+                name="kademeler"
+                rows={3}
+                placeholder={"500 = 50\n1000 = 150\n2000 = 400"}
+                className={`${GIRDI} rakam`}
+              />
+              <span className="text-xs text-metin-3">
+                Kapsamdaki ürünlerin tutarı hangi eşiği geçtiyse o basamağın indirimi uygulanır.
+                Sepette müşteriye bir sonraki basamağa ne kadar kaldığı yazılır.
+              </span>
             </label>
 
             {/* "X al Y öde" (K-168): en ucuz ürünler bedava. */}
@@ -321,14 +392,40 @@ export default async function KampanyaEkrani({
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <span className={ETIKET}>Başlangıç</span>
-              <input name="baslangic" type="date" className={GIRDI} />
+              <span className={ETIKET}>Başlangıç — saat isteğe bağlı (flaş kampanya)</span>
+              <input name="baslangic" type="datetime-local" className={GIRDI} />
             </label>
 
             <label className="flex flex-col gap-1.5">
               <span className={ETIKET}>Bitiş</span>
-              <input name="bitis" type="date" className={GIRDI} />
+              <input name="bitis" type="datetime-local" className={GIRDI} />
             </label>
+
+            {/* Kullanım kuralları (K-170). */}
+            <label className="flex flex-col gap-1.5">
+              <span className={ETIKET}>Toplam kullanım sınırı — ör. ilk 100 sipariş</span>
+              <input name="enFazlaKullanim" inputMode="numeric" placeholder="boş: sınırsız" className={`${GIRDI} rakam`} />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={ETIKET}>Kişi başı kullanım — bir üye en çok kaç kez</span>
+              <input name="kisiBasiSinir" inputMode="numeric" placeholder="boş: sınırsız" className={`${GIRDI} rakam`} />
+            </label>
+            <div className="flex flex-col gap-2 sm:col-span-2">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" name="uyelereOzel" className="h-4 w-4 accent-[var(--mercan)]" />
+                <span className="text-sm font-semibold">Yalnızca üyelere</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input type="checkbox" name="ilkSiparis" className="h-4 w-4 accent-[var(--mercan)]" />
+                <span className="text-sm font-semibold">Yalnızca ilk siparişte (hoş geldin kampanyası)</span>
+              </label>
+              <span className="text-xs text-metin-3">
+                İlk sipariş ve kişi başı sınır, kimin kullandığını bilmek için üye girişi ister;
+                bu kampanyalar yalnızca giriş yapmış müşteriye uygulanır ve ürün kartlarında
+                indirimli fiyat olarak görünmez. Üyeliksiz verilmiş eski siparişler de e-posta
+                adresinden sayılır.
+              </span>
+            </div>
           </div>
 
           <label className="flex items-center gap-2">

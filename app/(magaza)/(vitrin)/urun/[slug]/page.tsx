@@ -204,7 +204,7 @@ export default async function UrunSayfasi({
                   {urun.adetKampanyasi.etiket}
                 </span>{" "}
                 <span className="font-bold text-nane-koyu">{urun.adetKampanyasi.ad}</span>
-                {" · "}sepette en ucuz ürün bedava; kampanyadaki ürünleri karıştırabilirsin. Bir
+                {" · "}{urun.adetKampanyasi.aciklama}; kampanyadaki ürünleri karıştırabilirsin. Bir
                 kısmını iade edersen kampanya kalan ürünlere yeniden uygulanır.
               </p>
             )}

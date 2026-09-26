@@ -12,6 +12,7 @@ import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { fiyatiKaydet } from "@/server/fiyat-gecmisi";
 import { db } from "@/server/veritabani";
+import { Prisma } from "@/db/uretilen/client";
 import { TUM_ETIKETLER } from "@/server/onbellek";
 import { DURUMLAR, ODEME_DURUMLARI } from "@/ui/siparis-bicim";
 import { BANNER_GORSELLERI, BANNER_PALETLERI } from "@/server/banner";
@@ -42,6 +43,7 @@ import {
   suzgeciCoz as siparisSuzgeciniCoz,
 } from "@/server/siparis-arama";
 import { kargoyaVerildiEpostasi, odemeAlindiEpostasi } from "@/server/eposta";
+import { KAMPANYA_TIPLERI } from "@/server/kampanya";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { hareketYaz } from "@/server/stok-hareket";
 import { maliyetiGecmiseYaz } from "@/server/maliyet";
@@ -1161,7 +1163,7 @@ export async function kunyeKaydet(veri: FormData): Promise<void> {
 
 /* ── Kampanyalar ────────────────────────────────────────────────────────── */
 
-const TIPLER = ["yuzde", "tutar", "al-ode"];
+const TIPLER: readonly string[] = KAMPANYA_TIPLERI;
 const KAPSAMLAR = ["tumu", "kategori", "urun"];
 
 /**
@@ -1178,6 +1180,30 @@ function tariheCevir(deger: FormDataEntryValue | null, uc: "bas" | "son" = "bas"
     ? new Date(`${metin}T${uc === "bas" ? "00:00:00.000" : "23:59:59.999"}+03:00`)
     : new Date(metin);
   return Number.isNaN(t.getTime()) ? null : t;
+}
+
+/**
+ * Kademe metni (K-170): her satırda "eşik = indirim", ₺ cinsinden
+ * ("500 = 50", "1.000 = 150"). Eşikler artan, indirim eşikten küçük; aynı
+ * eşik iki kez yazılamıyor. Geçersizse `null`.
+ */
+function kademeleriOku(metin: string): { esikKurus: number; indirimKurus: number }[] | null {
+  const satirlar = metin
+    .split(/\n/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+  if (satirlar.length === 0 || satirlar.length > 10) return null;
+  const liste: { esikKurus: number; indirimKurus: number }[] = [];
+  for (const satir of satirlar) {
+    const [e, i] = satir.split(/[=:]/).map((x) => x?.trim());
+    const esikKurus = tutarCoz(e ?? "");
+    const indirimKurus = tutarCoz(i ?? "");
+    if (!esikKurus || !indirimKurus || indirimKurus <= 0 || indirimKurus >= esikKurus) return null;
+    liste.push({ esikKurus, indirimKurus });
+  }
+  liste.sort((a, b) => a.esikKurus - b.esikKurus);
+  if (new Set(liste.map((k) => k.esikKurus)).size !== liste.length) return null;
+  return liste;
 }
 
 export async function kampanyaKaydet(veri: FormData): Promise<void> {
@@ -1197,7 +1223,7 @@ export async function kampanyaKaydet(veri: FormData): Promise<void> {
   // olmayan yüzde eskiden sessizce %1 oluyordu.
   const ham = String(veri.get("deger") ?? "").trim();
   let deger = 0;
-  if (tip === "yuzde") {
+  if (tip === "yuzde" || tip === "nci-urun") {
     const n = Number(ham.replace(",", "."));
     if (!Number.isFinite(n) || n < 1 || n > 100) hata("yuzde");
     deger = Math.round(n);
@@ -1206,8 +1232,31 @@ export async function kampanyaKaydet(veri: FormData): Promise<void> {
     if (deger <= 0) hata("tutar");
   }
 
+  // "N. ürüne %X" (K-170): N 2-10; yüzde yukarıda sınandı.
+  const nciN = tip === "nci-urun" ? Number(veri.get("nciN")) : null;
+  if (tip === "nci-urun" && !(Number.isInteger(nciN) && nciN! >= 2 && nciN! <= 10)) hata("nci-urun");
+
+  // Kademeli (K-170): her satır "eşik = indirim" (500 = 50).
+  const kademeler = tip === "kademeli" ? kademeleriOku(String(veri.get("kademeler") ?? "")) : null;
+  if (tip === "kademeli" && !kademeler) hata("kademeli");
+
+  // Tavan ve üyelik kuralları (K-170).
+  const tavanHam = String(veri.get("tavan") ?? "").trim();
+  const enFazlaIndirimKurus = tavanHam ? kurusaCevir(tavanHam) : null;
+  if (tavanHam && (!enFazlaIndirimKurus || enFazlaIndirimKurus <= 0)) hata("tavan");
+  const sayiOku = (alan: string): number | null | "hata" => {
+    const h = String(veri.get(alan) ?? "").trim();
+    if (!h) return null;
+    const n = Number(h);
+    return Number.isInteger(n) && n >= 1 && n <= 100_000 ? n : "hata";
+  };
+  const kisiBasiSinir = sayiOku("kisiBasiSinir");
+  const enFazlaKullanim = sayiOku("enFazlaKullanim");
+  if (kisiBasiSinir === "hata" || enFazlaKullanim === "hata") hata("sinir");
+  const ilkSiparis = veri.get("ilkSiparis") === "on";
+
   // "X al Y öde" (K-168): 2 ≤ X ≤ 20, 1 ≤ Y < X.
-  const alAdet = tip === "al-ode" ? Number(veri.get("alAdet")) : null;
+  const alAdet = tip === "al-ode" ? Number(veri.get("alAdet")) : tip === "nci-urun" ? nciN : null;
   const odeAdet = tip === "al-ode" ? Number(veri.get("odeAdet")) : null;
   if (
     tip === "al-ode" &&
@@ -1235,6 +1284,13 @@ export async function kampanyaKaydet(veri: FormData): Promise<void> {
     deger,
     alAdet,
     odeAdet,
+    kademeler: kademeler ?? Prisma.DbNull,
+    enFazlaIndirimKurus,
+    // İlk sipariş ve kişi başı sınır üyelik gerektiriyor; işaretli sayılıyor.
+    uyelereOzel: veri.get("uyelereOzel") === "on" || ilkSiparis || kisiBasiSinir !== null,
+    ilkSiparis,
+    kisiBasiSinir: kisiBasiSinir as number | null,
+    enFazlaKullanim: enFazlaKullanim as number | null,
     kapsam,
     categoryId: kapsam === "kategori" ? String(veri.get("categoryId") ?? "") || null : null,
     productId: kapsam === "urun" ? String(veri.get("productId") ?? "") || null : null,

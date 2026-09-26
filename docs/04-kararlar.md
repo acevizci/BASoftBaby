@@ -6552,6 +6552,60 @@ sayım (K-165).
 **Nerede:** [`../server/iade.ts`](../server/iade.ts),
 [`../testler/al-ode.test.ts`](../testler/al-ode.test.ts)
 
+### K-170 · Popüler kampanya türleri ve kullanım kuralları
+
+Türkiye'de e-ticarette yaygın kampanyalar gözden geçirildi; eksikler eklendi.
+
+- **Yeni türler:**
+  - **N. ürüne indirim** (`nci-urun`: "2. ürüne %50"). Her N üründe birine
+    yüzde indirim; indirimli olanlar kapsamdaki en ucuz ürünler. Kartta ve
+    ürün sayfasında etiket.
+  - **Kademeli sepet indirimi** (`kademeli`: "500 ₺'ye 50 ₺, 1000 ₺'ye
+    150 ₺"). Kapsamdaki tutarın geçtiği en yüksek basamak. Panelde her satır
+    "eşik = indirim".
+  - **Ücretsiz kargo** (`kargo`, kuponlu ya da kendiliğinden; alt sınır ve
+    kapsam olabilir). Ürün indirimi değil. Öteki indirimlerle kampanyasız
+    kargo ücreti değeriyle yarışıyor (üst üste binmeme kuralı, K-02): 300 ₺
+    sepette 49,90 ₺ kargo %10'dan iyi, 1000 ₺ sepette %10 kazanıyor. Sipariş
+    `indirimKurus` 0, `kargoKurus` 0 ve kampanya adıyla yazılıyor.
+- **Kurallar:**
+  - **İndirim tavanı** (`enFazlaIndirimKurus`, "%20, en çok 200 ₺"), her
+    türde.
+  - **Toplam kullanım sınırı** ("ilk 100 sipariş"): alan vardı, formda
+    yoktu.
+  - **Kişi başı kullanım** (`kisiBasiSinir`) ve **ilk siparişe özel**
+    (`ilkSiparis`, HOSGELDIN). Eskiden hoş geldin kodu aynı kişi tarafından
+    sınırsız kullanılabiliyordu. İkisi de kimin kullandığını bilmek için
+    üyelik istiyor (`uyelereOzel` kendiliğinden işaretli).
+  - Sipariş sayısı iptal edilmemiş siparişlerden. Üyeliksiz verilmiş eski
+    siparişler de e-posta adresinden sayılıyor: hesap açarak kural
+    aşılamıyor.
+  - Sipariş işleminde üyenin satırı kilitlenip kural yeniden sınanıyor (iki
+    cihazdan eşzamanlı sipariş).
+  - Kişiye göre değişen kampanyalar ürün kartındaki fiyata yansımıyor.
+- **Flaş kampanya:** başlangıç ve bitişe saat girilebiliyor. Yalnız tarih
+  girilince gün başı ve gün sonu (K-165).
+- **Sepet:**
+  - "Sepetine X ₺ daha eklersen Y ₺ indirim / kargo bedava" (en yakın alt
+    sınır ya da sonraki basamak; şimdikinden fazla kazandırmıyorsa
+    gösterilmiyor).
+  - Kupon engeli yazıyor: üyelere özel (giriş yap / üye ol), ilk siparişe
+    özel, kişi başı hak doldu, kargo zaten bedava.
+- **Kısmi iade genelleşti** (K-169'un devamı). Sipariş anındaki kampanya
+  tanımı `Order.kampanyaAnlik`'e yazılıyor. Koşullu her türde (X al Y öde, N.
+  ürün, kademeli, alt sınırlı tutar) iade = ödenen − kalanların kampanyalı
+  fiyatı. Kademeli 200 ₺'ye 30 ₺, 2 × 100 ₺ alıp birini iade eden 70 ₺
+  alıyor. Talep formunda kural yazıyor.
+- **Zarar uyarısı:** N. ürün (yüzde / N), kademeli (en cömert basamağın
+  oranı), kargo (ürüne etkisiz).
+
+Kapsam hâlâ tek kategori ya da tek ürün; birden çok kategoriye aynı
+kampanya için ayrı kampanya açılıyor.
+
+**Nerede:** [`../server/kampanya.ts`](../server/kampanya.ts),
+[`../server/sepet.ts`](../server/sepet.ts),
+[`../testler/kampanya-turleri.test.ts`](../testler/kampanya-turleri.test.ts)
+
 ---
 
 ## Açık sorular

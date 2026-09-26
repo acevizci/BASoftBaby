@@ -211,6 +211,16 @@ export type ZararliUrun = { ad: string; indirimliKurus: number; netKurus: number
  * durum, yani sepette yalnızca o ürünün bir adedi varsayılıyor. Alış fiyatı
  * olmayan ürün hesaba girmiyor.
  */
+/** Kademelerin indirim/eşik oranları; bozuk basamak atlanıyor (K-170). */
+function kademeOranlari(ham: unknown): number[] {
+  if (!Array.isArray(ham)) return [];
+  return ham.flatMap((x: { esikKurus?: unknown; indirimKurus?: unknown }) =>
+    typeof x?.esikKurus === "number" && typeof x?.indirimKurus === "number" && x.esikKurus > 0
+      ? [x.indirimKurus / x.esikKurus]
+      : [],
+  );
+}
+
 export function kampanyaZarari(
   k: {
     tip: string;
@@ -220,6 +230,8 @@ export function kampanyaZarari(
     productId: string | null;
     alAdet?: number | null;
     odeAdet?: number | null;
+    kademeler?: unknown;
+    enFazlaIndirimKurus?: number | null;
   },
   urunler: { id: string; ad: string; categoryId: string; fiyatKurus: number; alisFiyatKurus: number | null }[],
   kdvOrani: number,
@@ -236,7 +248,20 @@ export function kampanyaZarari(
           ? k.alAdet && k.odeAdet && k.odeAdet < k.alAdet
             ? Math.floor((u.fiyatKurus * (k.alAdet - k.odeAdet)) / k.alAdet)
             : 0
-          : Math.min(Math.max(k.deger, 0), u.fiyatKurus);
+          : // "N. ürüne %X" (K-170): N üründe birine yüzde, ortalaması.
+            k.tip === "nci-urun"
+            ? k.alAdet && k.alAdet >= 2
+              ? Math.floor((u.fiyatKurus * Math.min(Math.max(k.deger, 0), 100)) / 100 / k.alAdet)
+              : 0
+            : // Kademeli: en cömert basamağın oranı; ücretsiz kargo ürüne dokunmuyor.
+              k.tip === "kademeli"
+              ? Math.floor(
+                  u.fiyatKurus *
+                    Math.max(0, ...kademeOranlari(k.kademeler)),
+                )
+              : k.tip === "kargo"
+                ? 0
+                : Math.min(Math.max(k.deger, 0), u.fiyatKurus);
     const indirimliKurus = u.fiyatKurus - indirim;
     const netKurus = kdvHaric(indirimliKurus, kdvOrani);
     return netKurus < u.alisFiyatKurus

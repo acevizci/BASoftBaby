@@ -17,6 +17,12 @@ import {
   enIyiKampanya,
   gecerliKampanyalar,
   kampanyaIndirimi,
+  kapsamdaMi,
+  kuponEngeli as kuponEngeli_,
+  sonrakiKademe,
+  type KampanyaKaydi,
+  type IndirimSatiri,
+  type UygunlukEngeli,
   type UygulananKampanya,
 } from "@/server/kampanya";
 import { paletCoz, type Palet } from "@/ui/katalog-bicim";
@@ -74,7 +80,15 @@ export type Sepet = {
    * kadar eksik) ya da kapsamındaki ürün sepette yok / "X al Y öde" için adet az.
    * Eskiden ikisinde de "daha çok indiren kampanya var" deniyordu.
    */
-  kuponUymuyor?: { sebep: "alt-sinir"; kalanKurus: number } | { sebep: "kapsam" };
+  kuponUymuyor?:
+    | { sebep: "alt-sinir"; kalanKurus: number }
+    | { sebep: "kapsam" }
+    /** Ücretsiz kargo kuponu ama kargo zaten bedava. */
+    | { sebep: "kargo-zaten" };
+  /** Kod var ama bu müşteriye uygun değil (K-170). */
+  kuponEngeli?: UygunlukEngeli;
+  /** Biraz daha alışverişle kazanılacak kampanya (K-170). */
+  firsat?: { ad: string; kalanKurus: number; kazancKurus?: number; kargo?: boolean };
   kargoKurus: number;
   toplamKurus: number;
   /** Bedava kargoya kalan tutar; kargo zaten bedavaysa sıfır */
@@ -252,13 +266,15 @@ export async function sepetGetir(): Promise<Sepet> {
   const araToplamKurus = cikti.reduce((t, s) => t + s.araToplamKurus, 0);
   const toplamAdet = cikti.reduce((t, s) => t + s.adet, 0);
 
-  // Kişiye özel kupon yalnızca sahibine (K-151); kod yoksa sorguya gerek yok.
-  const kampanyalar = await gecerliKampanyalar(
-    kuponKodu,
-    undefined,
-    kuponKodu ? (await girisYapan())?.id : undefined,
-  );
-  const kampanya = enIyiKampanya(kampanyalar, cikti, araToplamKurus);
+  // Kişiye özel kupon yalnızca sahibine (K-151); üyelere özel, ilk sipariş ve
+  // kişi başı sınırlı kampanyalar da üyeye göre (K-170).
+  const uye = await girisYapan();
+  const kampanyalar = await gecerliKampanyalar(kuponKodu, undefined, uye?.id);
+  // Ücretsiz kargo kampanyası öteki indirimlerle kampanyasız kargo ücretiyle
+  // yarışıyor (K-170).
+  const dolu = cikti.length > 0;
+  const kargoHam = kargoHesapla(araToplamKurus, ayar, dolu);
+  const kampanya = enIyiKampanya(kampanyalar, cikti, araToplamKurus, kargoHam);
   const indirimKurus = kampanya?.indirimKurus ?? 0;
 
   // Kupon yazılmışsa müşteriye ne olduğunu söyleyebilmek için iki durumu
@@ -272,15 +288,29 @@ export async function sepetGetir(): Promise<Sepet> {
     kuponKampanyasi && !kuponUygulandi
       ? araToplamKurus < kuponKampanyasi.enAzSepetKurus
         ? { sebep: "alt-sinir", kalanKurus: kuponKampanyasi.enAzSepetKurus - araToplamKurus }
-        : kampanyaIndirimi(kuponKampanyasi, cikti, araToplamKurus) <= 0
-          ? { sebep: "kapsam" }
-          : undefined
+        : kuponKampanyasi.tip === "kargo"
+          ? kargoHam === 0
+            ? { sebep: "kargo-zaten" }
+            : undefined
+          : kampanyaIndirimi(kuponKampanyasi, cikti, araToplamKurus) <= 0
+            ? { sebep: "kapsam" }
+            : undefined
       : undefined;
+  // Kod var ama uygun değil (K-170): üye girişi, ilk sipariş, kişi başı hak.
+  const kuponEngeli =
+    kuponVar && !kuponEslesti ? await kuponEngeli_(kuponKodu!, uye?.id) : undefined;
 
-  // Bedava kargo eşiği indirimden SONRAKİ tutara bakar.
+  // Bedava kargo eşiği indirimden SONRAKİ tutara bakar; ücretsiz kargo
+  // kampanyası kazandıysa kargo yok.
   const indirimliAraToplam = araToplamKurus - indirimKurus;
-  const kargoKurus = kargoHesapla(indirimliAraToplam, ayar, cikti.length > 0);
+  const kargoKurus = kampanya?.kargoBedava ? 0 : kargoHesapla(indirimliAraToplam, ayar, dolu);
   const kalan = ayar.bedavaKargoEsigi - indirimliAraToplam;
+
+  // "Sepete X ₺ daha ekle, indirim kazan" (K-170): kendiliğinden uygulanan
+  // kampanyalardan alt sınırı ya da sonraki basamağı en yakın olan.
+  const firsat = dolu
+    ? sonrakiFirsat(kampanyalar, cikti, araToplamKurus, indirimKurus, kargoKurus)
+    : undefined;
 
   return {
     satirlar: cikti,
@@ -292,12 +322,54 @@ export async function sepetGetir(): Promise<Sepet> {
     kuponGecersizMi: kuponVar && !kuponEslesti,
     kuponYetersizMi: kuponEslesti && !kuponUygulandi && !kuponUymuyor,
     kuponUymuyor,
+    kuponEngeli,
+    firsat,
     kargoKurus,
     toplamKurus: indirimliAraToplam + kargoKurus,
     bedavayaKalanKurus: kargoKurus > 0 && kalan > 0 ? kalan : 0,
     sorunluMu: cikti.some((s) => s.stok === 0 || s.adet === 0),
     cikarilan: pasifler.length,
   };
+}
+
+/**
+ * En yakın fırsat (K-170): kendiliğinden uygulanan (kuponsuz) kampanyalardan
+ * alt sınırına ya da sonraki basamağına en az tutar kalan. Şu an uygulanan
+ * indirimden fazlasını kazandırmayan fırsat gösterilmiyor.
+ */
+function sonrakiFirsat(
+  kampanyalar: KampanyaKaydi[],
+  satirlar: IndirimSatiri[],
+  araToplamKurus: number,
+  simdikiIndirim: number,
+  /** Şu an ödenecek kargo; sıfırsa kargo fırsatı anlamsız. */
+  kargoKurus: number,
+): Sepet["firsat"] {
+  let en: Sepet["firsat"];
+  for (const k of kampanyalar) {
+    if (k.kuponKodu) continue;
+    if (k.tip === "kargo" && kargoKurus === 0) continue;
+    const taban = satirlar
+      .filter((x) => kapsamdaMi(k, x))
+      .reduce((t, x) => t + x.araToplamKurus, 0);
+    if (taban <= 0) continue;
+    let kalanKurus = 0;
+    let kazancKurus: number | undefined;
+    if (k.tip === "kademeli") {
+      const sonraki = sonrakiKademe(k.kademeler, taban);
+      if (!sonraki) continue;
+      kalanKurus = Math.max(sonraki.esikKurus - taban, k.enAzSepetKurus - araToplamKurus);
+      kazancKurus = sonraki.indirimKurus;
+    } else if (araToplamKurus < k.enAzSepetKurus) {
+      kalanKurus = k.enAzSepetKurus - araToplamKurus;
+      if (k.tip === "tutar") kazancKurus = k.deger;
+    } else continue;
+    if (kazancKurus !== undefined && kazancKurus <= simdikiIndirim) continue;
+    if (!en || kalanKurus < en.kalanKurus) {
+      en = { ad: k.ad, kalanKurus, kazancKurus, ...(k.tip === "kargo" ? { kargo: true } : {}) };
+    }
+  }
+  return en;
 }
 
 export type SatisAyari = {

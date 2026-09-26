@@ -156,7 +156,15 @@ export default async function SepetSayfasi({ searchParams }: PageProps<"/sepet">
               <dt className="text-metin-2">Kargo</dt>
               <dd className="rakam font-semibold">
                 {sepet.kargoKurus === 0 ? (
-                  <span className="text-nane-koyu">Bedava</span>
+                  <span className="text-nane-koyu">
+                    Bedava
+                    {/* Ücretsiz kargo kampanyası (K-170) */}
+                    {sepet.kampanya?.kargoBedava && (
+                      <span className="block text-xs font-normal text-metin-3">
+                        {sepet.kampanya.ad}
+                      </span>
+                    )}
+                  </span>
                 ) : (
                   fiyatYaz(sepet.kargoKurus)
                 )}
@@ -207,7 +215,30 @@ export default async function SepetSayfasi({ searchParams }: PageProps<"/sepet">
                 Kısa sürede çok fazla kupon denendi. Bir saat içinde tekrar deneyebilirsin.
               </p>
             )}
-            {sepet.kuponGecersizMi && (
+            {sepet.kuponEngeli === "uye" && (
+              <p className="mt-2 text-xs font-semibold text-mercan-koyu">
+                Bu kupon üyelere özel.{" "}
+                <Link href="/giris?nereye=%2Fsepet" className="underline">
+                  Giriş yap
+                </Link>{" "}
+                ya da{" "}
+                <Link href="/kayit?nereye=%2Fsepet" className="underline">
+                  üye ol
+                </Link>
+                , kupon uygulansın.
+              </p>
+            )}
+            {sepet.kuponEngeli === "ilk" && (
+              <p className="mt-2 text-xs font-semibold text-mercan-koyu">
+                Bu kupon yalnızca ilk siparişte geçerli; hesabınla daha önce sipariş verilmiş.
+              </p>
+            )}
+            {sepet.kuponEngeli === "kisi" && (
+              <p className="mt-2 text-xs font-semibold text-mercan-koyu">
+                Bu kuponu kullanma hakkını doldurdun.
+              </p>
+            )}
+            {sepet.kuponGecersizMi && !sepet.kuponEngeli && (
               <p className="mt-2 text-xs font-semibold text-mercan-koyu">
                 Bu kupon geçerli değil ya da süresi dolmuş.
                 {/* Kişiye özel kuponlar (K-151, K-152) yalnızca sahibi girişliyken. */}
@@ -236,6 +267,11 @@ export default async function SepetSayfasi({ searchParams }: PageProps<"/sepet">
                 adet kampanyası için yeterli adet yok).
               </p>
             )}
+            {sepet.kuponUymuyor?.sebep === "kargo-zaten" && (
+              <p className="mt-2 text-xs font-semibold text-metin-2">
+                Kuponun geçerli; kargo zaten bedava olduğu için ayrıca bir şey kazandırmıyor.
+              </p>
+            )}
             {sepet.kuponYetersizMi && (
               <p className="mt-2 text-xs font-semibold text-metin-2">
                 Kuponun geçerli, ama şu an sepetinde daha çok indiren bir kampanya var; o
@@ -244,7 +280,23 @@ export default async function SepetSayfasi({ searchParams }: PageProps<"/sepet">
             )}
           </div>
 
-          {sepet.bedavayaKalanKurus > 0 && (
+          {/* "Sepete X ₺ daha ekle" (K-170): en yakın kampanya fırsatı. */}
+          {sepet.firsat && (
+            <p className="mt-3 rounded-marka bg-nane-soluk px-3 py-2 text-sm text-nane-koyu">
+              Sepetine <span className="rakam font-bold">{fiyatYaz(sepet.firsat.kalanKurus)}</span>{" "}
+              daha eklersen{" "}
+              {sepet.firsat.kargo
+                ? "kargo bedava"
+                : sepet.firsat.kazancKurus
+                  ? <>
+                      <span className="rakam font-bold">{fiyatYaz(sepet.firsat.kazancKurus)}</span>{" "}
+                      indirim
+                    </>
+                  : "indirim"}{" "}
+              kazanırsın ({sepet.firsat.ad}).
+            </p>
+          )}
+          {sepet.bedavayaKalanKurus > 0 && !sepet.firsat?.kargo && (
             <p className="mt-3 rounded-[10px] bg-nane-soluk px-3 py-2 text-xs font-semibold text-nane-koyu">
               <span className="rakam">{fiyatYaz(sepet.bedavayaKalanKurus)}</span> daha eklersen
               kargo bedava.

@@ -127,6 +127,7 @@ export async function talepDurumu(numara: string): Promise<TalepDurumBilgisi | u
       kampanyaAdi: true,
       kampanyaAlAdet: true,
       kampanyaOdeAdet: true,
+      kampanyaAnlik: true,
       satirlar: {
         orderBy: { id: "asc" },
         select: { id: true, urunAd: true, beden: true, renk: true, adet: true },
@@ -193,10 +194,15 @@ export async function talepDurumu(numara: string): Promise<TalepDurumBilgisi | u
     ? gunSonu(gunEkle(siparis.teslimTarihi, CAYMA_GUN))
     : undefined;
 
-  const kampanyaNotu =
-    siparis.kampanyaAlAdet && siparis.kampanyaOdeAdet
-      ? `Bu sipariş "${siparis.kampanyaAdi ?? "kampanya"}" (${siparis.kampanyaAlAdet} al ${siparis.kampanyaOdeAdet} öde) ile alındı. Bir kısmını iade edersen kampanya elinde kalan ürünlere yeniden uygulanır: iade tutarı, ödediğin ile kalan ürünlerin kampanyalı fiyatı arasındaki fark olur. Kampanya bozulursa iade edilen ürün için para dönmeyebilir.`
-      : undefined;
+  // Koşullu kampanyada kısmi iadenin nasıl hesaplandığı (K-169, K-170).
+  const anlik = siparis.kampanyaAnlik as { tip?: string; enAzSepetKurus?: number } | null;
+  const kosullu =
+    (siparis.kampanyaAlAdet && siparis.kampanyaOdeAdet) ||
+    (anlik?.tip && ["al-ode", "nci-urun", "kademeli"].includes(anlik.tip)) ||
+    (anlik && anlik.tip !== "kargo" && (anlik.enAzSepetKurus ?? 0) > 0);
+  const kampanyaNotu = kosullu
+    ? `Bu sipariş "${siparis.kampanyaAdi ?? "kampanya"}" kampanyasıyla alındı. Bir kısmını iade edersen kampanya elinde kalan ürünlere yeniden uygulanır: iade tutarı, ödediğin ile kalan ürünlerin kampanyalı fiyatı arasındaki fark olur. Kampanyanın koşulu (adet ya da sepet tutarı) bozulursa iade edilen ürün için dönen tutar azalabilir ya da hiç para dönmeyebilir.`
+    : undefined;
   const bos = (engel: string): TalepDurumBilgisi => ({
     turler: [],
     engel,

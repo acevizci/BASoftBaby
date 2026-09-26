@@ -82,7 +82,7 @@ export type Urun = {
    * Ürüne uyan "X al Y öde" kampanyası (K-168): fiyata yansımıyor, sepette
    * hesaplanıyor; kartta ve ürün sayfasında etiket olarak görünüyor.
    */
-  adetKampanyasi?: { ad: string; etiket: string; bitis?: string };
+  adetKampanyasi?: { ad: string; etiket: string; aciklama: string; bitis?: string };
   rozet?: { ton: RozetTonu; yazi: string };
   puan: number;
   yorumSayisi: number;

@@ -23,6 +23,7 @@ import {
   indirimiDagit,
   kapsamdaMi,
   kuponKullan,
+  uyeKurallariTutuyor,
 } from "@/server/kampanya";
 import { renkAdlari } from "@/server/renkler";
 import { takipAdresi, tasiyiciAdi } from "@/server/kargo";
@@ -195,7 +196,9 @@ export async function siparisOlustur(
     adet: s.adet,
   }));
   const kampanyalar = await gecerliKampanyalar(await kuponOku(), undefined, customerId);
-  const kampanya = enIyiKampanya(kampanyalar, indirimSatirlari, araToplamKurus);
+  // Ücretsiz kargo kampanyası kampanyasız kargo ücretiyle yarışıyor (K-170).
+  const kargoHam = kargoHesapla(araToplamKurus, ayar, true);
+  const kampanya = enIyiKampanya(kampanyalar, indirimSatirlari, araToplamKurus, kargoHam);
   const indirimKurus = kampanya?.indirimKurus ?? 0;
   // Her satırın indirim payı; yalnızca kampanyanın kapsadığı satırlara (K-109).
   const uygulanan = kampanyalar.find((k) => k.id === kampanya?.id);
@@ -205,7 +208,21 @@ export async function siparisOlustur(
   const kapsamda = indirimSatirlari.map((x) => (uygulanan ? kapsamdaMi(uygulanan, x) : false));
   const alOde = uygulanan?.tip === "al-ode" ? uygulanan : undefined;
 
-  const kargoKurus = kargoHesapla(araToplamKurus - indirimKurus, ayar, true);
+  const kargoKurus = kampanya?.kargoBedava
+    ? 0
+    : kargoHesapla(araToplamKurus - indirimKurus, ayar, true);
+  // Kısmi iadede yeniden hesap için kampanyanın o anki tanımı (K-170).
+  const kampanyaAnlik = uygulanan
+    ? {
+        tip: uygulanan.tip,
+        deger: uygulanan.deger,
+        alAdet: uygulanan.alAdet ?? null,
+        odeAdet: uygulanan.odeAdet ?? null,
+        kademeler: uygulanan.kademeler ?? null,
+        enFazlaIndirimKurus: uygulanan.enFazlaIndirimKurus ?? null,
+        enAzSepetKurus: uygulanan.enAzSepetKurus,
+      }
+    : undefined;
   const toplamKurus = araToplamKurus - indirimKurus + kargoKurus;
   const simdi = new Date();
   // Hediye çeki (K-137): bakiye işlemin içinde düşülüyor.
@@ -293,6 +310,7 @@ export async function siparisOlustur(
           indirimKurus,
           kampanyaAdi: kampanya?.ad ?? null,
           kampanyaId: kampanya?.id ?? null,
+          ...(kampanyaAnlik ? { kampanyaAnlik } : {}),
           kampanyaAlAdet: alOde?.alAdet ?? null,
           kampanyaOdeAdet: alOde?.odeAdet ?? null,
           kargoKurus,
@@ -313,6 +331,11 @@ export async function siparisOlustur(
 
       // Kullanım sınırı işlemin içinde sınanıyor (K-151).
       if (kampanya && !(await kuponKullan(islem, kampanya.id))) throw new Error("KUPON");
+      // İlk sipariş ve kişi başı sınır da işlemin içinde (K-170): iki cihazdan
+      // aynı anda verilen sipariş kuralı ikisinde de geçmiş görmesin.
+      if (kampanya && customerId && !(await uyeKurallariTutuyor(islem, kampanya.id, customerId, siparis.numara))) {
+        throw new Error("KUPON");
+      }
 
       // Stok hareketi siparişle aynı işlemde (K-103).
       await hareketYaz(

@@ -4,7 +4,32 @@ import { alanAramasi } from "@/ui/panel-arama-bicim";
 import type { Prisma } from "@/db/uretilen/client";
 import { cekeIadeEt } from "@/server/hediye-ceki";
 import { iadeBolustur } from "@/server/hediye-ceki-bicim";
-import { alOdeIndirimi } from "@/server/kampanya";
+import { kademeCoz, kampanyaIndirimi, type KampanyaKaydi } from "@/server/kampanya";
+
+type KampanyaAnligi = Pick<
+  KampanyaKaydi,
+  "tip" | "deger" | "alAdet" | "odeAdet" | "kademeler" | "enFazlaIndirimKurus" | "enAzSepetKurus"
+>;
+
+/** Siparişe yazılmış kampanya tanımı (K-170); eski X al Y öde siparişi için X/Y'den (K-169). */
+function anlikCoz(ham: unknown, alAdet: number | null, odeAdet: number | null): KampanyaAnligi | undefined {
+  if (ham && typeof ham === "object" && typeof (ham as KampanyaAnligi).tip === "string") {
+    const a = ham as KampanyaAnligi;
+    return {
+      tip: a.tip,
+      deger: Number(a.deger) || 0,
+      alAdet: a.alAdet ?? null,
+      odeAdet: a.odeAdet ?? null,
+      kademeler: kademeCoz(a.kademeler),
+      enFazlaIndirimKurus: a.enFazlaIndirimKurus ?? null,
+      enAzSepetKurus: Number(a.enAzSepetKurus) || 0,
+    };
+  }
+  if (alAdet && odeAdet) {
+    return { tip: "al-ode", deger: 0, alAdet, odeAdet, kademeler: null, enFazlaIndirimKurus: null, enAzSepetKurus: 0 };
+  }
+  return undefined;
+}
 
 /**
  * Para iadesi.
@@ -80,6 +105,7 @@ export async function iadeTutari(
       toplamKurus: true,
       kampanyaAlAdet: true,
       kampanyaOdeAdet: true,
+      kampanyaAnlik: true,
       satirlar: {
         select: { id: true, adet: true, fiyatKurus: true, indirimKurus: true, kampanyada: true },
       },
@@ -129,25 +155,53 @@ export async function iadeTutari(
   // kalan iki ürün kampanyaya girmiyor, zaten 200 ₺ ödemişti. Eskiden
   // indirim payı satıra sabit yazıldığı için ücretli ürünü iade eden tam
   // parasını alıyor, kampanya bozulduğu hâlde bedava ürün elinde kalıyordu.
-  const alOde =
-    !hepsi && siparis.kampanyaAlAdet && siparis.kampanyaOdeAdet
-      ? { alAdet: siparis.kampanyaAlAdet, odeAdet: siparis.kampanyaOdeAdet }
-      : undefined;
-  if (alOde) {
+  // Sipariş anındaki kampanya tanımı (K-170); yalnızca X/Y yazılmış eski
+  // "X al Y öde" siparişlerinde (K-169) ondan kuruluyor.
+  const anlik = anlikCoz(siparis.kampanyaAnlik, siparis.kampanyaAlAdet, siparis.kampanyaOdeAdet);
+  // Yüzde ve alt sınırsız tutar indirimi satır payıyla zaten doğru; yeniden
+  // hesap koşullu türlerde (X al Y öde, N. ürün, kademeli, alt sınırlı).
+  const yenidenHesap =
+    !hepsi &&
+    anlik &&
+    (["al-ode", "nci-urun", "kademeli"].includes(anlik.tip) ||
+      (anlik.enAzSepetKurus > 0 && anlik.tip !== "kargo"));
+  if (yenidenHesap && anlik) {
     // Önceki iadeler: tamamlanmışların toplamından bu talebin kendisi düşülüyor.
     const onceki = new Map<string, number>();
     for (const o of oncekiler) onceki.set(o.orderItemId, (onceki.get(o.orderItemId) ?? 0) + o.adet);
     const elde = (degis: boolean) =>
       siparis.satirlar.flatMap((s) => {
-        if (!s.kampanyada) return [];
         const bu = Math.min(Math.max(istenen.get(s.id) ?? 0, 0), s.adet);
         const once = Math.max(0, s.adet - Math.max(0, (onceki.get(s.id) ?? 0) - bu));
         const adet = degis ? Math.max(0, once - bu) : once;
         return adet > 0
-          ? [{ productId: s.id, categoryId: "", araToplamKurus: s.fiyatKurus * adet, adet }]
+          ? [
+              {
+                // Kapsam sipariş anında satıra yazıldı; burada "kampanyada" ile.
+                productId: s.kampanyada ? "k" : "-",
+                categoryId: "",
+                araToplamKurus: s.fiyatKurus * adet,
+                adet,
+              },
+            ]
           : [];
       });
-    satirPaylari = Math.max(0, alOdeIndirimi(alOde, elde(false)) - alOdeIndirimi(alOde, elde(true)));
+    const kampanya: KampanyaKaydi = {
+      id: "anlik",
+      ad: "",
+      kapsam: "urun",
+      productId: "k",
+      categoryId: null,
+      kuponKodu: null,
+      ...anlik,
+    };
+    const indirim = (satirlar: ReturnType<typeof elde>) =>
+      kampanyaIndirimi(
+        kampanya,
+        satirlar,
+        satirlar.reduce((t, x) => t + x.araToplamKurus, 0),
+      );
+    satirPaylari = Math.max(0, indirim(elde(false)) - indirim(elde(true)));
   }
 
   // Kargo kararı birikimli: bu talep tek başına siparişin tamamını
@@ -158,7 +212,7 @@ export async function iadeTutari(
 
   // İndirim payı: satır tutarının ara toplama oranı kadar. Ara toplam sıfırsa
   // (hepsi bedava) pay da sıfır — bölme yapılmıyor.
-  const indirimPayiKurus = payYazili || alOde
+  const indirimPayiKurus = payYazili || yenidenHesap
     ? satirPaylari
     : siparis.indirimKurus > 0 && siparis.araToplamKurus > 0
       ? Math.round(siparis.indirimKurus * (urunKurus / siparis.araToplamKurus))

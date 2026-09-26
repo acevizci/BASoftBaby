@@ -25,9 +25,13 @@ export type KampanyaKaydi = {
   productId: string | null;
   kuponKodu: string | null;
   enAzSepetKurus: number;
-  /** "X al Y öde" (K-168); yalnızca tip "al-ode" iken dolu. */
+  /** "X al Y öde" (K-168); "N. ürüne %X"te (K-170) `alAdet` N. */
   alAdet?: number | null;
   odeAdet?: number | null;
+  /** Kademeli sepet indirimi (K-170). */
+  kademeler?: Kademe[] | null;
+  /** İndirim tavanı (K-170). */
+  enFazlaIndirimKurus?: number | null;
   /** Bitiş anı (ISO); vitrindeki "son 3 gün" notu için, yalnızca ürün indirimlerinde dolu. */
   bitis?: string | null;
 };
@@ -41,14 +45,29 @@ export type IndirimSatiri = {
   adet?: number;
 };
 
+/** Kademeli indirimin bir basamağı: kapsamdaki tutar `esikKurus`u geçince `indirimKurus`. */
+export type Kademe = { esikKurus: number; indirimKurus: number };
+
 export type UygulananKampanya = {
   id: string;
   ad: string;
+  /** Ürünlerden düşülen indirim; kargo kampanyasında 0. */
   indirimKurus: number;
   kuponMu: boolean;
+  /** Ücretsiz kargo kampanyası kazandı (K-170): kargo ücreti alınmıyor. */
+  kargoBedava?: boolean;
 };
 
+/**
+ * Kampanya türleri (K-170). "kargo" ürün indirimi değil, kargo ücretini
+ * kaldırıyor; öteki kampanyalarla yarışırken değeri o sepetin kargo ücreti.
+ */
+export const KAMPANYA_TIPLERI = ["yuzde", "tutar", "al-ode", "nci-urun", "kademeli", "kargo"] as const;
+
 export const KUPON_CEREZI = "kupon";
+
+/** Tek bir sepette sayılacak en çok birim; bozuk bir adet döngüyü şişirmesin. */
+const EN_COK_BIRIM = 1000;
 
 export function kapsamdaMi(
   k: Pick<KampanyaKaydi, "kapsam" | "categoryId" | "productId">,
@@ -71,19 +90,86 @@ export function kampanyaIndirimi(
 ): number {
   if (araToplamKurus < k.enAzSepetKurus) return 0;
 
-  const taban = satirlar
-    .filter((s) => kapsamdaMi(k, s))
-    .reduce((t, s) => t + s.araToplamKurus, 0);
+  const kapsamdakiler = satirlar.filter((s) => kapsamdaMi(k, s));
+  const taban = kapsamdakiler.reduce((t, s) => t + s.araToplamKurus, 0);
   if (taban <= 0) return 0;
 
-  if (k.tip === "al-ode") return alOdeIndirimi(k, satirlar.filter((s) => kapsamdaMi(k, s)));
-  if (k.tip === "tutar") return Math.min(k.deger, taban);
-  if (k.deger <= 0) return 0;
-  return Math.floor((taban * Math.min(k.deger, 100)) / 100);
+  const indirim = hamIndirim(k, kapsamdakiler, taban);
+  // Tavan (K-170): "%20, en fazla 200 ₺".
+  const tavan = k.enFazlaIndirimKurus ?? 0;
+  return Math.min(tavan > 0 ? Math.min(indirim, tavan) : indirim, taban);
 }
 
-/** Tek bir sepette sayılacak en çok birim; bozuk bir adet döngüyü şişirmesin. */
-const EN_COK_BIRIM = 1000;
+function hamIndirim(k: KampanyaKaydi, kapsamdakiler: IndirimSatiri[], taban: number): number {
+  switch (k.tip) {
+    case "al-ode":
+      return alOdeIndirimi(k, kapsamdakiler);
+    case "nci-urun":
+      return nciUrunIndirimi(k, kapsamdakiler);
+    case "kademeli":
+      return kademeIndirimi(k.kademeler, taban);
+    case "tutar":
+      return Math.min(k.deger, taban);
+    case "kargo":
+      // Ürün indirimi yok; değeri `enIyiKampanya` kargo ücretinden hesaplıyor.
+      return 0;
+    default:
+      if (k.deger <= 0) return 0;
+      return Math.floor((taban * Math.min(k.deger, 100)) / 100);
+  }
+}
+
+/** Kapsamdaki satırlar birim birim, ucuzdan pahalıya; satırın sırası da tutuluyor. */
+function birimler(satirlar: IndirimSatiri[]): { i: number; birim: number }[] {
+  const liste: { i: number; birim: number }[] = [];
+  satirlar.forEach((s, i) => {
+    const adet = Math.max(1, Math.floor(s.adet ?? 1));
+    const birim = Math.floor(s.araToplamKurus / adet);
+    for (let j = 0; j < adet && liste.length < EN_COK_BIRIM; j++) liste.push({ i, birim });
+  });
+  return liste.sort((a, b) => a.birim - b.birim);
+}
+
+/**
+ * "N. ürüne %X" (K-170): "2. ürüne %50". Her N üründe bir tanesi indirimli;
+ * indirimli olanlar kapsamdaki **en ucuz** ürünler (X al Y öde'deki gibi,
+ * yaygın kural "ikinci ürün" = daha ucuz olan). 2. ürüne %50, 3 ürün: 1
+ * ürüne; 4 ürün: 2 ürüne.
+ */
+export function nciUrunIndirimi(
+  k: Pick<KampanyaKaydi, "alAdet" | "deger">,
+  satirlar: IndirimSatiri[],
+): number {
+  const n = k.alAdet ?? 0;
+  const yuzde = Math.min(Math.max(k.deger, 0), 100);
+  if (!Number.isInteger(n) || n < 2 || yuzde <= 0) return 0;
+  const liste = birimler(satirlar);
+  const adet = Math.floor(liste.length / n);
+  return liste.slice(0, adet).reduce((t, b) => t + Math.floor((b.birim * yuzde) / 100), 0);
+}
+
+/**
+ * Kademeli indirim (K-170): tutarın geçtiği en yüksek basamak. 500 ₺'ye 50 ₺,
+ * 1000 ₺'ye 150 ₺: 800 ₺'lik sepet 50 ₺, 1200 ₺'lik sepet 150 ₺.
+ */
+export function kademeIndirimi(kademeler: Kademe[] | null | undefined, tabanKurus: number): number {
+  let indirim = 0;
+  for (const k of kademeler ?? []) {
+    if (tabanKurus >= k.esikKurus && k.indirimKurus > indirim) indirim = k.indirimKurus;
+  }
+  return Math.min(indirim, tabanKurus);
+}
+
+/** Bir sonraki basamak: sepete ne kadar eklenirse hangi indirim (sepet ipucu için). */
+export function sonrakiKademe(
+  kademeler: Kademe[] | null | undefined,
+  tabanKurus: number,
+): Kademe | undefined {
+  return [...(kademeler ?? [])]
+    .sort((a, b) => a.esikKurus - b.esikKurus)
+    .find((k) => k.esikKurus > tabanKurus);
+}
+
 
 /**
  * "X al Y öde" indirimi (K-168).
@@ -120,6 +206,11 @@ export function alOdeEtiketi(k: Pick<KampanyaKaydi, "alAdet" | "odeAdet">): stri
   return `${k.alAdet ?? "?"} al ${k.odeAdet ?? "?"} öde`;
 }
 
+/** "2. ürüne %50" (K-170). */
+export function nciUrunEtiketi(k: Pick<KampanyaKaydi, "alAdet" | "deger">): string {
+  return `${k.alAdet ?? "?"}. ürüne %${k.deger}`;
+}
+
 /**
  * İndirimi satırlara dağıtır (K-109).
  *
@@ -133,7 +224,7 @@ export function alOdeEtiketi(k: Pick<KampanyaKaydi, "alAdet" | "odeAdet">): stri
 export function indirimiDagit(
   k:
     | (Pick<KampanyaKaydi, "kapsam" | "categoryId" | "productId"> &
-        Partial<Pick<KampanyaKaydi, "tip" | "alAdet" | "odeAdet">>)
+        Partial<Pick<KampanyaKaydi, "tip" | "alAdet" | "odeAdet" | "deger">>)
     | undefined,
   satirlar: IndirimSatiri[],
   indirimKurus: number,
@@ -143,23 +234,25 @@ export function indirimiDagit(
 
   // "X al Y öde"de indirim, bedava sayılan en ucuz birimlerin satırlarına
   // yazılıyor (K-168): orantılı dağıtılsaydı pahalı ürünü iade eden, bedava
-  // gelen ucuz ürünün indirimini de geri ödemiş olurdu.
-  if (k.tip === "al-ode") {
-    const birimler: { i: number; birim: number }[] = [];
-    satirlar.forEach((s, i) => {
-      if (!kapsamdaMi(k as KampanyaKaydi, s)) return;
-      const adet = Math.max(1, Math.floor(s.adet ?? 1));
-      const birim = Math.floor(s.araToplamKurus / adet);
-      for (let j = 0; j < adet && birimler.length < EN_COK_BIRIM; j++) birimler.push({ i, birim });
+  // gelen ucuz ürünün indirimini de geri ödemiş olurdu. "N. ürüne %X"te de
+  // indirimli olanlar en ucuzlar; birim başına payları yüzde kadar (K-170).
+  if (k.tip === "al-ode" || k.tip === "nci-urun") {
+    const kapsamdakiIdler: number[] = [];
+    const kapsamda = satirlar.filter((s, i) => {
+      const var_ = kapsamdaMi(k as KampanyaKaydi, s);
+      if (var_) kapsamdakiIdler.push(i);
+      return var_;
     });
-    birimler.sort((a, b) => a.birim - b.birim);
+    const yuzde = k.tip === "nci-urun" ? Math.min(Math.max(k.deger ?? 0, 0), 100) : 100;
     let kalan = indirimKurus;
-    for (const b of birimler) {
+    for (const b of birimler(kapsamda)) {
       if (kalan <= 0) break;
-      const pay = Math.min(b.birim, kalan);
-      paylar[b.i] += pay;
+      const pay = Math.min(Math.floor((b.birim * yuzde) / 100), kalan);
+      paylar[kapsamdakiIdler[b.i]] += pay;
       kalan -= pay;
     }
+    // Tavan ya da yuvarlama artığı en büyük kapsamdaki satıra.
+    if (kalan > 0 && kapsamdakiIdler.length > 0) paylar[kapsamdakiIdler[0]] += kalan;
     return paylar;
   }
 
@@ -188,18 +281,51 @@ export function enIyiKampanya(
   kampanyalar: KampanyaKaydi[],
   satirlar: IndirimSatiri[],
   araToplamKurus: number,
+  /**
+   * Kampanyasız ödenecek kargo ücreti (K-170): ücretsiz kargo kampanyası
+   * öteki indirimlerle bu değerle yarışıyor. Verilmezse kargo kampanyası
+   * hiç kazanmıyor (ürün kartı gibi kargonun olmadığı yerler).
+   */
+  kargoKurus = 0,
 ): UygulananKampanya | undefined {
-  let enIyi: UygulananKampanya | undefined;
+  let enIyi: (UygulananKampanya & { kazanc: number }) | undefined;
 
   for (const k of kampanyalar) {
-    const indirimKurus = kampanyaIndirimi(k, satirlar, araToplamKurus);
-    if (indirimKurus <= 0) continue;
-    if (!enIyi || indirimKurus > enIyi.indirimKurus) {
-      enIyi = { id: k.id, ad: k.ad, indirimKurus, kuponMu: Boolean(k.kuponKodu) };
+    const kargoMu = k.tip === "kargo";
+    const kazanc = kargoMu
+      ? kargoKazanci(k, satirlar, araToplamKurus, kargoKurus)
+      : kampanyaIndirimi(k, satirlar, araToplamKurus);
+    if (kazanc <= 0) continue;
+    if (!enIyi || kazanc > enIyi.kazanc) {
+      enIyi = {
+        id: k.id,
+        ad: k.ad,
+        indirimKurus: kargoMu ? 0 : kazanc,
+        kuponMu: Boolean(k.kuponKodu),
+        ...(kargoMu ? { kargoBedava: true } : {}),
+        kazanc,
+      };
     }
   }
 
-  return enIyi;
+  if (!enIyi) return undefined;
+  const { kazanc: _kazanc, ...sonuc } = enIyi;
+  void _kazanc;
+  return sonuc;
+}
+
+/**
+ * Ücretsiz kargo kampanyasının değeri (K-170): alt sınır tutuyor ve sepette
+ * kapsamdan en az bir ürün varsa o sepetin kargo ücreti; yoksa 0.
+ */
+function kargoKazanci(
+  k: KampanyaKaydi,
+  satirlar: IndirimSatiri[],
+  araToplamKurus: number,
+  kargoKurus: number,
+): number {
+  if (kargoKurus <= 0 || araToplamKurus < k.enAzSepetKurus) return 0;
+  return satirlar.some((s) => kapsamdaMi(k, s)) ? kargoKurus : 0;
 }
 
 const SECIM = {
@@ -214,7 +340,77 @@ const SECIM = {
   enAzSepetKurus: true,
   alAdet: true,
   odeAdet: true,
+  kademeler: true,
+  enFazlaIndirimKurus: true,
 } as const;
+
+/** Veritabanındaki kaydın motorun beklediği biçimi (kademeler JSON'dan). */
+function kayitCevir<T extends { kademeler: Prisma.JsonValue }>(k: T): Omit<T, "kademeler"> & { kademeler: Kademe[] | null } {
+  return { ...k, kademeler: kademeCoz(k.kademeler) };
+}
+
+/** JSON'daki kademeleri sınayarak okur; bozuk basamak atlanıyor. */
+export function kademeCoz(ham: unknown): Kademe[] | null {
+  if (!Array.isArray(ham)) return null;
+  const liste = ham.flatMap((x) =>
+    x &&
+    typeof x === "object" &&
+    Number.isInteger((x as Kademe).esikKurus) &&
+    Number.isInteger((x as Kademe).indirimKurus) &&
+    (x as Kademe).indirimKurus > 0
+      ? [{ esikKurus: (x as Kademe).esikKurus, indirimKurus: (x as Kademe).indirimKurus }]
+      : [],
+  );
+  return liste.length > 0 ? liste.sort((a, b) => a.esikKurus - b.esikKurus) : null;
+}
+
+/** Üyelik kuralı olan kampanya: yalnızca giriş yapmış üyeye (K-170). */
+const UYELIK_KOSULU = [{ uyelereOzel: true }, { ilkSiparis: true }, { kisiBasiSinir: { not: null } }];
+
+export type UygunlukEngeli = "uye" | "ilk" | "kisi";
+
+/**
+ * Üyenin kampanyayı kullanıp kullanamayacağı (K-170). Sipariş sayısı
+ * iptal edilmemiş siparişlerden; üyeliksiz verilmiş eski siparişler de
+ * e-posta adresinden sayılıyor, yoksa "ilk sipariş" kuponu hesap açarak
+ * yeniden kullanılırdı.
+ */
+async function uyelikBilgisi(
+  customerId: string,
+  kampanyaIdleri: string[],
+): Promise<{ siparisSayisi: number; kullanim: Map<string, number> }> {
+  const musteri = await db.customer.findUnique({
+    where: { id: customerId },
+    select: { eposta: true },
+  });
+  const kim = { OR: [{ customerId }, ...(musteri ? [{ eposta: musteri.eposta }] : [])] };
+  const [siparisSayisi, gruplar] = await Promise.all([
+    db.order.count({ where: { ...kim, durum: { not: "iptal" } } }),
+    kampanyaIdleri.length > 0
+      ? db.order.groupBy({
+          by: ["kampanyaId"],
+          where: { ...kim, durum: { not: "iptal" }, kampanyaId: { in: kampanyaIdleri } },
+          _count: { _all: true },
+        })
+      : Promise.resolve([]),
+  ]);
+  return {
+    siparisSayisi,
+    kullanim: new Map(gruplar.map((g) => [g.kampanyaId ?? "", g._count._all])),
+  };
+}
+
+function uygunlukEngeli(
+  k: { id: string; uyelereOzel: boolean; ilkSiparis: boolean; kisiBasiSinir: number | null },
+  uyelik: { siparisSayisi: number; kullanim: Map<string, number> } | undefined,
+): UygunlukEngeli | undefined {
+  const kural = k.uyelereOzel || k.ilkSiparis || k.kisiBasiSinir !== null;
+  if (!kural) return undefined;
+  if (!uyelik) return "uye";
+  if (k.ilkSiparis && uyelik.siparisSayisi > 0) return "ilk";
+  if (k.kisiBasiSinir !== null && (uyelik.kullanim.get(k.id) ?? 0) >= k.kisiBasiSinir) return "kisi";
+  return undefined;
+}
 
 function tarihSuzgeci(simdi: Date) {
   return {
@@ -252,11 +448,25 @@ export async function gecerliKampanyalar(
         { OR: [{ customerId: null }, ...(customerId ? [{ customerId }] : [])] },
       ],
     },
-    select: { ...SECIM, kullanim: true, enFazlaKullanim: true },
+    select: {
+      ...SECIM,
+      kullanim: true,
+      enFazlaKullanim: true,
+      uyelereOzel: true,
+      ilkSiparis: true,
+      kisiBasiSinir: true,
+    },
     orderBy: { olusturuldu: "asc" },
   });
+  // Üyelik kuralı olan kampanya varsa üyenin geçmişi bir kez okunuyor (K-170).
+  const kurallilar = kayitlar.filter((k) => k.uyelereOzel || k.ilkSiparis || k.kisiBasiSinir !== null);
+  const uyelik =
+    customerId && kurallilar.length > 0
+      ? await uyelikBilgisi(customerId, kurallilar.map((k) => k.id))
+      : undefined;
   return kayitlar
     .filter((k) => k.enFazlaKullanim === null || k.kullanim < k.enFazlaKullanim)
+    .filter((k) => !uygunlukEngeli(k, uyelik))
     .map((k) => ({
       id: k.id,
       ad: k.ad,
@@ -269,7 +479,59 @@ export async function gecerliKampanyalar(
       enAzSepetKurus: k.enAzSepetKurus,
       alAdet: k.alAdet,
       odeAdet: k.odeAdet,
+      kademeler: kademeCoz(k.kademeler),
+      enFazlaIndirimKurus: k.enFazlaIndirimKurus,
     }));
+}
+
+/**
+ * Sipariş işleminin içinde, sipariş yazıldıktan sonra (K-170): kampanyanın
+ * ilk sipariş ve kişi başı kuralı bu siparişle birlikte hâlâ tutuyor mu?
+ * Üyenin satırı kilitleniyor; aynı üyenin eşzamanlı ikinci siparişi bekliyor
+ * ve ilkini görüyor.
+ */
+export async function uyeKurallariTutuyor(
+  islem: Prisma.TransactionClient,
+  kampanyaId: string,
+  customerId: string,
+  buSiparisNo: string,
+): Promise<boolean> {
+  const k = await islem.campaign.findUnique({
+    where: { id: kampanyaId },
+    select: { ilkSiparis: true, kisiBasiSinir: true },
+  });
+  if (!k || (!k.ilkSiparis && k.kisiBasiSinir === null)) return true;
+  await islem.$queryRaw`select id from "Customer" where id = ${customerId} for update`;
+  const musteri = await islem.customer.findUnique({ where: { id: customerId }, select: { eposta: true } });
+  const kim = { OR: [{ customerId }, ...(musteri ? [{ eposta: musteri.eposta }] : [])] };
+  const oncekiler = { ...kim, durum: { not: "iptal" }, numara: { not: buSiparisNo } };
+  if (k.ilkSiparis && (await islem.order.count({ where: oncekiler })) > 0) return false;
+  if (
+    k.kisiBasiSinir !== null &&
+    (await islem.order.count({ where: { ...oncekiler, kampanyaId } })) >= k.kisiBasiSinir
+  ) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Yazılan kupon neden uygulanamıyor (K-170): üye girişi gerekiyor, ilk
+ * siparişe özel ya da kişi başı hakkı dolmuş. Sepet ekranı sebebi yazıyor;
+ * kod geçersizse ya da engel yoksa boş.
+ */
+export async function kuponEngeli(
+  kuponKodu: string,
+  customerId?: string,
+  simdi: Date = new Date(),
+): Promise<UygunlukEngeli | undefined> {
+  const k = await db.campaign.findFirst({
+    where: { ...tarihSuzgeci(simdi), kuponKodu: kuponKodu.trim().toUpperCase() },
+    select: { id: true, uyelereOzel: true, ilkSiparis: true, kisiBasiSinir: true },
+  });
+  if (!k) return undefined;
+  const uyelik = customerId ? await uyelikBilgisi(customerId, [k.id]) : undefined;
+  return uygunlukEngeli(k, uyelik);
 }
 
 /**
@@ -304,12 +566,18 @@ export async function urunIndirimleri(simdi?: Date): Promise<KampanyaKaydi[]> {
 
 async function indirimSorgusu(simdi: Date): Promise<KampanyaKaydi[]> {
   const kayitlar = await db.campaign.findMany({
-    where: { ...tarihSuzgeci(simdi), kuponKodu: null, enAzSepetKurus: 0 },
+    where: {
+      ...tarihSuzgeci(simdi),
+      kuponKodu: null,
+      enAzSepetKurus: 0,
+      // Kişiye göre değişen kampanya herkese gösterilen fiyata yansımaz (K-170).
+      NOT: { OR: UYELIK_KOSULU },
+    },
     select: { ...SECIM, bitis: true },
     orderBy: { olusturuldu: "asc" },
   });
   // Tarih metin olarak taşınıyor: önbellekten dönen değer zaten metin.
-  return kayitlar.map((k) => ({ ...k, bitis: k.bitis?.toISOString() ?? null }));
+  return kayitlar.map((k) => ({ ...kayitCevir(k), bitis: k.bitis?.toISOString() ?? null }));
 }
 
 /**

@@ -416,6 +416,11 @@ model Order {
   /// sonradan değişse ya da silinse de hesap bununla yapılıyor.
   kampanyaAlAdet  Int?
   kampanyaOdeAdet Int?
+  /// Uygulanan kampanyanın sipariş anındaki tanımı (K-170): tür, değer,
+  /// alt sınır, kademeler, tavan. Kısmi iadede kampanya kalan ürünlere bununla
+  /// yeniden uygulanıyor (bütün koşullu türler: X al Y öde, N. ürün, kademeli,
+  /// alt sınırlı tutar).
+  kampanyaAnlik   Json?
   kargoKurus     Int
   toplamKurus    Int
   /// Hediye çekiyle ödenen kısım (K-137). Karttan ya da havaleyle tahsil
@@ -528,16 +533,31 @@ model Campaign {
   id String @id @default(cuid())
   ad String
 
-  /// yuzde · tutar · al-ode
+  /// yuzde · tutar · al-ode · nci-urun · kademeli · kargo (K-170)
   tip   String @default("yuzde")
-  /// yuzde ise 20 (= %20), tutar ise kuruş; al-ode'de kullanılmıyor (0)
+  /// yuzde ve nci-urun'da yüzde (20 = %20), tutarda kuruş; ötekilerde 0
   deger Int
 
   /// "X al Y öde" (K-168): her `alAdet` üründen `odeAdet` kadarı ücretli,
   /// kalanı bedava; bedava olanlar kapsamdaki en ucuz ürünler. 3 al 2 öde →
-  /// alAdet 3, odeAdet 2. Yalnızca tip "al-ode" iken dolu.
+  /// alAdet 3, odeAdet 2. "N. ürüne %X"te (nci-urun, K-170) `alAdet` N.
   alAdet  Int?
   odeAdet Int?
+
+  /// Kademeli sepet indirimi (K-170): [{ esikKurus, indirimKurus }], eşiğe
+  /// göre artan. Kapsamdaki tutar hangi eşiği geçtiyse o basamağın indirimi.
+  kademeler Json?
+
+  /// İndirim tavanı (K-170): "%20, en fazla 200 ₺". Boşsa sınırsız.
+  enFazlaIndirimKurus Int?
+
+  /// Yalnızca giriş yapmış üyelere (K-170). İlk sipariş ve kişi başı sınır
+  /// da üyelik istiyor: kimin kullandığı ancak hesapla bilinebiliyor.
+  uyelereOzel   Boolean @default(false)
+  /// Yalnızca hiç siparişi olmayan üyeye (HOSGELDIN gibi, K-170).
+  ilkSiparis    Boolean @default(false)
+  /// Bir üyenin en çok kaç siparişte kullanabileceği (K-170); boşsa sınırsız.
+  kisiBasiSinir Int?
 
   /// tumu · kategori · urun
   kapsam     String    @default("tumu")
