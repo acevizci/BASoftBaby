@@ -6300,6 +6300,40 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
 **Nerede:** [`../server/siparis-silme.ts`](../server/siparis-silme.ts)
 
 
+### K-164 · İndirimdekiler ve indirim öncesi fiyat denetimi
+
+- **`/indirim` sayfası:** stokta olan ve indirimde görünen bütün ürünler.
+  İndirim = kampanyalı fiyat liste fiyatından düşük ya da elle girilen eski
+  fiyat satış fiyatından büyük (`urunFiyati`, `indirimdeMi`). Varsayılan
+  sıralama "En çok indirim" (yeni sıralama seçeneği, her listede var);
+  süzgeçler kategori sayfalarındakilerle aynı, seçenekler yalnızca
+  indirimdekilerden. Kendi başlığı ve açıklaması var, site haritasında
+  (yalnızca indirimde ürün varken); boşken `noindex`. `indirim` ayrılmış
+  adres oldu.
+- **Kategori sayfalarında "Yalnızca indirimdekiler"** (`?indirim=1`),
+  kategoride indirimde ürün varken görünüyor. İndirimdekilerde kategori
+  geçişi indirimde kalıyor ("Tümü" `/indirim`e dönüyor).
+- **Menüde mercan tonunda "% İndirim"** ve ana sayfada en çok indirimli dört
+  ürünlük **"İndirimdekiler" şeridi**; indirimde ürün yoksa ikisi de yok
+  (boş listeye giden bağlantı çıkmaz sokak, K-73).
+- Kart ve ürün sayfasında **"%X" rozeti**; eski fiyat satış fiyatından büyük
+  değilse üstü çizili fiyat ve "%0" artık çıkmıyor. Bitişi yakın kampanyada
+  kampanya adının yanında **"Son gün" / "Son N gün"** (İstanbul takvim
+  günü, bir haftadan uzaksa yok).
+- **Fiyat Etiketi Yönetmeliği:** indirimden önceki fiyat, indirimin
+  başladığı tarihten önceki **on gün** içinde uygulanan en düşük fiyat
+  olmalı (11.10.2025 değişikliği; önce otuz gündü), ispat yükü satıcıda.
+  Ürünün liste fiyatı değiştikçe `PriceHistory`'ye yazılıyor (panel ve toplu
+  yükleme; başlangıç kaydı bugünkü fiyat, ürünün son değiştiği tarihle).
+  Ürün düzenleme sayfası üstü çizili fiyat — elle eski fiyat ya da
+  kampanyada liste fiyatı — bu en düşük fiyatı aşıyorsa ya da o döneme ait
+  kayıt yoksa uyarıyor. Fiyat kendiliğinden değiştirilmiyor. Varyanta özel
+  fiyatlar ve geçmiş kampanyaların indirimli fiyatları geçmişe yazılmıyor.
+
+**Nerede:** [`../ui/katalog-bicim.ts`](../ui/katalog-bicim.ts),
+[`../server/fiyat-gecmisi.ts`](../server/fiyat-gecmisi.ts),
+[`../app/(magaza)/(vitrin)/[kategori]/page.tsx`](../app/(magaza)/(vitrin)/[kategori]/page.tsx)
+
 ---
 
 ## Açık sorular

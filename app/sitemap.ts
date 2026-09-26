@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { BILGI_SAYFALARI } from "@/app/(magaza)/(bilgi)/bilgi-bicim";
-import { kategorileriGetir, urunleriGetir } from "@/server/katalog";
+import { indirimdeMi, kategorileriGetir, urunleriGetir } from "@/server/katalog";
 import { yasalSayfalariGetir } from "@/server/yasal";
 import { tamAdres } from "@/server/site";
 import { db } from "@/server/veritabani";
@@ -54,6 +54,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
       images: u.fotograflar.slice(0, 10).map((f) => tamAdres(f.yol)),
     })),
+    // İndirimdekiler (K-164): yalnızca indirimde ürün varken; boş liste haritada durmasın.
+    ...(urunler.some(indirimdeMi)
+      ? [{ url: tamAdres("/indirim"), changeFrequency: "daily" as const, priority: 0.7 }]
+      : []),
     // Doğum listesi tanıtımı (K-145).
     { url: tamAdres("/dogum-listesi"), changeFrequency: "monthly" as const, priority: 0.6 },
     // Rehber yazıları (K-132).

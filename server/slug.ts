@@ -34,6 +34,8 @@ export function slugYap(metin: string): string {
  */
 export const AYRILMIS_ADRESLER: ReadonlySet<string> = new Set([
   "urunler",
+  // İndirimdekiler listesi (K-164).
+  "indirim",
   "arama",
   "urun",
   "sepet",

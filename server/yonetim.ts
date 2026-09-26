@@ -10,6 +10,7 @@
 
 import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
+import { fiyatiKaydet } from "@/server/fiyat-gecmisi";
 import { db } from "@/server/veritabani";
 import { TUM_ETIKETLER } from "@/server/onbellek";
 import { DURUMLAR, ODEME_DURUMLARI } from "@/ui/siparis-bicim";
@@ -137,6 +138,8 @@ export async function urunKaydet(form: FormData): Promise<void> {
     // İlk kez girilen alış fiyatı maliyeti bilinmeyen eski satışlara tahmini
     // olarak yazılıyor (K-111).
     await maliyetiGecmiseYaz(guncel.id, alanlar.alisFiyatKurus);
+    // Fiyat geçmişi: üstü çizili fiyat bununla sınanıyor (K-164).
+    await fiyatiKaydet(db, guncel.id, alanlar.fiyatKurus);
     await aramaMetniniTazele(guncel.id);
     vitriniYenile();
     // Bing ve Yandex'e yanıt gittikten sonra (K-129).
@@ -149,6 +152,7 @@ export async function urunKaydet(form: FormData): Promise<void> {
   if (varOlan) throw new Error(`"${ad}" adında bir ürün zaten var.`);
 
   const yeni = await db.product.create({ data: { slug, ...alanlar }, select: { id: true } });
+  await fiyatiKaydet(db, yeni.id, alanlar.fiyatKurus);
   await aramaMetniniTazele(yeni.id);
   vitriniYenile();
   after(() => indexNowBildir([`/urun/${slug}`, `/${kategori.slug}`]));

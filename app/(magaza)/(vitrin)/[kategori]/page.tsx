@@ -6,6 +6,7 @@ import {
   SIRALAMALAR,
   yasEtiketleri as yasEtiketleriYap,
   SIRALAMA_ADLARI,
+  indirimdeMi,
   kategoriGetir,
   kategorileriGetir,
   suzgecKapsami,
@@ -25,6 +26,14 @@ import { sayfaAdresi, sayfaNo } from "@/ui/sayfalama-bicim";
 
 /** "urunler" gerçek bir kategori değil; tüm katalogu gösteren liste. */
 const TUMU = "urunler";
+/**
+ * "indirim" de gerçek bir kategori değil: stokta ve indirimde olan bütün
+ * ürünler, en çok indirim önde (K-164). Kategori sayfalarındaki
+ * "Yalnızca indirimdekiler" seçeneğinin (`?indirim=1`) tüm katalogdaki hâli.
+ */
+const INDIRIM = "indirim";
+const INDIRIM_ACIKLAMASI =
+  "İndirimdeki bebek kıyafetleri: stokta olan, fiyatı düşmüş ya da kampanyada olan bütün ürünler, en çok indirim önde.";
 
 const FIYAT_ARALIKLARI = [
   { etiket: "200 ₺ altı", kurus: 20000 },
@@ -39,6 +48,8 @@ type Aranan = {
   fiyat?: string;
   sirala?: string;
   sayfa?: string;
+  /** "1" ise yalnızca indirimdekiler (K-164). */
+  indirim?: string;
 };
 
 /** Izgara iki ya da üç sütun; 24 ürün her ikisinde de tam sıra yapıyor. */
@@ -54,7 +65,9 @@ export async function generateMetadata({
   // Süzgeçli ya da sıralanmış liste dizine girmiyor ama içindeki bağlantılar
   // izleniyor (K-128): beden × renk × yaş × fiyat birleşimleri yüzlerce adres
   // üretiyor, Google tarama zamanını bunlarla harcamasın.
-  const suzgecli = Boolean(aranan.yas || aranan.beden || aranan.renk || aranan.fiyat || aranan.sirala);
+  const suzgecli = Boolean(
+    aranan.yas || aranan.beden || aranan.renk || aranan.fiyat || aranan.sirala || aranan.indirim,
+  );
   const robots = suzgecli ? { index: false, follow: true } : undefined;
 
   // Süzgeçler canonical adrese girmiyor: aynı listenin onlarca kopyası
@@ -63,6 +76,22 @@ export async function generateMetadata({
   const n = sayfaNo(sayfa);
   const ek = (yol: string) => sayfaAdresi(yol, n);
 
+  if (kategori === INDIRIM) {
+    // İndirimde ürün yokken boş liste dizine girmesin.
+    const bos = (await urunleriGetir({ indirim: true })).length === 0;
+    return {
+      title: n > 1 ? `İndirimdekiler · sayfa ${n}` : "İndirimdekiler",
+      description: INDIRIM_ACIKLAMASI,
+      alternates: { canonical: ek(`/${INDIRIM}`) },
+      robots: bos ? { index: false, follow: true } : robots,
+      openGraph: {
+        title: "İndirimdekiler · BASoftBaby",
+        description: INDIRIM_ACIKLAMASI,
+        url: `/${INDIRIM}`,
+        type: "website",
+      },
+    };
+  }
   if (kategori === TUMU) {
     return {
       title: n > 1 ? `Tüm ürünler · sayfa ${n}` : "Tüm ürünler",
@@ -143,9 +172,14 @@ export default async function KategoriSayfasi({
   const { kategori } = await params;
   const aranan = (await searchParams) as Aranan;
 
-  const tumu = kategori === TUMU;
+  const indirimSayfasi = kategori === INDIRIM;
+  const tumu = kategori === TUMU || indirimSayfasi;
   const bilgi = tumu ? undefined : await kategoriGetir(kategori);
   if (!tumu && !bilgi) notFound();
+  const indirimli = indirimSayfasi || aranan.indirim === "1";
+  const baslik = indirimSayfasi ? "İndirimdekiler" : tumu ? "Tüm ürünler" : bilgi!.ad;
+  // İndirimdekiler listesi varsayılan olarak en çok indirim önde.
+  const varsayilanSira = indirimSayfasi ? "indirim" : "onerilen";
 
   const enFazlaKurus = aranan.fiyat ? Number(aranan.fiyat) : undefined;
   const { urunler, durum } = await urunSayfasi(
@@ -155,7 +189,8 @@ export default async function KategoriSayfasi({
       beden: aranan.beden,
       renk: aranan.renk,
       enFazlaKurus: Number.isFinite(enFazlaKurus) ? enFazlaKurus : undefined,
-      sirala: aranan.sirala,
+      sirala: aranan.sirala ?? (indirimSayfasi ? "indirim" : undefined),
+      indirim: indirimli,
     },
     aranan.sayfa,
     IZGARA_BOYU,
@@ -172,11 +207,15 @@ export default async function KategoriSayfasi({
     return sayfaAdresi(temel, n);
   };
 
-  const acikSuzgecAdedi = [aranan.yas, aranan.beden, aranan.renk, aranan.fiyat].filter(
-    Boolean,
-  ).length;
+  const acikSuzgecAdedi = [
+    aranan.yas,
+    aranan.beden,
+    aranan.renk,
+    aranan.fiyat,
+    !indirimSayfasi && aranan.indirim,
+  ].filter(Boolean).length;
   const suzgecVar = acikSuzgecAdedi > 0;
-  const [tumBedenler, tumYaslar, renkler, kapsamdakiler, kategoriler] = await Promise.all([
+  const [tumBedenler, tumYaslar, renkler, kategoridekiler, kategoriler] = await Promise.all([
     bedenleriGetir(),
     yasGruplari(),
     renkSecenekleri(),
@@ -186,6 +225,12 @@ export default async function KategoriSayfasi({
     // Yalnızca içinde yayında ürün olan kategoriler (K-73).
     kategorileriGetir(),
   ]);
+
+  // İndirimdekiler listesinde seçenekler de yalnızca indirimdekilerden.
+  const kapsamdakiler = indirimli ? kategoridekiler.filter(indirimdeMi) : kategoridekiler;
+  // "Yalnızca indirimdekiler" seçeneği kategoride indirimde ürün varken.
+  const indirimSecenegi =
+    !indirimSayfasi && (indirimli || kategoridekiler.some(indirimdeMi));
 
   // Karşılığı olmayan seçenek gösterilmiyor: "Aksesuar"da 0-3 ay bedeni
   // seçen müşteri boş bir listeye düşüyordu. Seçili olan her hâlükârda
@@ -242,6 +287,9 @@ export default async function KategoriSayfasi({
       etiket: renkler.find((r) => r.kod === aranan.renk)?.ad ?? aranan.renk,
     });
   }
+  if (aranan.indirim && !indirimSayfasi) {
+    acikSuzgecler.push({ alan: "indirim", deger: aranan.indirim, etiket: "İndirimdekiler" });
+  }
   if (aranan.fiyat) {
     acikSuzgecler.push({
       alan: "fiyat",
@@ -258,7 +306,7 @@ export default async function KategoriSayfasi({
         veri={sayfaYolu(
           [
             { ad: "Ana sayfa", yol: "/" },
-            tumu ? { ad: "Tüm ürünler", yol: `/${TUMU}` } : { ad: bilgi!.ad, yol: `/${bilgi!.slug}` },
+            { ad: baslik, yol: `/${kategori}` },
           ],
           tamAdres,
         )}
@@ -267,12 +315,18 @@ export default async function KategoriSayfasi({
         <Link href="/" className="hover:underline">
           Ana sayfa
         </Link>
-        <span> · {tumu ? "Tüm ürünler" : bilgi!.ad}</span>
+        <span> · {baslik}</span>
       </nav>
 
-      <h1 className="mt-2 text-2xl sm:text-3xl">{tumu ? "Tüm ürünler" : bilgi!.ad}</h1>
+      <h1 className={`mt-2 text-2xl sm:text-3xl ${indirimSayfasi ? "text-mercan-koyu" : ""}`}>
+        {baslik}
+      </h1>
       <p className="mt-1 text-sm text-metin-2">
-        {tumu ? "Katalogdaki bütün ürünler" : bilgi!.aciklama}
+        {indirimSayfasi
+          ? "Stokta olan, fiyatı düşmüş ya da kampanyada olan ürünler"
+          : tumu
+            ? "Katalogdaki bütün ürünler"
+            : bilgi!.aciklama}
       </p>
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[210px_1fr]">
@@ -323,6 +377,7 @@ export default async function KategoriSayfasi({
                 fiyatSecenekleri={fiyatSecenekleri}
                 yasEtiketleri={yasEtiketleri}
                 kategoriler={kategoriler}
+                indirimSecenegi={indirimSecenegi}
               />
               {suzgecVar && (
                 <Link
@@ -345,6 +400,7 @@ export default async function KategoriSayfasi({
               fiyatSecenekleri={fiyatSecenekleri}
               yasEtiketleri={yasEtiketleri}
               kategoriler={kategoriler}
+              indirimSecenegi={indirimSecenegi}
             />
             {suzgecVar && (
               <Link
@@ -390,7 +446,7 @@ export default async function KategoriSayfasi({
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-xs text-metin-3">Sırala:</span>
               {SIRALAMALAR.map((sr) => {
-                const seciliSr = (aranan.sirala ?? "onerilen") === sr;
+                const seciliSr = (aranan.sirala ?? varsayilanSira) === sr;
                 return (
                   <Link
                     key={sr}
@@ -424,6 +480,20 @@ export default async function KategoriSayfasi({
                     className="mt-4 inline-block rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi"
                   >
                     Süzgeçleri temizle
+                  </Link>
+                </>
+              ) : indirimSayfasi ? (
+                <>
+                  <p className="font-baslik text-lg font-bold">Şu an indirimde ürün yok</p>
+                  <p className="mt-2 text-sm text-metin-2">
+                    Kampanyalar başlayınca burada listeleniyor. O zamana kadar kataloğun
+                    tamamına göz atabilirsin.
+                  </p>
+                  <Link
+                    href="/urunler"
+                    className="mt-4 inline-block rounded-full bg-dugme px-5 py-2.5 text-sm font-bold text-dugme-yazi"
+                  >
+                    Tüm ürünler
                   </Link>
                 </>
               ) : (
@@ -485,6 +555,7 @@ function Suzgecler({
   fiyatSecenekleri,
   yasEtiketleri,
   kategoriler,
+  indirimSecenegi,
 }: {
   kategori: string;
   aranan: Aranan;
@@ -495,9 +566,26 @@ function Suzgecler({
   /** Yaş grubu kodu → etiket; aynı açıklamalı gruplar ayrışsın diye (K-72). */
   yasEtiketleri: Map<string, string>;
   kategoriler: { slug: string; ad: string }[];
+  indirimSecenegi: boolean;
 }) {
+  // İndirimdekilerde kategori geçişi indirimde kalıyor: "Tümü" /indirim'e,
+  // kategori `?indirim=1` ile açılıyor (K-164).
+  const indirimde = kategori === INDIRIM || aranan.indirim === "1";
+  const indirimsiz: Aranan = { ...aranan, indirim: undefined };
+  const hedefAranan = indirimde ? { ...indirimsiz, indirim: "1" } : indirimsiz;
   return (
     <>
+          {indirimSecenegi && (
+            <div>
+              <SuzgecDugmesi
+                secili={aranan.indirim === "1"}
+                href={baglanti(kategori, aranan, "indirim", "1")}
+              >
+                <span className="text-mercan-koyu">%</span> Yalnızca indirimdekiler
+              </SuzgecDugmesi>
+            </div>
+          )}
+
           {/* Kategori süzgeci: "Tüm ürünler"de kategori seçmenin yolu yoktu,
               müşteri üst çubuğa dönmek zorundaydı. Kategori bir sorgu
               değeri değil, adresin kendisi (`/kiz-cocuk`); öteki süzgeçler
@@ -507,8 +595,8 @@ function Suzgecler({
             <p className="text-sm font-bold">Kategori</p>
             <div className="mt-2 flex flex-wrap gap-2">
               <SuzgecDugmesi
-                secili={kategori === TUMU}
-                href={kategoriBaglantisi(TUMU, aranan)}
+                secili={kategori === TUMU || kategori === INDIRIM}
+                href={kategoriBaglantisi(indirimde ? INDIRIM : TUMU, indirimsiz)}
               >
                 Tümü
               </SuzgecDugmesi>
@@ -516,7 +604,7 @@ function Suzgecler({
                 <SuzgecDugmesi
                   key={k.slug}
                   secili={kategori === k.slug}
-                  href={kategoriBaglantisi(k.slug, aranan)}
+                  href={kategoriBaglantisi(k.slug, hedefAranan)}
                 >
                   {k.ad}
                 </SuzgecDugmesi>

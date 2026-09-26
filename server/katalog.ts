@@ -8,7 +8,9 @@
 import { db } from "@/server/veritabani";
 import { urunIndirimleri, urunKampanyasi, type KampanyaKaydi } from "@/server/kampanya";
 import {
+  indirimdeMi,
   paletCoz,
+  urunFiyati,
   type RenkAdi,
   type RenkSecenegi,
   type RozetTonu,
@@ -253,6 +255,8 @@ export type UrunSuzgeci = {
   ara?: string;
   /** Liste sıralaması; boşsa kataloğa giriş sırası. */
   sirala?: string;
+  /** Yalnızca stokta ve indirimde olanlar (K-164). */
+  indirim?: boolean;
 };
 
 /**
@@ -355,10 +359,9 @@ async function urunleriSorgula(suzgec: UrunSuzgeci = {}): Promise<Urun[]> {
     bedenSirasi(),
     tumRenkSecenekleri(),
   ]);
-  return sirala(
-    satirlar.map((s) => urunYap(s as SatirTipi, kampanyalar, sira, renkSecenekleri)),
-    suzgec.sirala,
-  );
+  const urunler = satirlar.map((s) => urunYap(s as SatirTipi, kampanyalar, sira, renkSecenekleri));
+  // İndirim kampanyalar uygulandıktan sonra belli oluyor; sorguda süzülemez.
+  return sirala(suzgec.indirim ? urunler.filter(indirimdeMi) : urunler, suzgec.sirala);
 }
 
 /**
@@ -379,6 +382,11 @@ function sirala(urunler: Urun[], nasil?: string): Urun[] {
     case "yeni":
       // Sorgu eskiden yeniye getiriyor; tersi yeniden eskiye.
       return [...urunler].reverse();
+    case "indirim":
+      // En çok indirim önde; eşitse daha ucuz olan (K-164).
+      return [...urunler].sort(
+        (a, b) => urunFiyati(b).yuzde - urunFiyati(a).yuzde || fiyat(a) - fiyat(b),
+      );
     case "puan":
       // Hiç değerlendirmesi olmayan ürün sona: puanı yok, sıfır değil (K-34).
       return [...urunler].sort((a, b) => {

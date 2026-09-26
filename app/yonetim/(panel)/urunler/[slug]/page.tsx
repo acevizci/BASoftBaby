@@ -14,6 +14,8 @@ import { ayarlariGetir } from "@/server/sepet";
 import { kategoriEtiketleri } from "@/ui/kategori-etiketi";
 import SetYonetimi from "@/ui/set-yonetimi";
 import { urununSetleri } from "@/server/set";
+import { fiyatUyarisi, INDIRIM_ONCESI_GUN, type FiyatUyarisi } from "@/server/fiyat-gecmisi";
+import { fiyatYaz } from "@/ui/katalog-bicim";
 
 export const dynamic = "force-dynamic";
 
@@ -45,9 +47,10 @@ export default async function UrunDuzenle({
 
   // Silme kutusunda yazıyor: satılmış bir ürünü silmek geri alınamaz ve
   // değerlendirmelerini de götürüyor (K-52).
-  const siparisAdedi = await db.orderItem.count({
-    where: { variant: { productId: urun.id } },
-  });
+  const [siparisAdedi, uyari] = await Promise.all([
+    db.orderItem.count({ where: { variant: { productId: urun.id } } }),
+    fiyatUyarisi(urun.id),
+  ]);
 
   // Fotoğraf çekiminden dönen kişi ürün ürün dolaşmak zorunda kalmasın:
   // yükleme bittiğinde sıradaki fotoğrafsız ürün gösteriliyor (K-41).
@@ -93,6 +96,7 @@ export default async function UrunDuzenle({
 
   return (
     <div className="flex flex-col gap-6">
+      {uyari && <FiyatUyari uyari={uyari} />}
       <UrunFormu
         kaydedildi={kayit === "1"}
         varOlanVaryant={typeof varolan === "string" ? varolan.slice(0, 80) : undefined}
@@ -213,5 +217,45 @@ async function StokGecmisi({ productId, slug }: { productId: string; slug: strin
         </div>
       )}
     </section>
+  );
+}
+
+/**
+ * Üstü çizili fiyat yönetmeliğe uymuyor ya da kanıtlanamıyor (K-164).
+ * Fiyat kendiliğinden değiştirilmiyor; ne yapılacağını yazıyor.
+ */
+function FiyatUyari({ uyari }: { uyari: FiyatUyarisi }) {
+  const tarih = uyari.baslangic.toLocaleDateString("tr-TR", {
+    dateStyle: "long",
+    timeZone: "Europe/Istanbul",
+  });
+  const kaynak =
+    uyari.tur === "kampanya"
+      ? `"${uyari.kampanyaAdi}" kampanyasında üstü çizili görünen liste fiyatı`
+      : "Üstü çizili (eski) fiyat";
+  return (
+    <div role="alert" className="rounded-marka border border-sari bg-sari-soluk px-4 py-3 text-sm">
+      <p className="font-bold text-sari-koyu">İndirim öncesi fiyat yönetmeliğe uymayabilir</p>
+      <p className="mt-1 text-metin-2">
+        {kaynak} <span className="rakam font-bold">{fiyatYaz(uyari.ustuCiziliKurus)}</span>.{" "}
+        {uyari.enDusukKurus !== undefined ? (
+          <>
+            İndirimin başladığı {tarih} öncesindeki {INDIRIM_ONCESI_GUN} günde uygulanan en düşük
+            fiyat <span className="rakam font-bold">{fiyatYaz(uyari.enDusukKurus)}</span>. Fiyat
+            Etiketi Yönetmeliği&apos;ne göre indirim öncesi fiyat bundan yüksek yazılamaz.
+          </>
+        ) : (
+          <>
+            İndirimin başladığı {tarih} öncesindeki {INDIRIM_ONCESI_GUN} güne ait fiyat kaydı yok;
+            bu fiyatın gerçekten uygulandığı gösterilemiyor. İspat yükü satıcıda.
+          </>
+        )}
+      </p>
+      <p className="mt-1 text-metin-2">
+        {uyari.tur === "kampanya"
+          ? "Liste fiyatını indirimden önceki en düşük fiyata çek ya da kampanyayı ürünü o fiyattan en az 10 gün sattıktan sonra başlat."
+          : "Eski fiyatı indirimden önceki en düşük fiyata çek ya da boşalt."}
+      </p>
+    </div>
   );
 }

@@ -77,7 +77,7 @@ export type Urun = {
   fiyatKurus: number;
   eskiFiyatKurus?: number;
   /** O an geçerli kampanyanın ürüne düşen hâli; yoksa indirim yok */
-  kampanya?: { ad: string; indirimliFiyatKurus: number };
+  kampanya?: { ad: string; indirimliFiyatKurus: number; bitis?: string };
   rozet?: { ton: RozetTonu; yazi: string };
   puan: number;
   yorumSayisi: number;
@@ -95,7 +95,7 @@ export type Urun = {
  * Varsayılan "önerilen": kataloğa giriş sırası, yani mağaza sahibinin
  * seçtiği düzen. Ötekiler müşterinin kendi ölçütü.
  */
-export const SIRALAMALAR = ["onerilen", "ucuz", "pahali", "yeni", "puan"] as const;
+export const SIRALAMALAR = ["onerilen", "ucuz", "pahali", "yeni", "puan", "indirim"] as const;
 export type Siralama = (typeof SIRALAMALAR)[number];
 
 export const SIRALAMA_ADLARI: Record<Siralama, string> = {
@@ -104,6 +104,7 @@ export const SIRALAMA_ADLARI: Record<Siralama, string> = {
   pahali: "Önce pahalı",
   yeni: "Yeniler",
   puan: "Puana göre",
+  indirim: "En çok indirim",
 };
 
 /**
@@ -203,6 +204,58 @@ export function fiyatYaz(kurus: number): string {
       maximumFractionDigits: 2,
     }) + " ₺"
   );
+}
+
+/**
+ * Müşterinin gördüğü fiyat ve üstü çizili fiyat (K-164).
+ *
+ * Kampanya varsa satış fiyatı kampanyalı fiyat, üstü çizili de liste
+ * fiyatı; yoksa ürüne elle girilmiş eski fiyat. Eski fiyat satış fiyatından
+ * büyük değilse üstü çizili yok: "%0 indirim" yazılmasın.
+ */
+export function urunFiyati(urun: Pick<Urun, "fiyatKurus" | "eskiFiyatKurus" | "kampanya">): {
+  satisKurus: number;
+  ustuCiziliKurus?: number;
+  yuzde: number;
+} {
+  const satisKurus = urun.kampanya ? urun.kampanya.indirimliFiyatKurus : urun.fiyatKurus;
+  const ustu = urun.kampanya ? urun.fiyatKurus : urun.eskiFiyatKurus;
+  if (!ustu || ustu <= satisKurus) return { satisKurus, yuzde: 0 };
+  return {
+    satisKurus,
+    ustuCiziliKurus: ustu,
+    yuzde: Math.max(1, Math.round((1 - satisKurus / ustu) * 100)),
+  };
+}
+
+/** Stokta ve indirimde mi: "İndirimdekiler" listesinin ölçütü (K-164). */
+export function indirimdeMi(urun: Urun): boolean {
+  return urunFiyati(urun).yuzde > 0 && toplamStok(urun) > 0;
+}
+
+const GUN = 24 * 60 * 60 * 1000;
+
+/** İstanbul saatiyle takvim günü: gün sınırı gece yarısı, UTC'nin 03:00'ü değil. */
+function istanbulGunu(t: Date): number {
+  const [y, a, g] = t
+    .toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" })
+    .split("-")
+    .map(Number);
+  return Date.UTC(y, a - 1, g) / GUN;
+}
+
+/**
+ * Kampanyanın bitişine kalan gün notu: "Son gün", "Son 3 gün" (K-164).
+ * Bitişe bir haftadan fazla varsa ya da bitiş yoksa boş: uzak bir tarih
+ * aciliyet değil, gürültü.
+ */
+export function kampanyaBitisNotu(bitis: string | undefined, simdi = new Date()): string | undefined {
+  if (!bitis) return undefined;
+  const son = new Date(bitis);
+  if (Number.isNaN(son.getTime()) || son < simdi) return undefined;
+  const kalan = istanbulGunu(son) - istanbulGunu(simdi) + 1;
+  if (kalan > 7) return undefined;
+  return kalan <= 1 ? "Son gün" : `Son ${kalan} gün`;
 }
 
 export function toplamStok(urun: Urun): number {

@@ -25,6 +25,8 @@ export type KampanyaKaydi = {
   productId: string | null;
   kuponKodu: string | null;
   enAzSepetKurus: number;
+  /** Bitiş anı (ISO); vitrindeki "son 3 gün" notu için, yalnızca ürün indirimlerinde dolu. */
+  bitis?: string | null;
 };
 
 /** İndirim hesabı için bir sepet satırından gereken en az bilgi. */
@@ -224,12 +226,14 @@ export async function urunIndirimleri(simdi?: Date): Promise<KampanyaKaydi[]> {
   return indirimSorgusu(simdi);
 }
 
-function indirimSorgusu(simdi: Date): Promise<KampanyaKaydi[]> {
-  return db.campaign.findMany({
+async function indirimSorgusu(simdi: Date): Promise<KampanyaKaydi[]> {
+  const kayitlar = await db.campaign.findMany({
     where: { ...tarihSuzgeci(simdi), kuponKodu: null, enAzSepetKurus: 0 },
-    select: SECIM,
+    select: { ...SECIM, bitis: true },
     orderBy: { olusturuldu: "asc" },
   });
+  // Tarih metin olarak taşınıyor: önbellekten dönen değer zaten metin.
+  return kayitlar.map((k) => ({ ...k, bitis: k.bitis?.toISOString() ?? null }));
 }
 
 /**
@@ -248,7 +252,7 @@ const indirimleriOku = paylasilanOnbellek(
 export function urunKampanyasi(
   kampanyalar: KampanyaKaydi[],
   urun: { productId: string; categoryId: string; fiyatKurus: number },
-): { ad: string; indirimliFiyatKurus: number } | undefined {
+): { ad: string; indirimliFiyatKurus: number; bitis?: string } | undefined {
   const satir: IndirimSatiri = {
     productId: urun.productId,
     categoryId: urun.categoryId,
@@ -257,8 +261,10 @@ export function urunKampanyasi(
   const enIyi = enIyiKampanya(kampanyalar, [satir], urun.fiyatKurus);
   if (!enIyi) return undefined;
 
+  const bitis = kampanyalar.find((k) => k.id === enIyi.id)?.bitis ?? undefined;
   return {
     ad: enIyi.ad,
     indirimliFiyatKurus: urun.fiyatKurus - enIyi.indirimKurus,
+    ...(bitis ? { bitis } : {}),
   };
 }

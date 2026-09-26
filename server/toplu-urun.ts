@@ -22,6 +22,7 @@ import ExcelJS from "exceljs";
 import { db } from "@/server/veritabani";
 import { slugYap } from "@/server/slug";
 import { hareketYaz, type Yapan } from "@/server/stok-hareket";
+import { fiyatiKaydet } from "@/server/fiyat-gecmisi";
 import { maliyetiGecmiseYaz } from "@/server/maliyet";
 import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
 import { aramaMetinleriniTazele } from "@/server/arama";
@@ -669,6 +670,8 @@ export async function planiUygula(
 
         // İlk kez girilen alış fiyatı eski satışlara tahmini olarak (K-111).
         if (eski) await maliyetiGecmiseYaz(urun.id, alanlar.alisFiyatKurus, islem);
+        // Fiyat geçmişi (K-164); dosyada fiyat yoksa değişmedi.
+        if (alanlar.fiyatKurus !== undefined) await fiyatiKaydet(islem, urun.id, alanlar.fiyatKurus);
 
         for (const s of grup) {
           // SKU boşsa üretiliyor; var olan varyantın kendi kodu korunuyor.

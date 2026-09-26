@@ -7,9 +7,11 @@ import SepeteEkle from "@/ui/sepete-ekle";
 import { FavoriDugmesi } from "@/ui/favori";
 import {
   fiyatYaz,
+  kampanyaBitisNotu,
   paletCoz,
   renginFotograflari,
   toplamStok,
+  urunFiyati,
   type Urun,
 } from "@/ui/katalog-bicim";
 
@@ -56,6 +58,8 @@ function Puan({ puan, yorum }: { puan: number; yorum: number }) {
  */
 export default function UrunKarti({ urun }: { urun: Urun }) {
   const stok = toplamStok(urun);
+  const fiyat = urunFiyati(urun);
+  const bitisNotu = kampanyaBitisNotu(urun.kampanya?.bitis);
   const [secili, setSecili] = useState<string | undefined>(undefined);
   const [bakilan, setBakilan] = useState<string | undefined>(undefined);
   const gosterilen = bakilan ?? secili;
@@ -178,18 +182,32 @@ export default function UrunKarti({ urun }: { urun: Urun }) {
           })}
         </ul>
 
-        <p className="mt-auto flex items-baseline gap-2 pt-1">
+        <p className="mt-auto flex flex-wrap items-baseline gap-x-2 pt-1">
           <span className="rakam font-baslik text-lg font-bold text-mercan-koyu">
-            {fiyatYaz(urun.kampanya ? urun.kampanya.indirimliFiyatKurus : urun.fiyatKurus)}
+            {fiyatYaz(fiyat.satisKurus)}
           </span>
-          {(urun.kampanya || urun.eskiFiyatKurus) && (
-            <span className="rakam text-sm text-metin-3 line-through">
-              {fiyatYaz(urun.kampanya ? urun.fiyatKurus : urun.eskiFiyatKurus!)}
-            </span>
+          {fiyat.ustuCiziliKurus && (
+            <>
+              <span className="rakam text-sm text-metin-3 line-through">
+                {fiyatYaz(fiyat.ustuCiziliKurus)}
+              </span>
+              <span className="rakam rounded-full bg-mercan-soluk px-1.5 py-0.5 text-[0.68rem] font-bold text-mercan-koyu">
+                %{fiyat.yuzde}
+              </span>
+            </>
           )}
         </p>
         {urun.kampanya && (
-          <p className="text-xs font-bold text-nane-koyu">{urun.kampanya.ad}</p>
+          <p className="text-xs font-bold text-nane-koyu">
+            {urun.kampanya.ad}
+            {/* Gün sınırı sunucuyla tarayıcı arasında kayabilir. */}
+            {bitisNotu && (
+              <span suppressHydrationWarning className="text-mercan-koyu">
+                {" "}
+                · {bitisNotu}
+              </span>
+            )}
+          </p>
         )}
 
         <SepeteEkle

@@ -145,6 +145,7 @@ model Product {
   sorular   ProductQuestion[]
   yorumlar  Review[]
   favoriler Favorite[]
+  fiyatGecmisi PriceHistory[]
 
   @@index([categoryId, aktif])
   @@index([aramaMetni])
@@ -1506,4 +1507,19 @@ model GiftListItem {
 
   @@unique([listId, variantId])
   @@index([variantId])
+}
+
+/// Ürünün liste fiyatı geçmişi (K-164). Fiyat Etiketi Yönetmeliği:
+/// indirimden önceki fiyat, indirimin başladığı tarihten önceki on gün
+/// içinde uygulanan en düşük fiyat olmalı (11.10.2025 değişikliğinden önce
+/// otuz gündü). Fiyat her değiştiğinde bir satır; panel üstü çizili fiyatı
+/// bununla sınıyor.
+model PriceHistory {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  fiyatKurus  Int
+  olusturuldu DateTime @default(now())
+
+  @@index([productId, olusturuldu])
 }

@@ -27,7 +27,13 @@ import {
   urunGetir,
   urununBedenleri,
 } from "@/server/katalog";
-import { paletCoz, renginFotograflari, type RenkAdi } from "@/ui/katalog-bicim";
+import {
+  kampanyaBitisNotu,
+  paletCoz,
+  renginFotograflari,
+  urunFiyati,
+  type RenkAdi,
+} from "@/ui/katalog-bicim";
 import { FavoriDugmesi } from "@/ui/favori";
 import { SonBakilanKaydet, SonBakilanlar } from "@/ui/son-bakilan";
 
@@ -93,12 +99,10 @@ export default async function UrunSayfasi({
   const galeriFotograflari = renginFotograflari(urun.fotograflar, seciliRenk);
 
   // Kampanya varsa asıl fiyat kampanyalı fiyattır, üstü çizilen de liste
-  // fiyatı olur. Kampanya yoksa ürüne elle girilmiş eski fiyat kullanılır.
-  const satisKurus = urun.kampanya ? urun.kampanya.indirimliFiyatKurus : urun.fiyatKurus;
-  const ustuCizili = urun.kampanya ? urun.fiyatKurus : urun.eskiFiyatKurus;
-  const indirimYuzdesi = ustuCizili
-    ? Math.round((1 - satisKurus / ustuCizili) * 100)
-    : 0;
+  // fiyatı olur. Kampanya yoksa ürüne elle girilmiş eski fiyat kullanılır;
+  // satış fiyatından büyük değilse üstü çizili yok (K-164).
+  const { satisKurus, ustuCiziliKurus: ustuCizili, yuzde: indirimYuzdesi } = urunFiyati(urun);
+  const bitisNotu = kampanyaBitisNotu(urun.kampanya?.bitis);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -193,7 +197,10 @@ export default async function UrunSayfasi({
               )}
             </p>
             {urun.kampanya && (
-              <p className="mt-1 text-sm font-bold text-nane-koyu">{urun.kampanya.ad}</p>
+              <p className="mt-1 text-sm font-bold text-nane-koyu">
+                {urun.kampanya.ad}
+                {bitisNotu && <span className="text-mercan-koyu"> · {bitisNotu}</span>}
+              </p>
             )}
           </div>
 

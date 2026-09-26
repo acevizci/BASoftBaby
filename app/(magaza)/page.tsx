@@ -5,7 +5,7 @@ import UrunKarti from "@/ui/urun-karti";
 import YapisalVeri from "@/ui/yapisal-veri";
 import { kunyeGetir } from "@/server/yasal";
 import { siteAdresi, tamAdres } from "@/server/site";
-import { kategorileriGetir, oneCikanUrunler } from "@/server/katalog";
+import { kategorileriGetir, oneCikanUrunler, urunleriGetir } from "@/server/katalog";
 import { ayarlariGetir, type SatisAyari } from "@/server/sepet";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import { yasGruplari } from "@/server/yas-gruplari";
@@ -54,12 +54,13 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AnaSayfa() {
-  const [urunler, kategoriler, ayar, kunye, yasKutulari] = await Promise.all([
+  const [urunler, kategoriler, ayar, kunye, yasKutulari, indirimdekiler] = await Promise.all([
     oneCikanUrunler(8),
     kategorileriGetir(),
     ayarlariGetir(),
     kunyeGetir(),
     yasGruplari(),
+    urunleriGetir({ indirim: true, sirala: "indirim" }),
   ]);
   const guven = guvenSatirlari(ayar);
 
@@ -131,6 +132,26 @@ export default async function AnaSayfa() {
           ))}
         </div>
       </section>
+
+      {/* İndirimdekiler (K-164): en çok indirimli dört ürün; indirim yoksa şerit yok. */}
+      {indirimdekiler.length > 0 && (
+        <section className="mx-auto max-w-6xl px-4 pb-12">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-xl text-mercan-koyu">İndirimdekiler</h2>
+            <Link href="/indirim" className="text-sm font-bold text-mavi-koyu hover:underline">
+              Tümünü gör
+              {indirimdekiler.length > 4 && (
+                <span className="rakam"> ({indirimdekiler.length})</span>
+              )}
+            </Link>
+          </div>
+          <div className="mt-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {indirimdekiler.slice(0, 4).map((u) => (
+              <UrunKarti key={u.slug} urun={u} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Doğum listesi tanıtımı (K-145). */}
       <section className="mx-auto max-w-6xl px-4 pb-12">

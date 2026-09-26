@@ -2,7 +2,7 @@ import Link from "next/link";
 import AramaKutusu from "@/ui/arama-kutusu";
 import { HesapBaglantisi, SepetSayaci } from "@/ui/ziyaretci";
 import OdemedeGizli from "@/ui/odemede-gizli";
-import { kategorileriGetir } from "@/server/katalog";
+import { kategorileriGetir, urunleriGetir } from "@/server/katalog";
 
 /**
  * Üst çubuk.
@@ -27,6 +27,9 @@ import { kategorileriGetir } from "@/server/katalog";
  * gizlediği için geniş ekranda "hep açık" hâle getirmenin temiz bir yolu
  * yok; birkaç bağlantının iki kez yazılması bu kadar kırılganlığa değmiyor.
  *
+ * **"İndirim" bağlantısı mercan tonunda** (K-164) ve yalnızca stokta
+ * indirimli ürün varken: boş bir listeye giden bağlantı çıkmaz sokak (K-73).
+ *
  * **Ödeme sayfasında kategori menüsü yok** (K-84): müşteri işlemi bitirmeden
  * vitrine dağılmasın. Logo, arama, hesap ve sepet duruyor.
  */
@@ -35,7 +38,11 @@ const SERIT_BAGLANTISI =
   "whitespace-nowrap rounded-full border border-cizgi bg-yuzey px-3.5 py-1.5 text-sm font-semibold text-metin-2 transition hover:border-mercan hover:text-mercan-koyu";
 
 export default async function UstCubuk() {
-  const kategoriler = await kategorileriGetir();
+  const [kategoriler, indirimdekiler] = await Promise.all([
+    kategorileriGetir(),
+    urunleriGetir({ indirim: true }),
+  ]);
+  const indirimVar = indirimdekiler.length > 0;
 
   return (
     <header className="border-b border-cizgi-soluk bg-zemin">
@@ -79,6 +86,14 @@ export default async function UstCubuk() {
               </span>
             </summary>
             <nav aria-label="Kategoriler" className="mt-2 flex flex-col">
+              {indirimVar && (
+                <Link
+                  href="/indirim"
+                  className="border-b border-cizgi-soluk py-2.5 text-sm font-bold text-mercan-koyu hover:underline"
+                >
+                  % İndirim
+                </Link>
+              )}
               {kategoriler.map((k) => (
                 <Link
                   key={k.slug}
@@ -123,6 +138,14 @@ export default async function UstCubuk() {
               <Link href="/urunler" className={`${SERIT_BAGLANTISI} font-bold`}>
                 Tüm ürünler
               </Link>
+              {indirimVar && (
+                <Link
+                  href="/indirim"
+                  className="whitespace-nowrap rounded-full border border-mercan bg-mercan-soluk px-3.5 py-1.5 text-sm font-bold text-mercan-koyu transition hover:border-mercan-koyu"
+                >
+                  % İndirim
+                </Link>
+              )}
               {/* Doğum listesi (K-145): kategorilerden ayrı dursun diye nane tonunda. */}
               <Link
                 href="/dogum-listesi"
