@@ -54,6 +54,7 @@ const ROZETLER: Record<CalismaDurumu | "yok", [string, string]> = {
   acik: ["Açık", "bg-nane-soluk text-nane-koyu"],
   bekliyor: ["Başlamayı bekliyor", "bg-mavi-soluk text-mavi-koyu"],
   bitti: ["Süresi doldu", "bg-sari-soluk text-sari-koyu"],
+  doldu: ["Kullanım doldu", "bg-sari-soluk text-sari-koyu"],
   kapali: ["Kapalı", "bg-cizgi-soluk text-metin-2"],
   yok: ["Kurulmadı", "bg-cizgi-soluk text-metin-3"],
 };
@@ -191,6 +192,9 @@ export default async function KampanyaEkrani({
             const k = hazir.get(s.anahtar);
             const durum: CalismaDurumu | "yok" = k ? calismaDurumu(k) : "yok";
             const calisiyor = durum === "acik" || durum === "bekliyor";
+            // Kullanımı dolan açık kampanya çalışmıyor ama "Aç" düğmesi onu
+            // açamaz; kapatılabilir ya da sınırı "Düzenle"den artırılır.
+            const kapatilir = calisiyor || durum === "doldu";
             return (
               <div
                 key={s.anahtar}
@@ -218,9 +222,9 @@ export default async function KampanyaEkrani({
                     <input type="hidden" name="anahtar" value={s.anahtar} />
                     <button
                       type="submit"
-                      className={calisiyor ? IKINCIL_DUGME : `${ANA_DUGME} !px-4 !py-2 text-xs`}
+                      className={kapatilir ? IKINCIL_DUGME : `${ANA_DUGME} !px-4 !py-2 text-xs`}
                     >
-                      {calisiyor ? "Kapat" : durum === "bitti" ? "Yeniden aç" : "Aç"}
+                      {kapatilir ? "Kapat" : durum === "bitti" ? "Yeniden aç" : "Aç"}
                     </button>
                   </form>
                   {k && (

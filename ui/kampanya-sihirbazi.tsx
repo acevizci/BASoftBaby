@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import Link from "next/link";
 import { kampanyaKaydet } from "@/server/yonetim";
 import GonderDugmesi from "@/ui/gonder-dugmesi";
@@ -9,6 +9,8 @@ import {
   adimHatasi,
   adOnerisi,
   durumaCevir,
+  hataAdimi,
+  KAMPANYA_HATALARI,
   indirimCumlesi,
   kampanyaOzeti,
   taslagaCevir,
@@ -53,11 +55,27 @@ export default function KampanyaSihirbazi({
   const [adim, setAdim] = useState(id ? 5 : 0);
   const [hata, setHata] = useState<string | null>(null);
   const [ara, setAra] = useState("");
+  // Ad elle yazılmadıysa (boş ya da öneriyle aynı) özet adımında öneri
+  // tazeleniyor: türü ya da yüzdeyi değiştirince eski ad kalmasın.
+  const [adOtomatik, setAdOtomatik] = useState(
+    () => !baslangic.ad.trim() || baslangic.ad === adOnerisi(baslangic),
+  );
 
   const degis = <K extends keyof SihirbazDurumu>(alan: K, deger: SihirbazDurumu[K]) => {
     setD((o) => ({ ...o, [alan]: deger }));
     setHata(null);
   };
+
+  // Sunucunun hatası (kupon kodu başka kampanyada vb.) ilgili adımı açıyor;
+  // girilenler kaybolmuyor.
+  const [, gonder] = useActionState(async (onceki: { hata?: string }, form: FormData) => {
+    const sonuc = await kampanyaKaydet(onceki, form);
+    if (sonuc.hata) {
+      setAdim(hataAdimi(sonuc.hata));
+      setHata(KAMPANYA_HATALARI[sonuc.hata] ?? "Kaydedilemedi. Sayfayı yenileyip tekrar dene.");
+    }
+    return sonuc;
+  }, {});
 
   const taslak = useMemo(() => taslagaCevir(d), [d]);
   const adlar = useMemo(
@@ -89,7 +107,10 @@ export default function KampanyaSihirbazi({
       setHata(sorun.h);
       return;
     }
-    if (hedef === 5 && !d.ad.trim()) setD((o) => ({ ...o, ad: adOnerisi(taslagaCevir(o)) }));
+    if (hedef === 5 && (adOtomatik || !d.ad.trim())) {
+      setD((o) => ({ ...o, ad: adOnerisi(taslagaCevir(o)) }));
+      setAdOtomatik(true);
+    }
     setAdim(hedef);
     setHata(null);
   };
@@ -116,7 +137,7 @@ export default function KampanyaSihirbazi({
 
   return (
     <form
-      action={kampanyaKaydet}
+      action={gonder}
       onSubmit={(e) => {
         const sorun = ilkHatali(5);
         if (sorun) {
@@ -585,14 +606,20 @@ export default function KampanyaSihirbazi({
                 <span className="flex flex-wrap items-center gap-2">
                   <input
                     value={d.ad}
-                    onChange={(e) => degis("ad", e.target.value)}
+                    onChange={(e) => {
+                      degis("ad", e.target.value);
+                      setAdOtomatik(false);
+                    }}
                     maxLength={80}
                     className={`${GIRDI} sm:w-96`}
                   />
                   {d.ad.trim() !== adOnerisi(taslak) && (
                     <button
                       type="button"
-                      onClick={() => degis("ad", adOnerisi(taslak))}
+                      onClick={() => {
+                        degis("ad", adOnerisi(taslak));
+                        setAdOtomatik(true);
+                      }}
                       className={IKINCIL_DUGME}
                     >
                       Öneri: {adOnerisi(taslak)}
@@ -601,7 +628,7 @@ export default function KampanyaSihirbazi({
                 </span>
               </label>
               <div className="rounded-marka bg-yuzey-sicak p-4">
-                <p className="text-lg font-bold">{indirimCumlesi(taslak)}</p>
+                <p className="text-lg font-bold first-letter:uppercase">{indirimCumlesi(taslak)}</p>
                 <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-sm text-metin-2">
                   {kampanyaOzeti(taslak, adlar).map((c) => (
                     <li key={c}>{c}</li>

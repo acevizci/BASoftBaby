@@ -1235,22 +1235,49 @@ function kademeleriOku(metin: string): { esikKurus: number; indirimKurus: number
   return liste;
 }
 
-export async function kampanyaKaydet(veri: FormData): Promise<void> {
-  await yoneticiGerekli();
+/** Sihirbaza dönen sonuç (K-172): hata kodu; başarıda liste sayfasına gidiliyor. */
+export type KampanyaKayitSonucu = { hata?: string };
 
+/** Kampanya kaydının geçersiz girişi; `kampanyaKaydet` kodu sihirbaza döndürüyor. */
+class KampanyaHatasi extends Error {
+  constructor(readonly kod: string) {
+    super(kod);
+  }
+}
+
+/**
+ * Sihirbazın kaydı (K-172). Hata sayfayı değiştirmiyor, kod olarak dönüyor:
+ * sihirbaz ilgili adımı açıp sebebi yazıyor, girilenler kaybolmuyor.
+ */
+export async function kampanyaKaydet(
+  _onceki: KampanyaKayitSonucu,
+  veri: FormData,
+): Promise<KampanyaKayitSonucu> {
+  await yoneticiGerekli();
+  try {
+    await kampanyayiYaz(veri);
+  } catch (e) {
+    if (e instanceof KampanyaHatasi) return { hata: e.kod };
+    // Aynı anda aynı kupon kodu: benzersiz kısıt ikincisini durduruyor.
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      return { hata: "kupon" };
+    }
+    throw e;
+  }
+  vitriniYenile();
+  redirect("/yonetim/kampanyalar?kayit=1");
+}
+
+async function kampanyayiYaz(veri: FormData): Promise<void> {
   const id = String(veri.get("id") ?? "").trim();
   const ad = String(veri.get("ad") ?? "").trim().slice(0, 80);
   const tip = String(veri.get("tip") ?? "yuzde");
   const kapsam = String(veri.get("kapsam") ?? "tumu");
   // Geçersiz giriş sebebiyle geri dönüyor (K-168): eskiden form sessizce
   // hiçbir şey yapmıyordu, kampanya kaydedildi sanılıyordu.
-  // Sihirbazdan gelen hata sihirbaza dönüyor (K-172); adres yalnızca
-  // kampanya sayfalarından biri olabilir.
-  const donusHam = String(veri.get("donus") ?? "");
-  const donus = /^\/yonetim\/kampanyalar\/(yeni|duzenle\/[A-Za-z0-9_-]{1,40})$/.test(donusHam)
-    ? donusHam
-    : "/yonetim/kampanyalar";
-  const hata = (kod: string): never => redirect(`${donus}?hata=${kod}`);
+  const hata = (kod: string): never => {
+    throw new KampanyaHatasi(kod);
+  };
   if (!ad) hata("ad");
   if (!TIPLER.includes(tip) || !KAPSAMLAR.includes(kapsam)) hata("gecersiz");
 
@@ -1367,6 +1394,8 @@ export async function kampanyaKaydet(veri: FormData): Promise<void> {
   if (kapsam === "urun" && urunIdleri.length === 0) hata("urun");
   // Bitiş başlangıçtan önceyse kampanya hiç çalışmaz.
   if (veriler.baslangic && veriler.bitis && veriler.bitis < veriler.baslangic) hata("tarih");
+  // Bitişi geçmiş kampanya açık kaydedilse de çalışmaz (K-172).
+  if (veriler.aktif && veriler.bitis && veriler.bitis <= new Date()) hata("gecmis");
 
   // Kupon kodu benzersiz; aynı kodu ikinci kez vermek çökme değil, uyarı.
   if (kuponKodu) {
@@ -1379,15 +1408,16 @@ export async function kampanyaKaydet(veri: FormData): Promise<void> {
 
   if (id) {
     // Düzenleme (K-172): şablon bağı ve kullanım sayısı korunuyor.
-    const eski = await db.campaign.findUnique({ where: { id }, select: { id: true } });
+    // Kişiye özel kuponlar (K-151) panelden düzenlenmiyor.
+    const eski = await db.campaign.findFirst({
+      where: { id, customerId: null },
+      select: { id: true },
+    });
     if (!eski) hata("bulunamadi");
     await db.campaign.update({ where: { id }, data: veriler });
   } else {
     await db.campaign.create({ data: veriler });
   }
-
-  vitriniYenile();
-  redirect("/yonetim/kampanyalar?kayit=1");
 }
 
 /** Hazır kampanyayı açıp kapatır (K-172); ilk açılışta oluşturur. */

@@ -11,7 +11,12 @@ import "server-only";
 import { Prisma } from "@/db/uretilen/client";
 import { db } from "@/server/veritabani";
 import { KAMPANYA_TIPLERI, kademeCoz } from "@/server/kampanya";
-import { calismaDurumu, sablonBul, type KampanyaTaslagi, type KampanyaTuru } from "@/ui/kampanya-bicim";
+import {
+  calismaDurumu,
+  sablonBul,
+  type KampanyaTaslagi,
+  type KampanyaTuru,
+} from "@/ui/kampanya-bicim";
 
 export type SablonSonucu = "acildi" | "kapatildi" | "bulunamadi" | "kupon";
 
@@ -24,13 +29,20 @@ export async function sablonuCevir(anahtar: string, simdi = new Date()): Promise
 
   const varOlan = await db.campaign.findUnique({
     where: { sablon: anahtar },
-    select: { id: true, aktif: true, baslangic: true, bitis: true },
+    select: {
+      id: true,
+      aktif: true,
+      baslangic: true,
+      bitis: true,
+      kullanim: true,
+      enFazlaKullanim: true,
+    },
   });
   if (varOlan) {
     // Süresi dolmuş kampanya "açık" görünse de çalışmıyor; düğme onu yeniden
     // açıyor: flaşta yeni süre, ötekilerde bitiş kaldırılıyor.
     const durum = calismaDurumu(varOlan, simdi);
-    const kapat = durum === "acik" || durum === "bekliyor";
+    const kapat = durum === "acik" || durum === "bekliyor" || durum === "doldu";
     await db.campaign.update({
       where: { id: varOlan.id },
       data: kapat
@@ -72,9 +84,16 @@ export async function sablonuCevir(anahtar: string, simdi = new Date()): Promise
       },
     });
   } catch (e) {
-    // Aynı anda iki tıklama: ikincisi benzersiz şablon ya da kupon kısıtına
-    // çarpıyor; ilk tıklamanın açtığı kampanya duruyor.
-    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") return "acildi";
+    // Aynı anda iki tıklama: ikincisi benzersiz şablon kısıtına çarpıyor, ilk
+    // tıklamanın açtığı kampanya duruyor. Arada kupon kodunu başka bir
+    // kampanya almışsa kurulmadı.
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      const kuruldu = await db.campaign.findUnique({
+        where: { sablon: anahtar },
+        select: { id: true },
+      });
+      return kuruldu ? "acildi" : "kupon";
+    }
     throw e;
   }
   return "acildi";

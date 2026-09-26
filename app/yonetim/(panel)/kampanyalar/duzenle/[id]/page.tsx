@@ -5,20 +5,16 @@ import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { kaydiTaslaga } from "@/server/kampanya-sablon";
 import { kategoriEtiketleri } from "@/ui/kategori-etiketi";
 import KampanyaSihirbazi from "@/ui/kampanya-sihirbazi";
-import PanelBildirim, { ORTAK_HATALAR } from "@/ui/panel-bildirim";
-import { KAMPANYA_HATALARI } from "@/ui/kampanya-bicim";
 
 export const dynamic = "force-dynamic";
 
 /** Kampanyayı sihirbazda düzenleme (K-172); özet adımında açılıyor. */
 export default async function KampanyaDuzenle({
   params,
-  searchParams,
 }: PageProps<"/yonetim/kampanyalar/duzenle/[id]">) {
   await yoneticiGerekli();
 
   const { id } = await params;
-  const { hata } = await searchParams;
   const [kampanya, kategoriler, urunler] = await Promise.all([
     // Kişiye özel kuponlar (K-151) panelde düzenlenmiyor.
     db.campaign.findFirst({ where: { id, customerId: null } }),
@@ -45,7 +41,6 @@ export default async function KampanyaDuzenle({
           </p>
         )}
       </div>
-      <PanelBildirim hata={hata} hatalar={{ ...ORTAK_HATALAR, ...KAMPANYA_HATALARI }} />
       <KampanyaSihirbazi
         id={kampanya.id}
         baslangic={kaydiTaslaga(kampanya)}

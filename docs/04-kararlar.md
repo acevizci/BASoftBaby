@@ -6657,8 +6657,8 @@ görünüyordu, hangisinin hangi türde okunduğu etiketten anlaşılıyordu.
   - Adım geçmeden sınanıyor; Enter kaydetmiyor, sonraki adıma geçiyor.
   - Son adım kampanyayı düz cümleyle anlatıyor ve ad öneriyor. Aynı özet
     listede de var.
-  - Sunucu (`kampanyaKaydet`) her şeyi yeniden sınıyor. Hata sihirbaza
-    dönüyor. Düzenleme şablon bağını ve kullanım sayısını koruyor.
+  - Sunucu (`kampanyaKaydet`) her şeyi yeniden sınıyor; hatası sihirbazda
+    çıkıyor (K-173). Düzenleme şablon bağını ve kullanım sayısını koruyor.
   - Önceden kampanya düzenlenemiyordu, yalnızca silinip yeniden
     kuruluyordu.
 - Saatli tarih kutusu artık açıkça İstanbul saatiyle okunuyor; sunucunun
@@ -6667,6 +6667,38 @@ görünüyordu, hangisinin hangi türde okunduğu etiketten anlaşılıyordu.
 **Nerede:** [`../ui/kampanya-sihirbazi.tsx`](../ui/kampanya-sihirbazi.tsx),
 [`../ui/kampanya-bicim.ts`](../ui/kampanya-bicim.ts),
 [`../server/kampanya-sablon.ts`](../server/kampanya-sablon.ts)
+
+
+### K-173 · Kampanya sihirbazının yeniden incelenmesi
+
+K-172'nin baştan okunmasında bulunanlar:
+
+- **Sunucu hatası sihirbazı bozuyordu.** Kupon kodu başka kampanyadaysa
+  sayfa `?hata=` adresine yönleniyordu. Hata sayfanın üstünde çıkıyordu,
+  hangi adımda düzeltileceği belli değildi; adres de düzeltmeden sonra
+  hatayı taşımaya devam ediyordu.
+  - `kampanyaKaydet` artık hatayı kod olarak döndürüyor (`useActionState`).
+  - Sihirbaz ilgili adımı açıp sebebi yazıyor; girilenler duruyor.
+  - Aynı anda aynı kupon kodu (benzersiz kısıt) da çökme değil, aynı uyarı.
+- **Eski ad kalıyordu.** "3 al 2 öde" diye önerilen ad, adımlara dönüp
+  4 al 3 öde yapınca değişmiyordu. Ad elle yazılmadıysa özet adımında
+  öneri tazeleniyor. Düzenlemede de, ad öneriyle aynıysa aynı şey oluyor.
+- **Bitişi geçmiş kampanya açık kaydedilebiliyordu.** Kampanya hiç
+  çalışmıyor ama "Açık" görünüyordu. Sihirbaz ve sunucu artık durduruyor;
+  kapalı kaydetmek serbest.
+- **Kullanım sınırı dolan kampanya "Açık" görünüyordu.** Listede ve hazır
+  kartta artık "Kullanım doldu" yazıyor.
+- **Hazır kampanya yarışı:** iki tıklama arasında kupon kodunu başka bir
+  kampanya alırsa sonuç "açıldı" diyordu; artık "kupon kullanılıyor".
+- Kişiye özel kuponlar (K-151) sunucu tarafında da sihirbazla
+  düzenlenemiyor.
+- Kapsamlı ücretsiz kargonun özeti doğru okunuyor: "Sepette Zıbın
+  kategorisinden en az biri varsa ücretsiz kargo".
+- Kullanım rehberinin kampanya bölümü eski formu anlatıyordu. Metin ve
+  ekran görüntüsü hazır kampanyalar ve sihirbaza göre yenilendi.
+
+**Nerede:** [`../ui/kampanya-sihirbazi.tsx`](../ui/kampanya-sihirbazi.tsx),
+[`../server/yonetim.ts`](../server/yonetim.ts)
 
 ---
 

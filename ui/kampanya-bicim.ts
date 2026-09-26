@@ -163,15 +163,25 @@ export const SABLONLAR: readonly Sablon[] = [
   },
 ];
 
-export type CalismaDurumu = "acik" | "kapali" | "bitti" | "bekliyor";
+export type CalismaDurumu = "acik" | "kapali" | "bitti" | "bekliyor" | "doldu";
 
-/** Kampanya şu an çalışıyor mu: kapalı, süresi dolmuş, başlamayı bekliyor. */
+/**
+ * Kampanya şu an çalışıyor mu: kapalı, süresi dolmuş, kullanım sınırı
+ * dolmuş, başlamayı bekliyor.
+ */
 export function calismaDurumu(
-  k: { aktif: boolean; baslangic: Date | string | null; bitis: Date | string | null },
+  k: {
+    aktif: boolean;
+    baslangic: Date | string | null;
+    bitis: Date | string | null;
+    kullanim?: number;
+    enFazlaKullanim?: number | null;
+  },
   simdi = new Date(),
 ): CalismaDurumu {
   if (!k.aktif) return "kapali";
   if (k.bitis && new Date(k.bitis) <= simdi) return "bitti";
+  if (k.enFazlaKullanim && (k.kullanim ?? 0) >= k.enFazlaKullanim) return "doldu";
   if (k.baslangic && new Date(k.baslangic) > simdi) return "bekliyor";
   return "acik";
 }
@@ -241,7 +251,12 @@ export function kampanyaOzeti(
         ? `${liste(t.urunIdleri, adlar?.urun, "ürün")} ${t.urunIdleri.length > 1 ? "ürünlerinde" : "ürününde"}`
         : "bütün ürünlerde";
 
-  const cumleler = [`${kapsam[0].toLocaleUpperCase("tr")}${kapsam.slice(1)} ${indirimCumlesi(t)}.`];
+  // Ücretsiz kargo ürüne değil sepete: kapsamdan bir ürün yetiyor.
+  const ilk =
+    t.tip === "kargo" && t.kapsam !== "tumu"
+      ? `Sepette ${kapsam.replace(/(kategorilerinde|kategorisinde)$/, "kategorisinden").replace(/(ürünlerinde|ürününde)$/, "ürünlerinden")} en az biri varsa ücretsiz kargo`
+      : `${kapsam} ${indirimCumlesi(t)}`;
+  const cumleler = [`${ilk[0].toLocaleUpperCase("tr")}${ilk.slice(1)}.`];
   cumleler.push(
     t.kuponKodu
       ? `Müşteri sepette ${t.kuponKodu} kodunu yazınca uygulanır.`
@@ -443,7 +458,7 @@ const sinirliMi = (h: string) => {
  * Adımın hatası; yoksa `null`. Sunucu (`kampanyaKaydet`) aynı kuralları
  * yeniden sınıyor, bu yalnızca kullanıcıyı adımda tutmak için.
  */
-export function adimHatasi(d: SihirbazDurumu, adim: number): string | null {
+export function adimHatasi(d: SihirbazDurumu, adim: number, simdi = new Date()): string | null {
   const t = taslagaCevir(d);
   switch (adim) {
     case 0:
@@ -514,6 +529,10 @@ export function adimHatasi(d: SihirbazDurumu, adim: number): string | null {
         if (t.baslangic && t.bitis && t.bitis <= t.baslangic) {
           return "Bitiş, başlangıçtan sonra olmalı.";
         }
+        // Bitişi geçmiş kampanya açık kaydedilse de çalışmaz.
+        if (d.aktif && t.bitis && new Date(t.bitis) <= simdi) {
+          return "Bitiş geçmişte kalmış; ileri bir tarih seç ya da kampanyayı kapalı kaydet.";
+        }
       }
       return null;
     case 5:
@@ -544,4 +563,16 @@ export const KAMPANYA_HATALARI: Record<string, string> = {
     "Her basamakta sepet tutarı ve indirim olmalı; indirim tutardan küçük, aynı tutar iki kez olmaz, en çok 10 basamak.",
   tavan: "İndirim tavanı geçerli bir tutar olmalı (ör. 200).",
   sinir: "Kullanım sınırları 1 ya da daha büyük tam sayı olmalı.",
+  bulunamadi: "Kampanya bulunamadı; başka biri silmiş olabilir. Kampanyalar listesine dön.",
+  gecmis: "Bitiş geçmişte kalmış; ileri bir tarih seç ya da kampanyayı kapalı kaydet.",
 };
+
+/** Sunucunun döndürdüğü hata kodu sihirbazın hangi adımında düzeltilir. */
+export function hataAdimi(kod: string): number {
+  if (["gecersiz"].includes(kod)) return 0;
+  if (["yuzde", "tutar", "al-ode", "nci-urun", "kademeli", "tavan"].includes(kod)) return 1;
+  if (["kategori", "urun"].includes(kod)) return 2;
+  if (["kupon", "kupon-harf", "sinir"].includes(kod)) return 3;
+  if (["tarih", "gecmis"].includes(kod)) return 4;
+  return 5;
+}

@@ -8,6 +8,7 @@ import {
   BOS_TASLAK,
   calismaDurumu,
   durumaCevir,
+  hataAdimi,
   kampanyaOzeti,
   SABLONLAR,
   taslagaCevir,
@@ -131,6 +132,30 @@ describe("Kampanya sihirbazı", () => {
     assert.equal(calismaDurumu({ aktif: true, baslangic: null, bitis: once }, simdi), "bitti");
     assert.equal(calismaDurumu({ aktif: true, baslangic: sonra, bitis: null }, simdi), "bekliyor");
     assert.equal(calismaDurumu({ aktif: true, baslangic: once, bitis: sonra }, simdi), "acik");
+    const sinirli = { aktif: true, baslangic: null, bitis: null, enFazlaKullanim: 100 };
+    assert.equal(calismaDurumu({ ...sinirli, kullanim: 100 }, simdi), "doldu");
+    assert.equal(calismaDurumu({ ...sinirli, kullanim: 99 }, simdi), "acik");
+  });
+
+  it("bitişi geçmiş kampanya açık kaydedilmiyor, kapalı kaydediliyor", () => {
+    const simdi = new Date("2026-10-01T12:00:00Z");
+    const gecmis = { zaman: "aralik" as const, bitis: "2026-10-01T10:00" }; // İstanbul, 3 saat önce
+    assert.match(adimHatasi(durum({ ...gecmis, aktif: true }), 4, simdi)!, /geçmişte/);
+    assert.equal(adimHatasi(durum({ ...gecmis, aktif: false }), 4, simdi), null);
+  });
+
+  it("sunucu hatası ilgili adımı açıyor", () => {
+    assert.equal(hataAdimi("kupon"), 3);
+    assert.equal(hataAdimi("al-ode"), 1);
+    assert.equal(hataAdimi("urun"), 2);
+    assert.equal(hataAdimi("gecmis"), 4);
+    assert.equal(hataAdimi("ad"), 5);
+  });
+
+  it("kapsamlı ücretsiz kargo cümlesi", () => {
+    const t = taslagaCevir(durum({ tip: "kargo", kapsam: "kategori", kategoriIdleri: ["z"] }));
+    const [ilk] = kampanyaOzeti(t, { kategori: new Map([["z", "Zıbın"]]), urun: new Map() });
+    assert.equal(ilk, "Sepette Zıbın kategorisinden en az biri varsa ücretsiz kargo.");
   });
 });
 
