@@ -22,8 +22,16 @@ function metin(v: unknown, sinir: number): string {
 }
 
 export async function POST(istek: NextRequest): Promise<NextResponse> {
+  // Bazı tarayıcılar "Origin: null" gönderiyor; `new URL` onda hata atıyor,
+  // uç 500 dönüp hata kaydına kendi hatasını yazıyordu (K-165).
   const koken = istek.headers.get("origin");
-  if (!koken || new URL(koken).host !== istek.nextUrl.host) return bos();
+  let kokenHost: string | undefined;
+  try {
+    kokenHost = koken ? new URL(koken).host : undefined;
+  } catch {
+    kokenHost = undefined;
+  }
+  if (!kokenHost || kokenHost !== istek.nextUrl.host) return bos();
 
   const ham = await istek.text();
   if (ham.length > 8_000) return bos();

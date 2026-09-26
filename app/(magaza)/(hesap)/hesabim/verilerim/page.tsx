@@ -22,7 +22,7 @@ export default async function VerilerimSayfasi({ searchParams }: PageProps<"/hes
   if (!musteri) redirect("/giris?hata=giris&nereye=%2Fhesabim%2Fverilerim");
 
   const { hata } = await searchParams;
-  const hataMetni = typeof hata === "string" ? HATALAR[hata] : undefined;
+  const hataMetni = typeof hata === "string" && Object.hasOwn(HATALAR, hata) ? HATALAR[hata] : undefined;
 
   return (
     <section className="mt-6 flex flex-col gap-5">

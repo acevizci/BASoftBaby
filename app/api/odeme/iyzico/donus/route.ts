@@ -31,6 +31,9 @@ async function donusuIsle(jeton: string): Promise<NextResponse> {
   revalidatePath("/", "layout");
 
   if (sonuc.durum === "bulunamadi") return yonlendir("/sepet?hata=odeme");
+  // Sonuç belli değil: sipariş açık, sepet geri doldurulmuyor — müşteri aynı
+  // ürünleri ikinci kez satın almasın (K-165).
+  if (sonuc.durum === "belirsiz") return yonlendir(`/siparis/${sonuc.numara}?odeme=bekliyor`);
 
   if (sonuc.durum === "basarisiz") {
     // Sipariş iptal olduğu için sepet boşalmıştı; ürünler geri konuyor ki

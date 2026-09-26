@@ -21,7 +21,7 @@ export default async function KayitSayfasi({ searchParams }: PageProps<"/kayit">
       ? nereye
       : "/hesabim";
   if (await girisYapan()) redirect(hedef);
-  const hataMetni = typeof hata === "string" ? HATALAR[hata] : undefined;
+  const hataMetni = typeof hata === "string" && Object.hasOwn(HATALAR, hata) ? HATALAR[hata] : undefined;
   // Davet bağlantısıyla gelindiyse (K-152) kimin davet ettiği ve kupon.
   const davetKodu = (await cookies()).get(DAVET_CEREZI)?.value;
   const davet = davetKodu ? await davetAyari() : undefined;

@@ -40,8 +40,8 @@ export default async function SiparislerimSayfasi({ searchParams }: PageProps<"/
   ]);
   const adres = (n: number) => sayfaAdresi("/hesabim", n);
 
-  const bildirim = typeof kayit === "string" ? BILDIRIMLER[kayit] : undefined;
-  const hataMetni = typeof hata === "string" ? HATALAR[hata] : undefined;
+  const bildirim = typeof kayit === "string" && Object.hasOwn(BILDIRIMLER, kayit) ? BILDIRIMLER[kayit] : undefined;
+  const hataMetni = typeof hata === "string" && Object.hasOwn(HATALAR, hata) ? HATALAR[hata] : undefined;
   // Doğrulamadan sonra kaç eski siparişin bağlandığını söylüyoruz; müşteri
   // listenin neden uzadığını anlasın.
   const baglananSayisi = Number(baglanan);

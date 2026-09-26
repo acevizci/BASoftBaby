@@ -26,6 +26,8 @@ import { tahsilat } from "@/server/hediye-ceki-bicim";
 export type DonusSonucu =
   | { durum: "basarili"; numara: string }
   | { durum: "basarisiz"; numara: string; hata: string }
+  /** iyzico'ya ulaşılamadı; sipariş açık kalıyor, sonuç sonra belli olacak (K-165). */
+  | { durum: "belirsiz"; numara: string }
   | { durum: "bulunamadi" };
 
 export async function odemeGirisimiKaydet(
@@ -221,15 +223,19 @@ export async function odemeDonusunuIsle(jeton: string): Promise<DonusSonucu> {
   if (girisim.durum === "basarili") {
     return { durum: "basarili", numara: girisim.order.numara };
   }
-  if (girisim.durum === "basarisiz") {
-    return {
-      durum: "basarisiz",
-      numara: girisim.order.numara,
-      hata: girisim.hata ?? "Ödeme tamamlanamadı.",
-    };
-  }
+  const oncekiBasarisiz = girisim.durum === "basarisiz";
+  const kayitliHata = {
+    durum: "basarisiz" as const,
+    numara: girisim.order.numara,
+    hata: girisim.hata ?? "Ödeme tamamlanamadı.",
+  };
 
   const sonuc = await odemeSorgula(jeton);
+
+  // Başarısız sayılmış girişimin dönüşü yeniden geldiyse iyzico'ya bir kez
+  // daha soruluyor: süre dolduğu için kapatılan ödeme sonradan tamamlanmış
+  // olabilir (K-165). Hâlâ ödenmemişse kayıtlı sonuç, hiçbir şeye dokunulmadan.
+  if (oncekiBasarisiz && !sonuc.basarili) return kayitliHata;
 
   // Tutar tutmuyorsa ödeme başarılı sayılmıyor: eksik çekilmiş bir ödemeyle
   // sipariş hazırlanmaya başlamamalı. Elle bakmak için günlüğe yazılıyor.
@@ -250,8 +256,17 @@ export async function odemeDonusunuIsle(jeton: string): Promise<DonusSonucu> {
     ? null
     : (sonuc.hata ?? (tutarTutuyor ? "Ödeme onaylanmadı." : "Ödeme tutarı siparişle uyuşmadı."));
 
-  await db.payment.update({
-    where: { id: girisim.id },
+  // iyzico'ya ulaşılamadıysa girişim olduğu gibi kalıyor: ödeme belki
+  // alındı, sonuç bilinmeden sipariş iptal edilmemeli. Bir sonraki dönüş ya
+  // da temizlik yeniden soruyor (K-165).
+  if (sonuc.ulasilamadi) return { durum: "belirsiz", numara: girisim.order.numara };
+
+  // Girişim yalnızca "baslatildi" durumundaysa işleniyor. iyzico dönüşü ile
+  // tarayıcının dönüşü aynı anda gelirse ikisi de yukarıdaki okumada
+  // "baslatildi" görüyordu: sipariş iki kez işleniyor, iki onay e-postası
+  // gidiyordu (K-165). Koşullu güncellemeyi yalnızca biri kazanıyor.
+  const kazanan = await db.payment.updateMany({
+    where: { id: girisim.id, durum: girisim.durum },
     data: {
       durum: basarili ? "basarili" : "basarisiz",
       saglayiciRef: sonuc.saglayiciRef ?? null,
@@ -262,8 +277,22 @@ export async function odemeDonusunuIsle(jeton: string): Promise<DonusSonucu> {
       hamYanit: sonuc.ham || null,
     },
   });
+  if (kazanan.count === 0) {
+    const son = await db.payment.findUnique({
+      where: { id: girisim.id },
+      select: { durum: true, hata: true },
+    });
+    return son?.durum === "basarili"
+      ? { durum: "basarili", numara: girisim.order.numara }
+      : {
+          durum: "basarisiz",
+          numara: girisim.order.numara,
+          hata: son?.hata ?? "Ödeme tamamlanamadı.",
+        };
+  }
 
   if (!basarili) {
+    // Tutarı tutmayan geç ödemede sipariş zaten iptal; iptal ikinci kez işlemez.
     await siparisiIptalEtVeStoguIadeEt(girisim.order.id);
     return {
       durum: "basarisiz",
@@ -272,14 +301,42 @@ export async function odemeDonusunuIsle(jeton: string): Promise<DonusSonucu> {
     };
   }
 
-  await db.order.update({
-    where: { id: girisim.order.id },
+  // Sipariş bu arada iptal edilmiş olabilir: süresi dolduğu için ya da
+  // panelden. Stok geri verilmişti; siparişi "ödendi"ye çevirmek stoksuz bir
+  // siparişi hazırlığa sokardı. Para alındığı için iade kaydı açılıyor ve
+  // panelin "iade bekleyenler" listesine düşüyor (K-165).
+  const odendi = await db.order.updateMany({
+    where: { id: girisim.order.id, durum: { not: "iptal" } },
     data: { odemeDurumu: "odendi", durum: "hazirlaniyor" },
   });
+  if (odendi.count === 0) {
+    console.error(`İptal edilmiş siparişin ödemesi alındı, iade gerekiyor: ${girisim.order.numara}`);
+    await db.$transaction([
+      db.refund.create({
+        data: {
+          orderId: girisim.order.id,
+          tutarKurus: sonuc.odenenKurus,
+          hediyeCekiKurus: 0,
+          yontem: "kart",
+          aciklama:
+            "Ödeme, sipariş iptal edildikten sonra tamamlandı (ödeme süresi dolmuştu). Tutar karta iade edilmeli.",
+        },
+      }),
+      db.order.update({
+        where: { id: girisim.order.id },
+        data: { odemeDurumu: "iade-bekliyor" },
+      }),
+    ]);
+    return {
+      durum: "basarisiz",
+      numara: girisim.order.numara,
+      hata: "Ödemen sipariş süresi dolduktan sonra tamamlandı; sipariş iptal edilmişti. Çekilen tutar kartına iade edilecek.",
+    };
+  }
 
   // Kartta onay e-postası burada gidiyor: ödeme belli olmadan "siparişin
-  // alındı" demek, tutmayan ödemede yanlış bilgi vermek olurdu. Aynı dönüş
-  // ikinci kez gelse bu satıra ulaşılmıyor, yani e-posta bir kez gidiyor.
+  // alındı" demek, tutmayan ödemede yanlış bilgi vermek olurdu. Girişimi
+  // yalnızca bir dönüş kazanabildiği için e-posta bir kez gidiyor.
   await odemeAlindiEpostasi({
     numara: girisim.order.numara,
     adSoyad: girisim.order.adSoyad,
@@ -290,6 +347,40 @@ export async function odemeDonusunuIsle(jeton: string): Promise<DonusSonucu> {
   });
 
   return { durum: "basarili", numara: girisim.order.numara };
+}
+
+/**
+ * Süresi geçen kart siparişini sonuçlandırır (K-165).
+ *
+ * Eskiden iyzico'ya sorulmadan iptal ediliyordu. 3D doğrulamada oyalanan
+ * müşterinin ödemesi süre dolduktan sonra tamamlanınca para alınmış, sipariş
+ * iptal edilmiş ve stok başkasına açılmış oluyordu. Artık her açık girişim
+ * önce iyzico'ya soruluyor: ödendiyse sipariş ödeniyor, ödenmediyse iptal.
+ * iyzico'ya ulaşılamazsa dokunulmuyor, bir sonraki temizlik yeniden soruyor.
+ * Hiç girişimi olmayan (ödeme ekranı açılamamış) sipariş doğrudan iptal.
+ *
+ * Dönen değer: sipariş kapandı mı (ödendi ya da iptal edildi).
+ */
+export async function kartSiparisiniSonuclandir(orderId: string): Promise<boolean> {
+  const girisimler = await db.payment.findMany({
+    where: { orderId, durum: "baslatildi" },
+    select: { jeton: true },
+    orderBy: { olusturuldu: "desc" },
+  });
+  if (girisimler.length === 0) {
+    const onceki = await db.payment.count({ where: { orderId, durum: "basarili" } });
+    if (onceki > 0) return false;
+    await siparisiIptalEtVeStoguIadeEt(orderId);
+    return true;
+  }
+  let kapandi = false;
+  for (const g of girisimler) {
+    const sonuc = await odemeDonusunuIsle(g.jeton);
+    if (sonuc.durum === "basarili") return true;
+    const kayit = await db.order.findUnique({ where: { id: orderId }, select: { durum: true } });
+    if (kayit?.durum === "iptal") kapandi = true;
+  }
+  return kapandi;
 }
 
 /**
@@ -312,13 +403,9 @@ export async function suresiGecenOdemeleriTemizle(dakika = 30): Promise<number> 
     select: { id: true, orderId: true },
   });
 
-  for (const girisim of girisimler) {
-    await db.payment.update({
-      where: { id: girisim.id },
-      data: { durum: "basarisiz", hata: "Ödeme süresi doldu." },
-    });
-    await siparisiIptalEtVeStoguIadeEt(girisim.orderId);
+  let kapanan = 0;
+  for (const orderId of new Set(girisimler.map((g) => g.orderId))) {
+    if (await kartSiparisiniSonuclandir(orderId)) kapanan++;
   }
-
-  return girisimler.length;
+  return kapanan;
 }

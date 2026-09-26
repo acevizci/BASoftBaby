@@ -33,8 +33,8 @@ export default async function GirisSayfasi({ searchParams }: PageProps<"/giris">
       : "/hesabim";
   // Zaten girişliyse gideceği yere (K-145: doğum listesi düğmesi buradan geçiyor).
   if (await girisYapan()) redirect(hedef);
-  const temelHata = typeof hata === "string" ? HATALAR[hata] : undefined;
-  const bildirim = typeof kayit === "string" ? BILDIRIMLER[kayit] : undefined;
+  const temelHata = typeof hata === "string" && Object.hasOwn(HATALAR, hata) ? HATALAR[hata] : undefined;
+  const bildirim = typeof kayit === "string" && Object.hasOwn(BILDIRIMLER, kayit) ? BILDIRIMLER[kayit] : undefined;
 
   // Kilit süresi adres satırında sayı olarak geliyor; metin taşınsaydı biri
   // hazırladığı bağlantıyla sayfamızda istediği yazıyı gösterebilirdi.

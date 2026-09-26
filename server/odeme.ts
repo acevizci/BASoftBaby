@@ -49,6 +49,8 @@ export type OdemeSonucu = {
   komisyonKurus?: number;
   hata?: string;
   ham: string;
+  /** iyzico'ya ulaşılamadı: sonuç bilinmiyor, ödeme belki alındı (K-165). */
+  ulasilamadi?: boolean;
 };
 
 /**
@@ -233,7 +235,7 @@ export async function odemeSorgula(jeton: string): Promise<OdemeSonucu> {
     };
   } catch (hata) {
     console.error("iyzico sorgusu başarısız:", hata);
-    return { ...bos, hata: "Ödeme sağlayıcısına ulaşılamadı." };
+    return { ...bos, hata: "Ödeme sağlayıcısına ulaşılamadı.", ulasilamadi: true };
   }
 }
 

@@ -36,8 +36,8 @@ export default async function AdreslerSayfasi({
 
   const duzenlenen =
     typeof duzenle === "string" ? adresler.find((a) => a.id === duzenle) : undefined;
-  const hataMetni = typeof hata === "string" ? HATALAR[hata] : undefined;
-  const bildirim = typeof kayit === "string" ? BILDIRIMLER[kayit] : undefined;
+  const hataMetni = typeof hata === "string" && Object.hasOwn(HATALAR, hata) ? HATALAR[hata] : undefined;
+  const bildirim = typeof kayit === "string" && Object.hasOwn(BILDIRIMLER, kayit) ? BILDIRIMLER[kayit] : undefined;
 
   return (
     <section className="mt-6">

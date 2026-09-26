@@ -6351,6 +6351,66 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
 [`../server/fiyat-gecmisi.ts`](../server/fiyat-gecmisi.ts),
 [`../app/(magaza)/(vitrin)/[kategori]/page.tsx`](../app/(magaza)/(vitrin)/[kategori]/page.tsx)
 
+### K-165 · Modül modül gözden geçirme
+
+Bütün modüller sırayla okundu; bulunan hatalar:
+
+- **Saat dilimi:** sunucu (Vercel) UTC çalışıyordu; gün, ay ve yıl hesapları
+  sunucunun yerel saatiyle yapıldığı için "bugün" İstanbul'da 03:00'te
+  başlıyordu. Panel özeti, günlük liste, raporlar, iyzico'nun "aynı gün
+  iptal" kontrolü ve 1 Ocak gecesi sipariş/fatura/irsaliye numarasının yılı
+  kayıyordu. `instrumentation.ts` sunucu açılırken, `next.config.ts`
+  derlemede `TZ=Europe/Istanbul` kuruyor (Vercel'de `TZ` ortam değişkeni
+  ayrılmış); testler de İstanbul saatiyle çalışıyor.
+- **Kart ödemesi:**
+  - Süresi dolan kart siparişi iyzico'ya sorulmadan iptal ediliyordu. 3D
+    doğrulamada gecikenin ödemesi sonradan tamamlanınca iptal edilmiş
+    sipariş "ödendi / hazırlanıyor"a dönüyor, stoğu ise geri verilmiş
+    kalıyordu: aynı ürün iki kez satılabiliyordu. Artık süresi dolan her
+    girişim önce iyzico'ya soruluyor; ödendiyse sipariş ödeniyor.
+  - Sipariş başka yoldan iptal edilmişken gelen başarılı ödemede iptal
+    edilmiş sipariş açılmıyor, iade kaydı açılıyor ("iade bekleyenler").
+  - Aynı dönüş aynı anda iki kez gelince sipariş iki kez işleniyor, iki onay
+    e-postası gidiyordu; girişim artık koşullu güncellemeyle tek kez
+    işleniyor.
+  - iyzico'ya ulaşılamazsa sipariş iptal edilmiyor, sepet geri
+    doldurulmuyor ("Ödemen kontrol ediliyor"); sonraki dönüş ya da temizlik
+    yeniden soruyor.
+- **Tutar kampanyası ürün fiyatında:** "200 ₺ indirim" gibi kampanyalar
+  birim fiyattan düşülüyordu: 189,90 ₺'lik ürün kartta 0,00 ₺ görünüyordu,
+  iki adet alan iki kez indirim bekliyordu (sepette bir kez uygulanıyor).
+  Ürün fiyatında, İndirimdekiler'de ve fiyat denetiminde yalnızca yüzde
+  kampanyaları; tutar indirimi sepette.
+- **Stok sayımı:** bitirirken stok okunup "okunan + fark" yazılıyordu; arada
+  gelen siparişin düşümü eziliyordu. Satır artık kilitleniyor.
+- **Talepler:**
+  - Onaylanan iptal talebi, sipariş bu arada kargoya verilmişse siparişi
+    iptal edip stoğu geri veriyordu; artık panel uyarıyor, hiçbir şey
+    değişmiyor.
+  - Çift gönderim iki açık talep açabiliyordu; sipariş satırı kilitlenip
+    yeniden sayılıyor.
+  - Cayma süresi son günün sonuna kadar (eskiden teslim saatinde bitiyordu).
+- **Güvenlik:**
+  - Sipariş takibindeki talep ve değerlendirme hatası adres satırından
+    olduğu gibi gösteriliyordu; mağazanın adresinde istenen metin
+    gösterilebilirdi. Yalnızca bizim hata metinlerimiz gösteriliyor.
+  - `?kayit=constructor` gibi adresler bildirim sözlüğünden JavaScript'in
+    kendi işlevini getirip sayfayı hata sayfasına düşürüyordu (26 yer);
+    anahtar artık `Object.hasOwn` ile sınanıyor.
+  - Müşteri girişinde kayıtlı olmayan adreste şifre hesabı yapılmıyordu;
+    cevap süresi adresin kayıtlı olup olmadığını ele veriyordu.
+  - Hata bildirme ucu `Origin: null` başlığında 500 dönüyordu.
+- **Sağlamlık:**
+  - Zamanlanmış görevdeki işler birbirinden bağımsız: biri hata verince
+    sonrakiler (sabah özeti dahil) çalışmıyordu.
+  - E-postaların eklerini okuyan sorgular hata verirse e-posta eksik
+    gidiyor; eskiden hata, sipariş yazıldıktan sonra sipariş akışına
+    fırlıyor, müşteri hata sayfası görüyordu.
+
+**Nerede:** [`../server/odeme-akis.ts`](../server/odeme-akis.ts),
+[`../instrumentation.ts`](../instrumentation.ts),
+[`../server/talep.ts`](../server/talep.ts)
+
 ---
 
 ## Açık sorular

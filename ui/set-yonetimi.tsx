@@ -30,8 +30,11 @@ const HATALAR: Record<string, string> = {
 };
 
 function hataMetni(kod: string): string {
-  if (kod.startsWith("yetersiz:")) return `Parça stoğu yetmiyor; en çok ${kod.slice(9)} set hazırlanabilir.`;
-  return HATALAR[kod] ?? "İşlem yapılamadı.";
+  // Sayı adres satırından geliyor: yalnızca rakamsa yazılıyor.
+  if (kod.startsWith("yetersiz:") && /^\d+$/.test(kod.slice(9))) {
+    return `Parça stoğu yetmiyor; en çok ${kod.slice(9)} set hazırlanabilir.`;
+  }
+  return (Object.hasOwn(HATALAR, kod) ? HATALAR[kod] : undefined) ?? "İşlem yapılamadı.";
 }
 
 /**

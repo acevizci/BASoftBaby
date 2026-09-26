@@ -65,8 +65,8 @@ export default async function KullanicilarSayfasi({
     : "/yonetim/kullanicilar";
   const adres = (n: number) => sayfaAdresi(temel, n);
 
-  const bildirim = typeof kayit === "string" ? KULLANICI_BILDIRIMLERI[kayit] : undefined;
-  const hataMetni = typeof hata === "string" ? KULLANICI_HATALARI[hata] : undefined;
+  const bildirim = typeof kayit === "string" && Object.hasOwn(KULLANICI_BILDIRIMLERI, kayit) ? KULLANICI_BILDIRIMLERI[kayit] : undefined;
+  const hataMetni = typeof hata === "string" && Object.hasOwn(KULLANICI_HATALARI, hata) ? KULLANICI_HATALARI[hata] : undefined;
 
   // Tek açık hesap varsa panele girmenin tek yolu o hesap: kurulum ekranı
   // ancak hiç kullanıcı kalmazsa ve `YONETIM_SIFRE` tanımlıysa geri geliyor.

@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 import { guvenlikBasliklari } from "./server/guvenlik-basliklari";
 
+// Derleme sırasında önceden çizilen sayfalar da İstanbul saatiyle (K-165);
+// çalışma anı için instrumentation.ts.
+process.env.TZ = "Europe/Istanbul";
+
 const nextConfig: NextConfig = {
   /**
    * iyzico'nun paketi kendi dosyalarını çalışma anında `require` ile

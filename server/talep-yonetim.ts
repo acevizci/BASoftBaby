@@ -57,6 +57,7 @@ export async function talebiCevapla(form: FormData): Promise<void> {
   // Değişimde gönderilecek bedenin stoğu yetmedi: hiçbir şey yazılmadı,
   // müşteriye de e-posta gitmiyor (K-102).
   if ("hata" in sonuclanan) {
+    if (sonuclanan.hata === "kargolandi") redirect(donus(form, "hata=kargolandi"));
     redirect(donus(form, `hata=stok&mevcut=${sonuclanan.mevcut}&gereken=${sonuclanan.gereken}`));
   }
 

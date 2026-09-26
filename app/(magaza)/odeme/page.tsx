@@ -80,7 +80,7 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
   const odenecekKurus = sepet.toplamKurus - cekKurus;
   const cekleOdeniyor = cekKurus > 0 && odenecekKurus === 0;
   const cekHatasi =
-    (typeof cekHataKodu === "string" ? CEK_HATALARI[cekHataKodu] : undefined) ??
+    (typeof cekHataKodu === "string" && Object.hasOwn(CEK_HATALARI, cekHataKodu) ? CEK_HATALARI[cekHataKodu] : undefined) ??
     (cek && "hata" in cek ? CEK_HATALARI[cek.hata] : undefined);
 
   /**
@@ -173,7 +173,7 @@ export default async function OdemeSayfasi({ searchParams }: PageProps<"/odeme">
     );
   }
 
-  const hataMetni = typeof hata === "string" ? HATALAR[hata] : undefined;
+  const hataMetni = typeof hata === "string" && Object.hasOwn(HATALAR, hata) ? HATALAR[hata] : undefined;
 
   // Giriş yapan müşterinin adres defteri: seçilen adres, yoksa varsayılanı
   // forma yazılıyor. Seçim JavaScript'siz çalışsın diye bağlantıyla yapılıyor.

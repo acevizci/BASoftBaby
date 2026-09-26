@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "@/server/veritabani";
-import { enIyiKampanya, urunIndirimleri } from "@/server/kampanya";
+import { enIyiKampanya, urunFiyatinaYansiyanlar, urunIndirimleri } from "@/server/kampanya";
 import type { Prisma } from "@/db/uretilen/client";
 
 /**
@@ -105,7 +105,7 @@ export async function fiyatUyarisi(productId: string): Promise<FiyatUyarisi | un
 
   // Kampanya varsa üstü çizili liste fiyatı, indirim kampanyanın başlangıcında.
   const enIyi = enIyiKampanya(
-    kampanyalar,
+    urunFiyatinaYansiyanlar(kampanyalar),
     [{ productId: urun.id, categoryId: urun.categoryId, araToplamKurus: urun.fiyatKurus }],
     urun.fiyatKurus,
   );
@@ -162,6 +162,8 @@ export async function kampanyaFiyatUyarilari(
     where: {
       id: { in: [...kampanyaIdleri] },
       aktif: true,
+      // Ürün fiyatında yalnızca yüzde indirimi görünüyor (K-165).
+      tip: "yuzde",
       kuponKodu: null,
       customerId: null,
       enAzSepetKurus: 0,

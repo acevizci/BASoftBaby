@@ -39,7 +39,7 @@ export default async function SifremiUnuttum({
   // Hiç kullanıcı yokken sıfırlanacak bir şey de yok.
   if (!(await kullaniciVarMi())) notFound();
 
-  const temel = typeof hata === "string" ? SIFIRLAMA_HATALARI[hata] : undefined;
+  const temel = typeof hata === "string" && Object.hasOwn(SIFIRLAMA_HATALARI, hata) ? SIFIRLAMA_HATALARI[hata] : undefined;
   const hataMetni = hata === "kilit" && temel ? kilitMetni(temel, dk) : temel;
   const acik = epostaAcikMi();
 

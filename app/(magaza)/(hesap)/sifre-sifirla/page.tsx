@@ -20,7 +20,7 @@ const HATALAR: Record<string, string> = {
 export default async function SifreSifirla({ searchParams }: PageProps<"/sifre-sifirla">) {
   const { jeton, hata } = await searchParams;
   const jetonMetni = typeof jeton === "string" ? jeton : "";
-  const hataMetni = typeof hata === "string" ? HATALAR[hata] : undefined;
+  const hataMetni = typeof hata === "string" && Object.hasOwn(HATALAR, hata) ? HATALAR[hata] : undefined;
 
   return (
     <div className="mx-auto max-w-md px-4 py-10">

@@ -26,7 +26,7 @@ export default async function OlcumAyarlari({ searchParams }: PageProps<"/yoneti
   await yoneticiGerekli();
   const { kayit, hata } = await searchParams;
   const ayar = await olcumAyari();
-  const hataMetni = typeof hata === "string" ? HATALAR[hata] : undefined;
+  const hataMetni = typeof hata === "string" && Object.hasOwn(HATALAR, hata) ? HATALAR[hata] : undefined;
   const acik = Boolean(ayar.metaPikselId || ayar.googleEtiketId);
 
   return (

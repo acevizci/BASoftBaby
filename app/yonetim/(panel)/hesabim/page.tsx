@@ -27,7 +27,7 @@ export const dynamic = "force-dynamic";
 export default async function PanelHesabim({ searchParams }: PageProps<"/yonetim/hesabim">) {
   const ben = await yoneticiGerekli();
   const { kayit, hata } = await searchParams;
-  const hataMetni = typeof hata === "string" ? KULLANICI_HATALARI[hata] : undefined;
+  const hataMetni = typeof hata === "string" && Object.hasOwn(KULLANICI_HATALARI, hata) ? KULLANICI_HATALARI[hata] : undefined;
   const { sabahOzeti } = await db.adminUser.findUniqueOrThrow({
     where: { id: ben.id },
     select: { sabahOzeti: true },

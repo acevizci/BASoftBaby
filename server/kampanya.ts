@@ -248,6 +248,16 @@ const indirimleriOku = paylasilanOnbellek(
   60,
 );
 
+/**
+ * Ürün fiyatında gösterilebilen kampanyalar: yalnızca yüzde indirimleri
+ * (K-165). Tutar indirimi sepete bir kez uygulanıyor; birim fiyattan düşülünce
+ * 80 ₺'lik ürün "100 ₺ indirim" kampanyasında kartta 0,00 ₺ görünüyor, iki
+ * adet alan müşteri de iki kez indirim bekliyordu. O indirim sepette çıkıyor.
+ */
+export function urunFiyatinaYansiyanlar(kampanyalar: KampanyaKaydi[]): KampanyaKaydi[] {
+  return kampanyalar.filter((k) => k.tip === "yuzde");
+}
+
 /** Bir ürünün kartında görünecek indirimli fiyat; indirim yoksa undefined. */
 export function urunKampanyasi(
   kampanyalar: KampanyaKaydi[],
@@ -258,7 +268,7 @@ export function urunKampanyasi(
     categoryId: urun.categoryId,
     araToplamKurus: urun.fiyatKurus,
   };
-  const enIyi = enIyiKampanya(kampanyalar, [satir], urun.fiyatKurus);
+  const enIyi = enIyiKampanya(urunFiyatinaYansiyanlar(kampanyalar), [satir], urun.fiyatKurus);
   if (!enIyi) return undefined;
 
   const bitis = kampanyalar.find((k) => k.id === enIyi.id)?.bitis ?? undefined;

@@ -296,7 +296,10 @@ export async function sayimBitir(id: string, yapan?: Yapan): Promise<{ duzeltile
         await islem.stockCountLine.update({ where: { id: s.id }, data: { uygulanan: 0 } });
         continue;
       }
-      const v = await islem.productVariant.findUnique({ where: { id: s.variantId! }, select: { stok: true } });
+      // Satır kilitleniyor: okuma ile yazma arasında gelen sipariş stoğu
+      // düşürürse o düşüş ezilmesin (K-165). Sipariş kilit kalkınca yazıyor.
+      const [v] = await islem.$queryRaw<{ stok: number }[]>`
+        select stok from "ProductVariant" where id = ${s.variantId!} for update`;
       if (!v) continue;
       const yeni = Math.max(0, v.stok + fark);
       const uygulanan = yeni - v.stok;

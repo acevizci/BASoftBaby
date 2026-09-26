@@ -49,6 +49,10 @@ function epostaGecerliMi(eposta: string): boolean {
  * `//baska-site` gibi bir değer verilirse müşteri oradan giriş yapmış gibi
  * başka bir siteye atılabilirdi.
  */
+const SAHTE_OZET =
+  "scrypt$16384$8$1$AAAAAAAAAAAAAAAAAAAAAA==$" +
+  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
+
 function guvenliYol(deger: string, varsayilan: string): string {
   // Ters eğik çizgi de: tarayıcılar `/\\baska-site`i `//baska-site` gibi okuyor.
   if (!deger.startsWith("/") || deger.startsWith("//") || deger.includes("\\")) return varsayilan;
@@ -133,7 +137,10 @@ export async function girisYap(veri: FormData): Promise<void> {
 
   // E-posta kayıtlı değilse de şifre yanlışsa da aynı cevap veriliyor: yoksa
   // hangi adreslerin kayıtlı olduğu tek tek denenerek öğrenilebilirdi.
-  if (!musteri || !(await sifreTutuyorMu(sifre, musteri.sifreOzeti))) {
+  // Kayıtlı olmayan adreste de şifre hesabı yapılıyor (K-165): cevap
+  // süresinden adresin kayıtlı olup olmadığı anlaşılmasın (panelde de böyle).
+  const tutuyor = await sifreTutuyorMu(sifre, musteri?.sifreOzeti ?? SAHTE_OZET);
+  if (!musteri || !tutuyor) {
     // Bu denemeyle kilit kurulduysa sebebi hemen söyleniyor; müşteri bir kez
     // daha deneyip öğrenmek zorunda kalmasın.
     const sonrasi = await basarisizDeneme(eposta);

@@ -213,6 +213,16 @@ export type YorumGirdisi = {
   yorum: string;
 };
 
+/** Adres satırından gelip gösterilebilen yorum hataları (K-165); bkz. TALEP_HATALARI. */
+export const YORUM_HATALARI: readonly string[] = [
+  "Puan 1 ile 5 arasında olmalı.",
+  "Yorum en az 10 karakter olmalı.",
+  "Bu ürün bu siparişte bulunamadı.",
+  "Değerlendirme, sipariş teslim edildikten sonra yazılabiliyor.",
+  "Bu ürün için zaten bir değerlendirme yazmışsın.",
+  "Ürün artık katalogda yok.",
+];
+
 export type YorumSonucu = { tamam: true; reviewId: string } | { tamam: false; hata: string };
 
 /** Değerlendirmeyi kaydeder. Kuralları yeniden denetliyor. */

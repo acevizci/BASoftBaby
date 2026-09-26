@@ -4,8 +4,8 @@ import TalepFormu from "@/ui/talep-formu";
 import DegerlendirmeFormu from "@/ui/degerlendirme-formu";
 import { siparisGetir } from "@/server/siparis";
 import { islemSinirla } from "@/server/istek-siniri";
-import { talepDurumu } from "@/server/talep";
-import { degerlendirilebilirler } from "@/server/yorum";
+import { TALEP_HATALARI, talepDurumu } from "@/server/talep";
+import { YORUM_HATALARI, degerlendirilebilirler } from "@/server/yorum";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Sipariş takibi", robots: { index: false } };
@@ -35,9 +35,16 @@ export default async function SiparisTakip({ searchParams }: PageProps<"/siparis
   const degerlendirilebilir = siparis ? await degerlendirilebilirler(siparis.numara) : [];
 
   const talepSonucu = typeof aranan.talep === "string" ? aranan.talep : undefined;
-  const talepMesaji = typeof aranan.mesaj === "string" ? aranan.mesaj : undefined;
+  // Adres satırından gelen metin yalnızca bizim hata metinlerimizden biriyse (K-165).
+  const talepMesaji =
+    typeof aranan.mesaj === "string" && TALEP_HATALARI.includes(aranan.mesaj)
+      ? aranan.mesaj
+      : undefined;
   const yorumSonucu = typeof aranan.yorum === "string" ? aranan.yorum : undefined;
-  const yorumMesaji = typeof aranan.ymesaj === "string" ? aranan.ymesaj : undefined;
+  const yorumMesaji =
+    typeof aranan.ymesaj === "string" && YORUM_HATALARI.includes(aranan.ymesaj)
+      ? aranan.ymesaj
+      : undefined;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">

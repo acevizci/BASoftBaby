@@ -161,6 +161,12 @@ export default async function TalepEkrani({ searchParams }: PageProps<"/yonetim/
           bir beden seç. Hiçbir şey değişmedi, müşteriye e-posta gitmedi.
         </p>
       )}
+      {hata === "kargolandi" && (
+        <p className="rounded-marka bg-mercan-soluk px-4 py-3 text-sm font-semibold text-mercan-koyu">
+          İptal onaylanmadı: sipariş kargoya verilmiş. Talebi reddedip müşteriye ürün gelince iade
+          talebi açabileceğini yazabilirsin. Hiçbir şey değişmedi.
+        </p>
+      )}
       {hata === "1" && (
         <p className="rounded-marka bg-mercan-soluk px-4 py-3 text-sm font-semibold text-mercan-koyu">
           Talep işlenemedi.

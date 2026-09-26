@@ -11,7 +11,7 @@
     "tohum": "tsx db/tohum.ts",
     "postinstall": "prisma generate",
     "goc": "tsx db/goc.ts",
-    "test": "tsx --test --test-concurrency=1 \"testler/**/*.test.ts\""
+    "test": "TZ=Europe/Istanbul tsx --test --test-concurrency=1 \"testler/**/*.test.ts\""
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",

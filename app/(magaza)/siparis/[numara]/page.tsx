@@ -54,14 +54,18 @@ export default async function SiparisOnayi({
   const iadeBekliyor = siparis.odemeDurumu === "iade-bekliyor";
   const iadeEdildi = siparis.odemeDurumu === "iade";
   const iadeli = iadeBekliyor || iadeEdildi;
-  const odemeBasarisiz = kartla && !odendi && !iadeli;
+  // Kart ödemesinin sonucu henüz belli değil: sipariş açık, ödeme bekliyor
+  // (iyzico'ya ulaşılamadı ya da dönüş gelmedi, K-165). "Tahsilat yapılmadı"
+  // demek yanlış olabilir.
+  const odemeKontrolde = kartla && siparis.odemeDurumu === "bekliyor" && siparis.durum !== "iptal";
+  const odemeBasarisiz = kartla && !odendi && !iadeli && !odemeKontrolde;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       {/* Satış bir kez sayılıyor; ödemesi alınamayan kartlı sipariş satış değil
           (K-124). Havale siparişi sipariş anında sayılıyor: reklam açısından
           dönüşüm o an. */}
-      {!odemeBasarisiz && !iadeli && (
+      {!odemeBasarisiz && !iadeli && !odemeKontrolde && (
         <OlcumOlayi
           ad="satis"
           tekSeferlik={`satis:${siparis.numara}`}
@@ -74,11 +78,17 @@ export default async function SiparisOnayi({
       )}
       <div
         className={`rounded-marka px-5 py-6 text-center ${
-          odemeBasarisiz ? "bg-mercan-soluk" : iadeli ? "bg-yuzey-sicak" : "bg-nane-soluk"
+          odemeBasarisiz
+            ? "bg-mercan-soluk"
+            : iadeli || odemeKontrolde
+              ? "bg-yuzey-sicak"
+              : "bg-nane-soluk"
         }`}
       >
         <h1 className="text-2xl sm:text-3xl">
-          {odemeBasarisiz
+          {odemeKontrolde
+            ? "Ödemen kontrol ediliyor"
+            : odemeBasarisiz
             ? "Ödeme tamamlanamadı"
             : iadeEdildi
               ? "Ödemen iade edildi"
@@ -124,6 +134,13 @@ export default async function SiparisOnayi({
         ) : siparis.odemeYontemi === "hediye-ceki" ? (
           <p className="mt-2 text-sm text-metin-2">
             Siparişinin tamamı hediye çekinle ödendi; hazırlanmaya başlıyor.
+          </p>
+        ) : odemeKontrolde ? (
+          <p className="mt-2 text-sm text-metin-2">
+            Ödemenin sonucunu ödeme sağlayıcımızdan henüz alamadık. Kartından tahsilat
+            yapıldıysa siparişin hazırlanmaya başlayacak ve e-postayla haber vereceğiz;
+            yapılmadıysa sipariş kendiliğinden iptal olacak.{" "}
+            <span className="font-semibold">Lütfen aynı siparişi yeniden verme.</span>
           </p>
         ) : kartla ? (
           odendi ? (

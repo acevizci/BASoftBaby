@@ -6,8 +6,8 @@ import TalepFormu from "@/ui/talep-formu";
 import DegerlendirmeFormu from "@/ui/degerlendirme-formu";
 import { buHesabaBagliMi, girisYapan } from "@/server/uyelik";
 import { siparisGetir } from "@/server/siparis";
-import { talepDurumu } from "@/server/talep";
-import { degerlendirilebilirler } from "@/server/yorum";
+import { TALEP_HATALARI, talepDurumu } from "@/server/talep";
+import { YORUM_HATALARI, degerlendirilebilirler } from "@/server/yorum";
 import { IKINCIL_DUGME } from "../../../hesap-bicim";
 
 export const dynamic = "force-dynamic";
@@ -71,7 +71,8 @@ export default async function UyeSiparisAyrintisi({
         donus={donus}
         satirlar={degerlendirilebilir}
         sonuc={tek("yorum")}
-        mesaj={tek("ymesaj")}
+        // Yalnızca bizim hata metinlerimiz (K-165).
+        mesaj={YORUM_HATALARI.find((m) => m === tek("ymesaj"))}
         foto={tek("foto")}
       />
 
@@ -82,7 +83,7 @@ export default async function UyeSiparisAyrintisi({
           donus={donus}
           bilgi={talepBilgisi}
           sonuc={tek("talep")}
-          mesaj={tek("mesaj")}
+          mesaj={TALEP_HATALARI.find((m) => m === tek("mesaj"))}
         />
       )}
     </section>

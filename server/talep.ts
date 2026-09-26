@@ -74,12 +74,37 @@ export type TalepDurumBilgisi = {
   satirlar: TalepSatiri[];
 };
 
+/**
+ * Müşteriye gösterilen talep hataları (K-165). Hata ekrana adres satırından
+ * geliyor; listede olmayan metin gösterilmiyor. Yoksa biri mağazanın kendi
+ * adresinde istediği yazıyı ("parayı şu hesaba yatır") gösteren bir
+ * bağlantı hazırlayabilirdi.
+ */
+export const TALEP_HATALARI: readonly string[] = [
+  "Bu sipariş için zaten açık bir talebin var; sonucunu aşağıda görebilirsin.",
+  "Bu sipariş iptal edilmiş.",
+  "Siparişteki bütün ürünler için talep açılmış.",
+  "Bu sipariş için şu an talep açılamıyor.",
+  "Tanınmayan talep türü.",
+  "Sipariş bulunamadı.",
+  "En az bir ürün seçilmeli.",
+  "Bu sipariş için zaten açık bir talebin var.",
+  "Bu talep şu an açılamıyor.",
+  `Cayma hakkı süresi (${CAYMA_GUN} gün) doldu. Üründe bir ayıp varsa bu süreden bağımsız olarak bize yazabilirsin.`,
+];
+
 /** Açık sayılan talep: müşteri ikinci bir tane açmasın. */
 const ACIK_DURUMLAR = ["yeni", "onaylandi"];
 
 function gunEkle(t: Date, gun: number): Date {
   const y = new Date(t);
   y.setDate(y.getDate() + gun);
+  return y;
+}
+
+function gunSonu(t: Date): Date {
+  const y = new Date(t);
+  y.setHours(23, 59, 59, 999);
   return y;
 }
 
@@ -157,7 +182,11 @@ export async function talepDurumu(numara: string): Promise<TalepDurumBilgisi | u
     }),
   }));
 
-  const sonGun = siparis.teslimTarihi ? gunEkle(siparis.teslimTarihi, CAYMA_GUN) : undefined;
+  // Son gün sonuna kadar geçerli (K-165): eskiden teslim saatinde bitiyordu,
+  // öğlen teslim alan müşteri 14. günün öğleden sonra talep açamıyordu.
+  const sonGun = siparis.teslimTarihi
+    ? gunSonu(gunEkle(siparis.teslimTarihi, CAYMA_GUN))
+    : undefined;
 
   const bos = (engel: string): TalepDurumBilgisi => ({ turler: [], engel, sonGun, talepler, satirlar });
 
@@ -234,16 +263,29 @@ export async function talepAc(girdi: TalepGirdisi): Promise<TalepSonucu> {
     select: { id: true },
   });
 
-  const talep = await db.orderRequest.create({
-    data: {
-      orderId: siparis.id,
-      tur: girdi.tur,
-      sebep: girdi.sebep || "belirtmiyorum",
-      aciklama: girdi.aciklama.slice(0, 1000),
-      satirlar: { create: secilen.map((s) => ({ orderItemId: s.id, adet: s.adet })) },
-    },
-    select: { id: true },
+  // Sipariş satırı kilitlenip açık talep yeniden sayılıyor (K-165): formun
+  // iki kez gönderilmesi aynı ürünler için iki talep açıyordu; ikisi de
+  // tamamlanınca stok iki kez artıyordu.
+  const talep = await db.$transaction(async (islem) => {
+    await islem.$queryRaw`select id from "Order" where id = ${siparis.id} for update`;
+    const acik = await islem.orderRequest.count({
+      where: { orderId: siparis.id, durum: { in: ACIK_DURUMLAR } },
+    });
+    if (acik > 0) return undefined;
+    return islem.orderRequest.create({
+      data: {
+        orderId: siparis.id,
+        tur: girdi.tur,
+        sebep: girdi.sebep || "belirtmiyorum",
+        aciklama: girdi.aciklama.slice(0, 1000),
+        satirlar: { create: secilen.map((s) => ({ orderItemId: s.id, adet: s.adet })) },
+      },
+      select: { id: true },
+    });
   });
+  if (!talep) {
+    return { tamam: false, hata: "Bu sipariş için zaten açık bir talebin var." };
+  }
 
   return { tamam: true, id: talep.id };
 }
@@ -272,12 +314,15 @@ export async function talepAc(girdi: TalepGirdisi): Promise<TalepSonucu> {
  * sonuçlandırma, stoğu artmış ama parası kaydedilmemiş ya da "tamamlandı"
  * görünüp stoğu hiç düşmemiş bir talep bırakırdı.
  */
-export type SonuclandirmaHatasi = {
-  hata: "stok";
-  /** Seçilen bedenin mevcut stoğu (geri gelen dahil) ve gereken adet. */
-  mevcut: number;
-  gereken: number;
-};
+export type SonuclandirmaHatasi =
+  | {
+      hata: "stok";
+      /** Seçilen bedenin mevcut stoğu (geri gelen dahil) ve gereken adet. */
+      mevcut: number;
+      gereken: number;
+    }
+  /** İptal onaylanamaz: sipariş bu arada kargoya verilmiş ya da teslim edilmiş. */
+  | { hata: "kargolandi"; durum: string };
 
 /** Değişimde gönderilecek bedenin stoğu yetmedi; işlem geri alınıyor. */
 class YetersizStok extends Error {
@@ -304,7 +349,7 @@ export async function talebiSonuclandir(
       id: true,
       tur: true,
       durum: true,
-      order: { select: { id: true, numara: true } },
+      order: { select: { id: true, numara: true, durum: true } },
       satirlar: {
         select: {
           adet: true,
@@ -338,6 +383,17 @@ export async function talebiSonuclandir(
       throw e;
     }
     return { numara: talep.order.numara, tur: talep.tur };
+  }
+
+  // Kargoya verilmiş sipariş iptal edilemez (K-165): eskiden sipariş iptal
+  // ediliyor, raftan çıkmış ürünün stoğu geri veriliyordu. Müşteri artık
+  // iade talebi açabiliyor.
+  if (
+    talep.tur === "iptal" &&
+    yeniDurum === "onaylandi" &&
+    !["bekliyor", "hazirlaniyor", "iptal"].includes(talep.order.durum)
+  ) {
+    return { hata: "kargolandi", durum: talep.order.durum };
   }
 
   await db.orderRequest.update({ where: { id }, data: durumVerisi });

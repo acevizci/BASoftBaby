@@ -39,7 +39,7 @@ export default async function PanelSifreSifirla({
   if (await yoneticiGetir()) redirect("/yonetim");
 
   const jetonMetni = typeof jeton === "string" ? jeton : "";
-  const hataMetni = typeof hata === "string" ? SIFIRLAMA_HATALARI[hata] : undefined;
+  const hataMetni = typeof hata === "string" && Object.hasOwn(SIFIRLAMA_HATALARI, hata) ? SIFIRLAMA_HATALARI[hata] : undefined;
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-md flex-col justify-center px-4 py-12">

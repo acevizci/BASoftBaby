@@ -29,7 +29,7 @@ export default function UrunSorulari({
   sorular: UrunSorusu[];
   sonuc?: string;
 }) {
-  const mesaj = sonuc ? MESAJLAR[sonuc] : undefined;
+  const mesaj = sonuc && Object.hasOwn(MESAJLAR, sonuc) ? MESAJLAR[sonuc] : undefined;
   return (
     <section id="sorular" className="mt-12 scroll-mt-6">
       <h2 className="text-xl">Sorular ve cevaplar</h2>

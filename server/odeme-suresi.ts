@@ -1,7 +1,7 @@
 import "server-only";
 import { tahsilat } from "@/server/hediye-ceki-bicim";
 import { db } from "@/server/veritabani";
-import { siparisiIptalEtVeStoguIadeEt } from "@/server/odeme-akis";
+import { kartSiparisiniSonuclandir, siparisiIptalEtVeStoguIadeEt } from "@/server/odeme-akis";
 import { havaleHatirlatmaEpostasi } from "@/server/eposta";
 
 /**
@@ -75,15 +75,23 @@ export async function suresiDolanlariKapat(simdi: Date = new Date()): Promise<nu
       odemeDurumu: "bekliyor",
       OR: kosullar,
     },
-    select: { id: true },
+    select: { id: true, odemeYontemi: true },
     take: 200,
   });
 
+  // Kart siparişi iyzico'ya sorulmadan iptal edilmiyor: ödeme süre dolduktan
+  // sonra tamamlanmış olabilir (K-165).
+  let kapanan = 0;
   for (const s of dolanlar) {
-    await siparisiIptalEtVeStoguIadeEt(s.id);
+    if (s.odemeYontemi === "kart") {
+      if (await kartSiparisiniSonuclandir(s.id)) kapanan++;
+    } else {
+      await siparisiIptalEtVeStoguIadeEt(s.id);
+      kapanan++;
+    }
   }
 
-  return dolanlar.length;
+  return kapanan;
 }
 
 /**

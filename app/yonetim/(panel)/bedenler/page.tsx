@@ -160,8 +160,8 @@ export default async function BedenEkrani({
   const duzenlenenGrup =
     typeof duzenleYas === "string" ? tumGrupListesi.find((g) => g.id === duzenleYas) : undefined;
 
-  const bildirim = typeof kayit === "string" ? BILDIRIMLER[kayit] : undefined;
-  const hataMetni = typeof hata === "string" ? HATALAR[hata] : undefined;
+  const bildirim = typeof kayit === "string" && Object.hasOwn(BILDIRIMLER, kayit) ? BILDIRIMLER[kayit] : undefined;
+  const hataMetni = typeof hata === "string" && Object.hasOwn(HATALAR, hata) ? HATALAR[hata] : undefined;
   const kullanimAdedi = typeof adet === "string" ? Number(adet) : undefined;
 
   const acikSayisi = tumBedenListesi.filter((b) => b.aktif).length;

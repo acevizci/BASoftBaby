@@ -20,13 +20,35 @@ function fotoSec(resimler: Resim[], renk?: string): string | undefined {
   return r ? r.kucukYol || r.yol : undefined;
 }
 
+/**
+ * E-postadaki ekler (fotoğraf, satırlar, öneriler) okunamazsa e-posta yine
+ * gidiyor (K-165). Bu okumalar gönderimin hata yakalamasının dışında;
+ * veritabanındaki anlık bir kopukluk sipariş tamamlanmışken sipariş akışına
+ * hata olarak fırlıyor, müşteri hata sayfası görüp siparişi yeniden
+ * veriyordu.
+ */
+async function yumusak<T>(ad: string, yedek: T, is: () => Promise<T>): Promise<T> {
+  try {
+    return await is();
+  } catch (hata) {
+    console.error(`E-posta verisi okunamadı (${ad}):`, hata);
+    return yedek;
+  }
+}
+
 const RESIM = {
   orderBy: { sira: "asc" as const },
   select: { kucukYol: true, yol: true, renk: true },
 };
 
 /** Ürün adresine göre fotoğraf; renk verilirse o rengin fotoğrafı. */
-export async function urunFotolari(
+export function urunFotolari(
+  istekler: { slug: string; renk?: string }[],
+): Promise<(string | undefined)[]> {
+  return yumusak("fotoğraf", istekler.map(() => undefined), () => urunFotolariOku(istekler));
+}
+
+async function urunFotolariOku(
   istekler: { slug: string; renk?: string }[],
 ): Promise<(string | undefined)[]> {
   const sluglar = [...new Set(istekler.map((i) => i.slug))];
@@ -50,7 +72,11 @@ export type SiparisDetayi = {
   hediyePaketi: boolean;
 };
 
-export async function siparisDetayi(numara: string): Promise<SiparisDetayi | undefined> {
+export function siparisDetayi(numara: string): Promise<SiparisDetayi | undefined> {
+  return yumusak("sipariş", undefined, () => siparisDetayiOku(numara));
+}
+
+async function siparisDetayiOku(numara: string): Promise<SiparisDetayi | undefined> {
   const s = await db.order.findUnique({
     where: { numara },
     select: {
@@ -100,7 +126,11 @@ export async function siparisDetayi(numara: string): Promise<SiparisDetayi | und
 }
 
 /** Bedende stokta olan ürünler, en çok değerlendirilenler önde (büyüme e-postası). */
-export async function bedendekiUrunler(beden: string, adet = 4): Promise<UrunSatiri[]> {
+export function bedendekiUrunler(beden: string, adet = 4): Promise<UrunSatiri[]> {
+  return yumusak("öneri", [], () => bedendekiUrunlerOku(beden, adet));
+}
+
+async function bedendekiUrunlerOku(beden: string, adet: number): Promise<UrunSatiri[]> {
   const urunler = await db.product.findMany({
     where: {
       aktif: true,

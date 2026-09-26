@@ -1,6 +1,19 @@
 import type { Instrumentation } from "next";
 
 /**
+ * Sunucunun saat dilimi İstanbul (K-165). Vercel'de süreç UTC çalışıyor ve
+ * `TZ` ortam değişkeni orada ayrılmış, panelden verilemiyor. Oysa kod
+ * günü, ayı ve yılı sunucunun yerel saatiyle hesaplıyor: "bugünün
+ * siparişleri" İstanbul'da 03:00'te başlıyordu, gece yarısından sonraki üç
+ * saat önceki güne yazılıyordu; 1 Ocak'ın ilk saatlerinde açılan sipariş
+ * geçen yılın numarasını alıyordu. Node çalışırken `TZ` değişince saat
+ * dilimini yeniden okuyor.
+ */
+export function register(): void {
+  process.env.TZ = "Europe/Istanbul";
+}
+
+/**
  * Sunucuda yakalanmamış her hata buraya düşüyor (K-121): sayfa çizimi,
  * server action, API ucu. Next.js yönlendirme ve 404'ü (`redirect`,
  * `notFound`) hata saymıyor, buraya getirmiyor.

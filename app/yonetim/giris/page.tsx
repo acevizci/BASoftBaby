@@ -47,7 +47,7 @@ export default async function YonetimGirisi({ searchParams }: PageProps<"/yoneti
       ? nereye
       : "/yonetim";
 
-  const temel = typeof hata === "string" ? GIRIS_HATALARI[hata] : undefined;
+  const temel = typeof hata === "string" && Object.hasOwn(GIRIS_HATALARI, hata) ? GIRIS_HATALARI[hata] : undefined;
   const hataMetni = hata === "kilit" && temel ? kilitMetni(temel, dk) : temel;
 
   return (
