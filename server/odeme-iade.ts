@@ -84,7 +84,9 @@ export async function kartIadesiYap(
 
   // Siparişin başarılı ödeme girişimi: iyzico kimliği orada.
   const odeme = await db.payment.findFirst({
-    where: { orderId, durum: "basarili", saglayiciRef: { not: null } },
+    // Karttan para çekilmiş her girişim (K-167): tutarı tutmadığı için
+    // "basarisiz" sayılan ödemenin de parası alınmış; iadesi buradan.
+    where: { orderId, saglayiciRef: { not: null }, odenenKurus: { not: null } },
     orderBy: { olusturuldu: "desc" },
     select: {
       saglayiciRef: true,

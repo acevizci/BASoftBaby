@@ -3,6 +3,9 @@ import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { siparisOlustur, type SiparisGirdisi } from "@/server/siparis";
 import { iadeKaydiAc, iadeyiTamamla } from "@/server/iade";
+import { siparisiIptalEtVeStoguIadeEt } from "@/server/odeme-akis";
+import { KUPON_CEREZI } from "@/server/kampanya";
+import { cerezAyarla, cerezleriTemizle } from "./sahte-headers";
 import { listeKoduUret } from "@/server/dogum-listesi";
 import type { SatisAyari } from "@/server/sepet";
 
@@ -139,5 +142,49 @@ describe("çift satış (veritabanı)", { skip: atlamaSebebi }, () => {
     assert.ok(id);
     const sonuclar = await Promise.all([iadeyiTamamla(id), iadeyiTamamla(id)]);
     assert.equal(sonuclar.filter(Boolean).length, 1);
+  });
+
+  it("ödenmeden iptal edilen siparişin tek kullanımlık kuponu geri veriliyor", async () => {
+    const db = testDb();
+    const { variantId } = await urunKur(10);
+    const kod = `T${kimlik("k").slice(-8).toUpperCase()}`;
+    const kupon = await db.campaign.create({
+      data: { ad: "T_kupon", deger: 10, kuponKodu: kod, enFazlaKullanim: 1 },
+      select: { id: true },
+    });
+    try {
+      await sepetKur(variantId, 1);
+      cerezAyarla(KUPON_CEREZI, kod);
+      const s = await siparisOlustur(girdi(), AYAR);
+      cerezleriTemizle();
+      assert.ok(s.tamam);
+      const o = await db.order.findUniqueOrThrow({ where: { numara: s.numara } });
+      assert.equal(o.kampanyaId, kupon.id);
+      assert.equal((await db.campaign.findUniqueOrThrow({ where: { id: kupon.id } })).kullanim, 1);
+      await siparisiIptalEtVeStoguIadeEt(o.id);
+      assert.equal((await db.campaign.findUniqueOrThrow({ where: { id: kupon.id } })).kullanim, 0);
+    } finally {
+      await db.order.deleteMany({ where: { kampanyaId: kupon.id } });
+      await db.campaign.delete({ where: { id: kupon.id } });
+    }
+  });
+
+  it("çift ödemenin iadesi ödenmiş siparişi 'iade edildi' yapmıyor", async () => {
+    const db = testDb();
+    const { variantId } = await urunKur(10);
+    await sepetKur(variantId, 1);
+    const s = await siparisOlustur(girdi(), AYAR);
+    assert.ok(s.tamam);
+    const o = await db.order.update({
+      where: { numara: s.numara },
+      data: { odemeDurumu: "odendi" },
+      select: { id: true },
+    });
+    const iade = await db.refund.create({
+      data: { orderId: o.id, tutarKurus: 1000, yontem: "kart", aciklama: "Çift ödeme" },
+    });
+    await iadeyiTamamla(iade.id);
+    const son = await db.order.findUniqueOrThrow({ where: { id: o.id } });
+    assert.equal(son.odemeDurumu, "odendi");
   });
 });

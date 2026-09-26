@@ -70,6 +70,13 @@ export default async function SiparisDetayi({
           istiyorsa yeni sipariş vermesi gerekiyor.
         </p>
       )}
+      {hata === "odeme-gecisi" && (
+        <p className="rounded-marka border border-sari bg-sari-soluk px-4 py-3 text-sm text-sari-koyu">
+          Ödeme durumu buradan yalnızca &quot;Ödeme bekliyor&quot;dan &quot;Ödendi&quot;ye
+          geçirilebilir. Ödenmiş siparişin parası geri verilecekse İadeler ekranından iade
+          kaydı aç; kayıt ödeme durumunu kendisi günceller. Hiçbir şey değişmedi.
+        </p>
+      )}
       {hata === "kargo-iptal" && (
         <p className="rounded-marka border border-sari bg-sari-soluk px-4 py-3 text-sm text-sari-koyu">
           İptal edilmiş sipariş kargoya verilemez: ürünleri stoğa geri verildi. Kargo kaydı

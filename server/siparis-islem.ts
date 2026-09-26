@@ -25,9 +25,10 @@ import { HEDIYE_CEKI_CEREZI, sepetteCek } from "@/server/hediye-ceki";
 import { tahsilat } from "@/server/hediye-ceki-bicim";
 import { KUPON_CEREZI } from "@/server/kampanya";
 import { SON_SIPARIS_CEREZI, siparisGetirPanel, siparisOlustur } from "@/server/siparis";
-import { odemeAcikMi, odemeBaslat } from "@/server/odeme";
+import { odemeAcikMi, odemeBaslat, odemeSorgula } from "@/server/odeme";
 import { odemeDurumu } from "@/ui/odeme-bicim";
 import {
+  odemeDonusunuIsle,
   odemeGirisimiKaydet,
   sepetiSiparistenDoldur,
   siparisiIptalEtVeStoguIadeEt,
@@ -372,4 +373,66 @@ async function odemeyeYonlendir(numara: string): Promise<string> {
   if (kayit) await odemeGirisimiKaydet(kayit.id, baslatma.jeton, tahsilat(siparis));
 
   return baslatma.adres;
+}
+
+/**
+ * Kart ödemesini yeniden başlatır (K-167).
+ *
+ * Müşteri iyzico ekranını kapattıysa ya da geri döndüyse sipariş 30 dakika
+ * "ödeme bekliyor" kalıyor ve stok onun için ayrılmış duruyor. Eskiden tek
+ * yol süre dolana kadar beklemek ya da sepeti baştan kurmaktı. Artık onay
+ * sayfasından aynı siparişin ödemesi yeniden açılıyor.
+ *
+ * Çift ödeme olmasın diye önce açık girişimler iyzico'ya soruluyor:
+ * ödenmiş biri varsa sipariş onunla ödeniyor, yeni ödeme açılmıyor. Ödenmemiş
+ * olanlar kapatılıyor (sipariş iptal edilmeden). Sonuç bilinemiyorsa yeni
+ * ödeme açılmıyor.
+ */
+export async function odemeyiTamamla(veri: FormData): Promise<void> {
+  const numara = temiz(veri, "numara").toUpperCase();
+  // Yalnızca siparişi veren tarayıcı: onay sayfasını açan çerez.
+  const kavanoz = await cookies();
+  if (!numara || kavanoz.get(SON_SIPARIS_CEREZI)?.value !== numara) redirect("/sepet");
+  if (!(await islemSinirla("siparis")).izin) redirect(`/siparis/${numara}?odeme=cok`);
+  if (!odemeAcikMi()) redirect(`/siparis/${numara}`);
+
+  const kayit = await db.order.findUnique({
+    where: { numara },
+    select: { id: true, durum: true, odemeDurumu: true, odemeYontemi: true },
+  });
+  if (
+    !kayit ||
+    kayit.odemeYontemi !== "kart" ||
+    kayit.durum !== "bekliyor" ||
+    kayit.odemeDurumu !== "bekliyor"
+  ) {
+    redirect(`/siparis/${numara}`);
+  }
+
+  const acik = await db.payment.findMany({
+    where: { orderId: kayit.id, durum: "baslatildi" },
+    select: { id: true, jeton: true },
+  });
+  for (const g of acik) {
+    const sonuc = await odemeSorgula(g.jeton);
+    if (sonuc.basarili) {
+      await odemeDonusunuIsle(g.jeton);
+      redirect(`/siparis/${numara}?odeme=basarili`);
+    }
+    if (sonuc.ulasilamadi) redirect(`/siparis/${numara}?odeme=bekliyor`);
+    // Ödenmemiş eski girişim kapanıyor; sipariş açık kalıyor.
+    await db.payment.updateMany({
+      where: { id: g.id, durum: "baslatildi" },
+      data: { durum: "basarisiz", hata: "Müşteri ödemeyi yeniden başlattı." },
+    });
+  }
+
+  const siparis = await siparisGetirPanel(numara);
+  if (!siparis) redirect(`/siparis/${numara}`);
+  const baslik = await headers();
+  const ip = (baslik.get("x-forwarded-for") ?? "").split(",")[0].trim() || "127.0.0.1";
+  const baslatma = await odemeBaslat(siparis, { ip });
+  if (!baslatma.tamam) redirect(`/siparis/${numara}?odeme=baslatilamadi`);
+  await odemeGirisimiKaydet(kayit.id, baslatma.jeton, tahsilat(siparis));
+  redirect(baslatma.adres);
 }

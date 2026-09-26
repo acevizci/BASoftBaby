@@ -253,9 +253,11 @@ export async function iadeyiTamamla(
     const kalan = await islem.refund.count({
       where: { orderId: kayit.orderId, durum: { not: "tamamlandi" } },
     });
+    // Yalnızca iade bekleyen sipariş "iade edildi" oluyor (K-167): çift
+    // ödemenin iadesi geçerli, ödenmiş bir siparişi iade edilmiş göstermesin.
     if (kalan === 0) {
-      await islem.order.update({
-        where: { id: kayit.orderId },
+      await islem.order.updateMany({
+        where: { id: kayit.orderId, odemeDurumu: "iade-bekliyor" },
         data: { odemeDurumu: "iade" },
       });
     }

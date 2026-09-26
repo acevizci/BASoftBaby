@@ -408,6 +408,9 @@ model Order {
   indirimKurus   Int     @default(0)
   /// Müşteriye gösterilen kampanya adı; sonradan kampanya silinse de kalır.
   kampanyaAdi    String?
+  /// Uygulanan kampanyanın kimliği (K-167): sipariş ödenmeden iptal olursa
+  /// kuponun kullanımı geri veriliyor. İlişki değil: kampanya silinse de kalır.
+  kampanyaId     String?
   kargoKurus     Int
   toplamKurus    Int
   /// Hediye çekiyle ödenen kısım (K-137). Karttan ya da havaleyle tahsil

@@ -41,7 +41,7 @@ import {
   suzgecAdresi as siparisSuzgecAdresi,
   suzgeciCoz as siparisSuzgeciniCoz,
 } from "@/server/siparis-arama";
-import { kargoyaVerildiEpostasi } from "@/server/eposta";
+import { kargoyaVerildiEpostasi, odemeAlindiEpostasi } from "@/server/eposta";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { hareketYaz } from "@/server/stok-hareket";
 import { maliyetiGecmiseYaz } from "@/server/maliyet";
@@ -490,9 +490,30 @@ export async function siparisDurumuKaydet(veri: FormData): Promise<void> {
   // müşterinin süresi baştan başlamamalı.
   const oncesi = await db.order.findUnique({
     where: { numara },
-    select: { id: true, durum: true, teslimTarihi: true },
+    select: {
+      id: true,
+      durum: true,
+      teslimTarihi: true,
+      odemeDurumu: true,
+      odemeYontemi: true,
+      adSoyad: true,
+      eposta: true,
+      toplamKurus: true,
+      hediyeCekiKurus: true,
+    },
   });
   if (!oncesi) return;
+
+  // Ödeme durumu elle geri alınamıyor (K-167): "ödendi" sipariş "bekliyor"a
+  // dönerse süre dolumu onu iptal edip stoğu geri veriyordu, alınan paranın
+  // iade kaydı açılmıyordu. İade durumları da yalnızca İadeler ekranından
+  // değişiyor; elle yazılınca borcun kaydı olmuyordu.
+  const odemeGecisiGecerli =
+    odemeDurumu === oncesi.odemeDurumu ||
+    (oncesi.odemeDurumu === "bekliyor" && odemeDurumu === "odendi");
+  if (!odemeGecisiGecerli) {
+    redirect(`/yonetim/siparisler/${numara}?hata=odeme-gecisi`);
+  }
 
   // İptal edilmiş sipariş yeniden açılamıyor: stoğu geri verildi, açılırsa
   // ürünler stoktan düşmeden "hazırlanıyor"a geçerdi (K-103).
@@ -517,15 +538,40 @@ export async function siparisDurumuKaydet(veri: FormData): Promise<void> {
     redirect(`/yonetim/siparisler/${numara}?kayit=iptal`);
   }
 
+  // Havale onayı (K-167): ödeme koşullu olarak "ödendi"ye geçiyor; iki kez
+  // basılınca ya da iki kişi aynı anda onaylayınca e-posta bir kez gidiyor.
+  // Bekleyen sipariş kendiliğinden hazırlanmaya geçiyor (kartta da öyle).
+  const odemeOnaylandi =
+    oncesi.odemeDurumu === "bekliyor" && odemeDurumu === "odendi"
+      ? (
+          await db.order.updateMany({
+            where: { id: oncesi.id, odemeDurumu: "bekliyor", durum: { not: "iptal" } },
+            data: { odemeDurumu: "odendi" },
+          })
+        ).count === 1
+      : false;
+
   await db.order.update({
     where: { numara },
     data: {
-      durum,
-      odemeDurumu,
+      durum: odemeOnaylandi && durum === "bekliyor" ? "hazirlaniyor" : durum,
       kargoTakipNo: kargoTakipNo || null,
       ...(durum === "teslim" && !oncesi.teslimTarihi ? { teslimTarihi: new Date() } : {}),
     },
   });
+
+  // Havalesi gelen müşteri paranın ulaştığını ancak kargo e-postasıyla
+  // öğreniyordu; kartta ödeme alınınca giden e-postanın aynısı.
+  if (odemeOnaylandi) {
+    await odemeAlindiEpostasi({
+      numara,
+      adSoyad: oncesi.adSoyad,
+      eposta: oncesi.eposta,
+      toplamKurus: oncesi.toplamKurus,
+      hediyeCekiKurus: oncesi.hediyeCekiKurus,
+      odemeYontemi: oncesi.odemeYontemi,
+    });
+  }
 
   vitriniYenile();
   redirect(`/yonetim/siparisler/${numara}?kayit=1`);

@@ -8,6 +8,9 @@ import { ayarlariGetir } from "@/server/sepet";
 import { kunyeGetir } from "@/server/yasal";
 import { SON_SIPARIS_CEREZI, aliciyaGoster, siparisGetirPanel } from "@/server/siparis";
 import OlcumOlayi from "@/ui/olcum-olayi";
+import GonderDugmesi from "@/ui/gonder-dugmesi";
+import { odemeAcikMi } from "@/server/odeme";
+import { odemeyiTamamla } from "@/server/siparis-islem";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Siparişin alındı", robots: { index: false } };
@@ -87,7 +90,9 @@ export default async function SiparisOnayi({
       >
         <h1 className="text-2xl sm:text-3xl">
           {odemeKontrolde
-            ? "Ödemen kontrol ediliyor"
+            ? odeme === "bekliyor"
+              ? "Ödemen kontrol ediliyor"
+              : "Ödemeni tamamla"
             : odemeBasarisiz
             ? "Ödeme tamamlanamadı"
             : iadeEdildi
@@ -136,12 +141,37 @@ export default async function SiparisOnayi({
             Siparişinin tamamı hediye çekinle ödendi; hazırlanmaya başlıyor.
           </p>
         ) : odemeKontrolde ? (
-          <p className="mt-2 text-sm text-metin-2">
-            Ödemenin sonucunu ödeme sağlayıcımızdan henüz alamadık. Kartından tahsilat
-            yapıldıysa siparişin hazırlanmaya başlayacak ve e-postayla haber vereceğiz;
-            yapılmadıysa sipariş kendiliğinden iptal olacak.{" "}
-            <span className="font-semibold">Lütfen aynı siparişi yeniden verme.</span>
-          </p>
+          <>
+            <p className="mt-2 text-sm text-metin-2">
+              {odeme === "bekliyor"
+                ? "Ödemenin sonucunu ödeme sağlayıcımızdan henüz alamadık. Kartından tahsilat yapıldıysa siparişin hazırlanmaya başlayacak ve e-postayla haber vereceğiz."
+                : "Kart ödemesi henüz tamamlanmadı. Ürünlerin 30 dakika boyunca senin için ayrılmış durumda; ödemeyi aşağıdan tamamlayabilirsin. Tamamlanmazsa sipariş kendiliğinden iptal olur."}{" "}
+              <span className="font-semibold">Lütfen aynı siparişi yeniden verme.</span>
+            </p>
+            {odeme === "baslatilamadi" && (
+              <p className="mt-2 text-sm font-semibold text-mercan-koyu">
+                Ödeme sayfası açılamadı; kartından bir tahsilat yapılmadı. Biraz sonra tekrar dene.
+              </p>
+            )}
+            {odeme === "cok" && (
+              <p className="mt-2 text-sm font-semibold text-mercan-koyu">
+                Kısa sürede çok fazla deneme oldu; birkaç dakika sonra tekrar dene.
+              </p>
+            )}
+            {/* Aynı siparişin ödemesi yeniden açılıyor (K-167); önce önceki
+                deneme iyzico'ya soruluyor, çift ödeme olmuyor. */}
+            {odemeAcikMi() && (
+              <form action={odemeyiTamamla} className="mt-4">
+                <input type="hidden" name="numara" value={siparis.numara} />
+                <GonderDugmesi
+                  bekleyen="Ödeme sayfası açılıyor…"
+                  className="rounded-full bg-dugme px-6 py-2.5 font-bold text-dugme-yazi transition hover:brightness-95"
+                >
+                  Ödemeyi tamamla
+                </GonderDugmesi>
+              </form>
+            )}
+          </>
         ) : kartla ? (
           odendi ? (
             <p className="mt-2 text-sm text-metin-2">

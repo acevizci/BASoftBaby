@@ -284,6 +284,7 @@ export async function siparisOlustur(
           araToplamKurus,
           indirimKurus,
           kampanyaAdi: kampanya?.ad ?? null,
+          kampanyaId: kampanya?.id ?? null,
           kargoKurus,
           toplamKurus,
           satirlar: { create: kalemler.map((k, i) => ({ ...k, indirimKurus: paylar[i] })) },

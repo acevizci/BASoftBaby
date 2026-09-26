@@ -23,6 +23,9 @@ import { tahsilat } from "@/server/hediye-ceki-bicim";
  * (mimarideki 04. karar).
  */
 
+/** Bir kart ödeme girişiminin geçerli sayıldığı süre (iyzico formu ~30 dk). */
+const KART_GIRISIM_MS = 30 * 60_000;
+
 export type DonusSonucu =
   | { durum: "basarili"; numara: string }
   | { durum: "basarisiz"; numara: string; hata: string }
@@ -78,7 +81,7 @@ export async function siparisiIptalEtVeStoguIadeEt(
     // Ödeme durumu iptalden önce okunuyor: sonrası çok geç.
     const oncesi = await islem.order.findUnique({
       where: { id: orderId },
-      select: { odemeDurumu: true, numara: true, hediyeCekiKurus: true },
+      select: { odemeDurumu: true, numara: true, hediyeCekiKurus: true, kampanyaId: true },
     });
     const parasiAlindi = oncesi?.odemeDurumu === "odendi";
 
@@ -90,6 +93,15 @@ export async function siparisiIptalEtVeStoguIadeEt(
       },
     });
     if (iptal.count === 0) return [];
+
+    // Ödenmeden iptal edilen siparişin kuponu geri veriliyor (K-167): kart
+    // ödemesi tutmayan ya da havalesi gelmeyen müşterinin tek kullanımlık
+    // kuponu yanıyordu. Ödenmiş siparişin iptalinde kupon kullanılmış sayılıyor.
+    if (!parasiAlindi && oncesi?.kampanyaId) {
+      await islem.$executeRaw`
+        update "Campaign" set kullanim = kullanim - 1
+         where id = ${oncesi.kampanyaId} and kullanim > 0`;
+    }
 
     // Ödenmeden iptal: çekten düşülen tutar olduğu gibi bakiyeye dönüyor
     // (K-137). Ödenmişse aşağıdaki iade kaydı çek kısmını kendisi ayırıyor.
@@ -294,6 +306,16 @@ export async function odemeDonusunuIsle(jeton: string): Promise<DonusSonucu> {
   if (!basarili) {
     // Tutarı tutmayan geç ödemede sipariş zaten iptal; iptal ikinci kez işlemez.
     await siparisiIptalEtVeStoguIadeEt(girisim.order.id);
+    // iyzico "ödendi" dediği hâlde tutar tutmadıysa para karttan çekilmiş
+    // demek (K-167): sipariş iptal ediliyordu ama çekilen paranın hiçbir
+    // kaydı kalmıyordu. İade kaydı açılıyor, panelin listesine düşüyor.
+    if (sonuc.basarili && sonuc.odenenKurus > 0) {
+      await parasiAlinanIptalinIadesi(
+        girisim.order.id,
+        sonuc.odenenKurus,
+        "iyzico ödemeyi onayladı ama çekilen tutar siparişle uyuşmadı; sipariş iptal edildi. Tutar karta iade edilmeli.",
+      );
+    }
     return {
       durum: "basarisiz",
       numara: girisim.order.numara,
@@ -306,27 +328,43 @@ export async function odemeDonusunuIsle(jeton: string): Promise<DonusSonucu> {
   // siparişi hazırlığa sokardı. Para alındığı için iade kaydı açılıyor ve
   // panelin "iade bekleyenler" listesine düşüyor (K-165).
   const odendi = await db.order.updateMany({
-    where: { id: girisim.order.id, durum: { not: "iptal" } },
+    where: { id: girisim.order.id, durum: { not: "iptal" }, odemeDurumu: "bekliyor" },
     data: { odemeDurumu: "odendi", durum: "hazirlaniyor" },
   });
   if (odendi.count === 0) {
+    const guncel = await db.order.findUnique({
+      where: { id: girisim.order.id },
+      select: { durum: true },
+    });
+    // Sipariş iptal değilse zaten ödenmiş (K-167): müşteri ödemeyi yeniden
+    // başlatıp eski sekmede de tamamladıysa iki kez para çekilmiş olur. Başka
+    // bir başarılı girişim varsa bu ikinci ödeme iade kaydına giriyor;
+    // yoksa sipariş panelden elle "ödendi" yapılmış, aynı ödeme.
+    if (guncel && guncel.durum !== "iptal") {
+      const baska = await db.payment.count({
+        where: { orderId: girisim.order.id, durum: "basarili", id: { not: girisim.id } },
+      });
+      if (baska > 0) {
+        console.error(`Çift ödeme: ${girisim.order.numara}`);
+        await db.refund.create({
+          data: {
+            orderId: girisim.order.id,
+            tutarKurus: sonuc.odenenKurus,
+            hediyeCekiKurus: 0,
+            yontem: "kart",
+            aciklama:
+              "Çift ödeme: sipariş başka bir ödemeyle zaten ödenmişti. Bu ikinci tutar karta iade edilmeli.",
+          },
+        });
+      }
+      return { durum: "basarili", numara: girisim.order.numara };
+    }
     console.error(`İptal edilmiş siparişin ödemesi alındı, iade gerekiyor: ${girisim.order.numara}`);
-    await db.$transaction([
-      db.refund.create({
-        data: {
-          orderId: girisim.order.id,
-          tutarKurus: sonuc.odenenKurus,
-          hediyeCekiKurus: 0,
-          yontem: "kart",
-          aciklama:
-            "Ödeme, sipariş iptal edildikten sonra tamamlandı (ödeme süresi dolmuştu). Tutar karta iade edilmeli.",
-        },
-      }),
-      db.order.update({
-        where: { id: girisim.order.id },
-        data: { odemeDurumu: "iade-bekliyor" },
-      }),
-    ]);
+    await parasiAlinanIptalinIadesi(
+      girisim.order.id,
+      sonuc.odenenKurus,
+      "Ödeme, sipariş iptal edildikten sonra tamamlandı (ödeme süresi dolmuştu). Tutar karta iade edilmeli.",
+    );
     return {
       durum: "basarisiz",
       numara: girisim.order.numara,
@@ -350,6 +388,24 @@ export async function odemeDonusunuIsle(jeton: string): Promise<DonusSonucu> {
 }
 
 /**
+ * İptal edilmiş siparişe karttan çekilmiş para için iade kaydı (K-165, K-167).
+ * Tutar doğrudan iyzico'nun çektiği tutar; çek kısmı iptalde zaten bakiyeye
+ * dönmüştü.
+ */
+async function parasiAlinanIptalinIadesi(
+  orderId: string,
+  tutarKurus: number,
+  aciklama: string,
+): Promise<void> {
+  await db.$transaction([
+    db.refund.create({
+      data: { orderId, tutarKurus, hediyeCekiKurus: 0, yontem: "kart", aciklama },
+    }),
+    db.order.update({ where: { id: orderId }, data: { odemeDurumu: "iade-bekliyor" } }),
+  ]);
+}
+
+/**
  * Süresi geçen kart siparişini sonuçlandırır (K-165).
  *
  * Eskiden iyzico'ya sorulmadan iptal ediliyordu. 3D doğrulamada oyalanan
@@ -364,9 +420,14 @@ export async function odemeDonusunuIsle(jeton: string): Promise<DonusSonucu> {
 export async function kartSiparisiniSonuclandir(orderId: string): Promise<boolean> {
   const girisimler = await db.payment.findMany({
     where: { orderId, durum: "baslatildi" },
-    select: { jeton: true },
+    select: { jeton: true, olusturuldu: true },
     orderBy: { olusturuldu: "desc" },
   });
+  // Müşteri ödemeyi yeniden başlattıysa (K-167) son girişimin süresi
+  // dolmadan sipariş kapatılmıyor: ödeme ekranındayken iptal edilmesin.
+  if (girisimler[0] && Date.now() - girisimler[0].olusturuldu.getTime() < KART_GIRISIM_MS) {
+    return false;
+  }
   if (girisimler.length === 0) {
     const onceki = await db.payment.count({ where: { orderId, durum: "basarili" } });
     if (onceki > 0) return false;

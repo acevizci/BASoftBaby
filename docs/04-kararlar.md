@@ -6461,6 +6461,38 @@ sayım (K-165).
 [`../server/iade-islem.ts`](../server/iade-islem.ts),
 [`../testler/cift-satis-db.test.ts`](../testler/cift-satis-db.test.ts)
 
+### K-167 · Ödeme süreçlerinin ikinci gözden geçirmesi
+
+- **Tutarı tutmayan kart ödemesi:** iyzico "ödendi" dediği hâlde tutar
+  siparişle uyuşmazsa sipariş iptal ediliyordu, ama karttan çekilen paranın
+  hiçbir kaydı kalmıyordu. Artık iade kaydı açılıyor. iyzico ile iade, parası
+  çekilmiş her girişimi buluyor ("başarısız" sayılanı da).
+- **Kupon yanmıyor:** siparişe kampanya kimliği yazılıyor (`kampanyaId`).
+  Ödenmeden iptal olan siparişin (kart tutmadı, havale gelmedi) kupon
+  kullanımı geri veriliyor; tek kullanımlık kupon yeniden kullanılabiliyor.
+- **Kart ödemesini yeniden deneme:** iyzico ekranını kapatan müşteri onay
+  sayfasından "Ödemeyi tamamla" ile aynı siparişi ödeyebiliyor (stok 30 dk
+  onun için ayrılı).
+  - Önce açık girişimler iyzico'ya soruluyor: ödenmiş biri varsa yeni ödeme
+    açılmıyor, ödenmemişler kapatılıyor.
+  - Süre dolumu, son girişim tazeyken siparişi iptal etmiyor.
+  - İki girişimin ikisi de ödenirse ikinci tutar "çift ödeme" iade kaydına
+    giriyor. Bu iade tamamlanınca sipariş "iade edildi" olmuyor: bir iade
+    yalnızca "iade bekliyor" durumundaki siparişi "iade edildi" yapıyor.
+- **Havale onayı (panel):**
+  - Koşullu: çift tıklamada tek e-posta.
+  - Müşteriye "Ödemen alındı" e-postası gidiyor (eskiden kargo e-postasına
+    kadar haber yoktu).
+  - Bekleyen sipariş kendiliğinden "hazırlanıyor"a geçiyor.
+- **Ödeme durumu elle geri alınamıyor:** yalnızca "bekliyor → ödendi".
+  "Ödendi" sipariş "bekliyor"a dönünce süre dolumu onu iptal edip stoğu
+  geri veriyor, alınan paranın iade kaydı açılmıyordu. İade durumları
+  yalnızca İadeler ekranından değişiyor.
+
+**Nerede:** [`../server/odeme-akis.ts`](../server/odeme-akis.ts),
+[`../server/siparis-islem.ts`](../server/siparis-islem.ts),
+[`../server/yonetim.ts`](../server/yonetim.ts)
+
 ---
 
 ## Açık sorular
