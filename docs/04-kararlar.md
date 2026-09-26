@@ -6804,6 +6804,42 @@ tanıyordu. Mal kabulü ürün ürün aranarak yapılıyordu.
 [`../ui/kamera-okuyucu.tsx`](../ui/kamera-okuyucu.tsx),
 [`../testler/depo.test.ts`](../testler/depo.test.ts)
 
+
+### K-177 · Stok 2: Depo'da sayım ve sade stok menüsü
+
+- **Sayım telefonda, okutarak** (Depo › Say). Sayım mantığı aynı (K-107,
+  K-165): fark sayıldığı ana göre; rafta olması gereken = stok + ayrılan;
+  fark stoğa eklenerek uygulanıyor. Değişenler:
+  - **Kapsam:** "yalnızca okuttuklarım" (raf raf sayım; satırlar
+    okutuldukça açılıyor), bir kategori ya da bütün mağaza.
+  - **Sunucu asıl kayıt.** Okutulanlar 1,5 saniye sonra kendiliğinden
+    yazılıyor; mutlak değer olduğu için iki kez gitse de sonuç aynı. Telefon
+    değişse ya da sayfa kapansa da sayım kaldığı yerden sürüyor. Silinen
+    satırın sayılanı kalkıyor.
+  - **Kör sayım:** sayarken sistemdeki stok gösterilmiyor; sayanı
+    etkilemesin.
+  - **Bitir:** fark ekranı gösteriliyor (beklenen, sayılan, fark, maliyet
+    karşılığı).
+    - Kategori ya da bütün mağaza sayımında okutulmayan bedenlere
+      varsayılan olarak dokunulmuyor. "Rafta yok, stoklarını sıfırla"
+      ayrıca işaretleniyor.
+    - İptal edilebiliyor.
+  - **Aynı anda tek açık sayım** artık gerçekten uygulanıyor. Eski formda
+    bu kural yoktu; ikinci sayım açılabiliyordu.
+- **Stok menüsü 3 satır:** Stok, Depo, Sipariş ver.
+  - Hareketler, Satmayanlar ve Sayımlar Stok sayfasının sekmeleri oldu;
+    her ekran boyunda görünüyorlar.
+  - Hızlı atlamada bulunmaya devam ediyorlar (`menudeGizli`).
+  - Bu sayfalardayken yan menüde Stok seçili görünüyor.
+- Sayımlar sayfasındaki "Sayım başlat" formu kalktı; "Depo'da sayım başlat /
+  devam et" bağlantısı var. Eski sayım ayrıntı sayfası (bilgisayardan sayı
+  girme) duruyor.
+
+**Nerede:** [`../server/depo-sayim.ts`](../server/depo-sayim.ts),
+[`../ui/depo-ekrani.tsx`](../ui/depo-ekrani.tsx),
+[`../ui/panel-menu-bicim.ts`](../ui/panel-menu-bicim.ts),
+[`../testler/depo-sayim.test.ts`](../testler/depo-sayim.test.ts)
+
 ---
 
 ## Açık sorular

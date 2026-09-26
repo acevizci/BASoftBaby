@@ -1,4 +1,5 @@
 import Link from "next/link";
+import StokSekmeleri from "@/ui/stok-sekmeleri";
 import {
   HAREKET_SAYFA_BOYU,
   SEBEPLER,
@@ -33,6 +34,7 @@ export default async function StokHareketleri({
 
   return (
     <div className="flex flex-col gap-5">
+      <StokSekmeleri secili="/yonetim/stok/hareketler" />
       <h1 className="text-2xl">Stok hareketleri</h1>
       <p className="text-sm text-metin-2">
         Stoğun her değişimi burada: sipariş, iptal, iade, elle düzeltme, mal kabulü, sayım ve

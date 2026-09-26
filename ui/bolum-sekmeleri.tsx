@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { etkinAdres, etkinBolum } from "@/ui/panel-menu-bicim";
+import { etkinAdres, etkinBolum, gorunenAlt } from "@/ui/panel-menu-bicim";
 
 /**
  * Açık bölümün sayfaları, sekme olarak (K-116).
@@ -23,11 +23,12 @@ export default function BolumSekmeleri({ dar }: { dar: boolean }) {
     liste.current?.querySelector("[aria-current=page]")?.scrollIntoView({ block: "nearest", inline: "nearest" });
   }, [yol]);
   const b = etkinBolum(yol);
-  if (!b || b.alt.length === 0) return null;
+  if (!b || gorunenAlt(b).length === 0) return null;
   const adres = etkinAdres(yol);
+  const gizli = b.alt.find((a) => a.menudeGizli && a.yol === adres);
   const sekmeler = [
     ...(b.alt.some((a) => a.yol === b.yol) ? [] : [{ yol: b.yol, ad: b.ad }]),
-    ...b.alt,
+    ...gorunenAlt(b),
   ];
 
   return (
@@ -38,7 +39,8 @@ export default function BolumSekmeleri({ dar }: { dar: boolean }) {
     >
       <ul className="flex w-max gap-1 border-b border-cizgi">
         {sekmeler.map((s) => {
-          const secili = adres === s.yol;
+          // Menüde gizli alt sayfa (stok geçmişi) bölümün ana sekmesini seçili tutuyor.
+          const secili = adres === s.yol || (!!gizli && s.yol === b.yol);
           return (
             <li key={s.yol + s.ad}>
               <Link

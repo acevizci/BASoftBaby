@@ -61,6 +61,12 @@ export type AltMadde = {
   anahtar?: string;
   sayac?: SayacAdi;
   ton?: RozetTonu;
+  /**
+   * Yan menüde ve bölüm sekmelerinde görünmüyor; sayfanın kendi sekmesinden
+   * ve hızlı atlamadan açılıyor (K-177). Stok menüsü 3 satıra indi; geçmiş,
+   * satmayanlar ve sayımlar Stok sayfasının sekmeleri.
+   */
+  menudeGizli?: boolean;
 };
 
 export type Bolum = {
@@ -130,12 +136,16 @@ export const BOLUMLER: Bolum[] = [
       {
         yol: "/yonetim/stok/depo",
         ad: "Depo",
-        anahtar: "mal kabul gelen barkod okut telefon cikar hasar kayip",
+        anahtar: "mal kabul gelen barkod okut telefon cikar hasar kayip sayim",
       },
-      { yol: "/yonetim/stok/sayim", ad: "Sayım", anahtar: "envanter barkod" },
-      { yol: "/yonetim/stok/siparis-listesi", ad: "Sipariş listesi", anahtar: "tedarikci eksik alinacak" },
-      { yol: "/yonetim/stok/satmayanlar", ad: "Satmayanlar", anahtar: "olu stok" },
-      { yol: "/yonetim/stok/hareketler", ad: "Hareketler", anahtar: "stok gecmisi" },
+      {
+        yol: "/yonetim/stok/siparis-listesi",
+        ad: "Sipariş ver",
+        anahtar: "siparis listesi tedarikci eksik alinacak whatsapp",
+      },
+      { yol: "/yonetim/stok/hareketler", ad: "Hareketler", anahtar: "stok gecmisi", menudeGizli: true },
+      { yol: "/yonetim/stok/satmayanlar", ad: "Satmayanlar", anahtar: "olu stok", menudeGizli: true },
+      { yol: "/yonetim/stok/sayim", ad: "Sayımlar", anahtar: "envanter sayim", menudeGizli: true },
     ],
   },
   {
@@ -284,3 +294,8 @@ export function sayfaAdi(yol: string): string {
 
 /** Elle açılmış bölümlerin çerezi (K-116); `server/panel-gorunum.ts` okuyor. */
 export const BOLUM_CEREZI = "panel_bolumler";
+
+/** Yan menüde ve bölüm sekmelerinde görünen alt maddeler (K-177). */
+export function gorunenAlt(b: Bolum): AltMadde[] {
+  return b.alt.filter((a) => !a.menudeGizli);
+}

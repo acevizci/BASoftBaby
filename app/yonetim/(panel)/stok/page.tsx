@@ -1,4 +1,5 @@
 import Link from "next/link";
+import StokSekmeleri from "@/ui/stok-sekmeleri";
 import { stoklariKaydet } from "@/server/yonetim";
 import {
   AZALAN_ESIK,
@@ -64,6 +65,7 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
 
   return (
     <div className="flex flex-col gap-5">
+      <StokSekmeleri secili="/yonetim/stok" />
       <h1 className="text-2xl">Stok</h1>
       <StokDegeriKutusu d={deger} />
       <p className="text-sm text-metin-2">

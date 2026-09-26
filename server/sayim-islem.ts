@@ -6,7 +6,7 @@ import { TUM_ETIKETLER } from "@/server/onbellek";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
 import { db } from "@/server/veritabani";
-import { sayilanlar, sayilanlariYaz, sayimAc, sayimBitir, sayimIptal } from "@/server/sayim";
+import { sayilanlar, sayilanlariYaz, sayimBitir, sayimIptal } from "@/server/sayim";
 
 /** Stok sayımı eylemleri (K-107). */
 
@@ -23,12 +23,6 @@ function donus(form: FormData, id: string, ek: string): string {
   }
   const m = p.toString();
   return `/yonetim/stok/sayim/${encodeURIComponent(id)}?${m ? `${m}&` : ""}${ek}`;
-}
-
-export async function sayimBaslat(form: FormData): Promise<void> {
-  const ben = await yoneticiGerekli();
-  const id = await sayimAc({ ad: metin(form, "ad"), kapsam: metin(form, "kapsam"), yapan: ben });
-  redirect(`/yonetim/stok/sayim/${id}`);
 }
 
 export async function sayimKaydet(form: FormData): Promise<void> {

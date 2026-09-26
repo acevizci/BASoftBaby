@@ -8,9 +8,17 @@ import {
   depoBarkodOgret,
   depoBedenGetir,
   depoListeKaydet,
+  depoSayimBaslat,
+  depoSayimFarklari,
+  depoSayimGetir,
+  depoSayimiBitir,
+  depoSayimiIptalEt,
+  depoSayimKaydet,
   depoUrunAra,
   type AramaUrunu,
 } from "@/server/depo-islem";
+import type { AcikSayim, SayimFarklari } from "@/server/depo-sayim";
+import { fiyatYaz } from "@/ui/katalog-bicim";
 import {
   CIKIS_SEBEPLERI,
   EN_COK_ADET,
@@ -35,7 +43,7 @@ import {
 // Kamera ve ZXing yalnızca açılınca yükleniyor.
 const KameraOkuyucu = dynamic(() => import("@/ui/kamera-okuyucu"), { ssr: false });
 
-type Mod = "gelen" | "cikar";
+type Mod = "gelen" | "cikar" | "say";
 type Taslak = { anahtar: string; satirlar: DepoSatiri[] };
 
 const SAKLAMA = (mod: Mod) => `depo-taslak-${mod}`;
@@ -49,6 +57,8 @@ function yeniAnahtar(): string {
 }
 
 function taslakOku(mod: Mod): Taslak {
+  // Sayımın listesi sunucuda (K-177); telefonda saklanmıyor.
+  if (mod === "say") return { anahtar: "", satirlar: [] };
   try {
     const ham = localStorage.getItem(SAKLAMA(mod));
     if (ham) {
@@ -62,6 +72,7 @@ function taslakOku(mod: Mod): Taslak {
 }
 
 function taslakYaz(mod: Mod, t: Taslak) {
+  if (mod === "say") return;
   try {
     if (t.satirlar.length === 0) localStorage.removeItem(SAKLAMA(mod));
     else localStorage.setItem(SAKLAMA(mod), JSON.stringify(t));
@@ -109,7 +120,13 @@ function sesVer(iyi: boolean, acik: boolean) {
  * tek seferde yazılıyor. Liste telefonda saklanıyor; kaydetmeden çıkılsa da
  * kaybolmuyor.
  */
-export default function DepoEkrani({ baslangicModu = "gelen" }: { baslangicModu?: Mod }) {
+export default function DepoEkrani({
+  baslangicModu = "gelen",
+  kategoriler = [],
+}: {
+  baslangicModu?: Mod;
+  kategoriler?: { slug: string; ad: string }[];
+}) {
   const [mod, setMod] = useState<Mod>(baslangicModu);
   const [taslak, setTaslak] = useState<Taslak>({ anahtar: "", satirlar: [] });
   const [yuklendi, setYuklendi] = useState(false);
@@ -126,6 +143,12 @@ export default function DepoEkrani({ baslangicModu = "gelen" }: { baslangicModu?
   const [bekliyor, setBekliyor] = useState(false);
   const kutu = useRef<HTMLInputElement>(null);
   const onbellek = useRef(new Map<string, DepoBedeni>());
+  // Sayım (K-177): açık sayım, sunucuya yazılma durumu, silinen satırlar.
+  const [sayim, setSayim] = useState<AcikSayim | null | undefined>(undefined);
+  const [senkron, setSenkron] = useState<"tamam" | "bekliyor" | "hata">("tamam");
+  const [surum, setSurum] = useState(0);
+  const [bitirAcik, setBitirAcik] = useState(false);
+  const kaldirilan = useRef(new Set<string>());
 
   // Taslak tarayıcıda; ilk boyamadan sonra okunuyor (sunucuyla uyuşsun).
   // Mod değişimi `modDegis`te: mod ve liste aynı anda değişiyor, bir modun
@@ -134,7 +157,68 @@ export default function DepoEkrani({ baslangicModu = "gelen" }: { baslangicModu?
     // eslint-disable-next-line react-hooks/set-state-in-effect -- tarayıcı saklamasından tek seferlik okuma
     setTaslak(taslakOku(baslangicModu));
     setYuklendi(true);
+    if (baslangicModu === "say") void sayimYukle();
   }, [baslangicModu]);
+
+  /** Açık sayımı sunucudan alır; sayılmışlar listeye gelir. */
+  async function sayimYukle() {
+    setSayim(undefined);
+    try {
+      const s = await depoSayimGetir();
+      kaldirilan.current.clear();
+      setSayim(s);
+      setTaslak({ anahtar: "", satirlar: s?.satirlar ?? [] });
+      setSenkron("tamam");
+    } catch {
+      setSayim(null);
+      setMesaj({ iyi: false, metin: "Sayım bilgisi alınamadı; bağlantıyı kontrol et." });
+    }
+  }
+
+  /** Sayılanları sunucuya yazar (mutlak; iki kez gitse de sonuç aynı). */
+  const sayimiYaz = useCallback(
+    async (liste: DepoSatiri[]): Promise<boolean> => {
+      if (!sayim) return false;
+      const silinen = [...kaldirilan.current];
+      try {
+        const r = await depoSayimKaydet(
+          sayim.id,
+          liste.map((x) => ({ variantId: x.variantId, adet: x.adet })),
+          silinen,
+        );
+        if (!r.tamam) {
+          setSenkron("hata");
+          setMesaj({
+            iyi: false,
+            metin:
+              "Bu sayım kapanmış (başka yerden bitirilmiş ya da iptal edilmiş). Sayfayı yenile.",
+          });
+          return false;
+        }
+        for (const id of silinen) kaldirilan.current.delete(id);
+        setSenkron("tamam");
+        return true;
+      } catch {
+        setSenkron("hata");
+        return false;
+      }
+    },
+    [sayim],
+  );
+
+  // Sayım listesi değişince 1,5 saniye sonra sunucuya yazılıyor.
+  useEffect(() => {
+    if (mod !== "say" || !sayim || surum === 0) return;
+    const t = setTimeout(() => void sayimiYaz(taslak.satirlar), 1500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [surum]);
+
+  const sayimDegisti = () => {
+    if (mod !== "say") return;
+    setSenkron("bekliyor");
+    setSurum((n) => n + 1);
+  };
 
   useEffect(() => {
     if (yuklendi) taslakYaz(mod, taslak);
@@ -147,6 +231,8 @@ export default function DepoEkrani({ baslangicModu = "gelen" }: { baslangicModu?
     taslakYaz(mod, taslak);
     setMod(m);
     setTaslak(taslakOku(m));
+    if (m === "say") void sayimYukle();
+    setBitirAcik(false);
     setSon(null);
     setSecim(null);
     setOgret(null);
@@ -157,6 +243,8 @@ export default function DepoEkrani({ baslangicModu = "gelen" }: { baslangicModu?
   const ekle = useCallback(
     (b: DepoBedeni, adet = b.carpan) => {
       setTaslak((t) => ({ ...t, satirlar: listeyeEkle(t.satirlar, b, adet) }));
+      kaldirilan.current.delete(b.variantId);
+      sayimDegisti();
       setSon(b);
       setSecim(null);
       setOgret(null);
@@ -164,7 +252,8 @@ export default function DepoEkrani({ baslangicModu = "gelen" }: { baslangicModu?
       setMesaj(null);
       sesVer(true, ses);
     },
-    [ses],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [ses, mod],
   );
 
   const okut = useCallback(
@@ -243,7 +332,9 @@ export default function DepoEkrani({ baslangicModu = "gelen" }: { baslangicModu?
     }
   };
 
-  const adetDegis = (variantId: string, adet: number) =>
+  const adetDegis = (variantId: string, adet: number) => {
+    if (adet <= 0) kaldirilan.current.add(variantId);
+    sayimDegisti();
     setTaslak((t) => ({
       ...t,
       satirlar: t.satirlar.flatMap((s) =>
@@ -254,6 +345,7 @@ export default function DepoEkrani({ baslangicModu = "gelen" }: { baslangicModu?
             : [{ ...s, adet: Math.min(EN_COK_ADET, adet) }],
       ),
     }));
+  };
 
   const kaydet = async (ek: {
     sebep?: CikisSebebi;
@@ -265,7 +357,7 @@ export default function DepoEkrani({ baslangicModu = "gelen" }: { baslangicModu?
     try {
       const r = await depoListeKaydet({
         anahtar: taslak.anahtar,
-        tur: mod,
+        tur: mod === "cikar" ? "cikar" : "gelen",
         satirlar: taslak.satirlar.map((s) => ({ variantId: s.variantId, adet: s.adet })),
         ...ek,
       });
@@ -306,22 +398,24 @@ export default function DepoEkrani({ baslangicModu = "gelen" }: { baslangicModu?
   return (
     <div className="flex flex-col gap-4 pb-28">
       {/* Mod seçici */}
-      <div className="grid grid-cols-2 gap-2">
-        {(["gelen", "cikar"] as const).map((m) => (
+      <div className="grid grid-cols-3 gap-2">
+        {(["gelen", "cikar", "say"] as const).map((m) => (
           <button
             key={m}
             type="button"
             onClick={() => modDegis(m)}
             aria-pressed={mod === m}
-            className={`rounded-marka border-[1.5px] px-3 py-3 text-base font-bold transition ${
+            className={`whitespace-nowrap rounded-marka border-[1.5px] px-1 py-3 text-sm font-bold transition sm:text-base ${
               mod === m
                 ? m === "gelen"
                   ? "border-nane bg-nane-soluk text-nane-koyu"
-                  : "border-mercan bg-mercan-soluk text-mercan-koyu"
+                  : m === "cikar"
+                    ? "border-mercan bg-mercan-soluk text-mercan-koyu"
+                    : "border-mavi bg-mavi-soluk text-mavi-koyu"
                 : "border-cizgi bg-yuzey text-metin-2"
             }`}
           >
-            {m === "gelen" ? "＋ " : "− "}
+            {m === "gelen" ? "＋ " : m === "cikar" ? "− " : "# "}
             {MOD_ADLARI[m]}
           </button>
         ))}
@@ -329,11 +423,50 @@ export default function DepoEkrani({ baslangicModu = "gelen" }: { baslangicModu?
       <p className="-mt-2 text-xs text-metin-3">
         {mod === "gelen"
           ? "Okuttuğun her ürün stoğa eklenecek. Bitince aşağıdan kaydet."
-          : "Okuttuğun her ürün stoktan düşülecek (hasarlı, kayıp, numune). Bitince aşağıdan kaydet."}
+          : mod === "cikar"
+            ? "Okuttuğun her ürün stoktan düşülecek (hasarlı, kayıp, numune). Bitince aşağıdan kaydet."
+            : "Raftaki her ürünü okut; sayılanlar kendiliğinden kaydedilir. Bitince farkları görüp onaylarsın."}
       </p>
 
+      {/* Sayım: açık sayım yoksa kapsam seçip başlat. */}
+      {mod === "say" && sayim === undefined && (
+        <p className="text-sm text-metin-3">Sayım bilgisi alınıyor…</p>
+      )}
+      {mod === "say" && sayim === null && (
+        <SayimBaslat
+          kategoriler={kategoriler}
+          baslat={async (kapsam) => {
+            try {
+              const s = await depoSayimBaslat(kapsam);
+              kaldirilan.current.clear();
+              setSayim(s);
+              setTaslak({ anahtar: "", satirlar: s?.satirlar ?? [] });
+            } catch {
+              setMesaj({ iyi: false, metin: "Sayım başlatılamadı; bağlantıyı kontrol et." });
+            }
+          }}
+        />
+      )}
+      {mod === "say" && sayim && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-marka border border-mavi bg-mavi-soluk/50 px-4 py-3 text-sm">
+          <span>
+            <b>{sayim.ad}</b>
+            <span className="block text-xs text-metin-2">Kapsam: {sayim.kapsamAdi}</span>
+          </span>
+          <span
+            className={`text-xs font-bold ${senkron === "hata" ? "text-mercan-koyu" : "text-metin-3"}`}
+          >
+            {senkron === "tamam"
+              ? "✓ kaydedildi"
+              : senkron === "bekliyor"
+                ? "kaydediliyor…"
+                : "kaydedilemedi, yeniden denenecek"}
+          </span>
+        </div>
+      )}
+
       {/* Kamera */}
-      {kamera ? (
+      {mod === "say" && !sayim ? null : kamera ? (
         <KameraOkuyucu onOku={okut} onKapat={() => setKamera(false)} />
       ) : (
         <button type="button" onClick={() => setKamera(true)} className={`${ANA_DUGME} py-3`}>
@@ -347,7 +480,7 @@ export default function DepoEkrani({ baslangicModu = "gelen" }: { baslangicModu?
           e.preventDefault();
           void kutuGonder();
         }}
-        className="flex gap-2"
+        className={mod === "say" && !sayim ? "hidden" : "flex gap-2"}
       >
         <input
           ref={kutu}
@@ -427,7 +560,11 @@ export default function DepoEkrani({ baslangicModu = "gelen" }: { baslangicModu?
       {son && (
         <div
           className={`rounded-marka border-[1.5px] p-4 ${
-            mod === "gelen" ? "border-nane bg-nane-soluk/50" : "border-mercan bg-mercan-soluk/50"
+            mod === "gelen"
+              ? "border-nane bg-nane-soluk/50"
+              : mod === "cikar"
+                ? "border-mercan bg-mercan-soluk/50"
+                : "border-mavi bg-mavi-soluk/50"
           }`}
         >
           <p className="text-lg font-bold leading-tight">{son.urunAd}</p>
@@ -436,12 +573,13 @@ export default function DepoEkrani({ baslangicModu = "gelen" }: { baslangicModu?
           </p>
           <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-metin-2">
             <span className="rakam">
-              Bu listede:{" "}
+              {mod === "say" ? "Sayılan" : "Bu listede"}:{" "}
               <b>{taslak.satirlar.find((s) => s.variantId === son.variantId)?.adet ?? 0}</b>
             </span>
-            <span className="rakam">Stok: {son.stok}</span>
-            {son.sure && <span>{son.sure}</span>}
-            {son.ayrilan > 0 && (
+            {/* Sayımda sistemdeki stok gösterilmiyor: sayanı etkilemesin. */}
+            {mod !== "say" && <span className="rakam">Stok: {son.stok}</span>}
+            {mod !== "say" && son.sure && <span>{son.sure}</span>}
+            {mod !== "say" && son.ayrilan > 0 && (
               <span className="rakam">{son.ayrilan} tanesi siparişte ayrılı</span>
             )}
             {son.carpan > 1 && <span className="rakam">paket: ×{son.carpan}</span>}
@@ -453,7 +591,7 @@ export default function DepoEkrani({ baslangicModu = "gelen" }: { baslangicModu?
       {taslak.satirlar.length > 0 && (
         <section className="rounded-marka border border-cizgi bg-yuzey">
           <h2 className="border-b border-cizgi px-4 py-3 text-base">
-            {MOD_ADLARI[mod]} listesi{" "}
+            {mod === "say" ? "Sayılanlar" : `${MOD_ADLARI[mod]} listesi`}{" "}
             <span className="rakam text-sm font-normal text-metin-3">
               {taslak.satirlar.length} kalem · {toplamAdet} adet
             </span>
@@ -464,7 +602,8 @@ export default function DepoEkrani({ baslangicModu = "gelen" }: { baslangicModu?
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold">{s.urunAd}</span>
                   <span className="block text-xs text-metin-3">
-                    {s.beden} · {s.renkAdi} · <span className="rakam">stok {s.stok}</span>
+                    {s.beden} · {s.renkAdi}
+                    {mod !== "say" && <span className="rakam"> · stok {s.stok}</span>}
                   </span>
                 </span>
                 <button
@@ -504,7 +643,7 @@ export default function DepoEkrani({ baslangicModu = "gelen" }: { baslangicModu?
               </li>
             ))}
           </ul>
-          <div className="border-t border-cizgi px-4 py-2 text-right">
+          <div className={mod === "say" ? "hidden" : "border-t border-cizgi px-4 py-2 text-right"}>
             <button
               type="button"
               onClick={() => {
@@ -521,10 +660,38 @@ export default function DepoEkrani({ baslangicModu = "gelen" }: { baslangicModu?
         </section>
       )}
 
+      {/* Sayımı bitirme */}
+      {mod === "say" && sayim && bitirAcik && (
+        <SayimBitirPenceresi
+          sayimId={sayim.id}
+          raf={sayim.kapsam === "okutulan"}
+          hazirla={() => sayimiYaz(taslak.satirlar)}
+          kapat={() => setBitirAcik(false)}
+          bitti={(duzeltilen) => {
+            setBitirAcik(false);
+            setSayim(null);
+            setTaslak({ anahtar: "", satirlar: [] });
+            setSon(null);
+            setMesaj({
+              iyi: true,
+              metin: `Sayım bitti; ${duzeltilen} bedenin stoğu düzeltildi. Farklar stok geçmişinde "Sayım farkı" olarak duruyor.`,
+            });
+          }}
+          iptal={async () => {
+            await depoSayimiIptalEt(sayim.id);
+            setBitirAcik(false);
+            setSayim(null);
+            setTaslak({ anahtar: "", satirlar: [] });
+            setSon(null);
+            setMesaj({ iyi: true, metin: "Sayım iptal edildi; stoğa hiçbir şey yazılmadı." });
+          }}
+        />
+      )}
+
       {/* Kayıt penceresi */}
-      {kayitAcik && (
+      {kayitAcik && mod !== "say" && (
         <KayitPenceresi
-          mod={mod}
+          mod={mod === "cikar" ? "cikar" : "gelen"}
           kalem={taslak.satirlar.length}
           adet={toplamAdet}
           bekliyor={bekliyor}
@@ -534,7 +701,7 @@ export default function DepoEkrani({ baslangicModu = "gelen" }: { baslangicModu?
       )}
 
       {/* Alt çubuk */}
-      {taslak.satirlar.length > 0 && !kayitAcik && (
+      {mod !== "say" && taslak.satirlar.length > 0 && !kayitAcik && (
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-cizgi bg-yuzey/95 px-4 py-3 backdrop-blur">
           <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
             <span className="rakam text-sm">
@@ -546,6 +713,259 @@ export default function DepoEkrani({ baslangicModu = "gelen" }: { baslangicModu?
           </div>
         </div>
       )}
+      {mod === "say" && sayim && !bitirAcik && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-cizgi bg-yuzey/95 px-4 py-3 backdrop-blur">
+          <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
+            <span className="rakam text-sm">
+              <b>{taslak.satirlar.length}</b> kalem · <b>{toplamAdet}</b> adet sayıldı
+            </span>
+            <button type="button" onClick={() => setBitirAcik(true)} className={ANA_DUGME}>
+              Sayımı bitir
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SayimBaslat({
+  kategoriler,
+  baslat,
+}: {
+  kategoriler: { slug: string; ad: string }[];
+  baslat: (kapsam: string) => Promise<void>;
+}) {
+  const [tur, setTur] = useState<"okutulan" | "kategori" | "tumu">("okutulan");
+  const [kategori, setKategori] = useState(kategoriler[0]?.slug ?? "");
+  const [bekliyor, setBekliyor] = useState(false);
+  const secenekler = [
+    [
+      "okutulan",
+      "Yalnızca okuttuklarım",
+      "Raf raf sayım: yalnızca okuttuğun bedenler karşılaştırılır.",
+    ],
+    [
+      "kategori",
+      "Bir kategori",
+      "O kategorideki bütün bedenler; okutmadıklarını sonunda görürsün.",
+    ],
+    ["tumu", "Bütün mağaza", "Ayda bir önerilir; okutmadıklarını sonunda görürsün."],
+  ] as const;
+  return (
+    <div className="flex flex-col gap-3 rounded-marka border border-cizgi bg-yuzey p-4">
+      <p className="font-bold">Yeni sayım: neyi sayacaksın?</p>
+      {secenekler.map(([d, ad, aciklama]) => (
+        <label
+          key={d}
+          className={`flex gap-3 rounded-[10px] border-[1.5px] px-3 py-2.5 ${
+            tur === d ? "border-mavi" : "border-cizgi"
+          }`}
+        >
+          <input
+            type="radio"
+            checked={tur === d}
+            onChange={() => setTur(d)}
+            className="mt-1 h-4 w-4 accent-[var(--mercan)]"
+          />
+          <span>
+            <span className="block text-sm font-semibold">{ad}</span>
+            <span className="block text-xs text-metin-3">{aciklama}</span>
+          </span>
+        </label>
+      ))}
+      {tur === "kategori" && (
+        <select
+          value={kategori}
+          onChange={(e) => setKategori(e.target.value)}
+          aria-label="Kategori"
+          className={GIRDI}
+        >
+          {kategoriler.map((k) => (
+            <option key={k.slug} value={k.slug}>
+              {k.ad}
+            </option>
+          ))}
+        </select>
+      )}
+      <button
+        type="button"
+        disabled={bekliyor || (tur === "kategori" && !kategori)}
+        onClick={async () => {
+          setBekliyor(true);
+          await baslat(tur === "okutulan" ? "okutulan" : tur === "kategori" ? kategori : "");
+          setBekliyor(false);
+        }}
+        className={`${ANA_DUGME} self-start disabled:opacity-50`}
+      >
+        Sayımı başlat
+      </button>
+    </div>
+  );
+}
+
+function SayimBitirPenceresi({
+  sayimId,
+  raf,
+  hazirla,
+  kapat,
+  bitti,
+  iptal,
+}: {
+  sayimId: string;
+  raf: boolean;
+  hazirla: () => Promise<boolean>;
+  kapat: () => void;
+  bitti: (duzeltilen: number) => void;
+  iptal: () => Promise<void>;
+}) {
+  const [f, setF] = useState<SayimFarklari | null | undefined>(undefined);
+  const [sifir, setSifir] = useState(false);
+  const [bekliyor, setBekliyor] = useState(false);
+  const [hata, setHata] = useState("");
+
+  useEffect(() => {
+    let iptalEdildi = false;
+    (async () => {
+      // Önce bekleyen sayılanlar yazılıyor; farklar güncel olsun.
+      await hazirla();
+      try {
+        const r = await depoSayimFarklari(sayimId);
+        if (!iptalEdildi) setF(r);
+      } catch {
+        if (!iptalEdildi) setHata("Farklar alınamadı; bağlantıyı kontrol et.");
+      }
+    })();
+    return () => {
+      iptalEdildi = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sayimId]);
+
+  return (
+    <div
+      role="dialog"
+      aria-label="Sayımı bitir"
+      className="fixed inset-x-0 bottom-0 z-40 max-h-[88vh] overflow-y-auto rounded-t-marka border-t border-cizgi bg-yuzey p-5 shadow-2xl"
+    >
+      <div className="mx-auto flex max-w-xl flex-col gap-4">
+        <p className="text-lg font-bold">Sayımı bitir</p>
+        {hata && <p className={HATA_KUTUSU}>{hata}</p>}
+        {f === undefined && !hata && <p className="text-sm text-metin-3">Farklar hesaplanıyor…</p>}
+        {f === null && <p className={HATA_KUTUSU}>Bu sayım artık açık değil. Sayfayı yenile.</p>}
+        {f && (
+          <>
+            <p className="rakam text-sm text-metin-2">
+              {f.ozet.sayilan} beden sayıldı · {f.ozet.farkli} bedende fark
+              {f.ozet.farkli > 0 && (
+                <>
+                  {" "}
+                  (eksik {f.ozet.eksikAdet}, fazla {f.ozet.fazlaAdet} adet
+                  {f.ozet.farkMaliyetKurus !== 0 &&
+                    `; maliyetle ${fiyatYaz(f.ozet.farkMaliyetKurus)}`}
+                  )
+                </>
+              )}
+            </p>
+            {f.farklar.length === 0 ? (
+              <p className={IYI_KUTU}>Sayılanlar sistemle tutuyor; düzeltilecek bir şey yok.</p>
+            ) : (
+              <ul className="divide-y divide-cizgi-soluk rounded-marka border border-cizgi">
+                {f.farklar.slice(0, 200).map((x, i) => (
+                  <li
+                    key={(x.variantId ?? "") + i}
+                    className="flex items-center gap-2 px-3 py-2 text-sm"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-semibold">{x.urunAd}</span>
+                      <span className="block text-xs text-metin-3">
+                        {x.beden} · {x.renkAdi}
+                      </span>
+                    </span>
+                    <span className="rakam text-xs text-metin-2">
+                      beklenen {x.beklenen} · sayılan {x.sayilan}
+                    </span>
+                    <span
+                      className={`rakam w-12 text-right font-bold ${
+                        x.fark < 0 ? "text-mercan-koyu" : "text-nane-koyu"
+                      }`}
+                    >
+                      {x.fark > 0 ? `+${x.fark}` : x.fark}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {!raf && f.okutulmayan > 0 && (
+              <div className="rounded-marka border border-sari bg-sari-soluk px-4 py-3 text-sm">
+                <p>
+                  <b className="rakam">{f.okutulmayan}</b> bedeni okutmadın. Varsayılan olarak
+                  onlara dokunulmaz.
+                </p>
+                <label className="mt-2 flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    checked={sifir}
+                    onChange={(e) => setSifir(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 accent-[var(--mercan)]"
+                  />
+                  <span>
+                    Okutmadıklarım rafta yok: <b>stoklarını sıfırla</b>. Yalnızca kapsamdaki bütün
+                    rafları gerçekten saydıysan işaretle.
+                  </span>
+                </label>
+              </div>
+            )}
+            <p className="text-xs text-metin-3">
+              Fark, rafta olması gerekenle (stok + kargolanmamış siparişte ayrılan) karşılaştırılır
+              ve stoğa eklenerek uygulanır; sayım sürerken gelen satışlar korunur.
+            </p>
+          </>
+        )}
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            disabled={!f || bekliyor}
+            onClick={async () => {
+              setBekliyor(true);
+              setHata("");
+              try {
+                const r = await depoSayimiBitir(sayimId, sifir);
+                if (r.tamam) bitti(r.duzeltilen);
+                else
+                  setHata(
+                    "Sayım bitirilemedi; başka yerden bitirilmiş ya da iptal edilmiş olabilir.",
+                  );
+              } catch {
+                setHata("Bağlantı koptu. Yeniden bas; sayım iki kez uygulanmaz.");
+              } finally {
+                setBekliyor(false);
+              }
+            }}
+            className={`${ANA_DUGME} disabled:opacity-50`}
+          >
+            {bekliyor ? "Uygulanıyor…" : "Onayla, stoğa uygula"}
+          </button>
+          <button type="button" onClick={kapat} className="text-sm font-semibold text-metin-3">
+            Saymaya devam et
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (
+                window.confirm(
+                  "Sayım iptal edilsin mi? Sayılanlar silinir, stoğa hiçbir şey yazılmaz.",
+                )
+              ) {
+                void iptal();
+              }
+            }}
+            className="ml-auto text-xs font-bold text-metin-3 hover:text-mercan-koyu"
+          >
+            Sayımı iptal et
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

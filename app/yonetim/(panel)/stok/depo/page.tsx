@@ -1,15 +1,22 @@
+import { db } from "@/server/veritabani";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
+import { kategoriEtiketleri } from "@/ui/kategori-etiketi";
 import DepoEkrani from "@/ui/depo-ekrani";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Depo (K-176): telefonla barkod okutarak mal kabulü ve stoktan çıkarma.
- * Mal kabulü sayfası buraya yönleniyor.
+ * Depo (K-176, K-177): telefonla barkod okutarak mal kabulü, stoktan
+ * çıkarma ve sayım. Mal kabulü sayfası buraya yönleniyor.
  */
 export default async function Depo({ searchParams }: PageProps<"/yonetim/stok/depo">) {
   await yoneticiGerekli();
   const { mod } = await searchParams;
+  const kategoriler = await db.category.findMany({
+    orderBy: { sira: "asc" },
+    select: { slug: true, ad: true },
+  });
+  const etiketler = kategoriEtiketleri(kategoriler);
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
@@ -20,7 +27,10 @@ export default async function Depo({ searchParams }: PageProps<"/yonetim/stok/de
           öğretirsin, bir daha sorulmaz.
         </p>
       </div>
-      <DepoEkrani baslangicModu={mod === "cikar" ? "cikar" : "gelen"} />
+      <DepoEkrani
+        baslangicModu={mod === "cikar" ? "cikar" : mod === "say" ? "say" : "gelen"}
+        kategoriler={kategoriler.map((k) => ({ slug: k.slug, ad: etiketler.get(k.slug) ?? k.ad }))}
+      />
     </div>
   );
 }

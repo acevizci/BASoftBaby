@@ -1,4 +1,5 @@
 import Link from "next/link";
+import StokSekmeleri from "@/ui/stok-sekmeleri";
 import { PENCERELER, pencereCoz, satmayanlar } from "@/server/satmayan";
 import { renkAdlari } from "@/server/renkler";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
@@ -24,6 +25,7 @@ export default async function Satmayanlar({ searchParams }: PageProps<"/yonetim/
 
   return (
     <div className="flex flex-col gap-5">
+      <StokSekmeleri secili="/yonetim/stok/satmayanlar" />
       <h1 className="text-2xl">Satmayan stok</h1>
       <p className="text-sm text-metin-2">
         Son {gun} günde hiç satmamış, stoğu olan bedenler; en çok para bağlayan üstte. Bu süre

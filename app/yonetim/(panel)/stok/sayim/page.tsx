@@ -1,59 +1,44 @@
 import Link from "next/link";
-import { db } from "@/server/veritabani";
+import StokSekmeleri from "@/ui/stok-sekmeleri";
 import { sayimlar } from "@/server/sayim";
-import { sayimBaslat } from "@/server/sayim-islem";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { fiyatYaz } from "@/ui/katalog-bicim";
-import GonderDugmesi from "@/ui/gonder-dugmesi";
 
 export const dynamic = "force-dynamic";
 
-const GIRDI =
-  "rounded-[10px] border-[1.5px] border-cizgi bg-yuzey px-3 py-2 text-sm text-metin outline-none focus:border-mercan";
 const DURUM_ADI: Record<string, string> = { acik: "sürüyor", tamam: "bitti", iptal: "vazgeçildi" };
 
 /** Stok sayımları (K-107): yeni sayım ve geçmiş sayımların farkları. */
 export default async function Sayimlar() {
   await yoneticiGerekli();
 
-  const [liste, kategoriler] = await Promise.all([
-    sayimlar(),
-    db.category.findMany({ orderBy: { sira: "asc" }, select: { slug: true, ad: true } }),
-  ]);
-  const bugun = new Date().toLocaleDateString("tr-TR", { timeZone: "Europe/Istanbul" });
+  const liste = await sayimlar();
+  const acik = liste.find((s) => s.durum === "acik");
 
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="text-2xl">Sayım</h1>
+      <StokSekmeleri secili="/yonetim/stok/sayim" />
+      <h1 className="text-2xl">Sayımlar</h1>
       <p className="text-sm text-metin-2">
-        Raftaki gerçek adedi gir, sistemle farkları gör, onaylayınca stok düzeltilsin. Kargoya
+        Raftaki gerçek adedi say, sistemle farkları gör, onaylayınca stok düzeltilsin. Kargoya
         verilmemiş siparişlerin ürünleri hâlâ rafta olduğu için hesaba katılıyor. Sayım sürerken
         satış olursa o da korunuyor.
       </p>
 
-      <form action={sayimBaslat} className="flex flex-wrap items-end gap-3 rounded-marka border border-cizgi bg-yuzey p-4">
-        <label className="flex min-w-[200px] flex-1 flex-col gap-1.5">
-          <span className="text-xs font-bold text-metin-2">Sayımın adı</span>
-          <input name="ad" defaultValue={`Sayım ${bugun}`} maxLength={80} className={GIRDI} />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-bold text-metin-2">Ne sayılacak</span>
-          <select name="kapsam" defaultValue="" className={GIRDI}>
-            <option value="">Bütün ürünler</option>
-            {kategoriler.map((k) => (
-              <option key={k.slug} value={k.slug}>
-                {k.ad}
-              </option>
-            ))}
-          </select>
-        </label>
-        <GonderDugmesi
-          bekleyen="Açılıyor…"
+      {/* Yeni sayım Depo ekranında, okutarak (K-177). */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-marka border border-cizgi bg-yuzey p-4">
+        <p className="text-sm text-metin-2">
+          {acik
+            ? `"${acik.ad}" sürüyor. Telefondan okutarak devam edebilirsin.`
+            : "Sayım telefonla, barkod okutarak yapılıyor: raf raf, bir kategori ya da bütün mağaza."}
+        </p>
+        <Link
+          href="/yonetim/stok/depo?mod=say"
           className="rounded-full bg-dugme px-5 py-2 text-sm font-bold text-dugme-yazi transition hover:brightness-95"
         >
-          Sayım başlat
-        </GonderDugmesi>
-      </form>
+          {acik ? "Sayıma devam et" : "Depo'da sayım başlat"}
+        </Link>
+      </div>
 
       {liste.length === 0 ? (
         <p className="rounded-marka border border-cizgi bg-yuzey p-8 text-center text-sm text-metin-2">

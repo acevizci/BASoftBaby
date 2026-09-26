@@ -12,6 +12,7 @@ import {
   bekleyenToplami,
   bolumOzeti,
   bolumSatiriEtkinMi,
+  gorunenAlt,
   eslesir,
   etkinAdres,
   etkinBolum,
@@ -449,9 +450,11 @@ function BolumSatiri({
   acik: boolean;
   cevir: () => void;
 }) {
-  const satirEtkin = bolumSatiriEtkinMi(yol, b);
   const adres = etkinAdres(yol);
-  const altVar = b.alt.length > 0;
+  // Menüde gizli alt sayfadayken (stok geçmişi gibi) bölümün kendisi seçili.
+  const satirEtkin =
+    bolumSatiriEtkinMi(yol, b) || b.alt.some((a) => a.menudeGizli && a.yol === adres);
+  const altVar = gorunenAlt(b).length > 0;
   const gorunur = acik && altVar;
   // Alt maddeler görünüyorsa rakamlar onlarda; başlıkta yalnızca bölümün
   // kendi rozeti. Kapalıysa bölümün toplamı başlıkta (K-116). Dar menüde alt
@@ -522,7 +525,7 @@ function BolumSatiri({
           id={listeId}
           className={`mb-1 ml-[1.15rem] mt-0.5 flex flex-col gap-0.5 border-l border-cizgi pl-2 ${dar ? "lg:hidden" : ""}`}
         >
-          {b.alt.map((a) => (
+          {gorunenAlt(b).map((a) => (
             <AltSatir
               key={a.yol + a.ad}
               ad={a.ad}
@@ -550,7 +553,7 @@ function BolumSatiri({
             </Link>
             {altVar && (
               <ul className="mt-1 flex flex-col gap-0.5 border-t border-cizgi-soluk pt-1">
-                {b.alt.map((a) => (
+                {gorunenAlt(b).map((a) => (
                   <AltSatir
                     key={a.yol + a.ad}
                     ad={a.ad}
