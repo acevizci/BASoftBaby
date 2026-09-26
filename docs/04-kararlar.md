@@ -6840,6 +6840,48 @@ tanıyordu. Mal kabulü ürün ürün aranarak yapılıyordu.
 [`../ui/panel-menu-bicim.ts`](../ui/panel-menu-bicim.ts),
 [`../testler/depo-sayim.test.ts`](../testler/depo-sayim.test.ts)
 
+
+### K-178 · Stok 3: beden × renk tablosu, satış hızına göre "azaldı"
+
+- **Ürün sayfasında beden × renk tablosu.** Bedenler ve renkler
+  işaretleniyor, tablo doluyor; stok ve barkod aynı hücrede, tek "Kaydet".
+  Eskiden her birleşim ayrı formdu: 5 beden × 3 renk için 15 gönderim.
+  - **Yeni hücre:** beden oluşturuluyor, başlangıç stoğu, hareket "Yeni
+    beden".
+  - **Var olan hücre:** yalnızca elle değiştirilen hücrenin stoğu
+    gönderiliyor. Ekranda görülen değerle koşullu yazılıyor (K-102);
+    arada satış olduysa yazılmıyor, uyarı çıkıyor. Kayıttan sonra tablo
+    güncel veriyle yeniden kuruluyor.
+  - **Barkod** hücreye el okuyucuyla okutulabiliyor; Enter sonraki kutuya
+    geçiyor, form yarıda kaydedilmiyor.
+  - **"Son ürün gibi":** aynı kategorideki son ürünün bedenleri ve renkleri
+    tek tıkla işaretleniyor.
+  - Var olan birleşimin bedeni ya da rengi tablodan kaldırılamıyor; silme
+    stoğu da sildiği için alttaki listede, onaylı.
+  - Tek tek "Ekle" formu (`varyantEkle`) kaldırıldı.
+  - Depo'da tanınmayan barkod için "Yeni ürün olarak ekle": barkod yeni ürün
+    formundan geçip tabloya geliyor, boş bir barkod kutusuna ilk tıklamada
+    yazılıyor.
+- **"Azaldı" satış hızından.** Sabit "3 adet ve altı" kalktı:
+  - Tahmini süre 14 günden kısaysa azaldı.
+  - Az veride (30 günde 3 satıştan az) 2 adet ve altı azaldı.
+  - Hiç satmayan beden azaldı sayılmıyor.
+  - Menü rozeti, panel özeti, stok süzgeci ve sabah özeti aynı kuralı
+    kullanıyor (`azalanMi`, `azalanIdleri`). Liste beş dakika saklanıyor;
+    stok değişince katalog etiketiyle tazeleniyor. Biten bedenler her zaman
+    canlı sorgudan.
+- **Stok listesi beden × renk tablosu:** hücre kırmızı bitti, sarı azalıyor;
+  altında "~9 gün". Sayı yazarak düzeltme ve çakışma denetimi aynı.
+- **Özet kutusu:** bitti, 7 günde bitecek, haber bekleyen (müşteri ve beden
+  sayısı) ve açık sayım. Her biri ilgili listeyi açıyor.
+- **Toplu yüklemede "Barkod" sütunu** (isteğe bağlı). Dolu satırda barkod
+  bedene bağlanıyor; şablonda ve yardımda var.
+
+**Nerede:** [`../server/beden-tablosu.ts`](../server/beden-tablosu.ts),
+[`../ui/beden-renk-tablosu.tsx`](../ui/beden-renk-tablosu.tsx),
+[`../server/satis-hizi.ts`](../server/satis-hizi.ts),
+[`../testler/beden-tablosu.test.ts`](../testler/beden-tablosu.test.ts)
+
 ---
 
 ## Açık sorular

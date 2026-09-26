@@ -9,6 +9,9 @@ import UrunSilme from "@/ui/urun-silme";
 import Link from "next/link";
 import HareketTablosu from "@/ui/hareket-tablosu";
 import { urunHareketleri } from "@/server/stok-hareket";
+import { sonUrunDuzeni } from "@/server/beden-tablosu";
+import { cakismalariCoz } from "@/server/stok-ekrani";
+import { kodTemizle } from "@/ui/depo-bicim";
 import { renkAdlari } from "@/server/renkler";
 import { ayarlariGetir } from "@/server/sepet";
 import { kategoriEtiketleri } from "@/ui/kategori-etiketi";
@@ -28,8 +31,21 @@ export default async function UrunDuzenle({
   await yoneticiGerekli();
 
   const { slug } = await params;
-  const { kayit, fhata, fkayit, fsil, fsira, hata, renk: renkParam, varolan, sethata, setkayit, setadet } =
-    await searchParams;
+  const {
+    kayit,
+    fhata,
+    fkayit,
+    fsil,
+    fsira,
+    hata,
+    renk: renkParam,
+    sethata,
+    setkayit,
+    setadet,
+    tablo,
+    cakisma,
+    barkod,
+  } = await searchParams;
 
   const [urun, kategoriler, satisAyari] = await Promise.all([
     db.product.findUnique({
@@ -104,7 +120,9 @@ export default async function UrunDuzenle({
       {uyari && <FiyatUyari uyari={uyari} />}
       <UrunFormu
         kaydedildi={kayit === "1"}
-        varOlanVaryant={typeof varolan === "string" ? varolan.slice(0, 80) : undefined}
+        tabloSonucu={tabloSonucuCoz(tablo, cakisma)}
+        sonUrun={await sonUrunDuzeni(urun.id, urun.categoryId)}
+        bekleyenBarkod={typeof barkod === "string" ? kodTemizle(barkod) || undefined : undefined}
         kdvOrani={satisAyari.kdvOrani}
         kategoriler={kategoriler.map((k) => ({
           slug: k.slug,
@@ -264,4 +282,17 @@ function FiyatUyari({ uyari }: { uyari: FiyatUyarisi }) {
       </p>
     </div>
   );
+}
+
+/** `?tablo=yeni-düzeltilen-barkod-geçersiz` ve çakışma adedi (K-178). */
+function tabloSonucuCoz(tablo: unknown, cakisma: unknown) {
+  if (typeof tablo !== "string") return undefined;
+  const [yeni, duzeltilen, barkod, gecersiz] = tablo.split("-").map((x) => Number(x) || 0);
+  return {
+    yeni,
+    duzeltilen,
+    barkod,
+    gecersiz,
+    cakisan: cakismalariCoz(cakisma).length,
+  };
 }

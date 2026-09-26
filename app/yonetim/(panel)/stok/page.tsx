@@ -2,8 +2,9 @@ import Link from "next/link";
 import StokSekmeleri from "@/ui/stok-sekmeleri";
 import { stoklariKaydet } from "@/server/yonetim";
 import {
-  AZALAN_ESIK,
   SAYFA_BOYU,
+  stokOzeti,
+  type StokOzeti,
   cakismaAyrintisi,
   cakismalariCoz,
   stokAdresi,
@@ -19,7 +20,7 @@ import Sayfalama from "@/ui/sayfalama";
 import BarkodOkuyucu from "@/ui/barkod-okuyucu";
 import { stokDegeri, type StokDegeri } from "@/server/stok-degeri";
 import { fiyatYaz } from "@/ui/katalog-bicim";
-import { gunYaz, satisHizlari, type Hiz } from "@/server/satis-hizi";
+import { AZALAN_GUN, gunYaz, satisHizlari, type Hiz } from "@/server/satis-hizi";
 
 export const dynamic = "force-dynamic";
 
@@ -49,11 +50,13 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
   const parametreler = await searchParams;
   const suzgec = suzgeciCoz(parametreler);
   const { kayit } = parametreler;
-  const [{ urunler, sayfa, sonSayfa, toplamAdet, sayaclar }, cakismalar, deger] = await Promise.all([
-    stokSayfasi(suzgec),
-    cakismaAyrintisi(cakismalariCoz(parametreler.cakisma)),
-    stokDegeri(),
-  ]);
+  const [{ urunler, sayfa, sonSayfa, toplamAdet, sayaclar }, cakismalar, deger, ozet] =
+    await Promise.all([
+      stokSayfasi(suzgec),
+      cakismaAyrintisi(cakismalariCoz(parametreler.cakisma)),
+      stokDegeri(),
+      stokOzeti(),
+    ]);
   const [sira, hizlar] = await Promise.all([
     bedenSirasi(),
     // Sayfadaki bedenlerin "kaç gün yeter" tahmini (K-106).
@@ -67,10 +70,11 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
     <div className="flex flex-col gap-5">
       <StokSekmeleri secili="/yonetim/stok" />
       <h1 className="text-2xl">Stok</h1>
+      <OzetKutusu o={ozet} />
       <StokDegeriKutusu d={deger} />
       <p className="text-sm text-metin-2">
-        Biten ve azalan bedenler önce geliyor. Buradaki sayı stoğun kendisi; değiştirip
-        kaydet, sıfır yazdığın beden mağazada seçilemez hale gelir. Gelen malı eklemek için{" "}
+        Kırmızı hücre bitti, sarı satış hızına göre yakında bitecek. Buradaki sayı stoğun
+        kendisi; değiştirip kaydet, sıfır yazdığın beden mağazada seçilemez hale gelir. Gelen malı eklemek için{" "}
         <Link href="/yonetim/stok/depo" className="font-bold text-mavi-koyu hover:underline">
           Depo ekranı
         </Link>
@@ -166,7 +170,7 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
         <span className="text-xs text-metin-3">
           {suzgec.durum === "hepsi"
             ? "pasif ürünler dahil"
-            : `biten ve ${AZALAN_ESIK} adet ve altına düşen bedenler`}
+            : `biten ve satış hızına göre ${AZALAN_GUN} günden kısa sürede bitecek bedenler`}
         </span>
       </div>
 
@@ -194,13 +198,7 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
             <input type="hidden" name="sayfa" value={String(sayfa)} />
 
             {urunler.map((u) => (
-              <Urun
-                key={u.id}
-                urun={u}
-                hepsiAcik={suzgec.durum === "hepsi"}
-                sira={sira}
-                hizlar={hizlar}
-              />
+              <Urun key={u.id} urun={u} sira={sira} hizlar={hizlar} />
             ))}
 
             <button
@@ -231,28 +229,22 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
 
 function Urun({
   urun,
-  hepsiAcik,
   sira,
   hizlar,
 }: {
   urun: StokUrunu;
-  hepsiAcik: boolean;
   hizlar: Map<string, Hiz>;
   /** Beden sırası; liste veritabanından geliyor (K-56). */
   sira: Map<string, number>;
 }) {
-  // Biten önce, sonra azalan, sonra beden sırası: düzeltilecek olan en üstte
-  // dursun diye.
-  const sirali = [...urun.bedenler].sort((a, b) => {
-    const oncelik = (s: number) => (s === 0 ? 0 : s <= AZALAN_ESIK ? 1 : 2);
-    const fark = oncelik(a.stok) - oncelik(b.stok);
-    if (fark !== 0) return fark;
-    const bedenFarki = sonSira(sira, a.beden) - sonSira(sira, b.beden);
-    return bedenFarki !== 0 ? bedenFarki : a.renk.localeCompare(b.renk, "tr");
-  });
-
-  const sorunlu = sirali.filter((v) => v.stok <= AZALAN_ESIK);
-  const saglam = sirali.filter((v) => v.stok > AZALAN_ESIK);
+  // Beden × renk tablosu (K-178): satırlarda bedenler, sütunlarda renkler.
+  const bedenler = [...new Set(urun.bedenler.map((v) => v.beden))].sort(
+    (a, b) => sonSira(sira, a) - sonSira(sira, b),
+  );
+  const renkler = [...new Map(urun.bedenler.map((v) => [v.renk, v.renkAdi]))].sort((a, b) =>
+    a[1].localeCompare(b[1], "tr"),
+  );
+  const hucre = new Map(urun.bedenler.map((v) => [`${v.beden}|${v.renk}`, v]));
 
   return (
     <section className="rounded-marka border border-cizgi bg-yuzey p-5">
@@ -272,16 +264,14 @@ function Urun({
             <span className="rakam font-bold text-mercan-koyu">{urun.bitenAdedi} beden bitti</span>
           )}
           {urun.azalanAdedi > 0 && (
-            <span className="rakam font-bold text-sari-koyu">
-              {urun.azalanAdedi} beden azalıyor
-            </span>
+            <span className="rakam font-bold text-sari-koyu">{urun.azalanAdedi} beden azalıyor</span>
           )}
           <span className="rakam text-metin-3">toplam {urun.toplam} adet</span>
           <Link
             href={`/yonetim/stok/hareketler?urun=${encodeURIComponent(urun.slug)}`}
             className="font-bold text-mavi-koyu hover:underline"
           >
-            hareketler
+            geçmiş
           </Link>
           <Link
             href={`/yonetim/stok/etiketler?urun=${encodeURIComponent(urun.slug)}`}
@@ -292,72 +282,118 @@ function Urun({
         </span>
       </div>
 
-      {sirali.length === 0 ? (
+      {urun.bedenler.length === 0 ? (
         <p className="mt-3 text-sm text-metin-3">
           Bu ürüne henüz beden eklenmemiş.{" "}
           <Link
-            href={`/yonetim/urunler/${urun.slug}`}
+            href={`/yonetim/urunler/${urun.slug}#bedenler`}
             className="font-bold text-mavi-koyu hover:underline"
           >
             Ekle
           </Link>
         </p>
       ) : (
-        <>
-          {sorunlu.length > 0 && <Bedenler bedenler={sorunlu} hizlar={hizlar} />}
-
-          {/* Süzgeçliyken düzeltilecek bedenler açık, stoğu yerinde olanlar
-              katlanmış duruyor: aradığın beden kapalı bölümün içinde kalmasın
-              ama on bir beden de ekranı kaplamasın. Katlanmış da olsalar
-              formun içindeler, yani "kaydet" hepsini gönderiyor (K-44). */}
-          {saglam.length > 0 &&
-            (hepsiAcik || sorunlu.length === 0 ? (
-              <Bedenler bedenler={saglam} hizlar={hizlar} />
-            ) : (
-              <details className="group mt-3">
-                <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 text-xs font-bold text-metin-2 hover:text-metin [&::-webkit-details-marker]:hidden">
-                  Stoğu yerinde {saglam.length} beden
-                  <span aria-hidden="true" className="transition group-open:rotate-180">
-                    ▾
-                  </span>
-                </summary>
-                <Bedenler bedenler={saglam} hizlar={hizlar} />
-              </details>
-            ))}
-        </>
+        <div className="mt-3 overflow-x-auto">
+          <table className="text-sm">
+            <thead>
+              <tr>
+                <th className="py-1 pr-3 text-left text-xs font-bold text-metin-3">Beden</th>
+                {renkler.map(([kod, ad]) => (
+                  <th key={kod} className="px-1.5 py-1 text-left text-xs font-bold text-metin-2">
+                    {ad}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {bedenler.map((beden) => (
+                <tr key={beden}>
+                  <th className="whitespace-nowrap py-1 pr-3 text-left font-semibold">{beden}</th>
+                  {renkler.map(([kod]) => {
+                    const v = hucre.get(`${beden}|${kod}`);
+                    return (
+                      <td key={kod} className="px-1.5 py-1 align-top">
+                        {v ? (
+                          <Hucre v={v} hiz={hizlar.get(v.id)} />
+                        ) : (
+                          <span className="block w-20 text-center text-metin-3">—</span>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   );
 }
 
-function Bedenler({ bedenler, hizlar }: { bedenler: StokBedeni[]; hizlar: Map<string, Hiz> }) {
+function Hucre({ v, hiz }: { v: StokBedeni; hiz?: Hiz }) {
   return (
-    <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {bedenler.map((v) => (
-        <label key={v.id} className="flex items-center gap-3">
-          {/* Ekranın açıldığı andaki değer: kaydederken arada değişip
-              değişmediği buna bakılarak anlaşılıyor (K-102). */}
-          <input type="hidden" name={`once-${v.id}`} value={v.stok} />
-          <span className="flex-1 text-sm">
-            {v.beden}
-            <span className="text-metin-3"> · {v.renkAdi}</span>
-            <HizNotu hiz={hizlar.get(v.id)} stok={v.stok} />
+    <label className="block w-20">
+      {/* Ekranın açıldığı andaki değer: kaydederken arada değişip
+          değişmediği buna bakılarak anlaşılıyor (K-102). */}
+      <input type="hidden" name={`once-${v.id}`} value={v.stok} />
+      <input
+        name={`stok-${v.id}`}
+        type="number"
+        min={0}
+        defaultValue={v.stok}
+        aria-label={`${v.beden} ${v.renkAdi} stok`}
+        className={`rakam w-20 rounded-[10px] border-[1.5px] px-2 py-1.5 text-sm outline-none focus:border-mercan ${
+          v.stok === 0
+            ? "border-mercan bg-mercan-soluk"
+            : v.azalan
+              ? "border-sari bg-sari-soluk"
+              : "border-cizgi bg-yuzey"
+        }`}
+      />
+      <HizNotu hiz={hiz} stok={v.stok} />
+    </label>
+  );
+}
+
+/** Stok özeti (K-178): her sayı listeyi ilgili süzgeçle açıyor. */
+function OzetKutusu({ o }: { o: StokOzeti }) {
+  const kutular = [
+    { ad: "Bitti", sayi: o.biten, alt: "beden", href: "/yonetim/stok?durum=biten", ton: "text-mercan-koyu" },
+    { ad: "7 günde bitecek", sayi: o.yediGun, alt: "beden", href: "/yonetim/stok", ton: "text-sari-koyu" },
+    {
+      ad: "Haber bekleyen",
+      sayi: o.haberBekleyen,
+      alt: `müşteri · ${o.haberBeden} beden`,
+      href: "/yonetim/stok/siparis-listesi",
+      ton: "text-mavi-koyu",
+    },
+  ];
+  return (
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      {kutular.map((k) => (
+        <Link
+          key={k.ad}
+          href={k.href}
+          className="rounded-marka border border-cizgi bg-yuzey px-4 py-3 transition hover:border-metin-3"
+        >
+          <span className="block text-xs font-bold text-metin-2">{k.ad}</span>
+          <span className={`rakam block text-2xl font-bold ${k.sayi > 0 ? k.ton : "text-metin-3"}`}>
+            {k.sayi}
           </span>
-          <input
-            name={`stok-${v.id}`}
-            type="number"
-            min={0}
-            defaultValue={v.stok}
-            className={`rakam w-20 rounded-[10px] border-[1.5px] px-3 py-2 text-sm outline-none focus:border-mercan ${
-              v.stok === 0
-                ? "border-mercan bg-mercan-soluk"
-                : v.stok <= AZALAN_ESIK
-                  ? "border-sari bg-sari-soluk"
-                  : "border-cizgi bg-yuzey"
-            }`}
-          />
-        </label>
+          <span className="block text-xs text-metin-3">{k.alt}</span>
+        </Link>
       ))}
+      <Link
+        href={o.acikSayim ? "/yonetim/stok/depo?mod=say" : "/yonetim/stok/sayim"}
+        className="rounded-marka border border-cizgi bg-yuzey px-4 py-3 transition hover:border-metin-3"
+      >
+        <span className="block text-xs font-bold text-metin-2">Sayım</span>
+        <span className="block text-sm font-bold">
+          {o.acikSayim ? "Sürüyor · devam et" : "Açık sayım yok"}
+        </span>
+        <span className="block truncate text-xs text-metin-3">{o.acikSayim?.ad ?? "Sayımlar"}</span>
+      </Link>
     </div>
   );
 }

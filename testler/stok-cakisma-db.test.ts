@@ -105,6 +105,7 @@ describe("stok ezilmesi (veritabanı)", { skip: atlamaSebebi }, () => {
       renk: "mint",
       stok,
       sku,
+      barkod: "",
       gorsel: "",
       palet: "",
       aktif: true,

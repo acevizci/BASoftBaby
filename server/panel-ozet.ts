@@ -19,16 +19,14 @@ import { kunyeGetir } from "@/server/yasal";
 import { whatsappDugmeNumarasi } from "@/server/whatsapp";
 import { bekleyenTalepSayisi } from "@/server/talep";
 import { OLUMSUZ_PUAN, yanitsizOlumsuzYorum } from "@/server/yorum";
-import { AZALAN_ESIK } from "@/server/stok-ekrani";
+import { azalanIdleri } from "@/server/stok-ekrani";
 import { GECIKMIS_GUN } from "@/server/kargo-bekleme";
 
 /**
- * Bu adedin altına düşen beden "azalan" sayılıyor.
- *
- * Eşik stok ekranının kuralı; özet ekranı onu kullanıyor ki iki ekranda iki
- * ayrı sayı çıkmasın.
+ * "Azalan" beden satış hızından (K-178): stok ekranının kuralı; özet ekranı
+ * onu kullanıyor ki iki ekranda iki ayrı sayı çıkmasın.
  */
-export { AZALAN_ESIK as KRITIK_STOK } from "@/server/stok-ekrani";
+export { AZALAN_GUN } from "@/server/satis-hizi";
 
 /** Kargoya verileli bu kadar gün geçtiyse takip edilmesi gerekiyor olabilir. */
 /**
@@ -111,6 +109,7 @@ export async function panelOzetiGetir(): Promise<PanelOzeti> {
 
   // İptal edilen sipariş ciroya girmiyor; sayılırsa gün "iyi geçmiş" görünür.
   const satilan = { durum: { not: "iptal" } };
+  const azalan = await azalanIdleri();
 
   const [
     bugunku,
@@ -147,7 +146,7 @@ export async function panelOzetiGetir(): Promise<PanelOzeti> {
     db.order.count({ where: { durum: "kargoda", guncellendi: { lt: kargoSiniri } } }),
     db.productVariant.count({ where: { stok: 0 } }),
     db.productVariant.findMany({
-      where: { stok: { gt: 0, lte: AZALAN_ESIK } },
+      where: { id: { in: azalan }, stok: { gt: 0 } },
       orderBy: { stok: "asc" },
       take: KISA_LISTE,
       select: {
@@ -160,7 +159,7 @@ export async function panelOzetiGetir(): Promise<PanelOzeti> {
     }),
     // Kısa listenin altında "kaç tane var" yazabilmek için: sessizce kesen
     // bir liste, eksik olduğunu bile söylemiyor.
-    db.productVariant.count({ where: { stok: { gt: 0, lte: AZALAN_ESIK } } }),
+    db.productVariant.count({ where: { id: { in: azalan }, stok: { gt: 0 } } }),
     // "Gelince haber ver" diyenler: hangi bedeni kaç kişi bekliyor. Neyin
     // önce sipariş edileceği sorusunun en doğrudan cevabı (K-28).
     db.stockAlert.groupBy({

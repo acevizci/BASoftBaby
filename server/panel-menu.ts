@@ -15,7 +15,7 @@ import "server-only";
 
 import { db } from "@/server/veritabani";
 import { OLUMSUZ_PUAN } from "@/server/yorum";
-import { AZALAN_ESIK } from "@/server/stok-ekrani";
+import { azalanIdleri, sorunluBedenKosulu } from "@/server/stok-ekrani";
 
 import type { Sayaclar } from "@/ui/panel-menu-bicim";
 export type { Sayaclar } from "@/ui/panel-menu-bicim";
@@ -38,7 +38,10 @@ export async function menuSayaclari(): Promise<Sayaclar> {
     // Beden değil **ürün** sayılıyor: rozete tıklayınca açılan listede o
     // kadar satır çıksın. "13" yazıp yedi satır göstermek kafa karıştırıyordu
     // (K-44).
-    db.product.count({ where: { aktif: true, variants: { some: { stok: { lte: AZALAN_ESIK } } } } }),
+    // Sorunlu = biten ya da satış hızına göre azalan (K-178).
+    azalanIdleri().then((azalan) =>
+      db.product.count({ where: { aktif: true, variants: { some: sorunluBedenKosulu(azalan) } } }),
+    ),
     db.errorLog.count({ where: { cozuldu: false } }),
     db.productQuestion.count({ where: { durum: "bekliyor" } }),
   ]);

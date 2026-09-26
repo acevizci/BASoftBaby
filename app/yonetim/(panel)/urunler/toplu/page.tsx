@@ -38,6 +38,7 @@ const sutunAciklamalari = (bedenler: string[], renkler: string[]): [string, stri
   ["Renk", `Zorunlu. ${renkler.join(", ")}.`],
   ["Stok", "Zorunlu. Tam sayı."],
   ["SKU", "Boş bırakılırsa üretilir."],
+  ["Barkod", "İsteğe bağlı. Ürünün üzerindeki barkod; Depo ekranında okutunca bu beden gelir."],
   ["Görsel", "Çizim tipi. Boşsa zıbın."],
   ["Palet", `Kart rengi. Boşsa ${renkler[0] ?? "listedeki ilk renk"}.`],
   ["Aktif", "Evet/Hayır. Boşsa evet."],

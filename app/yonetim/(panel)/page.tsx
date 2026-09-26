@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { KISA_LISTE, KRITIK_STOK, panelOzetiGetir } from "@/server/panel-ozet";
+import { AZALAN_GUN, KISA_LISTE, panelOzetiGetir } from "@/server/panel-ozet";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import { renkAdlari } from "@/server/renkler";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
@@ -167,7 +167,7 @@ export default async function YonetimOzeti() {
         <h2 className="text-lg">Stoğu azalanlar</h2>
         {o.azalanlar.length === 0 ? (
           <p className="mt-2 text-sm text-metin-2">
-            {KRITIK_STOK} adedin altına düşen beden yok.
+            Satış hızına göre {AZALAN_GUN} günden kısa sürede bitecek beden yok.
           </p>
         ) : (
           <ul className="mt-3 flex flex-col divide-y divide-cizgi-soluk">

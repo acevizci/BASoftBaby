@@ -24,9 +24,25 @@ import { renkAdlari } from "@/server/renkler";
 import { kelimeler } from "@/server/arama-metin";
 import { hareketYaz, type Yapan } from "@/server/stok-hareket";
 import { barkodNoCoz } from "@/server/barkod";
+import { azalanBedenIdleri, satisHizlari } from "@/server/satis-hizi";
+import { ETIKETLER, paylasilanOnbellek } from "@/server/onbellek";
 
-/** Bu sayı ve altı "azalıyor" sayılıyor; sıfır zaten "bitti". */
-export const AZALAN_ESIK = 3;
+/**
+ * Azalan bedenler (K-178): satış hızından, beş dakika saklanıyor. Menü rozeti
+ * her sayfada soruyor; stok değişince katalog etiketiyle tazeleniyor. Biten
+ * (0) bedenler her zaman canlı sorgudan.
+ */
+export const azalanIdleri = paylasilanOnbellek(
+  () => azalanBedenIdleri(),
+  ["azalan-bedenler"],
+  [ETIKETLER.katalog],
+  300,
+);
+
+/** Sorunlu beden koşulu: bitti ya da azaldı. */
+export function sorunluBedenKosulu(azalan: string[]) {
+  return { OR: [{ stok: 0 }, ...(azalan.length > 0 ? [{ id: { in: azalan } }] : [])] };
+}
 
 /** Sayfada gösterilen ürün adedi. */
 export const SAYFA_BOYU = 20;
@@ -47,6 +63,8 @@ export type StokBedeni = {
   /** Rengin görünen adı; liste burada çözülüyor, ekran sorgu yapmasın (K-66). */
   renkAdi: string;
   stok: number;
+  /** Satış hızına göre azaldı (K-178). */
+  azalan: boolean;
 };
 
 export type StokUrunu = {
@@ -108,19 +126,17 @@ export function stokAdresi(s: Partial<StokSuzgeci>): string {
  * bir üründe biten beden bugünün işi değil. Tam listede görünüyorlar,
  * ekranda "pasif" diye işaretli.
  */
-function durumKosulu(durum: StokDurumu): Record<string, unknown> {
+function durumKosulu(durum: StokDurumu, azalan: string[]): Record<string, unknown> {
   if (durum === "biten") return { aktif: true, variants: { some: { stok: 0 } } };
-  if (durum === "sorunlu") {
-    return { aktif: true, variants: { some: { stok: { lte: AZALAN_ESIK } } } };
-  }
+  if (durum === "sorunlu") return { aktif: true, variants: { some: sorunluBedenKosulu(azalan) } };
   return {};
 }
 
-function kosulYap(s: StokSuzgeci): Record<string, unknown> {
+function kosulYap(s: StokSuzgeci, azalan: string[]): Record<string, unknown> {
   const aranan = kelimeler(s.ara);
   const ara = s.ara.trim();
   return {
-    ...durumKosulu(s.durum),
+    ...durumKosulu(s.durum, azalan),
     // Her kelime ayrı aranıyor ve hepsi bulunmak zorunda (K-35). Barkod
     // okutulduysa SKU ya da beden kimliği tam eşleşiyor (K-107).
     ...(ara
@@ -145,12 +161,14 @@ function kosulYap(s: StokSuzgeci): Record<string, unknown> {
 }
 
 export async function stokSayfasi(s: StokSuzgeci): Promise<StokSayfasi> {
-  const kosul = kosulYap(s);
+  const azalan = await azalanIdleri();
+  const azalanlar = new Set(azalan);
+  const kosul = kosulYap(s, azalan);
 
   const [toplamAdet, sorunlu, biten, hepsi] = await Promise.all([
     db.product.count({ where: kosul }),
-    db.product.count({ where: durumKosulu("sorunlu") }),
-    db.product.count({ where: durumKosulu("biten") }),
+    db.product.count({ where: durumKosulu("sorunlu", azalan) }),
+    db.product.count({ where: durumKosulu("biten", azalan) }),
     db.product.count(),
   ]);
 
@@ -173,13 +191,14 @@ export async function stokSayfasi(s: StokSuzgeci): Promise<StokSayfasi> {
     aktif: u.aktif,
     toplam: u.variants.reduce((t, v) => t + v.stok, 0),
     bitenAdedi: u.variants.filter((v) => v.stok === 0).length,
-    azalanAdedi: u.variants.filter((v) => v.stok > 0 && v.stok <= AZALAN_ESIK).length,
+    azalanAdedi: u.variants.filter((v) => azalanlar.has(v.id)).length,
     bedenler: u.variants.map((v) => ({
       id: v.id,
       beden: v.beden,
       renk: v.renk,
       renkAdi: adlar[v.renk] ?? v.renk,
       stok: v.stok,
+      azalan: azalanlar.has(v.id),
     })),
   }));
 
@@ -295,4 +314,39 @@ export async function cakismaAyrintisi(
       { ...x, ad: v.product.ad, beden: v.beden, renkAdi: adlar[v.renk] ?? v.renk, simdi: v.stok },
     ];
   });
+}
+
+// ── Özet kutusu (K-178) ─────────────────────────────────────────────────────
+
+export type StokOzeti = {
+  /** Satıştaki ürünlerde stoğu 0 olan beden. */
+  biten: number;
+  /** 7 gün içinde bitecek beden (satış hızına göre). */
+  yediGun: number;
+  /** "Gelince haber ver" diyen müşteri ve bekledikleri beden sayısı. */
+  haberBekleyen: number;
+  haberBeden: number;
+  acikSayim: { id: string; ad: string } | null;
+};
+
+export async function stokOzeti(): Promise<StokOzeti> {
+  const [biten, hizlar, haberBekleyen, haberGrup, acikSayim] = await Promise.all([
+    db.productVariant.count({ where: { stok: 0, product: { aktif: true } } }),
+    satisHizlari(),
+    db.stockAlert.count(),
+    db.stockAlert.groupBy({ by: ["variantId"] }),
+    db.stockCount.findFirst({
+      where: { durum: "acik" },
+      orderBy: { olusturuldu: "desc" },
+      select: { id: true, ad: true },
+    }),
+  ]);
+  const yakin = [...hizlar]
+    .filter(([, h]) => h.stok > 0 && h.kacGun !== null && h.kacGun <= 7)
+    .map(([id]) => id);
+  const yediGun =
+    yakin.length === 0
+      ? 0
+      : await db.productVariant.count({ where: { id: { in: yakin }, product: { aktif: true } } });
+  return { biten, yediGun, haberBekleyen, haberBeden: haberGrup.length, acikSayim };
 }

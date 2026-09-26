@@ -27,6 +27,7 @@ import { maliyetiGecmiseYaz } from "@/server/maliyet";
 import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
 import { aramaMetinleriniTazele } from "@/server/arama";
 import { normalle } from "@/server/arama-metin";
+import { kodTemizle } from "@/ui/depo-bicim";
 import { GORSEL_TIPLERI, type RenkAdi, type RenkSecenegi } from "@/ui/katalog-bicim";
 
 /** Tablodaki bir satırın çözülmüş hâli. */
@@ -48,6 +49,8 @@ export type Satir = {
   renk: string;
   stok: number;
   sku: string;
+  /** Üretici barkodu (K-178); boşsa bağlanmıyor. */
+  barkod: string;
   gorsel: string;
   palet: string;
   aktif: boolean;
@@ -96,6 +99,12 @@ export async function anlikStokAl(satirlar: Satir[]): Promise<Record<string, num
   );
 }
 
+/** Barkod hücresi: boşluklar ve görünmez karakterler atılıyor; 3 karakterden kısası yok sayılıyor. */
+function barkodCoz(ham: string): string {
+  const kod = kodTemizle(ham);
+  return kod.length >= 3 ? kod : "";
+}
+
 /** Tabloda beklenen sütunlar. İlk ad şablonda yazan ad; ötekiler kabul edilen yazımlar. */
 const SUTUNLAR = {
   ad: ["urun adi", "urun", "ad", "urun ismi"],
@@ -113,6 +122,7 @@ const SUTUNLAR = {
   renk: ["renk"],
   stok: ["stok", "adet"],
   sku: ["sku", "stok kodu"],
+  barkod: ["barkod", "ean", "barkod no"],
   gorsel: ["gorsel"],
   palet: ["palet"],
   aktif: ["aktif", "yayinda"],
@@ -427,6 +437,7 @@ export function satirlariCoz(
       renk: renk ?? renkHam,
       stok: Number.isInteger(stok) && stok >= 0 ? stok : 0,
       sku: al(h, "sku"),
+      barkod: barkodCoz(al(h, "barkod")),
       gorsel,
       palet: palet ?? "mint",
       aktif: evetMi(al(h, "aktif"), true),
@@ -702,6 +713,19 @@ export async function planiUygula(
                 { variantId: eskiVaryant.id, degisim: s.stok - eskiVaryant.stok, sebep: "toplu", yapan },
               ]);
             }
+          }
+          // Üretici barkodu bedene öğretiliyor (K-178); aynı barkod başka bir
+          // bedende de olabilir (renkler aynı barkodu taşıyabiliyor).
+          if (s.barkod) {
+            const v = await islem.productVariant.findUniqueOrThrow({
+              where: { productId_beden_renk: anahtar_ },
+              select: { id: true },
+            });
+            await islem.variantBarcode.upsert({
+              where: { kod_variantId: { kod: s.barkod, variantId: v.id } },
+              update: {},
+              create: { kod: s.barkod, variantId: v.id, adminId: yapan?.id ?? null },
+            });
           }
           varyantSayisi += 1;
           yazilanUrunler.add(urun.id);

@@ -3,9 +3,9 @@ import "server-only";
 /**
  * Satış hızı ve "kaç gün yeter" tahmini (K-106).
  *
- * Sabit "3 ve altı azalıyor" eşiği (`AZALAN_ESIK`) her ürüne aynı
- * davranıyor: günde 2 satan zıbın için 3 adet yarın biter, ayda 1 satan
- * şapka için 3 adet üç ay yeter. Tahmin son 30 günün satışından.
+ * Sabit "3 ve altı azalıyor" eşiği her ürüne aynı davranıyordu: günde 2
+ * satan zıbın için 3 adet yarın biter, ayda 1 satan şapka için 3 adet üç ay
+ * yeter. Tahmin son 30 günün satışından; "azaldı" da buradan (K-178).
  *
  * - **Stoksuz günler sayılmıyor.** Tükenmiş ürün o günlerde satamadığı için
  *   "az satıyor" görünmesin. Stoksuz süre stok hareketlerinden (K-103) geriye
@@ -134,6 +134,37 @@ export function gunYaz(h: Pick<Hiz, "kacGun" | "azVeri" | "satilan">): string {
   if (h.kacGun < 1) return "bugün biter";
   if (h.kacGun > 365) return "1 yıldan fazla";
   return `~${Math.round(h.kacGun)} gün`;
+}
+
+// ── "Azaldı" (K-178) ────────────────────────────────────────────────────────
+
+/** Bu kadar günden az yetecekse azaldı. */
+export const AZALAN_GUN = 14;
+/** Az veride (30 günde 3 satıştan az) bu adet ve altı azaldı. */
+export const AZ_VERI_STOK = 2;
+
+/**
+ * Beden azaldı mı (K-178): sabit "3 adet" yerine satış hızından. Çok satan
+ * bodyde 3 adet birkaç günlük; yavaş satan üründe aylarca yeter. Hiç
+ * satmayan beden azaldı sayılmıyor (satmayanlar sekmesinin işi); biten (0)
+ * ayrı sayılıyor.
+ */
+export function azalanMi(h: Pick<Hiz, "satilan" | "azVeri" | "kacGun"> | undefined, stok: number): boolean {
+  if (!h || stok <= 0 || h.satilan === 0) return false;
+  if (h.azVeri) return stok <= AZ_VERI_STOK;
+  return h.kacGun !== null && h.kacGun <= AZALAN_GUN;
+}
+
+/** Satıştaki ürünlerin azalan bedenleri (stoğu 0'dan büyük). */
+export async function azalanBedenIdleri(simdi: Date = new Date()): Promise<string[]> {
+  const hizlar = await satisHizlari(undefined, simdi);
+  const adaylar = [...hizlar].filter(([, h]) => azalanMi(h, h.stok)).map(([id]) => id);
+  if (adaylar.length === 0) return [];
+  const aktif = await db.productVariant.findMany({
+    where: { id: { in: adaylar }, product: { aktif: true } },
+    select: { id: true },
+  });
+  return aktif.map((v) => v.id);
 }
 
 // ── Sipariş listesi (C4) ───────────────────────────────────────────────────

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import BedenTablosu from "@/ui/beden-tablosu";
 import UrunGorseli from "@/ui/urun-gorseli";
-import { urunKaydet, varyantEkle, varyantSil } from "@/server/yonetim";
+import { urunKaydet, varyantSil } from "@/server/yonetim";
 import { barkodBaginiKaldir } from "@/server/depo-islem";
+import BedenRenkTablosu from "@/ui/beden-renk-tablosu";
 import {
   GORSEL_ADLARI,
   GORSEL_TIPLERI,
@@ -68,8 +69,10 @@ export default function UrunFormu({
   renkler = [],
   fotografVar = false,
   kaydedildi,
-  varOlanVaryant,
   kdvOrani = 10,
+  tabloSonucu,
+  sonUrun = null,
+  bekleyenBarkod,
 }: {
   urun?: FormUrunu;
   kategoriler: { slug: string; ad: string }[];
@@ -80,13 +83,14 @@ export default function UrunFormu({
   /** Ürünün yüklenmiş fotoğrafı var mı; varsa çizim hiç görünmüyor (K-71). */
   fotografVar?: boolean;
   kaydedildi?: boolean;
-  /**
-   * "Ekle" ile zaten var olan bir beden-renk girildi (K-102): stoğu
-   * değiştirilmedi, hangisi olduğu burada.
-   */
-  varOlanVaryant?: string;
   /** Satış ayarlarındaki KDV oranı; marj göstergesi için (K-111). */
   kdvOrani?: number;
+  /** Beden tablosu kaydının sonucu (K-178): yeni, düzeltilen, barkod, geçersiz. */
+  tabloSonucu?: { yeni: number; duzeltilen: number; barkod: number; gecersiz: number; cakisan: number };
+  /** "Bu kategorideki son ürün gibi" (K-178). */
+  sonUrun?: { ad: string; bedenler: string[]; renkler: string[] } | null;
+  /** Depo'da okutulup tanınmayan barkod (K-176): tabloda bir hücreye yazılacak. */
+  bekleyenBarkod?: string;
 }) {
   const marj =
     urun && urun.alisFiyatKurus !== null ? birimMarj(urun.fiyatKurus, urun.alisFiyatKurus, kdvOrani) : null;
@@ -119,6 +123,8 @@ export default function UrunFormu({
 
       <form id={FORM_KIMLIGI} action={urunKaydet} className="flex flex-col gap-5">
         {!yeni && <input type="hidden" name="eskiSlug" value={urun.slug} />}
+        {/* Depo'da okutulan barkod ürün kurulunca beden tablosuna taşınıyor (K-178). */}
+        {yeni && bekleyenBarkod && <input type="hidden" name="barkod" value={bekleyenBarkod} />}
 
         <div className="rounded-marka border border-cizgi bg-yuzey p-5">
           <h2 className="text-lg">Temel bilgiler</h2>
@@ -336,11 +342,43 @@ export default function UrunFormu({
       </form>
 
       {!yeni && (
-        <div className="rounded-marka border border-cizgi bg-yuzey p-5">
+        <div id="bedenler" className="scroll-mt-4 rounded-marka border border-cizgi bg-yuzey p-5">
           <h2 className="text-lg">Bedenler ve stok</h2>
           <p className="mt-1 text-xs text-metin-3">
-            Her beden-renk birleşimi ayrı stok tutar. Stoğu sıfır olan beden mağazada seçilemez.
+            Bedenleri ve renkleri işaretle, tabloya stokları ve barkodları yaz, kaydet. Her
+            beden-renk birleşimi ayrı stok tutar; stoğu sıfır olan beden mağazada seçilemez.
           </p>
+
+          {tabloSonucu && (
+            <p className="mt-3 rounded-marka bg-nane-soluk px-4 py-3 text-sm font-semibold text-nane-koyu">
+              Kaydedildi:{" "}
+              {[
+                tabloSonucu.yeni > 0 && `${tabloSonucu.yeni} yeni birleşim`,
+                tabloSonucu.duzeltilen > 0 && `${tabloSonucu.duzeltilen} stok düzeltmesi`,
+                tabloSonucu.barkod > 0 && `${tabloSonucu.barkod} barkod`,
+              ]
+                .filter(Boolean)
+                .join(", ") || "değişiklik yoktu"}
+              .
+            </p>
+          )}
+          {tabloSonucu && tabloSonucu.cakisan > 0 && (
+            <p className="mt-2 rounded-marka bg-sari-soluk px-4 py-3 text-sm text-sari-koyu">
+              {tabloSonucu.cakisan} bedenin stoğu sen düzenlerken değişti (arada sipariş geldi);
+              onlar kaydedilmedi. Tablodaki güncel sayıya bakıp yeniden yaz.
+            </p>
+          )}
+
+          {/* Kayıttan sonra yeni veriyle yeniden kuruluyor (anahtar stoklardan). */}
+          <BedenRenkTablosu
+            key={urun.variants.map((v) => `${v.id}:${v.stok}`).join(",")}
+            slug={urun.slug}
+            bedenler={bedenler.map((b) => b.ad)}
+            renkler={renkler.map((r) => ({ kod: r.kod, ad: r.ad }))}
+            mevcut={urun.variants.map((v) => ({ id: v.id, beden: v.beden, renk: v.renk, stok: v.stok }))}
+            sonUrun={sonUrun}
+            bekleyenBarkod={bekleyenBarkod}
+          />
 
           {/* Beden hangi boya denk geliyor: müşteri telefonda soruyor,
               cevap için mağazanın rehber sayfasını ayrı sekmede açmak
@@ -359,7 +397,11 @@ export default function UrunFormu({
           </details>
 
           {urun.variants.length > 0 && (
-            <div className="mt-4 overflow-x-auto">
+            <details className="mt-5">
+              <summary className="cursor-pointer text-xs font-bold text-metin-2">
+                Bedenlerin listesi: barkodları gör, beden sil
+              </summary>
+            <div className="mt-3 overflow-x-auto">
               <table className="w-full min-w-[420px] text-sm">
                 <thead className="border-b border-cizgi text-left text-xs uppercase tracking-wide text-metin-3">
                   <tr>
@@ -431,57 +473,10 @@ export default function UrunFormu({
                 </tbody>
               </table>
             </div>
+            </details>
           )}
 
-          {varOlanVaryant && (
-            <p className="mt-4 rounded-marka bg-sari-soluk px-4 py-3 text-sm text-sari-koyu">
-              <b>{varOlanVaryant}</b> zaten var; stoğu değiştirilmedi. Adedi değiştirmek için{" "}
-              <Link href="/yonetim/stok?durum=hepsi" className="font-bold underline">
-                stok ekranını
-              </Link>{" "}
-              kullan.
-            </p>
-          )}
 
-          <form action={varyantEkle} className="mt-5 flex flex-wrap items-end gap-3">
-            <input type="hidden" name="slug" value={urun.slug} />
-            <label className="flex flex-col gap-1.5">
-              <span className={ETIKET}>Beden</span>
-              <select name="beden" className={GIRDI}>
-                {bedenler.map((b) => (
-                  <option key={b.id} value={b.ad}>
-                    {b.ad}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className={ETIKET}>Renk</span>
-              <select name="renk" className={GIRDI}>
-                {renkler.map((r) => (
-                  <option key={r.kod} value={r.kod}>
-                    {r.ad}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className={ETIKET}>Adet</span>
-              <input
-                name="stok"
-                type="number"
-                min={0}
-                defaultValue={0}
-                className={`${GIRDI} rakam w-24`}
-              />
-            </label>
-            <button
-              type="submit"
-              className="rounded-full bg-nane-koyu px-5 py-2.5 text-sm font-bold text-white"
-            >
-              Ekle
-            </button>
-          </form>
 
           <p className="mt-4 text-xs text-metin-3">
             Şu anki satış fiyatı: <span className="rakam">{fiyatYaz(urun.fiyatKurus)}</span>

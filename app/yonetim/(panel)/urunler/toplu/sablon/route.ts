@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 const BASLIKLAR = [
   "Ürün adı", "Kategori", "Fiyat", "Eski fiyat", "Alış fiyatı", "Özet", "Açıklama",
   "Kumaş içeriği", "Yıkama talimatı", "Üretici", "Özellikler",
-  "Beden", "Renk", "Stok", "SKU", "Görsel", "Palet", "Aktif",
+  "Beden", "Renk", "Stok", "SKU", "Barkod", "Görsel", "Palet", "Aktif",
 ];
 
 const ORNEKLER = [
@@ -26,11 +26,11 @@ const ORNEKLER = [
     "Organik zıbın", "Zıbın & Body", "249,90", "", "120,00", "Pamuklu, dikişsiz omuzlu zıbın", "",
     "%100 organik pamuk", "30°C'de ters yüz yıkayın", "",
     "Dikişsiz omuz|Çıtçıtlı",
-    "0-3 ay", "Nane", "12", "", "zibin", "Nane", "Evet",
+    "0-3 ay", "Nane", "12", "", "8690000000017", "zibin", "Nane", "Evet",
   ],
   [
     "Organik zıbın", "Zıbın & Body", "249,90", "", "", "", "", "", "", "", "",
-    "3-6 ay", "Nane", "8", "", "", "", "",
+    "3-6 ay", "Nane", "8", "", "", "", "", "",
   ],
 ];
 
@@ -65,6 +65,7 @@ export async function GET(): Promise<Response> {
     ["Renk", (await renkSecenekleri()).map((r) => r.ad).join(", ")],
     ["Stok", "Zorunlu. Tam sayı."],
     ["SKU", "Boş bırakılırsa kendiliğinden üretilir."],
+    ["Barkod", "İsteğe bağlı. Ürünün üzerindeki barkod; Depo ekranında okutunca bu beden gelir."],
     ["Aktif", "Evet / Hayır. Boşsa Evet."],
     ["", ""],
     ["Var olan ürün", "Boş bıraktığınız hücre eski değeri silmez, olduğu gibi bırakır."],

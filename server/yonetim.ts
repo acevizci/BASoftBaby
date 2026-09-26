@@ -30,7 +30,6 @@ import { formSayfaEki, tasimaSayfaEki } from "@/ui/sayfalama-bicim";
 import { formAramaEki } from "@/ui/panel-arama-bicim";
 import { aramaMetniniTazele } from "@/server/arama";
 import { stokBildirimleriniGonder } from "@/server/stok-bildirimi";
-import { renkAdlari } from "@/server/renkler";
 import {
   cakismaAdresi,
   stokAdresi,
@@ -45,6 +44,8 @@ import {
 import { kargoyaVerildiEpostasi, odemeAlindiEpostasi } from "@/server/eposta";
 import { KAMPANYA_TIPLERI } from "@/server/kampanya";
 import { sablonuCevir } from "@/server/kampanya-sablon";
+import { bedenTablosunuYaz, hucreleriCoz } from "@/server/beden-tablosu";
+import { kodTemizle } from "@/ui/depo-bicim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
 import { hareketYaz } from "@/server/stok-hareket";
 import { maliyetiGecmiseYaz } from "@/server/maliyet";
@@ -159,7 +160,12 @@ export async function urunKaydet(form: FormData): Promise<void> {
   await aramaMetniniTazele(yeni.id);
   vitriniYenile();
   after(() => indexNowBildir([`/urun/${slug}`, `/${kategori.slug}`]));
-  redirect(`/yonetim/urunler/${slug}?kayit=1`);
+  // Depo'dan "yeni ürün" diye gelindiyse okutulan barkod beden tablosunda
+  // bir hücreye yazılmayı bekliyor (K-178).
+  const barkod = kodTemizle(metin(form, "barkod"));
+  redirect(
+    `/yonetim/urunler/${slug}?kayit=1${barkod ? `&barkod=${encodeURIComponent(barkod)}#bedenler` : ""}`,
+  );
 }
 
 /**
@@ -306,53 +312,25 @@ export async function topluUrunIslemi(form: FormData): Promise<void> {
 }
 
 /**
- * Ürüne yeni beden-renk ekler.
- *
- * Eskiden "ekle / güncelle"ydi: var olan bir birleşim girilirse stoğunun
- * üzerine yazıyordu — arada satılanlar da geri geliyordu, üstelik ekrandaki
- * adet 0 varsayılanıyla kalırsa stok sessizce sıfırlanıyordu. Artık var
- * olana dokunulmuyor; stok değişikliği stok ekranından (K-102).
+ * Beden × renk tablosu (K-178): yeni birleşimler, stok düzeltmeleri ve
+ * barkodlar tek kayıtta.
  */
-export async function varyantEkle(form: FormData): Promise<void> {
+export async function bedenTablosuKaydet(form: FormData): Promise<void> {
   const ben = await yoneticiGerekli();
-
   const slug = metin(form, "slug");
-  const beden = metin(form, "beden");
-  const renk = metin(form, "renk");
-  const stok = Number(metin(form, "stok") || "0");
+  const urun = await db.product.findUnique({ where: { slug }, select: { id: true } });
+  if (!urun) redirect("/yonetim/urunler?hata=bulunamadi");
 
-  const urun = await db.product.findUniqueOrThrow({ where: { slug } });
-  const varOlan = await db.productVariant.findUnique({
-    where: { productId_beden_renk: { productId: urun.id, beden, renk } },
-    select: { id: true },
-  });
-  if (varOlan) {
-    const adlar = await renkAdlari();
-    redirect(
-      `/yonetim/urunler/${slug}?varolan=${encodeURIComponent(`${beden} · ${adlar[renk] ?? renk}`)}`,
-    );
-  }
-
-  const ilkStok = Number.isInteger(stok) ? Math.max(0, stok) : 0;
-  const varyant = await db.$transaction(async (islem) => {
-    const v = await islem.productVariant.create({
-      data: {
-        productId: urun.id,
-        beden,
-        renk,
-        stok: ilkStok,
-        sku: `${slug}-${beden.replace(/\s/g, "")}-${renk}`,
-      },
-      select: { id: true },
-    });
-    await hareketYaz(islem, [{ variantId: v.id, degisim: ilkStok, sebep: "yeni", yapan: ben }]);
-    return v;
-  });
-  await stokBildirimleriniGonder([varyant.id]);
+  const hucreler = hucreleriCoz(form.get("tablo"));
+  const sonuc = await bedenTablosunuYaz(urun.id, hucreler, ben);
+  await stokBildirimleriniGonder(sonuc.artan);
   vitriniYenile();
-  // Eklenen renk fotoğraf yükleme formunda seçili gelsin: sıradaki iş
-  // çoğunlukla o rengin fotoğrafını yüklemek (K-91).
-  redirect(`/yonetim/urunler/${slug}?kayit=1&renk=${encodeURIComponent(renk)}`);
+
+  const p = new URLSearchParams({
+    tablo: [sonuc.yeni, sonuc.duzeltilen, sonuc.barkod, sonuc.gecersiz].join("-"),
+  });
+  if (sonuc.cakisan.length > 0) p.set("cakisma", cakismaAdresi(sonuc.cakisan));
+  redirect(`/yonetim/urunler/${slug}?${p.toString()}#bedenler`);
 }
 
 export async function varyantSil(form: FormData): Promise<void> {
