@@ -19,7 +19,7 @@ const GIRDI =
 const ETIKET = "text-xs font-bold text-metin-2";
 
 function tarihYaz(t?: Date): string {
-  return t ? t.toLocaleDateString("tr-TR") : "—";
+  return t ? t.toLocaleDateString("tr-TR", { timeZone: "Europe/Istanbul" }) : "—";
 }
 
 const UYARI = <>Duyuru kalıcı olarak siliniyor; geri alınamıyor. Yalnızca şeritten kaldırmak istiyorsan &quot;Kapat&quot; yeter.</>;

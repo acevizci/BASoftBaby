@@ -341,7 +341,6 @@ async function urunleriSorgula(suzgec: UrunSuzgeci = {}): Promise<Urun[]> {
         // aramada ve yaş süzgecinde görünmeye devam ediyordu (K-82). Ürün
         // sayfası doğrudan adresle açılmaya devam ediyor.
         category: { aktif: true, ...(suzgec.kategori ? { slug: suzgec.kategori } : {}) },
-        ...(suzgec.enFazlaKurus ? { fiyatKurus: { lte: suzgec.enFazlaKurus } } : {}),
         ...varyantKosulu(suzgec, yasBedenleri),
         // Her kelime ayrı aranıyor ve hepsi bulunmak zorunda: "mavi tulum"
         // yazan kişi mavi VE tulum arıyor (K-35). Yaş grubunun kategori
@@ -359,9 +358,16 @@ async function urunleriSorgula(suzgec: UrunSuzgeci = {}): Promise<Urun[]> {
     bedenSirasi(),
     tumRenkSecenekleri(),
   ]);
-  const urunler = satirlar.map((s) => urunYap(s as SatirTipi, kampanyalar, sira, renkSecenekleri));
-  // İndirim kampanyalar uygulandıktan sonra belli oluyor; sorguda süzülemez.
-  return sirala(suzgec.indirim ? urunler.filter(indirimdeMi) : urunler, suzgec.sirala);
+  // İndirim ve müşterinin gördüğü fiyat kampanyalar uygulandıktan sonra
+  // belli oluyor; ikisi de sorguda süzülemez (K-164). Fiyat süzgeci liste
+  // fiyatına bakınca "200 ₺ altı" kampanyayla 180 ₺'ye düşmüş ürünü
+  // getirmiyordu.
+  const enFazla = suzgec.enFazlaKurus;
+  const urunler = satirlar
+    .map((s) => urunYap(s as SatirTipi, kampanyalar, sira, renkSecenekleri))
+    .filter((u) => !enFazla || urunFiyati(u).satisKurus <= enFazla)
+    .filter((u) => !suzgec.indirim || indirimdeMi(u));
+  return sirala(urunler, suzgec.sirala);
 }
 
 /**

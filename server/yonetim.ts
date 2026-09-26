@@ -411,8 +411,8 @@ export async function duyuruEkle(form: FormData): Promise<void> {
       metin: metinAlani,
       link: metin(form, "link") || null,
       sira: (sonSira._max.sira ?? 0) + 1,
-      baslangic: baslangic ? new Date(baslangic) : null,
-      bitis: bitis ? new Date(bitis) : null,
+      baslangic: tariheCevir(baslangic),
+      bitis: tariheCevir(bitis, "son"),
     },
   });
   vitriniYenile();
@@ -1098,10 +1098,19 @@ export async function kunyeKaydet(veri: FormData): Promise<void> {
 const TIPLER = ["yuzde", "tutar"];
 const KAPSAMLAR = ["tumu", "kategori", "urun"];
 
-function tariheCevir(deger: FormDataEntryValue | null): Date | null {
+/**
+ * Paneldeki tarih kutusu (`<input type="date">`) "2026-09-30" gönderiyor.
+ * `new Date("2026-09-30")` UTC gece yarısı, yani İstanbul'da 03:00: bitişi
+ * 30 Eylül seçilen kampanya o günün başında bitiyor, başlangıcı 1 Ekim
+ * seçilen de 03:00'te başlıyordu (K-164). Gün İstanbul saatiyle okunuyor:
+ * başlangıç günün başı, bitiş günün sonu — seçilen gün dahil.
+ */
+function tariheCevir(deger: FormDataEntryValue | null, uc: "bas" | "son" = "bas"): Date | null {
   const metin = String(deger ?? "").trim();
   if (!metin) return null;
-  const t = new Date(metin);
+  const t = /^\d{4}-\d{2}-\d{2}$/.test(metin)
+    ? new Date(`${metin}T${uc === "bas" ? "00:00:00.000" : "23:59:59.999"}+03:00`)
+    : new Date(metin);
   return Number.isNaN(t.getTime()) ? null : t;
 }
 
@@ -1136,7 +1145,7 @@ export async function kampanyaKaydet(veri: FormData): Promise<void> {
     enAzSepetKurus: kurusaCevir(veri.get("enAzSepet")) ?? 0,
     aktif: veri.get("aktif") === "on",
     baslangic: tariheCevir(veri.get("baslangic")),
-    bitis: tariheCevir(veri.get("bitis")),
+    bitis: tariheCevir(veri.get("bitis"), "son"),
   };
 
   // Kapsam kategori ya da ürünse hedef seçilmiş olmalı, yoksa kampanya
@@ -1312,7 +1321,7 @@ export async function bannerKaydet(veri: FormData): Promise<void> {
     sira: Number.isFinite(siraHam) ? Math.trunc(siraHam) : 0,
     aktif: veri.get("aktif") === "on",
     baslangic: tariheCevir(veri.get("baslangic")),
-    bitis: tariheCevir(veri.get("bitis")),
+    bitis: tariheCevir(veri.get("bitis"), "son"),
     ...resimAlanlari,
   };
 

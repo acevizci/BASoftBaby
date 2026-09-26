@@ -191,9 +191,11 @@ export default function UrunKarti({ urun }: { urun: Urun }) {
               <span className="rakam text-sm text-metin-3 line-through">
                 {fiyatYaz(fiyat.ustuCiziliKurus)}
               </span>
-              <span className="rakam rounded-full bg-mercan-soluk px-1.5 py-0.5 text-[0.68rem] font-bold text-mercan-koyu">
-                %{fiyat.yuzde}
-              </span>
+              {fiyat.yuzde > 0 && (
+                <span className="rakam rounded-full bg-mercan-soluk px-1.5 py-0.5 text-[0.68rem] font-bold text-mercan-koyu">
+                  %{fiyat.yuzde}
+                </span>
+              )}
             </>
           )}
         </p>

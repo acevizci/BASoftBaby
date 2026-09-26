@@ -2,7 +2,12 @@ import { atlamaSebebi, temizle, testDb, urunKur } from "./veritabani";
 import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { kampanyaBitisNotu, urunFiyati } from "@/ui/katalog-bicim";
-import { fiyatiKaydet, fiyatUyarisi, indirimOncesiEnDusuk } from "@/server/fiyat-gecmisi";
+import {
+  fiyatiKaydet,
+  fiyatUyarisi,
+  indirimOncesiEnDusuk,
+  kampanyaFiyatUyarilari,
+} from "@/server/fiyat-gecmisi";
 
 /** İndirimdekiler listesi ve indirim öncesi fiyat denetimi (K-164). */
 
@@ -25,8 +30,13 @@ describe("ürün fiyatı ve indirim yüzdesi", () => {
     assert.equal(urunFiyati({ fiyatKurus: 20000 }).ustuCiziliKurus, undefined);
   });
 
-  it("çok küçük indirim %0 değil %1 yazıyor", () => {
-    assert.equal(urunFiyati({ fiyatKurus: 99900, eskiFiyatKurus: 100000 }).yuzde, 1);
+  it("yüzde aşağı yuvarlanıyor: indirim olduğundan büyük görünmüyor", () => {
+    // %29,6 → %29
+    assert.equal(urunFiyati({ fiyatKurus: 13300, eskiFiyatKurus: 18900 }).yuzde, 29);
+    // %0,1 → rozet yok ama üstü çizili fiyat duruyor
+    const f = urunFiyati({ fiyatKurus: 99900, eskiFiyatKurus: 100000 });
+    assert.equal(f.yuzde, 0);
+    assert.equal(f.ustuCiziliKurus, 100000);
   });
 });
 
@@ -116,5 +126,35 @@ describe("fiyat geçmişi ve panel uyarısı (veritabanı)", { skip: atlamaSebeb
     await db.product.update({ where: { id: productId }, data: { eskiFiyatKurus: 15000 } });
     const uyari = await fiyatUyarisi(productId);
     assert.equal(uyari?.enDusukKurus, undefined);
+  });
+
+  it("kampanya sayfası: başlangıçtan önceki on günün en düşüğünü aşan ürün uyarılıyor", async () => {
+    const db = testDb();
+    const { productId } = await urunKur(3);
+    const baslangic = new Date(Date.now() + 2 * GUN); // henüz başlamamış
+    await db.priceHistory.createMany({
+      data: [
+        { productId, fiyatKurus: 8000, olusturuldu: new Date(Date.now() - 5 * GUN) },
+        { productId, fiyatKurus: 10000, olusturuldu: new Date(Date.now() - GUN) },
+      ],
+    });
+    const k = await db.campaign.create({
+      data: { ad: "T_kampanya", deger: 20, kapsam: "urun", productId, baslangic },
+      select: { id: true },
+    });
+    try {
+      const uyari = (await kampanyaFiyatUyarilari([k.id])).get(k.id);
+      assert.equal(uyari?.length, 1);
+      assert.equal(uyari?.[0].enDusukKurus, 8000);
+
+      // Fiyat pencere boyunca 10000 olsaydı uyarı yok.
+      await db.campaign.update({
+        where: { id: k.id },
+        data: { baslangic: new Date(Date.now() + 20 * GUN) },
+      });
+      assert.equal((await kampanyaFiyatUyarilari([k.id])).get(k.id), undefined);
+    } finally {
+      await db.campaign.delete({ where: { id: k.id } });
+    }
   });
 });

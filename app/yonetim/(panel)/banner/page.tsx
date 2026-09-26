@@ -28,7 +28,7 @@ const ETIKET = "text-xs font-bold text-metin-2";
 
 
 function tarihYaz(t: Date | null): string {
-  return t ? t.toLocaleDateString("tr-TR") : "—";
+  return t ? t.toLocaleDateString("tr-TR", { timeZone: "Europe/Istanbul" }) : "—";
 }
 
 const UYARI = <>Banner kalıcı olarak siliniyor; geri alınamıyor. Ana sayfadan kalkacak. Yalnızca yayından kaldırmak istiyorsan &quot;Kapat&quot; yeter.</>;
@@ -294,10 +294,8 @@ export default async function BannerEkrani({ searchParams }: PageProps<"/yonetim
 /** "YYYY-MM-DD": tarih kutusunun beklediği biçim. */
 function tarihGirdisi(t: Date | null | undefined): string {
   if (!t) return "";
-  const y = t.getFullYear();
-  const a = String(t.getMonth() + 1).padStart(2, "0");
-  const g = String(t.getDate()).padStart(2, "0");
-  return `${y}-${a}-${g}`;
+  // İstanbul günü: kayıt günün başı/sonu İstanbul saatiyle (K-164).
+  return t.toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" });
 }
 
 type BannerKaydi = Awaited<ReturnType<typeof tumBannerlar>>[number];

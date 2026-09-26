@@ -212,6 +212,10 @@ export function fiyatYaz(kurus: number): string {
  * Kampanya varsa satış fiyatı kampanyalı fiyat, üstü çizili de liste
  * fiyatı; yoksa ürüne elle girilmiş eski fiyat. Eski fiyat satış fiyatından
  * büyük değilse üstü çizili yok: "%0 indirim" yazılmasın.
+ *
+ * Yüzde **aşağı yuvarlanıyor**: %29,6 "%29" yazılıyor, "%30" değil. İndirimi
+ * olduğundan büyük göstermek yanıltıcı reklam; birkaç kuruşluk farkta
+ * yüzde sıfır çıkıyor ve rozet görünmüyor.
  */
 export function urunFiyati(urun: Pick<Urun, "fiyatKurus" | "eskiFiyatKurus" | "kampanya">): {
   satisKurus: number;
@@ -224,13 +228,13 @@ export function urunFiyati(urun: Pick<Urun, "fiyatKurus" | "eskiFiyatKurus" | "k
   return {
     satisKurus,
     ustuCiziliKurus: ustu,
-    yuzde: Math.max(1, Math.round((1 - satisKurus / ustu) * 100)),
+    yuzde: Math.floor(((ustu - satisKurus) * 100) / ustu),
   };
 }
 
 /** Stokta ve indirimde mi: "İndirimdekiler" listesinin ölçütü (K-164). */
 export function indirimdeMi(urun: Urun): boolean {
-  return urunFiyati(urun).yuzde > 0 && toplamStok(urun) > 0;
+  return urunFiyati(urun).ustuCiziliKurus !== undefined && toplamStok(urun) > 0;
 }
 
 const GUN = 24 * 60 * 60 * 1000;
@@ -326,13 +330,15 @@ export function yasEtiketleri(
  * süzgeci liste fiyatına bakıyor, o yüzden en düşük liste fiyatı dönüyor.
  */
 export function suzgecKapsami(
-  urunler: readonly Pick<Urun, "fiyatKurus" | "varyantlar">[],
+  urunler: readonly Pick<Urun, "fiyatKurus" | "eskiFiyatKurus" | "kampanya" | "varyantlar">[],
 ): { bedenler: Set<string>; renkler: Set<string>; enDusukKurus: number | undefined } {
   const bedenler = new Set<string>();
   const renkler = new Set<string>();
   let enDusukKurus: number | undefined;
   for (const u of urunler) {
-    if (enDusukKurus === undefined || u.fiyatKurus < enDusukKurus) enDusukKurus = u.fiyatKurus;
+    // Fiyat süzgeci müşterinin gördüğü fiyata bakıyor (K-164).
+    const fiyat = urunFiyati(u).satisKurus;
+    if (enDusukKurus === undefined || fiyat < enDusukKurus) enDusukKurus = fiyat;
     for (const v of u.varyantlar) {
       renkler.add(v.renk);
       if (v.stok > 0) bedenler.add(v.beden);

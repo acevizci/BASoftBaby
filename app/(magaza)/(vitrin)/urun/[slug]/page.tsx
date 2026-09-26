@@ -190,9 +190,11 @@ export default async function UrunSayfasi({
                   <span className="rakam text-lg text-metin-3 line-through">
                     {fiyatYaz(ustuCizili)}
                   </span>
-                  <span className="rakam rounded-full bg-nane-soluk px-2.5 py-1 text-sm font-bold text-nane-koyu">
-                    %{indirimYuzdesi} indirim
-                  </span>
+                  {indirimYuzdesi > 0 && (
+                    <span className="rakam rounded-full bg-nane-soluk px-2.5 py-1 text-sm font-bold text-nane-koyu">
+                      %{indirimYuzdesi} indirim
+                    </span>
+                  )}
                 </>
               )}
             </p>

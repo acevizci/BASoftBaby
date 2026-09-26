@@ -11,6 +11,12 @@ import { sayfaAdresi, sayfaCoz } from "@/ui/sayfalama-bicim";
 import PanelArama from "@/ui/panel-arama";
 import { alanAramasi, aramaCoz } from "@/ui/panel-arama-bicim";
 import { kategoriEtiketleri } from "@/ui/kategori-etiketi";
+import Link from "next/link";
+import {
+  INDIRIM_ONCESI_GUN,
+  kampanyaFiyatUyarilari,
+  type KampanyaFiyatUyarisi,
+} from "@/server/fiyat-gecmisi";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +28,7 @@ const ETIKET = "text-xs font-bold text-metin-2";
 const LISTE_BOYU = 20;
 
 function tarihYaz(t: Date | null): string {
-  return t ? t.toLocaleDateString("tr-TR") : "—";
+  return t ? t.toLocaleDateString("tr-TR", { timeZone: "Europe/Istanbul" }) : "—";
 }
 
 function degerYaz(tip: string, deger: number): string {
@@ -85,6 +91,7 @@ export default async function KampanyaEkrani({
     }),
     ayarlariGetir(),
   ]);
+  const fiyatUyarilari = await kampanyaFiyatUyarilari(kampanyalar.map((k) => k.id));
 
   return (
     <div className="flex flex-col gap-6">
@@ -142,6 +149,7 @@ export default async function KampanyaEkrani({
                         </span>
                       )}
                       <ZararUyarisi zararlilar={kampanyaZarari(k, maliyetliler, satisAyari.kdvOrani)} tutarMi={k.tip === "tutar"} />
+                      <FiyatUyarisi urunler={fiyatUyarilari.get(k.id) ?? []} />
                     </td>
                     <td className="rakam py-2 font-semibold">{degerYaz(k.tip, k.deger)}</td>
                     <td className="py-2 text-metin-2">
@@ -330,6 +338,42 @@ function ZararUyarisi({ zararlilar, tutarMi }: { zararlilar: ZararliUrun[]; tuta
         {zararlilar.length > 10 && <li>…ve {zararlilar.length - 10} ürün daha</li>}
       </ul>
       {tutarMi && <p className="mt-1 text-metin-3">Tutar indiriminde sepette yalnızca o ürün varsa.</p>}
+    </details>
+  );
+}
+
+/**
+ * Fiyat Etiketi Yönetmeliği (K-164): kampanyada üstü çizili görünen liste
+ * fiyatı, kampanya başlangıcından önceki on günün en düşük fiyatını aşıyor
+ * ya da o döneme ait fiyat kaydı yok.
+ */
+function FiyatUyarisi({ urunler }: { urunler: KampanyaFiyatUyarisi[] }) {
+  if (urunler.length === 0) return null;
+  return (
+    <details className="mt-1 text-xs">
+      <summary className="cursor-pointer font-bold text-sari-koyu">
+        İndirim öncesi fiyat: {urunler.length} üründe uyarı
+      </summary>
+      <p className="mt-1 max-w-md text-metin-2">
+        Üstü çizili liste fiyatı, kampanya başlangıcından önceki {INDIRIM_ONCESI_GUN} günde uygulanan
+        en düşük fiyattan yüksek olamaz. Kaydı olmayan üründe fiyatın uygulandığı gösterilemiyor.
+      </p>
+      <ul className="mt-1 flex flex-col gap-0.5">
+        {urunler.slice(0, 10).map((u) => (
+          <li key={u.slug}>
+            <Link href={`/yonetim/urunler/${u.slug}`} className="font-semibold hover:underline">
+              {u.ad}
+            </Link>{" "}
+            <span className="rakam text-metin-3">
+              {fiyatYaz(u.ustuCiziliKurus)}
+              {u.enDusukKurus !== undefined
+                ? ` · en düşük ${fiyatYaz(u.enDusukKurus)}`
+                : " · kayıt yok"}
+            </span>
+          </li>
+        ))}
+        {urunler.length > 10 && <li className="text-metin-3">ve {urunler.length - 10} ürün daha</li>}
+      </ul>
     </details>
   );
 }

@@ -6330,6 +6330,23 @@ sorusu getiriyor; kullanım görülünce ayrıca ele alınabilir.
   kayıt yoksa uyarıyor. Fiyat kendiliğinden değiştirilmiyor. Varyanta özel
   fiyatlar ve geçmiş kampanyaların indirimli fiyatları geçmişe yazılmıyor.
 
+- **Gözden geçirmede düzeltilenler:**
+  - İndirim yüzdesi aşağı yuvarlanıyor (%29,6 → "%29"): yukarı yuvarlama
+    indirimi olduğundan büyük gösteriyordu. %1'in altındaki farkta rozet yok.
+  - Fiyat süzgeci ("200 ₺ altı") müşterinin gördüğü fiyata bakıyor; liste
+    fiyatına baktığı için kampanyayla altına düşen ürünler listeye girmiyordu.
+  - Fiyat uyarısı **Kampanyalar** sayfasında da var: kendiliğinden uygulanan
+    her kampanyada (başlamamışlar dahil) liste fiyatı başlangıçtan önceki on
+    günün en düşüğünü aşan ya da kaydı olmayan ürünler, ürün sayfasına
+    bağlantıyla.
+  - **Tarih kutuları İstanbul günü:** kampanya, banner ve duyuruda seçilen gün
+    UTC gece yarısı yazılıyordu (İstanbul 03:00): bitişi 30 Eylül seçilen
+    kampanya 30 Eylül'ün başında bitiyordu. Başlangıç günün başı, bitiş günün
+    sonu (23:59:59, +03:00); tam UTC gece yarısındaki eski kayıtlar göçle
+    taşındı. Paneldeki tarihler İstanbul saatiyle yazılıyor.
+  - `indirim` adresini almış bir kategori varsa `indirim-2`ye taşınıyor (K-78
+    gibi); varsayılan sıralamanın bağlantısı adrese `sirala` yazmıyor.
+
 **Nerede:** [`../ui/katalog-bicim.ts`](../ui/katalog-bicim.ts),
 [`../server/fiyat-gecmisi.ts`](../server/fiyat-gecmisi.ts),
 [`../app/(magaza)/(vitrin)/[kategori]/page.tsx`](../app/(magaza)/(vitrin)/[kategori]/page.tsx)

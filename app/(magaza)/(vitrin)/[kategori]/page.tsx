@@ -126,7 +126,8 @@ function baglanti(kategori: string, aranan: Aranan, alan: keyof Aranan, deger: s
   for (const [ad, d] of Object.entries(aranan)) {
     if (d && ad !== "sayfa") yeni.set(ad, d);
   }
-  if (yeni.get(alan) === deger) yeni.delete(alan);
+  // Boş değer ya da zaten seçili olan: süzgeç kalkıyor.
+  if (!deger || yeni.get(alan) === deger) yeni.delete(alan);
   else yeni.set(alan, deger);
   const sorgu = yeni.toString();
   return `/${kategori}${sorgu ? `?${sorgu}` : ""}`;
@@ -450,7 +451,13 @@ export default async function KategoriSayfasi({
                 return (
                   <Link
                     key={sr}
-                    href={baglanti(kategori, aranan, "sirala", sr)}
+                    href={
+                      // Varsayılan sıralama adrese yazılmıyor: aynı liste
+                      // süzgeçli (noindex) ikinci bir adres olmasın.
+                      sr === varsayilanSira
+                        ? baglanti(kategori, { ...aranan, sirala: undefined }, "sirala", "")
+                        : baglanti(kategori, aranan, "sirala", sr)
+                    }
                     aria-pressed={seciliSr}
                     className={`rounded-full border px-2.5 py-1 text-xs font-bold transition ${
                       seciliSr

@@ -138,3 +138,72 @@ export async function fiyatUyarisi(productId: string): Promise<FiyatUyarisi | un
     baslangic,
   };
 }
+
+export type KampanyaFiyatUyarisi = {
+  slug: string;
+  ad: string;
+  ustuCiziliKurus: number;
+  enDusukKurus?: number;
+};
+
+/**
+ * Kampanyalar sayfası için (K-164): kendiliğinden uygulanan her kampanyada,
+ * liste fiyatı kampanya başlangıcından önceki on günün en düşüğünü aşan ya
+ * da o döneme ait kaydı olmayan ürünler. Başlamamış kampanyalar da
+ * sınanıyor: uyarı kampanya başlamadan görülsün. Kuponlu ve sepet alt
+ * sınırlı kampanyalar ürün fiyatında görünmediği için dışarıda.
+ */
+export async function kampanyaFiyatUyarilari(
+  kampanyaIdleri: readonly string[],
+  simdi = new Date(),
+): Promise<Map<string, KampanyaFiyatUyarisi[]>> {
+  const sonuc = new Map<string, KampanyaFiyatUyarisi[]>();
+  const kampanyalar = await db.campaign.findMany({
+    where: {
+      id: { in: [...kampanyaIdleri] },
+      aktif: true,
+      kuponKodu: null,
+      customerId: null,
+      enAzSepetKurus: 0,
+      OR: [{ bitis: null }, { bitis: { gte: simdi } }],
+    },
+    select: {
+      id: true,
+      tip: true,
+      deger: true,
+      kapsam: true,
+      categoryId: true,
+      productId: true,
+      baslangic: true,
+      olusturuldu: true,
+    },
+  });
+  if (kampanyalar.length === 0) return sonuc;
+
+  const urunler = await db.product.findMany({
+    where: { aktif: true },
+    select: {
+      id: true,
+      slug: true,
+      ad: true,
+      categoryId: true,
+      fiyatKurus: true,
+      fiyatGecmisi: { select: { fiyatKurus: true, olusturuldu: true } },
+    },
+  });
+
+  for (const k of kampanyalar) {
+    // Başlangıç yoksa kampanya açıldığı an başladı.
+    const baslangic = k.baslangic ?? k.olusturuldu;
+    const liste: KampanyaFiyatUyarisi[] = [];
+    for (const u of urunler) {
+      if (k.kapsam === "urun" && k.productId !== u.id) continue;
+      if (k.kapsam === "kategori" && k.categoryId !== u.categoryId) continue;
+      const enDusuk = indirimOncesiEnDusuk(u.fiyatGecmisi, baslangic);
+      if (enDusuk !== undefined && u.fiyatKurus <= enDusuk) continue;
+      liste.push({ slug: u.slug, ad: u.ad, ustuCiziliKurus: u.fiyatKurus, enDusukKurus: enDusuk });
+    }
+    if (liste.length > 0) sonuc.set(k.id, liste);
+  }
+  return sonuc;
+}
