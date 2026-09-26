@@ -6,6 +6,7 @@
  */
 
 import { db } from "@/server/veritabani";
+import { kapsamdaUrunMu } from "@/server/kampanya-kapsam";
 import {
   alOdeEtiketi,
   nciUrunEtiketi,
@@ -114,9 +115,7 @@ function urunYap(
   const adet = kampanyalar.find(
     (k) =>
       (k.tip === "al-ode" || k.tip === "nci-urun") &&
-      (k.kapsam === "tumu" ||
-        (k.kapsam === "kategori" && k.categoryId === satir.categoryId) ||
-        (k.kapsam === "urun" && k.productId === satir.id)),
+      kapsamdaUrunMu(k, { productId: satir.id, categoryId: satir.categoryId }),
   );
   const adetKampanyasi = adet
     ? {

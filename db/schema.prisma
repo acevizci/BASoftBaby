@@ -561,6 +561,12 @@ model Campaign {
 
   /// tumu · kategori · urun
   kapsam     String    @default("tumu")
+  /// Çoklu kapsam (K-171): kapsam "kategori"yse bu kategoriler, "urun"se bu
+  /// ürünler. Tekli `categoryId`/`productId` eski kayıtlar için; yeni
+  /// kampanyada boş. Kategori ya da ürün silinince listeden çıkarılıyor,
+  /// kampanya silinmiyor.
+  kategoriIdleri String[] @default([])
+  urunIdleri     String[] @default([])
   categoryId String?
   category   Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   productId  String?

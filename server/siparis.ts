@@ -16,9 +16,8 @@
 import { db } from "@/server/veritabani";
 import { Prisma } from "@/db/uretilen/client";
 import { hareketYaz } from "@/server/stok-hareket";
-import { kargoHesapla, kuponOku, sepetIdOku, type SatisAyari } from "@/server/sepet";
+import { kuponOku, sepetIdOku, sepetiHesapla, type SatisAyari } from "@/server/sepet";
 import {
-  enIyiKampanya,
   gecerliKampanyalar,
   indirimiDagit,
   kapsamdaMi,
@@ -197,9 +196,9 @@ export async function siparisOlustur(
   }));
   const kampanyalar = await gecerliKampanyalar(await kuponOku(), undefined, customerId);
   // Ücretsiz kargo kampanyası kampanyasız kargo ücretiyle yarışıyor (K-170).
-  const kargoHam = kargoHesapla(araToplamKurus, ayar, true);
-  const kampanya = enIyiKampanya(kampanyalar, indirimSatirlari, araToplamKurus, kargoHam);
-  const indirimKurus = kampanya?.indirimKurus ?? 0;
+  // Sepetteki hesabın aynısı (K-171): en düşük toplamı veren kampanya.
+  const hesap = sepetiHesapla(kampanyalar, indirimSatirlari, araToplamKurus, ayar, true);
+  const { kampanya, indirimKurus } = hesap;
   // Her satırın indirim payı; yalnızca kampanyanın kapsadığı satırlara (K-109).
   const uygulanan = kampanyalar.find((k) => k.id === kampanya?.id);
   const paylar = indirimiDagit(uygulanan, indirimSatirlari, indirimKurus);
@@ -208,9 +207,7 @@ export async function siparisOlustur(
   const kapsamda = indirimSatirlari.map((x) => (uygulanan ? kapsamdaMi(uygulanan, x) : false));
   const alOde = uygulanan?.tip === "al-ode" ? uygulanan : undefined;
 
-  const kargoKurus = kampanya?.kargoBedava
-    ? 0
-    : kargoHesapla(araToplamKurus - indirimKurus, ayar, true);
+  const kargoKurus = hesap.kargoKurus;
   // Kısmi iadede yeniden hesap için kampanyanın o anki tanımı (K-170).
   const kampanyaAnlik = uygulanan
     ? {

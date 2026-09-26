@@ -6,6 +6,8 @@
  * KDV'den arındırılıyor; yoksa marj olduğundan büyük görünürdü.
  */
 
+import { kapsamdaUrunMu } from "@/server/kampanya-kapsam";
+
 /** KDV dahil tutardan KDV hariç tutar; faturadaki ayrıştırmayla aynı yuvarlama. */
 export function kdvHaric(kurus: number, kdvOrani: number): number {
   return Math.round(kurus / (1 + kdvOrani / 100));
@@ -228,6 +230,8 @@ export function kampanyaZarari(
     kapsam: string;
     categoryId: string | null;
     productId: string | null;
+    kategoriIdleri?: string[];
+    urunIdleri?: string[];
     alAdet?: number | null;
     odeAdet?: number | null;
     kademeler?: unknown;
@@ -238,8 +242,7 @@ export function kampanyaZarari(
 ): ZararliUrun[] {
   return urunler.flatMap((u) => {
     if (u.alisFiyatKurus === null) return [];
-    if (k.kapsam === "urun" && k.productId !== u.id) return [];
-    if (k.kapsam === "kategori" && k.categoryId !== u.categoryId) return [];
+    if (!kapsamdaUrunMu(k, { productId: u.id, categoryId: u.categoryId })) return [];
     // "X al Y öde"de ürün başına ortalama indirim (X − Y) / X (K-168).
     const indirim =
       k.tip === "yuzde"
@@ -262,6 +265,9 @@ export function kampanyaZarari(
               : k.tip === "kargo"
                 ? 0
                 : Math.min(Math.max(k.deger, 0), u.fiyatKurus);
+    // Ürüne indirim düşmüyorsa (ücretsiz kargo, bozuk tanım) kampanya zararı
+    // yok (K-171); ürün zaten maliyetin altındaysa o kampanyanın işi değil.
+    if (indirim <= 0) return [];
     const indirimliKurus = u.fiyatKurus - indirim;
     const netKurus = kdvHaric(indirimliKurus, kdvOrani);
     return netKurus < u.alisFiyatKurus

@@ -6599,12 +6599,41 @@ Türkiye'de e-ticarette yaygın kampanyalar gözden geçirildi; eksikler eklendi
 - **Zarar uyarısı:** N. ürün (yüzde / N), kademeli (en cömert basamağın
   oranı), kargo (ürüne etkisiz).
 
-Kapsam hâlâ tek kategori ya da tek ürün; birden çok kategoriye aynı
-kampanya için ayrı kampanya açılıyor.
-
 **Nerede:** [`../server/kampanya.ts`](../server/kampanya.ts),
 [`../server/sepet.ts`](../server/sepet.ts),
 [`../testler/kampanya-turleri.test.ts`](../testler/kampanya-turleri.test.ts)
+
+### K-171 · Çoklu kapsam ve kampanya işlerinin yeniden incelenmesi
+
+- **Çoklu kapsam:** kampanya birden çok kategoriye ya da ürüne uygulanıyor
+  (`Campaign.kategoriIdleri`, `urunIdleri`). Panelde onay kutuları var,
+  JavaScript'siz çalışıyor.
+  - Eski tekli kayıtlar göçle listeye taşındı.
+  - Kapsam kuralı tek yerde (`server/kampanya-kapsam.ts`); motor, zarar
+    uyarısı, fiyat denetimi ve vitrin etiketi onu kullanıyor.
+  - Kategori ya da ürün silinince kampanya artık silinmiyor, listeden
+    çıkarılıyor. Liste boşalırsa kampanya hiçbir ürüne uygulanmıyor
+    (herkese değil).
+- **İncelemede bulunanlar:**
+  - **Kampanya müşteriye pahalıya gelebiliyordu.** Bedava kargo eşiği
+    indirimden sonraki tutara bakıyor. 755 ₺'lik sepette %1 kampanya 7,55 ₺
+    indirip 49,90 ₺ kargo getiriyordu.
+    - Seçim artık "en çok indirim" değil, **müşterinin ödeyeceği en düşük
+      toplam**; kampanyasız hâl de aday (`sepetiHesapla`).
+    - Sepet ve sipariş aynı fonksiyondan geçiyor.
+    - Kupon bu yüzden uygulanmadıysa sepet sebebini yazıyor.
+  - **Tavanlı kampanyada kısmi iade müşteri aleyhineydi.** "%20, en çok
+    200 ₺" ile 2000 ₺'lik siparişin yarısını iade eden orantılı payla 900 ₺
+    alıyordu, doğrusu 1000 ₺. Tavanlı kampanyalar da yeniden hesaba giriyor.
+  - Üyelere özel kampanyalar kartta üstü çizili fiyat göstermediği hâlde
+    fiyat denetimine giriyordu.
+  - Zarar uyarısı ürüne indirim düşmeyen (ücretsiz kargo) kampanyada da
+    maliyet altı ürünleri listeliyordu.
+  - Deneme siparişi silinince (K-163) kupon kullanımı artık geri geliyor.
+    Ödenmeden iptal edilmişse iptalde zaten gelmişti.
+
+**Nerede:** [`../server/kampanya-kapsam.ts`](../server/kampanya-kapsam.ts),
+[`../server/sepet.ts`](../server/sepet.ts)
 
 ---
 

@@ -17,7 +17,7 @@ import { siparisOlustur } from "@/server/siparis";
 import { talebiSonuclandir } from "@/server/talep";
 import { cerezAyarla, cerezleriTemizle } from "./sahte-headers";
 import { KUPON_CEREZI } from "@/server/kampanya";
-import type { SatisAyari } from "@/server/sepet";
+import { sepetiHesapla, type SatisAyari } from "@/server/sepet";
 
 /** Popüler kampanya türleri (K-170). */
 
@@ -82,6 +82,55 @@ describe("kampanya türleri", () => {
     assert.equal(enIyiKampanya([yuzde, kargo], [satir(100000, 1)], 100000, 4990)?.id, "yuzde");
     // Kargo zaten bedavaysa kargo kampanyası değersiz
     assert.equal(enIyiKampanya([kargo], [satir(30000, 1)], 30000, 0), undefined);
+  });
+
+  it("müşteriye en düşük toplamı veren seçiliyor: indirim kargo eşiğini bozmuyor (K-171)", () => {
+    const ayar: SatisAyari = {
+      kargoKurus: 4990,
+      bedavaKargoEsigi: 75000,
+      havaleBilgisi: "",
+      havaleSaat: 72,
+      havaleHatirlatmaSaat: 24,
+      kdvOrani: 10,
+      varsayilanTasiyici: "yurtici",
+    };
+    const satirlar = [satir(75500, 1)];
+    // %1 = 7,55 ₺ indirim sepeti 750 ₺ altına düşürüp 49,90 ₺ kargo getirirdi
+    const az = sepetiHesapla([k({ id: "az", deger: 1 })], satirlar, 75500, ayar, true);
+    assert.equal(az.kampanya, undefined);
+    assert.equal(az.kargoKurus, 0);
+    // %10 = 75,50 ₺ indirim, 49,90 ₺ kargoyla bile ucuz: uygulanıyor
+    const cok = sepetiHesapla([k({ id: "cok", deger: 10 })], satirlar, 75500, ayar, true);
+    assert.equal(cok.kampanya?.id, "cok");
+    assert.equal(cok.kargoKurus, 4990);
+    // Ücretsiz kargo kuponu 300 ₺ sepette
+    const kargo = sepetiHesapla(
+      [k({ id: "y", deger: 10 }), k({ id: "kargo", tip: "kargo" })],
+      [satir(30000, 1)],
+      30000,
+      ayar,
+      true,
+    );
+    assert.equal(kargo.kampanya?.id, "kargo");
+    assert.equal(kargo.kargoKurus, 0);
+    assert.equal(kargo.indirimKurus, 0);
+  });
+
+  it("çoklu kapsam: seçili kategoriler ve ürünler (K-171)", () => {
+    const kat = k({ deger: 10, kapsam: "kategori", kategoriIdleri: ["zibin", "tulum"] });
+    const satirlar = [
+      { productId: "a", categoryId: "zibin", araToplamKurus: 10000 },
+      { productId: "b", categoryId: "tulum", araToplamKurus: 20000 },
+      { productId: "c", categoryId: "sapka", araToplamKurus: 30000 },
+    ];
+    assert.equal(kampanyaIndirimi(kat, satirlar, 60000), 3000);
+    const urun = k({ deger: 10, kapsam: "urun", urunIdleri: ["a", "c"] });
+    assert.equal(kampanyaIndirimi(urun, satirlar, 60000), 4000);
+    // Liste boşalınca (silinen kategori) hiçbir ürüne uygulanmıyor, herkese değil
+    assert.equal(
+      kampanyaIndirimi(k({ deger: 10, kapsam: "kategori", kategoriIdleri: [] }), satirlar, 60000),
+      0,
+    );
   });
 
   it("N. üründe indirim en ucuz birimlerin satırına yazılıyor", () => {
@@ -242,5 +291,42 @@ describe("kampanya kuralları (veritabanı)", { skip: atlamaSebebi }, () => {
     const r = await db.refund.findFirst({ where: { requestId: t.id } });
     // Kalan 100 ₺ basamağın altında: 30 ₺ indirim bozuldu → 100 − 30 = 70 ₺
     assert.equal(r?.tutarKurus, 7000);
+  });
+
+  it("tavanlı kampanyada kısmi iade orantılı değil, yeniden hesap (K-171)", async () => {
+    const db = testDb();
+    const kampanya = await db.campaign.create({
+      data: { ad: "T_tavan", deger: 20, enFazlaIndirimKurus: 20000 },
+      select: { id: true },
+    });
+    const a = await urunKur(10);
+    const b = await urunKur(10);
+    await db.product.update({ where: { id: a.productId }, data: { fiyatKurus: 100000 } });
+    await db.product.update({ where: { id: b.productId }, data: { fiyatKurus: 100000 } });
+    const cartId = await sepetKur(a.variantId, 1);
+    await db.cartItem.create({
+      data: { id: kimlik("sat"), cartId, variantId: b.variantId, adet: 1 },
+    });
+    const s = await siparisOlustur(girdi(), { ...AYAR, kargoKurus: 0 });
+    await db.campaign.delete({ where: { id: kampanya.id } });
+    assert.ok(s.tamam);
+    const o = await db.order.update({
+      where: { numara: s.numara },
+      data: { durum: "teslim", odemeDurumu: "odendi", teslimTarihi: new Date() },
+      include: { satirlar: true },
+    });
+    assert.equal(o.toplamKurus, 180000); // 2000 − 200 (tavan)
+    const t = await db.orderRequest.create({
+      data: {
+        orderId: o.id,
+        tur: "iade",
+        sebep: "beden",
+        satirlar: { create: [{ orderItemId: o.satirlar[0].id, adet: 1 }] },
+      },
+    });
+    await talebiSonuclandir(t.id, "tamamlandi", "");
+    const r = await db.refund.findFirst({ where: { requestId: t.id } });
+    // Kalan 1000 ₺'ye yine 200 ₺ indirim: ödenen 1800 − kalan 800 = 1000 ₺
+    assert.equal(r?.tutarKurus, 100000);
   });
 });

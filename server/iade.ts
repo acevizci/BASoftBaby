@@ -164,7 +164,11 @@ export async function iadeTutari(
     !hepsi &&
     anlik &&
     (["al-ode", "nci-urun", "kademeli"].includes(anlik.tip) ||
-      (anlik.enAzSepetKurus > 0 && anlik.tip !== "kargo"));
+      (anlik.tip !== "kargo" &&
+        // Tavanlı kampanyada da (K-171): "%20, en çok 200 ₺" ile 2000 ₺'lik
+        // siparişin yarısını iade eden orantılı hesapla 900 ₺ alıyordu; kalan
+        // 1000 ₺'ye de 200 ₺ indirim düşüyor, doğrusu 1000 ₺.
+        ((anlik.enAzSepetKurus ?? 0) > 0 || (anlik.enFazlaIndirimKurus ?? 0) > 0)));
   if (yenidenHesap && anlik) {
     // Önceki iadeler: tamamlanmışların toplamından bu talebin kendisi düşülüyor.
     const onceki = new Map<string, number>();

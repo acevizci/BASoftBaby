@@ -84,7 +84,9 @@ export type Sepet = {
     | { sebep: "alt-sinir"; kalanKurus: number }
     | { sebep: "kapsam" }
     /** Ücretsiz kargo kuponu ama kargo zaten bedava. */
-    | { sebep: "kargo-zaten" };
+    | { sebep: "kargo-zaten" }
+    /** İndirim sepeti bedava kargo eşiğinin altına düşürüp toplamı artırırdı (K-171). */
+    | { sebep: "kargo-esigi" };
   /** Kod var ama bu müşteriye uygun değil (K-170). */
   kuponEngeli?: UygunlukEngeli;
   /** Biraz daha alışverişle kazanılacak kampanya (K-170). */
@@ -273,9 +275,8 @@ export async function sepetGetir(): Promise<Sepet> {
   // Ücretsiz kargo kampanyası öteki indirimlerle kampanyasız kargo ücretiyle
   // yarışıyor (K-170).
   const dolu = cikti.length > 0;
-  const kargoHam = kargoHesapla(araToplamKurus, ayar, dolu);
-  const kampanya = enIyiKampanya(kampanyalar, cikti, araToplamKurus, kargoHam);
-  const indirimKurus = kampanya?.indirimKurus ?? 0;
+  const hesap = sepetiHesapla(kampanyalar, cikti, araToplamKurus, ayar, dolu);
+  const { kampanya, indirimKurus, kargoHam } = hesap;
 
   // Kupon yazılmışsa müşteriye ne olduğunu söyleyebilmek için iki durumu
   // ayırıyoruz: kod hiç tutmadı mı, yoksa tuttu da başka kampanya mı kazandı.
@@ -294,7 +295,11 @@ export async function sepetGetir(): Promise<Sepet> {
             : undefined
           : kampanyaIndirimi(kuponKampanyasi, cikti, araToplamKurus) <= 0
             ? { sebep: "kapsam" }
-            : undefined
+            : // Kupon indiriyordu ama hiçbir kampanya seçilmediyse sebep kargo
+              // eşiği: indirim sepeti bedava kargonun altına düşürüyordu (K-171).
+              !kampanya
+              ? { sebep: "kargo-esigi" }
+              : undefined
       : undefined;
   // Kod var ama uygun değil (K-170): üye girişi, ilk sipariş, kişi başı hak.
   const kuponEngeli =
@@ -303,7 +308,7 @@ export async function sepetGetir(): Promise<Sepet> {
   // Bedava kargo eşiği indirimden SONRAKİ tutara bakar; ücretsiz kargo
   // kampanyası kazandıysa kargo yok.
   const indirimliAraToplam = araToplamKurus - indirimKurus;
-  const kargoKurus = kampanya?.kargoBedava ? 0 : kargoHesapla(indirimliAraToplam, ayar, dolu);
+  const kargoKurus = hesap.kargoKurus;
   const kalan = ayar.bedavaKargoEsigi - indirimliAraToplam;
 
   // "Sepete X ₺ daha ekle, indirim kazan" (K-170): kendiliğinden uygulanan
@@ -414,6 +419,45 @@ export function kargoHesapla(
   if (!sepetDoluMu) return 0;
   if (ayar.bedavaKargoEsigi > 0 && indirimliAraToplamKurus >= ayar.bedavaKargoEsigi) return 0;
   return ayar.kargoKurus;
+}
+
+/**
+ * Sepetin kampanyalı hesabı (K-171): sepet de sipariş de buradan geçiyor.
+ *
+ * Seçim "en çok indirim" değil, **müşterinin ödeyeceği en düşük toplam**.
+ * Bedava kargo eşiği indirimden sonraki tutara baktığı için küçük bir
+ * indirim sepeti eşiğin altına düşürüp kargo ekleyebiliyordu: 780 ₺'lik
+ * sepette %1 kampanya 7,80 ₺ indirip 49,90 ₺ kargo getiriyordu — müşteri
+ * kampanya yüzünden fazla ödüyordu. Kampanyasız hâl de adaylardan biri.
+ * Ücretsiz kargo kampanyası da aynı ölçüyle yarışıyor. Eşitlikte önce
+ * oluşturulan kampanya.
+ */
+export function sepetiHesapla(
+  kampanyalar: KampanyaKaydi[],
+  satirlar: IndirimSatiri[],
+  araToplamKurus: number,
+  ayar: SatisAyari,
+  dolu: boolean,
+): { kampanya?: UygulananKampanya; indirimKurus: number; kargoKurus: number; kargoHam: number } {
+  const kargoHam = kargoHesapla(araToplamKurus, ayar, dolu);
+  let en: { kampanya?: UygulananKampanya; indirimKurus: number; kargoKurus: number } = {
+    indirimKurus: 0,
+    kargoKurus: kargoHam,
+  };
+  let enToplam = araToplamKurus + kargoHam;
+  for (const k of kampanyalar) {
+    const aday = enIyiKampanya([k], satirlar, araToplamKurus, kargoHam);
+    if (!aday) continue;
+    const kargoKurus = aday.kargoBedava
+      ? 0
+      : kargoHesapla(araToplamKurus - aday.indirimKurus, ayar, dolu);
+    const toplam = araToplamKurus - aday.indirimKurus + kargoKurus;
+    if (toplam < enToplam) {
+      en = { kampanya: aday, indirimKurus: aday.indirimKurus, kargoKurus };
+      enToplam = toplam;
+    }
+  }
+  return { ...en, kargoHam };
 }
 
 /** Üst çubuktaki rozet için; sepetin tamamını kurmaya değmez. */

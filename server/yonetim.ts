@@ -198,6 +198,7 @@ export async function urunSil(form: FormData): Promise<void> {
   // Adresi kategorisine yönlensin (K-128).
   await silinenleriYonlendir([{ slug, categoryId: urun.categoryId }]);
   await db.product.delete({ where: { id: urun.id } });
+  await kampanyaKapsamindanCikar({ urunIdleri: [urun.id] });
 
   vitriniYenile();
   // Silinen adres artık yönleniyor; arama motoru bunu öğrensin.
@@ -296,6 +297,7 @@ export async function topluUrunIslemi(form: FormData): Promise<void> {
     );
     await silinenleriYonlendir(silinecekler);
     await db.product.deleteMany({ where: { id: { in: silinecekler.map((u) => u.id) } } });
+    await kampanyaKapsamindanCikar({ urunIdleri: silinecekler.map((u) => u.id) });
     vitriniYenile();
   }
 
@@ -783,6 +785,7 @@ export async function kategoriSil(veri: FormData): Promise<void> {
       db.product.updateMany({ where: { categoryId: id }, data: { categoryId: hedefId } }),
       db.category.delete({ where: { id } }),
     ]);
+    await kampanyaKapsamindanCikar({ kategoriId: id });
     vitriniYenile();
     redirect(
       `/yonetim/kategoriler?kayit=tasindi&adet=${urunAdedi}${formSayfaEki(veri)}${formAramaEki(veri)}`,
@@ -790,6 +793,7 @@ export async function kategoriSil(veri: FormData): Promise<void> {
   }
 
   await db.category.delete({ where: { id } });
+  await kampanyaKapsamindanCikar({ kategoriId: id });
   vitriniYenile();
   redirect(`/yonetim/kategoriler?kayit=silindi${formSayfaEki(veri)}${formAramaEki(veri)}`);
 }
@@ -1183,6 +1187,26 @@ function tariheCevir(deger: FormDataEntryValue | null, uc: "bas" | "son" = "bas"
 }
 
 /**
+ * Silinen kategori ya da ürün kampanya kapsamlarından çıkarılıyor (K-171).
+ * Eskiden tekli alanın `Cascade`i kampanyanın kendisini siliyordu; çoklu
+ * kapsamda öteki kategoriler için kampanya sürmeli. Liste boşalırsa kampanya
+ * hiçbir ürüne uygulanmıyor (herkese değil).
+ */
+async function kampanyaKapsamindanCikar(g: { kategoriId?: string; urunIdleri?: string[] }) {
+  if (g.kategoriId) {
+    await db.$executeRaw`
+      update "Campaign" set "kategoriIdleri" = array_remove("kategoriIdleri", ${g.kategoriId}),
+             "guncellendi" = now()
+       where ${g.kategoriId} = any("kategoriIdleri")`;
+  }
+  for (const id of g.urunIdleri ?? []) {
+    await db.$executeRaw`
+      update "Campaign" set "urunIdleri" = array_remove("urunIdleri", ${id}), "guncellendi" = now()
+       where ${id} = any("urunIdleri")`;
+  }
+}
+
+/**
  * Kademe metni (K-170): her satırda "eşik = indirim", ₺ cinsinden
  * ("500 = 50", "1.000 = 150"). Eşikler artan, indirim eşikten küçük; aynı
  * eşik iki kez yazılamıyor. Geçersizse `null`.
@@ -1278,6 +1302,28 @@ export async function kampanyaKaydet(veri: FormData): Promise<void> {
     String(veri.get("kuponKodu") ?? "").trim().toUpperCase().slice(0, 40) || null;
   if (kuponKodu && !/^[A-Z0-9_-]{3,40}$/.test(kuponKodu)) hata("kupon-harf");
 
+  // Seçilen kategoriler ve ürünler (K-171): yalnızca var olanlar.
+  const secilen = (alan: string) =>
+    [...new Set(veri.getAll(alan).map((x) => String(x).trim()).filter(Boolean))].slice(0, 500);
+  const kategoriIdleri =
+    kapsam === "kategori"
+      ? (
+          await db.category.findMany({
+            where: { id: { in: secilen("kategoriIdleri") } },
+            select: { id: true },
+          })
+        ).map((x) => x.id)
+      : [];
+  const urunIdleri =
+    kapsam === "urun"
+      ? (
+          await db.product.findMany({
+            where: { id: { in: secilen("urunIdleri") } },
+            select: { id: true },
+          })
+        ).map((x) => x.id)
+      : [];
+
   const veriler = {
     ad,
     tip,
@@ -1292,8 +1338,11 @@ export async function kampanyaKaydet(veri: FormData): Promise<void> {
     kisiBasiSinir: kisiBasiSinir as number | null,
     enFazlaKullanim: enFazlaKullanim as number | null,
     kapsam,
-    categoryId: kapsam === "kategori" ? String(veri.get("categoryId") ?? "") || null : null,
-    productId: kapsam === "urun" ? String(veri.get("productId") ?? "") || null : null,
+    // Çoklu kapsam (K-171); tekli alanlar yeni kampanyada boş.
+    categoryId: null,
+    productId: null,
+    kategoriIdleri,
+    urunIdleri,
     kuponKodu,
     enAzSepetKurus: kurusaCevir(veri.get("enAzSepet")) ?? 0,
     aktif: veri.get("aktif") === "on",
@@ -1303,8 +1352,8 @@ export async function kampanyaKaydet(veri: FormData): Promise<void> {
 
   // Kapsam kategori ya da ürünse hedef seçilmiş olmalı, yoksa kampanya
   // sessizce herkese uygulanırdı.
-  if (kapsam === "kategori" && !veriler.categoryId) hata("kategori");
-  if (kapsam === "urun" && !veriler.productId) hata("urun");
+  if (kapsam === "kategori" && kategoriIdleri.length === 0) hata("kategori");
+  if (kapsam === "urun" && urunIdleri.length === 0) hata("urun");
   // Bitiş başlangıçtan önceyse kampanya hiç çalışmaz.
   if (veriler.baslangic && veriler.bitis && veriler.bitis < veriler.baslangic) hata("tarih");
 

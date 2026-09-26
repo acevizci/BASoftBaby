@@ -14,6 +14,7 @@
 import { db } from "@/server/veritabani";
 import { ETIKETLER, paylasilanOnbellek } from "@/server/onbellek";
 import type { Prisma } from "@/db/uretilen/client";
+import { kapsamdaUrunMu, type Kapsam } from "@/server/kampanya-kapsam";
 
 export type KampanyaKaydi = {
   id: string;
@@ -23,6 +24,9 @@ export type KampanyaKaydi = {
   kapsam: string;
   categoryId: string | null;
   productId: string | null;
+  /** Çoklu kapsam (K-171). */
+  kategoriIdleri?: string[];
+  urunIdleri?: string[];
   kuponKodu: string | null;
   enAzSepetKurus: number;
   /** "X al Y öde" (K-168); "N. ürüne %X"te (K-170) `alAdet` N. */
@@ -69,13 +73,8 @@ export const KUPON_CEREZI = "kupon";
 /** Tek bir sepette sayılacak en çok birim; bozuk bir adet döngüyü şişirmesin. */
 const EN_COK_BIRIM = 1000;
 
-export function kapsamdaMi(
-  k: Pick<KampanyaKaydi, "kapsam" | "categoryId" | "productId">,
-  satir: IndirimSatiri,
-): boolean {
-  if (k.kapsam === "urun") return k.productId === satir.productId;
-  if (k.kapsam === "kategori") return k.categoryId === satir.categoryId;
-  return true;
+export function kapsamdaMi(k: Kapsam, satir: IndirimSatiri): boolean {
+  return kapsamdaUrunMu(k, satir);
 }
 
 /**
@@ -223,7 +222,7 @@ export function nciUrunEtiketi(k: Pick<KampanyaKaydi, "alAdet" | "deger">): stri
  */
 export function indirimiDagit(
   k:
-    | (Pick<KampanyaKaydi, "kapsam" | "categoryId" | "productId"> &
+    | (Kapsam &
         Partial<Pick<KampanyaKaydi, "tip" | "alAdet" | "odeAdet" | "deger">>)
     | undefined,
   satirlar: IndirimSatiri[],
@@ -336,6 +335,8 @@ const SECIM = {
   kapsam: true,
   categoryId: true,
   productId: true,
+  kategoriIdleri: true,
+  urunIdleri: true,
   kuponKodu: true,
   enAzSepetKurus: true,
   alAdet: true,
@@ -475,6 +476,8 @@ export async function gecerliKampanyalar(
       kapsam: k.kapsam,
       categoryId: k.categoryId,
       productId: k.productId,
+      kategoriIdleri: k.kategoriIdleri,
+      urunIdleri: k.urunIdleri,
       kuponKodu: k.kuponKodu,
       enAzSepetKurus: k.enAzSepetKurus,
       alAdet: k.alAdet,

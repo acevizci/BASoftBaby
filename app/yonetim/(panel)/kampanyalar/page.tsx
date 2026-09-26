@@ -28,6 +28,13 @@ const ETIKET = "text-xs font-bold text-metin-2";
 /** Kampanya satırı tablo satırı; sayfaya çok sayıda sığıyor. */
 const LISTE_BOYU = 20;
 
+/** Kapsamdaki kategori ya da ürün adları: "Zıbın, Tulum ve 3 tane daha" (K-171). */
+function kapsamAdlari(idler: (string | null)[], adlar: Map<string, string>, tur: string): string {
+  const liste = idler.filter((x): x is string => !!x).map((id) => adlar.get(id) ?? `silinmiş ${tur}`);
+  if (liste.length === 0) return `${tur} seçili değil`;
+  return liste.length > 3 ? `${liste.slice(0, 3).join(", ")} ve ${liste.length - 3} tane daha` : liste.join(", ");
+}
+
 function tarihYaz(t: Date | null): string {
   return t ? t.toLocaleDateString("tr-TR", { timeZone: "Europe/Istanbul" }) : "—";
 }
@@ -82,8 +89,8 @@ const HATALAR: Record<string, string> = {
     "\"X al Y öde\" için X en az 2, en çok 20; Y en az 1 ve X'ten küçük olmalı (ör. 3 al 2 öde).",
   "kupon-harf":
     "Kupon kodu 3-40 karakter; yalnızca Türkçe olmayan büyük harf (A-Z), rakam, tire ve alt çizgi. Ör. HOSGELDIN10.",
-  kategori: "Kapsam \"Tek kategori\" seçildiyse bir kategori seç.",
-  urun: "Kapsam \"Tek ürün\" seçildiyse bir ürün seç.",
+  kategori: "Kapsam \"Seçili kategoriler\" ise en az bir kategori işaretle.",
+  urun: "Kapsam \"Seçili ürünler\" ise en az bir ürün işaretle.",
   tarih: "Bitiş tarihi başlangıçtan önce olamaz.",
   "nci-urun": "N. ürün 2 ile 10 arasında olmalı; yüzdeyi Değer kutusuna yaz (ör. 2. ürüne %50).",
   kademeli:
@@ -118,6 +125,7 @@ export default async function KampanyaEkrani({
       where: kosul,
       orderBy: { olusturuldu: "desc" },
       include: { category: { select: { ad: true } }, product: { select: { ad: true } } },
+      // Kapsam adları aşağıda kategori ve ürün listesinden (K-171).
       skip: durum.atla,
       take: durum.boy,
     }),
@@ -134,6 +142,8 @@ export default async function KampanyaEkrani({
     ayarlariGetir(),
   ]);
   const fiyatUyarilari = await kampanyaFiyatUyarilari(kampanyalar.map((k) => k.id));
+  const kategoriAdi = new Map(kategoriler.map((k) => [k.id, k.ad]));
+  const urunAdi = new Map(urunler.map((u) => [u.id, u.ad]));
 
   return (
     <div className="flex flex-col gap-6">
@@ -210,8 +220,16 @@ export default async function KampanyaEkrani({
                       {k.kapsam === "tumu"
                         ? "Tüm ürünler"
                         : k.kapsam === "kategori"
-                          ? (k.category?.ad ?? "kategori silinmiş")
-                          : (k.product?.ad ?? "ürün silinmiş")}
+                          ? kapsamAdlari(
+                              k.kategoriIdleri.length ? k.kategoriIdleri : [k.categoryId],
+                              kategoriAdi,
+                              "kategori",
+                            )
+                          : kapsamAdlari(
+                              k.urunIdleri.length ? k.urunIdleri : [k.productId],
+                              urunAdi,
+                              "ürün",
+                            )}
                     </td>
                     <td className="rakam py-2">{k.kuponKodu ?? "—"}</td>
                     <td className="rakam py-2 text-xs text-metin-3">
@@ -343,34 +361,45 @@ export default async function KampanyaEkrani({
               <span className={ETIKET}>Kapsam</span>
               <select name="kapsam" defaultValue="tumu" className={GIRDI}>
                 <option value="tumu">Tüm ürünler</option>
-                <option value="kategori">Tek kategori</option>
-                <option value="urun">Tek ürün</option>
+                <option value="kategori">Seçili kategoriler</option>
+                <option value="urun">Seçili ürünler</option>
               </select>
             </label>
 
-            <label className="flex flex-col gap-1.5">
-              <span className={ETIKET}>Kategori — kapsam kategoriyse</span>
-              <select name="categoryId" defaultValue="" className={GIRDI}>
-                <option value="">seçilmedi</option>
+            {/* Çoklu kapsam (K-171): onay kutuları; JavaScript'siz çalışıyor. */}
+            <fieldset className="flex flex-col gap-1.5 sm:col-span-2">
+              <legend className={ETIKET}>Kategoriler — kapsam &quot;Seçili kategoriler&quot;se</legend>
+              <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1.5 rounded-[10px] border-[1.5px] border-cizgi p-3">
                 {kategoriler.map((k) => (
-                  <option key={k.id} value={k.id}>
+                  <label key={k.id} className="flex items-center gap-1.5 text-sm">
+                    <input
+                      type="checkbox"
+                      name="kategoriIdleri"
+                      value={k.id}
+                      className="h-4 w-4 accent-[var(--mercan)]"
+                    />
                     {kategoriEtiketleri(kategoriler).get(k.slug) ?? k.ad}
-                  </option>
+                  </label>
                 ))}
-              </select>
-            </label>
+              </div>
+            </fieldset>
 
-            <label className="flex flex-col gap-1.5 sm:col-span-2">
-              <span className={ETIKET}>Ürün — kapsam ürünse</span>
-              <select name="productId" defaultValue="" className={GIRDI}>
-                <option value="">seçilmedi</option>
+            <fieldset className="flex flex-col gap-1.5 sm:col-span-2">
+              <legend className={ETIKET}>Ürünler — kapsam &quot;Seçili ürünler&quot;se</legend>
+              <div className="mt-1.5 grid max-h-64 gap-1.5 overflow-y-auto rounded-[10px] border-[1.5px] border-cizgi p-3 sm:grid-cols-2">
                 {urunler.map((u) => (
-                  <option key={u.id} value={u.id}>
+                  <label key={u.id} className="flex items-center gap-1.5 text-sm">
+                    <input
+                      type="checkbox"
+                      name="urunIdleri"
+                      value={u.id}
+                      className="h-4 w-4 accent-[var(--mercan)]"
+                    />
                     {u.ad}
-                  </option>
+                  </label>
                 ))}
-              </select>
-            </label>
+              </div>
+            </fieldset>
 
             <label className="flex flex-col gap-1.5">
               <span className={ETIKET}>Kupon kodu — boşsa kendiliğinden uygulanır</span>

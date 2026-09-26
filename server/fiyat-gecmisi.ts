@@ -2,6 +2,7 @@ import "server-only";
 import { db } from "@/server/veritabani";
 import { enIyiKampanya, urunFiyatinaYansiyanlar, urunIndirimleri } from "@/server/kampanya";
 import type { Prisma } from "@/db/uretilen/client";
+import { kapsamdaUrunMu } from "@/server/kampanya-kapsam";
 
 /**
  * Fiyat geçmişi ve indirim öncesi fiyat denetimi (K-164).
@@ -167,6 +168,10 @@ export async function kampanyaFiyatUyarilari(
       kuponKodu: null,
       customerId: null,
       enAzSepetKurus: 0,
+      // Üyeye göre değişen kampanya kartta üstü çizili fiyat göstermiyor (K-171).
+      uyelereOzel: false,
+      ilkSiparis: false,
+      kisiBasiSinir: null,
       OR: [{ bitis: null }, { bitis: { gte: simdi } }],
     },
     select: {
@@ -176,6 +181,8 @@ export async function kampanyaFiyatUyarilari(
       kapsam: true,
       categoryId: true,
       productId: true,
+      kategoriIdleri: true,
+      urunIdleri: true,
       baslangic: true,
       olusturuldu: true,
     },
@@ -199,8 +206,7 @@ export async function kampanyaFiyatUyarilari(
     const baslangic = k.baslangic ?? k.olusturuldu;
     const liste: KampanyaFiyatUyarisi[] = [];
     for (const u of urunler) {
-      if (k.kapsam === "urun" && k.productId !== u.id) continue;
-      if (k.kapsam === "kategori" && k.categoryId !== u.categoryId) continue;
+      if (!kapsamdaUrunMu(k, { productId: u.id, categoryId: u.categoryId })) continue;
       const enDusuk = indirimOncesiEnDusuk(u.fiyatGecmisi, baslangic);
       if (enDusuk !== undefined && u.fiyatKurus <= enDusuk) continue;
       liste.push({ slug: u.slug, ad: u.ad, ustuCiziliKurus: u.fiyatKurus, enDusukKurus: enDusuk });

@@ -24,8 +24,9 @@ import { puaniTazele } from "@/server/yorum";
  * çekiliyor: bütün deneme siparişleri silinince ilk gerçek sipariş
  * BA-…-0001 oluyor.
  *
- * Kampanya kullanım sayısı (yalnızca raporlama) ve tek kullanımlık kişisel
- * kupon geri alınmıyor.
+ * - **Kampanya kullanımı** (K-171): deneme siparişinde harcanan kupon geri
+ *   geliyor. Ödenmeden iptal edilmiş siparişin kuponu iptalde zaten geri
+ *   verilmişti (K-167); ikinci kez düşülmüyor.
  */
 
 const SON_EK = /-(\d+)$/;
@@ -49,6 +50,8 @@ export async function siparisleriSil(
           id: true,
           numara: true,
           durum: true,
+          odemeDurumu: true,
+          kampanyaId: true,
           giftCardId: true,
           satirlar: {
             select: {
@@ -129,6 +132,13 @@ export async function siparisleriSil(
         }
       }
       await islem.giftCardUse.deleteMany({ where: { siparisNo: s.numara } });
+
+      // Kupon kullanımı geri (K-171); ödenmeden iptal edilmişse zaten verildi.
+      if (s.kampanyaId && !(iptal && s.odemeDurumu === "bekliyor")) {
+        await islem.$executeRaw`
+          update "Campaign" set kullanim = kullanim - 1
+           where id = ${s.kampanyaId} and kullanim > 0`;
+      }
 
       for (const x of s.satirlar) if (x.yorum) urunler.add(x.yorum.productId);
       await islem.order.delete({ where: { id: s.id } });

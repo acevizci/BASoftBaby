@@ -267,6 +267,13 @@ export default async function SepetSayfasi({ searchParams }: PageProps<"/sepet">
                 adet kampanyası için yeterli adet yok).
               </p>
             )}
+            {sepet.kuponUymuyor?.sebep === "kargo-esigi" && (
+              <p className="mt-2 text-xs font-semibold text-metin-2">
+                Kuponun geçerli, ama uygulansaydı sepetin bedava kargo sınırının altına düşüp
+                toplamın artacaktı; o yüzden uygulanmadı. Biraz daha ürün eklersen kupon da
+                kargo da senin olur.
+              </p>
+            )}
             {sepet.kuponUymuyor?.sebep === "kargo-zaten" && (
               <p className="mt-2 text-xs font-semibold text-metin-2">
                 Kuponun geçerli; kargo zaten bedava olduğu için ayrıca bir şey kazandırmıyor.
