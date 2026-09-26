@@ -293,14 +293,20 @@ export default async function SiparisDetayi({
                       ? "bg-nane-soluk text-nane-koyu"
                       : i.durum === "basarisiz"
                         ? "bg-mercan-soluk text-mercan-koyu"
-                        : "bg-sari-soluk text-sari-koyu"
+                        : i.durum === "gecersiz"
+                          ? "bg-cizgi-soluk text-metin-2"
+                          : "bg-sari-soluk text-sari-koyu"
                   }`}
                 >
                   {i.durum === "tamamlandi"
                     ? "İade edildi"
                     : i.durum === "basarisiz"
                       ? "Gönderilemedi"
-                      : "Bekliyor"}
+                      : i.durum === "gecersiz"
+                        ? "Geçersiz sayıldı"
+                        : i.durum === "gonderiliyor"
+                          ? "Gönderiliyor"
+                          : "Bekliyor"}
                 </span>
                 <span className="min-w-0 flex-1 truncate text-xs text-metin-3">
                   {i.aciklama}

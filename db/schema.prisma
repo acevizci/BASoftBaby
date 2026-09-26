@@ -850,6 +850,7 @@ model Refund {
 
   /// bekliyor · gonderiliyor · tamamlandi · basarisiz. "gonderiliyor": iyzico'ya
   /// istek gitti, sonuç yazılmadı (K-166); kendiliğinden yeniden gönderilmez.
+  /// "gecersiz": yanlış açılmış kayıt, para gönderilmeyecek (K-175).
   durum String @default("bekliyor")
   /// iyzico iade kimliği ya da havale dekont açıklaması
   saglayiciRef String?

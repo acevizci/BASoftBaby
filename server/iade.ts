@@ -262,7 +262,11 @@ export async function iadeKaydiAc(
       odemeYontemi: true,
       toplamKurus: true,
       hediyeCekiKurus: true,
-      iadeler: { select: { tutarKurus: true, hediyeCekiKurus: true } },
+      // Geçersiz sayılan kayıt (K-175) ödenmedi; önceki iadelere girmiyor.
+      iadeler: {
+        where: { durum: { not: "gecersiz" } },
+        select: { tutarKurus: true, hediyeCekiKurus: true },
+      },
     },
   });
   if (!siparis) return undefined;
@@ -298,7 +302,7 @@ export async function iadeKaydiAc(
   });
 
   const bekleyen = yalnizCek
-    ? await islem.refund.count({ where: { orderId, durum: { not: "tamamlandi" } } })
+    ? await islem.refund.count({ where: { orderId, ...ACIK_IADE } })
     : 1;
   await islem.order.update({
     where: { id: orderId },
@@ -323,12 +327,13 @@ export async function iadeyiTamamla(
       where: { id },
       select: { id: true, orderId: true, durum: true },
     });
-    if (!kayit || kayit.durum === "tamamlandi") return undefined;
+    if (!kayit || !ACIK_DURUMLAR.includes(kayit.durum)) return undefined;
 
     // Koşullu (K-166): "işaretle"ye iki kez basılınca iki istek de
     // tamamlanmamış görüyor, müşteriye iki iade e-postası gidiyordu.
+    // Geçersiz sayılmış kayıt da tamamlanamıyor (K-175).
     const { count } = await islem.refund.updateMany({
-      where: { id, durum: { not: "tamamlandi" } },
+      where: { id, ...ACIK_IADE },
       data: {
         durum: "tamamlandi",
         tamamlandi: new Date(),
@@ -342,7 +347,7 @@ export async function iadeyiTamamla(
     // Reddedilmiş ya da gönderimi yarıda kalmış iade de borç (K-166): eskiden
     // yalnızca "bekliyor" sayılıyordu, sipariş "iade edildi" görünüyordu.
     const kalan = await islem.refund.count({
-      where: { orderId: kayit.orderId, durum: { not: "tamamlandi" } },
+      where: { orderId: kayit.orderId, ...ACIK_IADE },
     });
     // Yalnızca iade bekleyen sipariş "iade edildi" oluyor (K-167): çift
     // ödemenin iadesi geçerli, ödenmiş bir siparişi iade edilmiş göstermesin.
@@ -354,6 +359,81 @@ export async function iadeyiTamamla(
     }
 
     return { orderId: kayit.orderId };
+  });
+}
+
+/** Ödenmesi süren iade durumları; "tamamlandi" ve "gecersiz" kapanmış. */
+const ACIK_DURUMLAR = ["bekliyor", "basarisiz", "gonderiliyor"];
+const ACIK_IADE = { durum: { in: ACIK_DURUMLAR } };
+
+export type GecersizSonucu =
+  | "tamam"
+  | "bulunamadi"
+  | "kapali"
+  | "cek"
+  | "iptal-degil"
+  | "degisti";
+
+/**
+ * Yanlış açılmış iade kaydını geçersiz sayar (K-175): para hiç
+ * gönderilmeyecek. Örnek: havale "ödendi" diye yanlışlıkla işaretlenmiş,
+ * sipariş iptal edilince iade kaydı açılmış, oysa para hiç gelmemiş.
+ *
+ * - Müşteriye e-posta gitmiyor; kayıt silinmiyor, sebebiyle duruyor.
+ * - Çek bakiyesine dönmüş kısmı olan kayıt geçersiz sayılamıyor: bakiye
+ *   müşteriye çoktan verildi.
+ * - Siparişte açık iade kalmadıysa ödeme durumu düzeliyor: tamamlanmış
+ *   iade varsa "iade", yoksa "ödendi". `alinmadi` (yalnızca iptal edilmiş
+ *   siparişte) ödemenin hiç alınmadığını söylüyor: "bekliyor".
+ */
+export async function iadeyiGecersizSay(
+  id: string,
+  g: { sebep: string; alinmadi: boolean; yapanId?: string },
+): Promise<GecersizSonucu> {
+  return db.$transaction(async (islem) => {
+    const kayit = await islem.refund.findUnique({
+      where: { id },
+      select: {
+        orderId: true,
+        durum: true,
+        hediyeCekiKurus: true,
+        aciklama: true,
+        order: { select: { durum: true } },
+      },
+    });
+    if (!kayit) return "bulunamadi";
+    if (!ACIK_DURUMLAR.includes(kayit.durum)) return "kapali";
+    if (kayit.hediyeCekiKurus > 0) return "cek";
+    if (g.alinmadi && kayit.order.durum !== "iptal") return "iptal-degil";
+
+    // Koşullu: arada tamamlandıysa ya da gönderildiyse dokunulmuyor.
+    const { count } = await islem.refund.updateMany({
+      where: { id, ...ACIK_IADE },
+      data: {
+        durum: "gecersiz",
+        hata: null,
+        yapanId: g.yapanId ?? null,
+        aciklama: [kayit.aciklama, `Geçersiz: ${g.sebep}`]
+          .filter(Boolean)
+          .join(" · ")
+          .slice(0, 500),
+      },
+    });
+    if (count === 0) return "degisti";
+
+    const kalan = await islem.refund.count({ where: { orderId: kayit.orderId, ...ACIK_IADE } });
+    if (kalan === 0) {
+      const tamamlanan = await islem.refund.count({
+        where: { orderId: kayit.orderId, durum: "tamamlandi" },
+      });
+      await islem.order.updateMany({
+        where: { id: kayit.orderId, odemeDurumu: "iade-bekliyor" },
+        data: {
+          odemeDurumu: tamamlanan > 0 ? "iade" : g.alinmadi ? "bekliyor" : "odendi",
+        },
+      });
+    }
+    return "tamam";
   });
 }
 

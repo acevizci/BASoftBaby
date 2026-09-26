@@ -3,7 +3,12 @@ import Katlanir from "@/ui/katlanir";
 import PanelBildirim, { ORTAK_HATALAR } from "@/ui/panel-bildirim";
 import { bekleyenIadeOzeti, bekleyenIadeler } from "@/server/iade";
 import { odemeAcikMi } from "@/server/odeme";
-import { elleIadeAc, iadeyiIsaretle, karttanIadeEt } from "@/server/iade-islem";
+import {
+  elleIadeAc,
+  iadeyiGecersizSayIslem,
+  iadeyiIsaretle,
+  karttanIadeEt,
+} from "@/server/iade-islem";
 import { fiyatYaz } from "@/ui/katalog-bicim";
 import { yontemAdi } from "@/ui/siparis-bicim";
 import { yoneticiGerekli } from "@/server/yonetim-kimlik";
@@ -30,6 +35,7 @@ const BILDIRIMLER: Record<string, string> = {
   kart: "İade iyzico'ya gönderildi ve kabul edildi.",
   acildi: "İade kaydı açıldı.",
   zaten: "Bu iade zaten tamamlanmıştı.",
+  gecersiz: "İade kaydı geçersiz sayıldı; para gönderilmeyecek. Sipariş kaydında sebebiyle duruyor.",
 };
 
 const HATALAR: Record<string, string> = {
@@ -43,6 +49,14 @@ const HATALAR: Record<string, string> = {
   odenmemis: "Bu siparişin parası alınmamış; iade edilecek bir şey yok.",
   gonderiliyor:
     "Bu iade şu an gönderiliyor ya da gönderimi yarıda kaldı; ikinci kez gönderilmedi. iyzico panelinden bak.",
+  sebep: "Geçersiz saymak için kısa bir sebep yaz (ör. havale hiç gelmemişti).",
+  "gecersiz-bulunamadi": "İade kaydı bulunamadı.",
+  "gecersiz-kapali": "Bu iade zaten tamamlanmış ya da geçersiz sayılmış.",
+  "gecersiz-degisti": "İade bu arada tamamlandı ya da gönderildi; geçersiz sayılmadı.",
+  "gecersiz-cek":
+    "Bu iadenin bir kısmı hediye çeki bakiyesine döndü; bakiye müşteriye verildiği için kayıt geçersiz sayılamaz.",
+  "gecersiz-iptal-degil":
+    "\"Para hiç alınmadı\" yalnızca iptal edilmiş siparişte seçilebilir. Sipariş sürüyorsa işareti kaldırıp yeniden dene.",
 };
 
 function tarihYaz(t: Date): string {
@@ -175,6 +189,50 @@ export default async function IadeEkrani({ searchParams }: PageProps<"/yonetim/i
                     </button>
                   </form>
                 </div>
+
+                {/* Yanlış açılmış kayıt (K-175): para gönderilmeyecek. */}
+                <details className="text-xs">
+                  <summary className="cursor-pointer font-semibold text-metin-3 hover:text-metin">
+                    Bu kayıt yanlış açıldı
+                  </summary>
+                  <form
+                    action={iadeyiGecersizSayIslem}
+                    className="mt-2 flex flex-col gap-2 rounded-marka border border-cizgi p-3"
+                  >
+                    <input type="hidden" name="id" value={i.id} />
+                    <SayfaAlani sayfa={durum.sayfa} />
+                    <p className="text-metin-2">
+                      Geçersiz sayılan iade listeden kalkar, müşteriye e-posta gitmez; kayıt
+                      sebebiyle sipariş ekranında kalır. Yalnızca müşteriye gerçekten borcun
+                      yoksa kullan.
+                    </p>
+                    <label className="flex flex-col gap-1.5">
+                      <span className={ETIKET}>Sebep</span>
+                      <input
+                        name="sebep"
+                        required
+                        minLength={3}
+                        maxLength={200}
+                        placeholder="ör. havale hiç gelmemişti, yanlışlıkla ödendi yapılmış"
+                        className={`${GIRDI} sm:w-96`}
+                      />
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        name="alinmadi"
+                        className="h-4 w-4 accent-[var(--mercan)]"
+                      />
+                      <span>
+                        Para hiç alınmadı: sipariş &quot;ödeme bekliyor&quot; sayılsın (yalnızca
+                        iptal edilmiş siparişte)
+                      </span>
+                    </label>
+                    <button type="submit" className={`${KUCUK_DUGME} self-start`}>
+                      Geçersiz say
+                    </button>
+                  </form>
+                </details>
               </li>
             ))}
           </ul>

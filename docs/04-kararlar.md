@@ -6719,9 +6719,41 @@ Panel rehberi (K-162) K-163'ten bu yana yapılanlarla yeniden okundu:
   görüntüsüyle) ve sihirbazın kuralları. Rehberde ayrıca kartta ve sepette
   ne göründüğü, durum etiketleri, uyarılar, "Son N gün" notu ve "X ₺ daha
   ekle" ipucu var. Sık yapılan işlere üç kampanya tarifi eklendi.
-- **Açık kalan:** yanlışlıkla "ödendi" yapılıp iptal edilen siparişte
-  açılan iade kaydını kapatmanın yolu yok; İadeler ekranında yalnızca
-  "iade et" ve "parayı gönderdim" var.
+- Rehberi yazarken bulunan eksik (yanlış açılmış iade kaydı kapatılamıyor)
+  K-175'te giderildi.
+
+
+### K-175 · Yanlış açılmış iade kaydını geçersiz sayma
+
+Yanlış açılmış bir iade kaydı kapatılamıyordu. Örnek: havale gelmeden
+"ödendi" yapılıp iptal edilen siparişte iade kaydı açılıyor, oysa para hiç
+gelmemiş. İadeler ekranında yalnızca "iyzico ile iade et" ve "Parayı
+gönderdim, işaretle" vardı. İkincisi müşteriye "iaden gönderildi"
+e-postası atıyor, sahte bir para çıkışını rapora yazıyordu.
+
+- **Yeni iade durumu `gecersiz`:** İadeler'de her kaydın altında "Bu kayıt
+  yanlış açıldı". Sebep zorunlu.
+  - Kayıt silinmiyor; sebebi açıklamaya ekleniyor. Sipariş ekranında
+    "Geçersiz sayıldı" diye duruyor.
+  - Müşteriye e-posta gitmiyor.
+  - Koşullu yazma: aynı anda tamamlanan ya da iyzico'ya gönderilen kayıt
+    geçersiz sayılmıyor.
+  - Geçersiz kayıt sonradan tamamlanamıyor.
+  - Çek bakiyesine dönmüş kısmı olan kayıt geçersiz sayılamıyor: bakiye
+    müşteriye verilmiş.
+- **Siparişin ödeme durumu:** açık iade kalmadıysa düzeliyor.
+  - Tamamlanmış iade varsa "iade", yoksa "ödendi" oluyor.
+  - "Para hiç alınmadı" seçilirse "bekliyor" oluyor. Bu yalnızca iptal
+    edilmiş siparişte seçilebiliyor; süren siparişte süre dolumu siparişi
+    iptal ederdi.
+- Geçersiz kayıt önceki iadelere sayılmıyor, siparişin iade sınırını
+  yemiyor. Rapor ve kâr zaten yalnızca tamamlanan iadeye bakıyordu.
+- Sipariş ekranında "gönderiliyor"daki iade "Bekliyor" yazıyordu; artık
+  "Gönderiliyor" yazıyor.
+
+**Nerede:** [`../server/iade.ts`](../server/iade.ts),
+[`../server/iade-islem.ts`](../server/iade-islem.ts),
+[`../testler/iade-gecersiz-db.test.ts`](../testler/iade-gecersiz-db.test.ts)
 
 ---
 

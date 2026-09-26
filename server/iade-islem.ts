@@ -26,7 +26,12 @@ import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/server/veritabani";
 import { TUM_ETIKETLER } from "@/server/onbellek";
-import { iadeKaydiAc, iadeyiBasarisizIsaretle, iadeyiTamamla } from "@/server/iade";
+import {
+  iadeKaydiAc,
+  iadeyiBasarisizIsaretle,
+  iadeyiGecersizSay,
+  iadeyiTamamla,
+} from "@/server/iade";
 import { tutarCoz } from "@/server/tutar";
 import { kartIadesiYap } from "@/server/odeme-iade";
 import { iadeYapildiEpostasi } from "@/server/eposta";
@@ -131,6 +136,29 @@ export async function karttanIadeEt(form: FormData): Promise<void> {
 
   vitriniYenile();
   redirect(donus(form, "kayit=kart"));
+}
+
+/**
+ * Yanlış açılmış iade kaydını geçersiz sayar (K-175): para gönderilmeyecek.
+ * Sebep zorunlu; kayıt silinmiyor, sebebiyle sipariş ekranında duruyor.
+ */
+export async function iadeyiGecersizSayIslem(form: FormData): Promise<void> {
+  const yonetici = await yoneticiGerekli();
+
+  const id = String(form.get("id") ?? "").trim();
+  const sebep = String(form.get("sebep") ?? "").trim().slice(0, 200);
+  if (!id) redirect(donus(form, "hata=bulunamadi"));
+  if (sebep.length < 3) redirect(donus(form, "hata=sebep"));
+
+  const sonuc = await iadeyiGecersizSay(id, {
+    sebep,
+    alinmadi: form.get("alinmadi") === "on",
+    yapanId: yonetici.id,
+  });
+  if (sonuc !== "tamam") redirect(donus(form, `hata=gecersiz-${sonuc}`));
+
+  vitriniYenile();
+  redirect(donus(form, "kayit=gecersiz"));
 }
 
 /** Panelden elle iade kaydı: talepten doğmayan iadeler için. */
