@@ -36,7 +36,12 @@ export default async function UrunDuzenle({
       where: { slug },
       include: {
         category: true,
-        variants: true,
+        // Üretici barkodları (K-176).
+        variants: {
+          include: {
+            barkodlar: { orderBy: { olusturuldu: "asc" }, select: { id: true, kod: true, carpan: true } },
+          },
+        },
         images: { orderBy: { sira: "asc" } },
       },
     }),
@@ -129,6 +134,7 @@ export default async function UrunDuzenle({
             beden: v.beden,
             renk: v.renk,
             stok: v.stok,
+            barkodlar: v.barkodlar,
           })),
         }}
       />

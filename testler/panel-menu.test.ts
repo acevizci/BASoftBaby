@@ -38,7 +38,7 @@ describe("menü işaretleme", () => {
   });
 
   it("sayfa adı", () => {
-    assert.equal(sayfaAdi("/yonetim/stok/mal-kabul"), "Stok › Mal kabulü");
+    assert.equal(sayfaAdi("/yonetim/stok/depo"), "Stok › Depo");
     assert.equal(sayfaAdi("/yonetim/siparisler/BA-1"), "Siparişler");
     assert.equal(sayfaAdi("/yonetim/kampanyalar"), "Vitrin › Kampanyalar");
   });

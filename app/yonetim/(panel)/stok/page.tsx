@@ -69,8 +69,8 @@ export default async function StokEkrani({ searchParams }: PageProps<"/yonetim/s
       <p className="text-sm text-metin-2">
         Biten ve azalan bedenler önce geliyor. Buradaki sayı stoğun kendisi; değiştirip
         kaydet, sıfır yazdığın beden mağazada seçilemez hale gelir. Gelen malı eklemek için{" "}
-        <Link href="/yonetim/stok/mal-kabul" className="font-bold text-mavi-koyu hover:underline">
-          mal kabulü
+        <Link href="/yonetim/stok/depo" className="font-bold text-mavi-koyu hover:underline">
+          Depo ekranı
         </Link>
         .
       </p>

@@ -6755,6 +6755,55 @@ e-postası atıyor, sahte bir para çıkışını rapora yazıyordu.
 [`../server/iade-islem.ts`](../server/iade-islem.ts),
 [`../testler/iade-gecersiz-db.test.ts`](../testler/iade-gecersiz-db.test.ts)
 
+
+### K-176 · Stok 1: barkod öğrenme ve Depo ekranı
+
+Stok planının (`06-stok-plani.md`) ilk aşaması. Ürünlerde üretici barkodu
+var ama sistem yalnızca kendi etiketimizi, SKU'yu ve beden kimliğini
+tanıyordu. Mal kabulü ürün ürün aranarak yapılıyordu.
+
+- **Barkod bir kez öğretiliyor** (`VariantBarcode`). Tanınmayan barkod
+  okutulunca ürün adıyla aranıp beden seçiliyor; sonra hep tanınıyor.
+  - Bir barkod birden çok bedene bağlanabiliyor. Okutunca "hangisi?" diye
+    seçtiriliyor; öğretme kartından bağlanan tek kalıyor.
+  - Paket ya da koli barkodu için çarpan var ("bir okutma 3 adet").
+  - Çözme sırası: üretici barkodu, bizim etiketimiz (`B` + numara), SKU,
+    beden kimliği (`barkodCoz`).
+  - Ürün sayfasında bedenin barkodları görünüyor, yanlışsa kaldırılıyor.
+    Beden silinince bağı da siliniyor.
+- **Depo ekranı** (`/yonetim/stok/depo`, telefon için):
+  - İki mod var: Mal geldi, Çıkar. Okutulanlar listede birikiyor; satırda
+    − / + ve sil var.
+  - Stok "Stoğa ekle" ya da "Stoktan düş"te tek seferde yazılıyor.
+  - Kamera sürekli okuyor. Android'de tarayıcının kendi okuyucusu,
+    iPhone'da ZXing (`@zxing/browser`); ZXing paket içinde, yalnızca kamera
+    açılınca yükleniyor, içerik politikası değişmedi. Aynı kod 1,2 saniye
+    içinde tekrar sayılmıyor. Fener, ses ve titreşim var.
+  - El okuyucu ve arama kutusu da çalışıyor. Barkoda benzemeyen yazı ada
+    göre aranıyor.
+  - Liste telefonda saklanıyor (mod başına); sayfa kapansa da kaybolmuyor.
+- **Çift kayıt yok:** her liste bir kerelik anahtarla gönderiliyor
+  (`DepoIslemi`, tekil kimlik). Aynı liste ikinci kez gelirse (çift basış,
+  bağlantı koptu) stok yeniden yazılmıyor, ilk sonuç dönüyor. Aynı anda iki
+  gönderimde de yalnızca biri işliyor (test).
+- **Mal geldi:**
+  - Stok artırılarak yazılıyor.
+  - Tedarikçi, irsaliye ve not isteğe bağlı; hareket notuna yazılıyor.
+  - "Gelince haber ver" diyenlere e-posta gidiyor.
+  - Sonuçta üretici barkodu olmayan ürünler için etiket bağlantısı çıkıyor.
+- **Çıkar:**
+  - Sebep zorunlu: hasarlı/fire, kayıp, numune/hediye. Hareket sebepleri
+    `hasar`, `kayip`, `numune`.
+  - Stok eksiye inmiyor; yetmeyen satır yazılmıyor, listede kalıyor, sebebi
+    gösteriliyor.
+- Mal kabulü sayfası kaldırıldı; eski adres Depo'ya yönleniyor. Menüde
+  "Mal kabulü" yerine "Depo" var.
+
+**Nerede:** [`../server/depo.ts`](../server/depo.ts),
+[`../ui/depo-ekrani.tsx`](../ui/depo-ekrani.tsx),
+[`../ui/kamera-okuyucu.tsx`](../ui/kamera-okuyucu.tsx),
+[`../testler/depo.test.ts`](../testler/depo.test.ts)
+
 ---
 
 ## Açık sorular

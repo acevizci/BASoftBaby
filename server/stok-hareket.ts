@@ -29,6 +29,10 @@ export const SEBEPLER = {
   silindi: "Beden silindi",
   "set-hazirla": "Set hazırlama",
   "set-boz": "Set bozma",
+  // Depo ekranında "Çıkar" (K-176).
+  hasar: "Hasarlı / fire",
+  kayip: "Kayıp",
+  numune: "Numune, hediye",
 } as const;
 export type Sebep = keyof typeof SEBEPLER;
 

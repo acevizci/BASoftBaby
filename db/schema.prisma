@@ -180,6 +180,8 @@ model ProductVariant {
   @@unique([productId, beden, renk])
   @@index([productId])
   listeKalemleri GiftListItem[]
+  /// Üretici barkodları (K-176); Depo ekranında okutunca bu beden geliyor.
+  barkodlar     VariantBarcode[]
 }
 
 model ProductImage {
@@ -1011,7 +1013,8 @@ model StockMovement {
   degisim Int
   sonra   Int
   /// siparis · iptal · iade · degisim-geri · degisim · duzeltme · mal-kabul ·
-  /// sayim · toplu · yeni · silindi
+  /// sayim · toplu · yeni · silindi · set-hazirla · set-boz · hasar · kayip ·
+  /// numune (K-176)
   sebep     String
   siparisNo String?
   /// Panelden yapıldıysa kim; müşteri ya da zamanlı iş yaptıysa boş.
@@ -1579,4 +1582,38 @@ model PriceHistory {
   olusturuldu DateTime @default(now())
 
   @@index([productId, olusturuldu])
+}
+
+/// Üretici barkodunun bedene bağı (K-176). Barkod bir kez "öğretiliyor":
+/// tanınmayan barkod okutulunca hangi beden olduğu soruluyor, sonra hep
+/// tanınıyor. Bir barkod birden çok bedene bağlanabiliyor (bazı üreticiler
+/// bütün renklerde aynı barkodu kullanıyor; okutunca seçtiriliyor), bir
+/// bedenin de birden çok barkodu olabiliyor (tedarikçi değişti).
+model VariantBarcode {
+  id        String         @id @default(cuid())
+  kod       String
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  /// Bir okutma kaç adet: tek ürün 1, "3'lü paket" barkodu 3, koli 24.
+  carpan      Int      @default(1)
+  adminId     String?
+  olusturuldu DateTime @default(now())
+
+  @@unique([kod, variantId])
+  @@index([kod])
+}
+
+/// Depo ekranında bir kayıt (K-176). Kimlik tarayıcının ürettiği bir
+/// kerelik anahtar: aynı liste iki kez gönderilirse (çift basış, bağlantı
+/// koptu) stok ikinci kez yazılmıyor, ilk kaydın sonucu dönüyor.
+model DepoIslemi {
+  id          String   @id
+  /// gelen · cikar · say
+  tur         String
+  /// Kaydın sonucu; aynı anahtar yeniden gelince bu gösteriliyor.
+  sonuc       Json
+  adminId     String?
+  olusturuldu DateTime @default(now())
+
+  @@index([olusturuldu])
 }

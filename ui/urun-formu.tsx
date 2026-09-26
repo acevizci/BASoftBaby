@@ -2,6 +2,7 @@ import Link from "next/link";
 import BedenTablosu from "@/ui/beden-tablosu";
 import UrunGorseli from "@/ui/urun-gorseli";
 import { urunKaydet, varyantEkle, varyantSil } from "@/server/yonetim";
+import { barkodBaginiKaldir } from "@/server/depo-islem";
 import {
   GORSEL_ADLARI,
   GORSEL_TIPLERI,
@@ -14,7 +15,14 @@ import {
 import SilmeOnayi, { SIL_DUGMESI } from "@/ui/silme-onayi";
 import { birimMarj, yuzdeYaz } from "@/server/kar";
 
-type Varyant = { id: string; beden: string; renk: string; stok: number };
+type Varyant = {
+  id: string;
+  beden: string;
+  renk: string;
+  stok: number;
+  /** Üretici barkodları (K-176). */
+  barkodlar?: { id: string; kod: string; carpan: number }[];
+};
 
 export type FormUrunu = {
   slug: string;
@@ -358,6 +366,7 @@ export default function UrunFormu({
                     <th className="py-2">Beden</th>
                     <th className="py-2">Renk</th>
                     <th className="py-2">Stok</th>
+                    <th className="py-2">Barkod</th>
                     <th className="py-2"></th>
                   </tr>
                 </thead>
@@ -367,6 +376,35 @@ export default function UrunFormu({
                       <td className="py-2">{v.beden}</td>
                       <td className="py-2">{renkYaz(renkler, v.renk)}</td>
                       <td className="rakam py-2">{v.stok}</td>
+                      <td className="py-2">
+                        {/* Depo ekranında öğretilen barkodlar; yanlışsa kaldırılıyor (K-176). */}
+                        <span className="flex flex-wrap gap-1">
+                          {(v.barkodlar ?? []).length === 0 && (
+                            <span className="text-xs text-metin-3">—</span>
+                          )}
+                          {(v.barkodlar ?? []).map((b) => (
+                            <form
+                              key={b.id}
+                              action={barkodBaginiKaldir}
+                              className="flex items-center gap-1 rounded-full bg-yuzey-sicak px-2 py-0.5 text-xs"
+                            >
+                              <input type="hidden" name="id" value={b.id} />
+                              <input type="hidden" name="slug" value={urun.slug} />
+                              <span className="rakam">
+                                {b.kod}
+                                {b.carpan > 1 && ` ×${b.carpan}`}
+                              </span>
+                              <button
+                                type="submit"
+                                aria-label={`${b.kod} barkodunu kaldır`}
+                                className="font-bold text-metin-3 hover:text-mercan-koyu"
+                              >
+                                ×
+                              </button>
+                            </form>
+                          ))}
+                        </span>
+                      </td>
                       <td className="py-2 text-right">
                         {/* Varyant silmek o beden-renk birleşiminin stoğunu da
                             siliyor; tek tıkla olmamalı (K-57). */}

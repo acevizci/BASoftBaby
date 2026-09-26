@@ -46,6 +46,16 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  /**
+   * Stok sayfaları sadeleşti (K-176): eski adresler yeni yerlerine. Kalıcı
+   * değil (307): tarayıcı önbelleğe almasın, adresler yeniden kullanılabilsin.
+   */
+  async redirects() {
+    return [
+      { source: "/yonetim/stok/mal-kabul", destination: "/yonetim/stok/depo", permanent: false },
+    ];
+  },
+
   experimental: {
     serverActions: {
       /**

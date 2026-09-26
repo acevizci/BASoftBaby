@@ -127,7 +127,11 @@ export const BOLUMLER: Bolum[] = [
     ton: "hatirlatma",
     ozetSayaclar: ["sorunluStok"],
     alt: [
-      { yol: "/yonetim/stok/mal-kabul", ad: "Mal kabulü", anahtar: "gelen mal tedarik giris" },
+      {
+        yol: "/yonetim/stok/depo",
+        ad: "Depo",
+        anahtar: "mal kabul gelen barkod okut telefon cikar hasar kayip",
+      },
       { yol: "/yonetim/stok/sayim", ad: "Sayım", anahtar: "envanter barkod" },
       { yol: "/yonetim/stok/siparis-listesi", ad: "Sipariş listesi", anahtar: "tedarikci eksik alinacak" },
       { yol: "/yonetim/stok/satmayanlar", ad: "Satmayanlar", anahtar: "olu stok" },
